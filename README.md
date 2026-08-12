@@ -9,8 +9,8 @@ Dieses Repo dient als Backup/Restore-Punkt für den Nuzlocke-Tracker (Claude Art
 zurückgekehrt werden kann — unabhängig von der Versionshistorie des Artifacts.
 
 So kommt man zurück:
-1. Diese Datei öffnen/an Claude geben und erneut als Artifact veröffentlichen ("stelle die Ursprungsversion wieder her"), oder
-2. Den Git-Tag `nuzlocke-v1-baseline` auschecken:
+1. Claude bitten: "stelle die Ursprungsversion wieder her" — dann wird `nuzlocke-v1-baseline.html` erneut als Artifact veröffentlicht, oder
+2. Den Commit direkt auschecken:
    ```
-   git checkout nuzlocke-v1-baseline -- nuzlocke-v1-baseline.html
+   git checkout 9416d80 -- nuzlocke-v1-baseline.html
    ```
