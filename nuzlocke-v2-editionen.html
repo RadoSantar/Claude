@@ -918,12 +918,24 @@ function cardClass(loc){
   return "st-box";
 }
 
+function rivalDuelTally(){
+  let wins = 0, losses = 0;
+  Object.values(state.pvp).forEach(rec=>{
+    if(rec.winner==="me") wins++;
+    else if(rec.winner==="friend") losses++;
+  });
+  if(state.hallOfFame.result==="win") wins++;
+  else if(state.hallOfFame.result==="loss") losses++;
+  return { wins, losses };
+}
+
 function statsCardHtml(){
   const total = state.locations.length;
   const pct = total? Math.round(resolvedCount()/total*100) : 0;
   const caught = aliveCount()+deadCount();
   const survivalRate = caught>0 ? Math.round(aliveCount()/caught*100) : null;
   const bossesDefeated = currentGame().bosses.filter(b=>isBossDefeated(b.id)).length;
+  const duelTally = rivalDuelTally();
   return `<div class="card">
     <div class="loc-name" style="margin-bottom:10px;">Statistik</div>
     <div class="stats-row">
@@ -933,6 +945,8 @@ function statsCardHtml(){
       <span class="stat-pill dot-gold">Bosse besiegt <b>${bossesDefeated}/${currentGame().bosses.length}</b></span>
       <span class="stat-pill">Entwicklungen <b>${state.evolutionCount||0}</b></span>
       <span class="stat-pill dot-gold">Fortschritt <b>${resolvedCount()}/${total}</b></span>
+      <span class="stat-pill dot-good">Rivalenduelle gewonnen <b>${duelTally.wins}</b></span>
+      <span class="stat-pill dot-red">Rivalenduelle verloren <b>${duelTally.losses}</b></span>
     </div>
     <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
   </div>`;
