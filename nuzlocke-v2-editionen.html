@@ -788,6 +788,7 @@ const ICON_EVOLVE = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><
 const ICON_GRAVE = '<svg viewBox="0 0 24 24"><path d="M6 21V11a6 6 0 0112 0v10"/><path d="M6 21h12"/></svg>';
 const ICON_TRASH = '<svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4.6c0-.3.3-.6.6-.6h4.8c.3 0 .6.3.6.6V7M6.5 7l.7 12.4c0 .6.5 1.1 1.1 1.1h7.4c.6 0 1.1-.5 1.1-1.1L17.5 7"/><path d="M10 11v6M14 11v6"/></svg>';
 const ICON_UNDO = '<svg viewBox="0 0 24 24"><path d="M9 5L4 9l5 4"/><path d="M4 9h9a6.5 6.5 0 110 13h-1"/></svg>';
+const ICON_EDIT = '<svg viewBox="0 0 24 24"><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/><path d="M14.5 5.5l4 4"/></svg>';
 
 function iconBtn(tone, act, id, iconSvg, label, disabled, small){
   const cls = "icon-act " + tone + (small?" small":"");
@@ -1369,13 +1370,17 @@ function hallOfFameCardHtml(){
   const won = hof.result !== "loss";
   const dateLabel = hof.defeatedAt ? new Date(hof.defeatedAt).toLocaleDateString("de-DE") : "";
   return `<div class="card hall-of-fame-card">
-    <div class="loc-name" style="margin-bottom:2px;">Ruhmeshalle</div>
-    <div class="loc-sub" style="margin-bottom:14px;">${won?"Sieg im":"Niederlage im"} ${pvpTitle("finalen Rivalenduell")}${dateLabel?" am "+dateLabel:""}</div>
-    <div class="loc-sub" style="margin-bottom:6px; font-weight:700;">Dein Team</div>
+    <div class="card-top">
+      <div>
+        <div class="loc-name" style="margin-bottom:2px;">Ruhmeshalle</div>
+        <div class="loc-sub">${won?"Sieg im":"Niederlage im"} ${pvpTitle("finalen Rivalenduell")}${dateLabel?" am "+dateLabel:""}</div>
+      </div>
+      ${iconBtn("tone-gold","open-final-rival",boss.id,ICON_EDIT,"Ruhmeshalle bearbeiten")}
+    </div>
+    <div class="loc-sub" style="margin:14px 0 6px; font-weight:700;">Dein Team</div>
     ${hofGridHtml(hof.playerTeam||[], true)}
     <div class="loc-sub" style="margin-bottom:6px; font-weight:700;">${escapeHtml(duelPartnerTeamLabel())}</div>
     ${hofGridHtml(hof.rivalTeam||[], false)}
-    <button class="btn-ghost" style="margin-top:12px;" data-act="open-final-rival" data-id="${boss.id}">Bearbeiten</button>
   </div>`;
 }
 
