@@ -152,8 +152,13 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 .stat-pill.dot-good b{ color:var(--good); }
 .stat-pill.dot-red b{ color:var(--red); }
 .stat-pill.dot-gold b{ color:var(--accent); }
+.progress-label-row{
+  display:flex; align-items:baseline; justify-content:space-between; margin-top:14px;
+  font-size:.78rem; font-weight:700; color:var(--ink-soft);
+}
+.progress-pct{ font-family:var(--font-mono); font-variant-numeric:tabular-nums; font-size:1.05rem; color:var(--accent); }
 .progress-track{
-  margin-top:10px; height:6px; border-radius:999px; background:var(--surface-alt); overflow:hidden;
+  margin-top:6px; height:6px; border-radius:999px; background:var(--surface-alt); overflow:hidden;
 }
 .progress-fill{ height:100%; background:linear-gradient(155deg, var(--accent-shine), var(--accent) 55%, var(--accent-deep)); border-radius:999px; transition:width .3s ease; }
 .header-team-row{ display:flex; gap:6px; margin-top:12px; }
@@ -1196,7 +1201,7 @@ function monActionsHtml(loc, small, showDelete){
     if(m.inTeam){
       html += iconBtn("tone-gold","remove-from-team",loc.id,ICON_POKEBALL_FILLED,"Aus dem Team nehmen",false,small);
     } else {
-      html += iconBtn("tone-gold","add-to-team",loc.id,ICON_POKEBALL,full?"Team ist voll (6/6)":"Ins Team aufnehmen",full,small);
+      html += iconBtn("tone-gold","add-to-team",loc.id,ICON_POKEBALL,full?"Gegen Team-Mitglied tauschen":"Ins Team aufnehmen",false,small);
     }
     html += iconBtn("tone-evolve","open-evolve",loc.id,ICON_EVOLVE,"Entwickeln",false,small);
     html += iconBtn("tone-red","mark-dead",loc.id,ICON_GRAVE,"Als gestorben markieren",false,small);
@@ -1347,9 +1352,22 @@ function rivalDuelTally(){
   return { wins, losses };
 }
 
+/* Gesamtabschluss über alle fangbaren Standorte (noCatch-Orte ausgenommen, dort gibt es nie
+   etwas zu tun) UND alle Bosse der aktuellen Edition - "duel-final" ist Teil dieser Boss-Liste,
+   erreicht also erst 100%, wenn auch das finale Rivalenduell gegen den Duellpartner eingetragen
+   wurde (Sieg oder Niederlage, siehe act==="save-final-rival"). */
+function completionPercent(){
+  const catchable = state.locations.filter(l=>!l.noCatch);
+  const locsDone = catchable.filter(l=>l.status!=="pending").length;
+  const bosses = currentGame().bosses;
+  const bossesDone = bosses.filter(b=>isBossDefeated(b.id)).length;
+  const total = catchable.length + bosses.length;
+  return total ? Math.round((locsDone+bossesDone)/total*100) : 0;
+}
+
 function statsCardHtml(){
   const total = state.locations.length;
-  const pct = total? Math.round(resolvedCount()/total*100) : 0;
+  const pct = completionPercent();
   const caught = aliveCount()+deadCount();
   const survivalRate = caught>0 ? Math.round(aliveCount()/caught*100) : null;
   const bossesDefeated = currentGame().bosses.filter(b=>isBossDefeated(b.id)).length;
@@ -1365,6 +1383,10 @@ function statsCardHtml(){
       <span class="stat-pill dot-gold">Fortschritt <b>${resolvedCount()}/${total}</b></span>
       <span class="stat-pill dot-good">Rivalenduelle gewonnen <b>${duelTally.wins}</b></span>
       <span class="stat-pill dot-red">Rivalenduelle verloren <b>${duelTally.losses}</b></span>
+    </div>
+    <div class="progress-label-row">
+      <span>Gesamtabschluss</span>
+      <span class="progress-pct">${pct}%</span>
     </div>
     <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
   </div>`;
@@ -2205,6 +2227,26 @@ function openTeamPicker(){
   openSheet(`<h3>Pokémon ins Team holen</h3>${opts}`);
 }
 
+function openTeamSwapSheet(newLocId){
+  const newLoc = findLoc(newLocId);
+  if(!newLoc || !newLoc.mon) return;
+  const teamLocs = state.locations.filter(l=>l.mon && l.mon.inTeam && !l.mon.dead && !l.mon.given);
+  const opts = teamLocs.map(loc=>`<button class="sheet-option" data-act="do-team-swap" data-id="${newLocId}" data-swap="${loc.id}" style="display:flex; align-items:center; gap:10px;">${spriteImgHtml(loc.mon.species,44)}<span>${escapeHtml(loc.mon.nickname||loc.mon.species)} <span style="opacity:.6">— ${escapeHtml(loc.name)}</span></span></button>`).join("");
+  openSheet(`
+    <div class="sheet-mon-header">
+      ${spriteImgHtml(newLoc.mon.species, 64)}
+      <div>
+        <h3>Team ist voll</h3>
+        <div class="loc-sub">Wen soll ${escapeHtml(newLoc.mon.nickname||newLoc.mon.species)} ersetzen?</div>
+      </div>
+    </div>
+    ${opts}
+    <div class="sheet-footer">
+      <button class="btn btn-secondary btn-block" data-act="close-sheet">Abbrechen</button>
+    </div>
+  `);
+}
+
 function openPvpWinSheet(key){
   openSheet(`
     <h3>Gewonnenes Pokémon</h3>
@@ -2324,8 +2366,16 @@ document.addEventListener("click", e=>{
   }
   else if(act==="open-team-picker") openTeamPicker();
   else if(act==="add-to-team"){
-    if(teamCount()>=6) return;
+    if(teamCount()>=6){ openTeamSwapSheet(id); return; }
     findLoc(id).mon.inTeam=true; saveState(); closeSheet(); render();
+  }
+  else if(act==="do-team-swap"){
+    const newLoc = findLoc(id);
+    const swapLoc = findLoc(t.dataset.swap);
+    if(!newLoc || !swapLoc) return;
+    swapLoc.mon.inTeam = false;
+    newLoc.mon.inTeam = true;
+    saveState(); closeSheet(); render();
   }
   else if(act==="remove-from-team"){ findLoc(id).mon.inTeam=false; saveState(); closeSheet(); render(); }
   else if(act==="mark-dead"){ const m=findLoc(id).mon; m.dead=true; m.inTeam=false; saveState(); closeSheet(); render(); }
