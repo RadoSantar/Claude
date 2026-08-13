@@ -6,6 +6,11 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Nuzlocke">
+<meta name="theme-color" content="#F5EFDD" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#11151D" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
 <title>Nuzlocke</title>
 <style>
 :root{
@@ -2680,6 +2685,14 @@ applyTheme();
 
 render();
 Object.keys(BOSS_SPRITES).forEach(key=>freezeSpriteSrc(key, BOSS_SPRITES[key]));
+</script>
+
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
+}
 </script>
 
 </body></html>

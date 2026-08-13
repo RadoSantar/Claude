@@ -23,11 +23,20 @@ So kommt man zu diesem Stand zurück:
 
 ### Als Offline-App installieren (Netlify)
 
-`nuzlocke-v2-editionen.html` lässt sich 1:1 als statische Seite hosten - z. B. per Drag & Drop einer
-ZIP-Datei (enthält nur eine `index.html`) auf [app.netlify.com/drop](https://app.netlify.com/drop). Auf dem
-iPhone danach über Safari die Netlify-URL öffnen und über "Teilen" → "Zum Home-Bildschirm" hinzufügen -
-die Seite bringt dafür bereits die nötigen `apple-mobile-web-app-*`-Meta-Tags mit und startet dann ohne
-Safari-Oberfläche als eigenständige App.
+Der Ordner `pwa/` enthält alles, was zusätzlich zur `index.html` (Kopie von `nuzlocke-v2-editionen.html`)
+für eine echte installierbare, offline-fähige PWA gebraucht wird:
+- `manifest.json` – App-Name, Icons, Farben, `display:"standalone"`
+- `sw.js` – Service Worker, der die App beim ersten Laden cached (danach funktioniert sie komplett ohne
+  Internetverbindung; Cache-Name enthält eine Versionsnummer, die bei größeren Updates hochgezählt werden
+  sollte, damit Nutzer:innen die neue Version bekommen statt der alten aus dem Cache)
+- `icon-192.png`, `icon-512.png`, `icon-maskable-*.png` – App-Icons (Pokéball, wiederverwendet aus V1.0)
+
+Zum Deployen alle sieben Dateien (die `index.html` aus dem Repo-Root umbenannt/kopiert plus die vier Dateien
+aus `pwa/`) gemeinsam als ZIP oder Ordner per Drag & Drop auf [app.netlify.com/drop](https://app.netlify.com/drop)
+ziehen — **nicht nur die `index.html` allein**, sonst fehlen Service Worker und Icons und die Installation
+verhält sich nur wie ein Lesezeichen statt wie eine echte Offline-App.
+
+Auf dem iPhone danach über Safari die Netlify-URL öffnen und über "Teilen" → "Zum Home-Bildschirm" hinzufügen.
 
 ## Ursprungsversion (V1) wiederherstellen
 
