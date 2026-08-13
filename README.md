@@ -18,7 +18,7 @@ So kommt man zu diesem Stand zurück:
 1. Claude bitten: "stelle die aktuelle Standardversion wieder her" — dann wird `nuzlocke-v2-standard.html` erneut als Artifact veröffentlicht, oder
 2. Den Commit direkt auschecken:
    ```
-   git checkout <commit-hash> -- nuzlocke-v2-standard.html
+   git checkout 84df535 -- nuzlocke-v2-standard.html
    ```
 
 ### Als Offline-App installieren (Netlify)
