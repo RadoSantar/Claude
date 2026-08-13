@@ -1,4 +1,8 @@
-<!doctype html><html><head><!-- frame-runtime --><script>window.__FRAME_PREAMBLE={"capabilities":{"assets":"assets.hcOK0ALv.js","comments":"comments.BKZ3qutA.js","db":"db.C8ehi_0m.js","downloads":"downloads.BXsoAvg9.js","mcp":"mcp.D3B2EyQu.js","permissions":"permissions.DdITF2Mk.js","room":"room.BgXZkiYR.js","sample":"sample.DpdXn9di.js","self":"self.BN4be5De.js","user":"user.o5zdRedj.js"},"transforms":"_transforms.BI3gXbbT.js","comments":"_comments.N0PcGxg5.js","translate":"_translate.BOzFH2D9.js"}</script><script>(function(){"use strict";var oe=["light","dark","system"],ae=/^[A-Za-z0-9_-]{1,64}$/,K=/^[a-zA-Z_:][a-zA-Z0-9_:.-]{0,127}$/,ie=new Set(["class","hidden"]);function le(e){const t=e.toLowerCase();return t.startsWith("data-")||t.startsWith("aria-")||ie.has(t)}function ce(e){if(e===null||typeof e!="object")return!1;const t=e.__frame_patch;if(t===null||typeof t!="object")return!1;const{seq:n,elements:l}=t;if(typeof n!="number"||!Number.isSafeInteger(n)||!Array.isArray(l)||l.length===0||l.length>64)return!1;for(const i of l){if(i===null||typeof i!="object")return!1;const r=i;if(typeof r.target!="string"||!ae.test(r.target)||r.text!==void 0&&typeof r.text!="string")return!1;if(r.attrsSet!==void 0){if(r.attrsSet===null||typeof r.attrsSet!="object")return!1;for(const[a,c]of Object.entries(r.attrsSet))if(!K.test(a)||typeof c!="string")return!1}if(r.attrsRemoved!==void 0){if(!Array.isArray(r.attrsRemoved))return!1;for(const a of r.attrsRemoved)if(typeof a!="string"||!K.test(a))return!1}}return!0}function ue(e){if(e===null||typeof e!="object")return!1;const t=e.__frame_init;return t!==null&&typeof t=="object"}function fe(e){return e!==null&&typeof e=="object"&&e.__frame_size_poke===!0}function de(e){if(e===null||typeof e!="object")return!1;const t=e.__frame_theme;if(t===null||typeof t!="object")return!1;const n=t.theme;return typeof n=="string"&&oe.includes(n)}function pe(e){try{typeof reportError=="function"?reportError(e):setTimeout(()=>{throw e},0)}catch{}}var G=["#62744c","#b04e72","#5b7596","#a3651f","#7a6ba8","#3f7a75"],J=e=>{let t=0;for(let n=0;n<e.length;n++)t=t*31+e.charCodeAt(n)>>>0;return G[t%G.length]??"#788c5d"},V="#c7c9d1",X=e=>"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2 2'%3E%3Ccircle cx='1' cy='1' r='1' fill='"+encodeURIComponent(e)+"'/%3E%3C/svg%3E",me=Object.freeze({id:null,name:"",avatarUrl:X(V),color:V,email:null,isOwner:!1,canEdit:!1}),ge=(...e)=>{const t=e[0],n=typeof t=="string"?[t]:Array.isArray(t)?t.filter(i=>typeof i=="string"):[],l=Object.create(null);for(const i of n)l[i]={id:i,name:"",avatarUrl:X(J(i)),color:J(i),email:null,isMe:!1};return l},Z=Object.freeze(Object.assign(Object.create(null),{user:Object.freeze(Object.assign(Object.create(null),{id:null,isOwner:!1,canEdit:!1,me,profiles:ge,name:"",avatarUrl:null,search:Object.freeze([]),email:null}))})),_e={sample:"sample"};function Q(){const e=new Uint8Array(20);try{crypto.getRandomValues(e)}catch{for(let n=0;n<e.length;n++)e[n]=Math.floor(Math.random()*256)}let t="";for(const n of e)t+=(n%36).toString(36);return t}function ve(e,t){const n=r=>{const a={path:r},c=r.split("/");return{id:c[c.length-1],path:r,get:()=>t("get",[a]),set:p=>t("set",[a,p]),update:p=>t("update",[a,p]),delete:()=>t("delete",[a]),acquire:p=>t("acquire",[a,p]),onSnapshot:(p,b)=>t("subscribe",[a,p,b]),collection:p=>i(r+"/"+String(p))}},l=r=>({where:(a,c,p)=>l({...r,where:[...r.where??[],{f:String(a),op:String(c),v:p}]}),orderBy:(a,c)=>l({...r,orderBy:{f:String(a),dir:c===void 0?"asc":String(c)}}),limit:a=>l({...r,limit:Number(a)}),get:()=>t("query",[r]),onSnapshot:(a,c)=>t("subscribe",[r,a,c])}),i=r=>({...l({collection:r}),path:r,doc:a=>n(r+"/"+(a===void 0?Q():String(a))),add:a=>{const c=n(r+"/"+Q());return Promise.resolve(c.set(a)).then(()=>c)}});e.doc=r=>n(String(r)),e.collection=r=>i(String(r))}var ye=Object.freeze([]);function he(e,t){let n=null,l=null;const i=()=>e.__settled;e.peers=()=>ye,e.connected=()=>!1,e.emit=()=>i()?.()??Promise.resolve(),e.presence=r=>{const a=i();if(a)return a();let c=null;if(r!==null&&typeof r=="object")try{Array.isArray(r)||(c={...r})}catch{}return c===null?Promise.reject({code:"invalid_argument",message:"presence takes an object"}):(n===null&&(n=Object.create(null),l=Promise.resolve(t("presence",[n]))),Object.assign(n,c),l)}}var B="__frame_scroll",be=150,Ee=310,Ae=160,we=3e4;function Se(){let e=0,t=!1,n=!1,l=!1,i=0,r=null;const a=u=>{try{sessionStorage.setItem(B,JSON.stringify({y:u}))}catch{}},c=()=>{if(clearTimeout(e),r===null)return;const u=r;r=null,a(u)},p=()=>{if(t){t=!1;return}n=!0,r=scrollY,clearTimeout(e),e=setTimeout(c,be)};try{addEventListener("scroll",p,{passive:!0}),addEventListener("pagehide",c)}catch{}const b=()=>{let u;try{u=sessionStorage.getItem(B)}catch{return null}if(u===null)return null;let f;try{f=JSON.parse(u)}catch{f=null}const m=f?.y;if(!(typeof m=="number"&&Number.isFinite(m)&&m>=0)){try{sessionStorage.removeItem(B)}catch{}return null}return m};let M=!1;const h=u=>{try{const f=scrollY;scrollTo({top:u,left:0,behavior:"instant"}),i=u,l=!0,clearTimeout(e),r=null,a(u);const m=scrollY;m!==f&&(t=!0),m!==u&&!M&&(M=!0,addEventListener("load",()=>{try{if(scrollY===m){const v=b();h(v!==null?v:i)}}catch{}},{once:!0}))}catch{}},R=()=>{try{return!!location.hash}catch{return!0}};let w=!1;const O=()=>{try{if(w||innerWidth>Ee||innerHeight>Ae)return;w=!0;const u=Date.now(),f=()=>{try{removeEventListener("resize",f)}catch{}if(Date.now()-u>we||n||R())return;const m=b();h(m!==null?m:i)};addEventListener("resize",f)}catch{}};let L=!1,s=!1;return{restore(){if(L||(L=!0,R()))return;const u=b();u!==null&&(h(u),O())},promoted(){if(s||(s=!0,R()))return;const u=b();u!==null?(h(u),O()):l&&h(i)}}}var qe="modulepreload",Ue=function(e){return"/"+e},Ie={},je=function(t,n,l){let i=Promise.resolve();function r(a){const c=new Event("vite:preloadError",{cancelable:!0});if(c.payload=a,window.dispatchEvent(c),!c.defaultPrevented)throw a}return i.then(a=>{for(const c of a||[])c.status==="rejected"&&r(c.reason);return t().catch(r)})};(function(){const e=Object.defineProperty,t=globalThis,n=["RTCPeerConnection","webkitRTCPeerConnection","RTCDataChannel","RTCIceCandidate","RTCSessionDescription","RTCRtpSender","RTCRtpReceiver"];let l=0;for(let i=0;i<n.length;i++){const r=n[i];try{e(t,r,{value:void 0,writable:!1,configurable:!1})}catch{try{delete t[r]}catch{}try{e(t,r,{value:void 0,writable:!1,configurable:!0})}catch{}}typeof t[r]=="function"&&l++}if(l&&window!==top)try{parent.postMessage({__frame_rtc_lockdown_failed:l},"*")}catch{}})();var Re=1e4,Oe=Object.freeze([...window.__FRAME_PREAMBLE?.origins??["https://claude.ai","https://preview.claude.ai"]]);function ee(e){for(const t of Oe)if(t.endsWith(":*"))try{const n=new URL(e);if(`${n.protocol}//${n.hostname}:*`===t)return!0}catch{}else if(e===t)return!0;return!1}var q=Object.freeze({...window.__FRAME_PREAMBLE?.capabilities}),z=window.__FRAME_PREAMBLE?.transforms,F=window.__FRAME_PREAMBLE?.comments,$=window.__FRAME_PREAMBLE?.translate,U=/^[\w.-]+\.js$/,Pe=/^[a-z][a-z0-9_-]{0,63}$/,I=e=>je(()=>import("/_runtime/"+e),void 0);function Me(e,t){return{contract:e.contract,changes:new Set(e.changes??[]),flags:new Set(e.flags??[]),capabilities:e.capabilities??{},capBudgets:e.capBudgets??{},transforms:new Map,shellOrigin:t,mount:W,pipe:()=>({wrap:(n,l)=>(...i)=>{try{return l(...i)}catch(r){return Promise.reject(r)}}})}}var te=null,T=null;function x(e,t,n){try{Object.defineProperty(e,t,{value:n,writable:!1,configurable:!1,enumerable:!0})}catch{try{Object.defineProperty(e,t,{value:n,writable:!1,configurable:!0,enumerable:!0})}catch{}}}var Y=!1;function Le(e,t){const n=[];for(const l of e.elements){const i=document.querySelector(`[data-id="${l.target}"]`);if(!i){parent.postMessage({__frame_patch_miss:{seq:e.seq}},t);return}if([...Object.keys(l.attrsSet??{}),...l.attrsRemoved??[]].some(r=>!le(r))){parent.postMessage({__frame_patch_miss:{seq:e.seq}},t);return}for(const[r,a]of Object.entries(l.attrsSet??{}))if(r.toLowerCase()!=="data-id")try{i.setAttribute(r,a)}catch{}for(const r of l.attrsRemoved??[])r.toLowerCase()!=="data-id"&&i.removeAttribute(r);typeof l.text=="string"&&(i.textContent=l.text),n.push(l.target)}try{document.dispatchEvent(new CustomEvent("claude:edit",{detail:{seq:e.seq,targets:n}}))}catch{}}function re(e){const t=document.documentElement;e==="light"||e==="dark"?(t.dataset.theme=e,t.style.colorScheme=e,Y=!0):Y&&(delete t.dataset.theme,t.style.colorScheme="",Y=!1)}var ne=256,k=Object.assign(Object.create(null),{mcp:Object.assign(Object.create(null),{watchTool:{handlerArg:3}}),db:Object.assign(Object.create(null),{subscribe:{handlerArg:1,errArg:2}}),room:Object.assign(Object.create(null),{on:{handlerArg:1,errArg:2},onPeers:{handlerArg:0,errArg:1},onConnection:{handlerArg:0,errArg:1}})}),Te=Object.assign(Object.create(null),{db:(e,t)=>ve(e,t),room:(e,t,n)=>he(e,n)}),C=new Map;function W(e,t){const n=C.get(e);if(!n)return;const l=Object.assign(Object.create(null),t);Object.assign(n.impl,l),n.impl.__settled=()=>Promise.reject({code:"capability_removed",message:`${e}: method not in this runtime`});const i=n.queue;n.queue=[];for(const r of i){const a=l[r.method];if(a)if(k[e]?.[r.method])try{r.resolve(a(...r.args))}catch{N(r,k[e][r.method],{code:"transform_error",message:`${e}.${r.method} rejected its arguments`})}else a(...r.args).then(r.resolve,r.reject);else{const c={code:"capability_removed",message:`${e}.${r.method} is not in this runtime`},p=k[e]?.[r.method];if(p){N(r,p,c);continue}r.reject(c)}}}function ke(e,t){const n=C.get(e);if(!n)return;n.impl.__settled=()=>Promise.reject(t);const l=n.queue;n.queue=[];for(const i of l){const r=k[e]?.[i.method];if(r){N(i,r,t);continue}i.reject(t)}}function se(e,t){if(typeof e=="function")try{return e(...t)}catch{return Object.create(null)}return Array.isArray(e)?[...e]:e!==null&&typeof e=="object"?{...e}:e}function D(e,t){const n=Z[e];if(!n){ke(e,t);return}W(e,Object.fromEntries(Object.entries(n).map(([l,i])=>[l,(...r)=>Promise.resolve(se(i,r))])))}function N(e,t,n){if(e.syncState?.dead)return;const l=t.errArg===void 0?void 0:e.args[t.errArg],i=t.errArg===void 0?e.args[t.handlerArg]:l;typeof i=="function"&&queueMicrotask(()=>{if(!e.syncState?.dead)try{i(t.errArg===void 0?{type:"error",error:n}:n)}catch(r){pe(r)}})}var H=Object.getOwnPropertyDescriptor(window,"claude");if(window!==top&&!(H&&H.writable===!1)){const e=z&&U.test(z)?I(z).catch(()=>{}):Promise.resolve(void 0),t=s=>{if(s.type==="auxclick"&&s.button!==1)return;const u=s.target,f=u&&u.closest?u.closest("a[href],area[href]"):null;if(!f)return;const m=f.getAttribute("href");if(!m)return;let v,S;try{v=new URL(m,document.baseURI),S=new URL(document.baseURI).origin}catch{return}if((v.protocol==="http:"||v.protocol==="https:")&&v.origin!==S){s.preventDefault();const A=(f.getAttribute("target")??"").toLowerCase(),g=s.type==="auxclick"||s.metaKey||s.ctrlKey||s.shiftKey||s.altKey||!["","_self","_top","_parent"].includes(A);parent.postMessage({__frame_nav:!0,url:v.href,newTab:g},"*")}};addEventListener("click",t,!0),addEventListener("auxclick",t,!0);const n={},l=s=>{s.isTrusted&&(n.pointer=!0)},i=s=>{s.isTrusted&&(n.click=!0)};addEventListener("pointermove",l,{capture:!0,passive:!0}),addEventListener("click",i,{capture:!0,passive:!0}),e.then(s=>{s?.wireNav&&(s.wireNav(),removeEventListener("click",t,!0),removeEventListener("auxclick",t,!0),removeEventListener("pointermove",l,!0),removeEventListener("click",i,!0),s.wireEngagement?.(n))});let r=null;try{r=Se()}catch{}const a=H?.value??{};x(window,"claude",a);const c=s=>{const u={impl:Object.create(null),queue:[]};C.set(s,u);const f=u.impl,m=g=>({code:"queue_overflow",message:`${s}.${g}: pre-init call queue is full`}),v=(g,d)=>{if(u.queue.length>=ne){const y=Z[s];return y&&g in y?Promise.resolve(se(y[g],d)):Promise.reject(m(g))}return new Promise((y,o)=>{u.queue.push({method:g,args:d,resolve:y,reject:o})})},S=_e[s],A=new Proxy(S===void 0?f:(()=>{}),{apply:(g,d,y)=>{const o=S,_=f[o]??f.__settled;return _?_(...y):v(o,y)},get:(g,d)=>{if(typeof d!="string"||d==="then"||d==="toJSON"||d==="valueOf")return;if(d==="toString")return Object.prototype.toString;if(S!==void 0&&(d==="call"||d==="apply"||d==="bind"))return Function.prototype[d];const y=k[s]?.[d];return y?(...o)=>{if(typeof o[y.handlerArg]!="function")throw new TypeError(`${s}.${d} requires a handler function`);const _=f[d];if(_)return _(...o);if(f.__settled){const j={dead:!1},Ce={args:[...o],syncState:j};return f.__settled().catch(Ne=>N(Ce,y,Ne)),()=>{j.dead=!0}}if(u.queue.length>=ne){const j={dead:!1};return N({args:[...o],syncState:j},y,m(d)),()=>{j.dead=!0}}let E=null;const P={dead:!1};return u.queue.push({method:d,args:o,resolve:j=>{E=typeof j=="function"?j:null,P.dead&&E?.()},reject:()=>{},syncState:P}),()=>{P.dead=!0,E?.()}}:(...o)=>{const _=f[d]??f.__settled;return _?_(...o):v(d,o)}},set:()=>!1});Te[s]?.(f,(g,d)=>A[g](...d),v),x(a,s,A)};for(const s of Object.keys(q)){if(a[s]!==void 0){x(a,s,a[s]);continue}c(s)}let p=null,b=null,M=0;const h=s=>{s.source!==parent||!ee(s.origin)||ue(s.data)&&(p=s.data.__frame_init,T=s.origin,removeEventListener("message",h),clearTimeout(M),b?.())};addEventListener("message",h),parent.postMessage({__frame_connect:!0},"*");const R=new Promise(s=>{b=s,M=setTimeout(()=>{removeEventListener("message",h),s()},Re)}),w=document.readyState==="loading"?new Promise(s=>document.addEventListener("DOMContentLoaded",()=>s(),{once:!0})):Promise.resolve();w.then(()=>{try{r?.restore()}catch{}});const O={cb:null},L=s=>{if(!(s.source!==parent||!ee(s.origin))&&fe(s.data)){try{r?.promoted()}catch{}O.cb?.()}};addEventListener("message",L),R.then(async()=>{if(!p||!T){for(const o of C.keys())D(o,{code:"not_granted",message:"frame initialization did not arrive - capability unavailable"});return}re(p.theme);const s=T;let u=!1,f=!1;addEventListener("message",o=>{if(o.source!==parent||o.origin!==s)return;de(o.data)&&re(o.data.__frame_theme.theme),ce(o.data)&&Le(o.data.__frame_patch,s);const _=o.data?.__fc_mode;_&&typeof _=="object"&&!u&&F&&U.test(F)&&(u=!0,I(F).then(P=>P.install?.(s,_.on===!0)).catch(()=>{}));const E=o.data?.__ft_cmd;E&&typeof E=="object"&&!f&&$&&U.test($)&&(f=!0,I($).then(P=>P.install?.(s,E)).catch(()=>{}))});const m=Object.keys(p.capabilities??{});for(const o of m)Object.hasOwn(q,o)||Pe.test(o)&&a[o]===void 0&&(c(o),D(o,{code:"capability_disabled",message:"capability not in this runtime generation"}));const v=m.filter(o=>Object.hasOwn(q,o)).map(o=>[o,q[o]]).filter(o=>typeof o[1]=="string"&&U.test(o[1])),S=await Promise.allSettled(v.map(([,o])=>I(o))),A=await e,g=T;A?.buildBoot||parent.postMessage({__frame_cap_telemetry:{kind:"cap-load-error",cap:"_transforms"}},g),te=A?.buildBoot?A.buildBoot(p,A.TRANSFORMS??{},{shellOrigin:g,mount:W},o=>parent.postMessage({__frame_cap_telemetry:o},g)):Me(p,g);const d=o=>parent.postMessage({__frame_cap_telemetry:{kind:"cap-load-error",cap:o}},g),y=te;S.forEach((o,_)=>{const E=v[_][0];if(o.status!=="fulfilled"){d(E);return}try{o.value?.install?.(y)}catch{d(E)}});for(const[o,_]of C)if(_.impl.__settled===void 0){if(m.includes(o)){D(o,{code:"capability_disabled",message:"capability not available in this session"});continue}D(o,{code:"not_granted",message:"capability not available in this session"})}await w,parent.postMessage({__frame_ready:!0},T),e.then(o=>o?.installSizeReporter?.(g,O))})}})();</script><!-- /frame-runtime --><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}</style></head><body>
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Nuzlocke</title>
 <style>
 :root{
@@ -443,6 +447,26 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 }
 .fab:active{ transform:scale(.94); }
 
+.jump-fab{
+  position:absolute; left:16px; bottom:calc(88px + env(safe-area-inset-bottom)); z-index:15;
+  display:flex; align-items:center; gap:7px; border:none; border-radius:999px;
+  background:var(--surface); color:var(--ink); box-shadow:var(--shadow);
+  padding:11px 16px 11px 12px; font-size:.8rem; font-weight:700;
+  opacity:0; pointer-events:none; transform:translateY(8px);
+  transition:opacity .2s ease, transform .2s ease;
+}
+.jump-fab.visible{ opacity:1; pointer-events:auto; transform:translateY(0); }
+.jump-fab svg{ width:18px; height:18px; stroke:var(--accent); fill:none; stroke-width:2.2; flex:none; }
+.jump-fab:active{ transform:scale(.95); }
+
+.collapse-toggle{
+  display:flex; align-items:center; gap:8px; width:100%; border:none; background:none;
+  color:var(--ink-soft); font-size:.82rem; font-weight:700; padding:10px 2px; text-align:left;
+}
+.collapse-toggle:active{ opacity:.7; }
+.collapse-chevron{ width:16px; height:16px; stroke:var(--ink-soft); fill:none; stroke-width:2.2; flex:none; transition:transform .2s ease; }
+.collapse-chevron.open{ transform:rotate(90deg); }
+
 /* Team grid */
 .content:has(.team-grid){ display:flex; flex-direction:column; overflow:hidden; padding-bottom:14px; }
 .team-grid{ flex:1; min-height:0; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:repeat(3,1fr); gap:12px; }
@@ -541,6 +565,8 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 datalist{}
 ::selection{ background:var(--accent-soft); }
 </style>
+</head>
+<body>
 
 <div class="app">
   <div class="topbar">
@@ -570,6 +596,10 @@ datalist{}
   </div>
 
   <button class="fab" id="fabAdd" title="Standort hinzufügen">+</button>
+  <button class="jump-fab" id="jumpFab" data-act="jump-to-frontier" title="Zum aktuellen Standort">
+    <svg viewBox="0 0 24 24"><path d="M12 4v14M6 12l6 6 6-6"/></svg>
+    <span>Aktueller Standort</span>
+  </button>
 
   <div class="tabbar">
     <button class="tab" data-tab="box"><svg viewBox="0 0 24 24"><path d="M3 8l9-5 9 5-9 5-9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>Box</button>
@@ -1129,6 +1159,7 @@ let lastEvolvedId = null;
 let lastDefeatedId = null;
 let lastFinalRivalFlash = false;
 let pendingCatchData = null;
+let expandedRegions = new Set(); // welche Regionen ihre abgeschlossene Historie ausgeklappt haben - bewusst nicht persistiert, jeder Reload startet eingeklappt
 
 function performCatch(id, species, nick){
   const loc = findLoc(id);
@@ -1357,23 +1388,72 @@ function renderHeaderTeam(){
   row.innerHTML = html;
 }
 
+/* Standorte ohne Fangmöglichkeit gelten für die Fortschritts-/Einklapp-Logik als "erledigt",
+   auch wenn ihr status technisch nie aus "pending" rauskommt (es gibt dort ja nichts zu tun). */
+function isLocResolved(loc){ return loc.noCatch || loc.status!=="pending"; }
+
+function locationBlockHtml(loc, region, game, isFrontier){
+  let html = routeCard(loc, isFrontier);
+  const bossIds = game.bossAfter[region+"|"+loc.name];
+  if(bossIds) bossIds.forEach(id=>{
+    const boss=bossById(id); if(!boss) return;
+    if(boss.final){ html += finalRivalCardHtml(boss); return; }
+    html += bossCardHtml(boss); if(boss.pvp) html += pvpCardHtml(boss);
+  });
+  return html;
+}
+
+function collapseToggleHtml(regionKey, count, expanded){
+  return `<button class="collapse-toggle" data-act="toggle-region-collapse" data-region="${regionKey}">
+    <svg class="collapse-chevron${expanded?" open":""}" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
+    <span>${count} abgeschlossene ${count===1?"Standort":"Standorte"} ${expanded?"ausblenden":"anzeigen"}</span>
+  </button>`;
+}
+
+/* "Zum aktuellen Standort"-Button: zeigt/versteckt sich je nachdem, ob der erste noch offene
+   Standort (frontierLocId) gerade im sichtbaren Bereich ist - siehe updateJumpButtonVisibility(),
+   die bei jedem Scroll-Event neu prüft, welches Element gerade unter data-frontier="true" steht. */
+function updateJumpButton(frontierLocId){
+  const btn = document.getElementById("jumpFab");
+  if(!btn) return;
+  btn.dataset.target = frontierLocId || "";
+  updateJumpButtonVisibility();
+}
+function updateJumpButtonVisibility(){
+  const btn = document.getElementById("jumpFab");
+  if(!btn || activeTab!=="routes" || !btn.dataset.target){ if(btn) btn.classList.remove("visible"); return; }
+  const el = document.querySelector(`[data-loc="${btn.dataset.target}"]`);
+  if(!el){ btn.classList.remove("visible"); return; }
+  const rect = el.getBoundingClientRect();
+  const inView = rect.top < innerHeight*0.85 && rect.bottom > innerHeight*0.15;
+  btn.classList.toggle("visible", !inView);
+}
+document.getElementById("content").addEventListener("scroll", ()=>requestAnimationFrame(updateJumpButtonVisibility), {passive:true});
+
 function renderRoutes(){
   let html = "";
   const game = currentGame();
   html += starterCardHtml();
+  let frontierLocId = null;
   game.regions.forEach(([region])=>{
     const locs = state.locations.filter(l=>l.region===region);
     if(!locs.length) return;
     html += `<div class="region-header">${escapeHtml(region)}</div>`;
-    locs.forEach(loc=>{
-      html += routeCard(loc);
-      const bossIds = game.bossAfter[region+"|"+loc.name];
-      if(bossIds) bossIds.forEach(id=>{
-        const boss=bossById(id); if(!boss) return;
-        if(boss.final){ html += finalRivalCardHtml(boss); return; }
-        html += bossCardHtml(boss); if(boss.pvp) html += pvpCardHtml(boss);
-      });
-    });
+
+    let frontierIdx = locs.findIndex(l=>!isLocResolved(l));
+    if(frontierIdx===-1) frontierIdx = locs.length;
+    if(frontierLocId===null && frontierIdx<locs.length) frontierLocId = locs[frontierIdx].id;
+    const collapseEnd = Math.max(0, frontierIdx-2); // die letzten 2 erledigten Standorte bleiben sichtbar
+
+    if(collapseEnd>0){
+      const regionKey = slug(region);
+      const expanded = expandedRegions.has(regionKey);
+      html += collapseToggleHtml(regionKey, collapseEnd, expanded);
+      if(expanded){
+        for(let i=0;i<collapseEnd;i++) html += locationBlockHtml(locs[i], region, game, false);
+      }
+    }
+    for(let i=collapseEnd;i<locs.length;i++) html += locationBlockHtml(locs[i], region, game, i===frontierIdx);
   });
   const customs = state.locations.filter(l=>l.custom);
   if(customs.length){
@@ -1381,11 +1461,13 @@ function renderRoutes(){
     customs.forEach(loc=>{ html += routeCard(loc); });
   }
   document.getElementById("content").innerHTML = html || emptyState("Keine Standorte","Füge über + einen eigenen Fundort hinzu.");
+  updateJumpButton(frontierLocId);
 }
 
-function routeCard(loc){
+function routeCard(loc, isFrontier){
+  const frontierAttr = isFrontier ? ` data-frontier="true"` : "";
   if(loc.noCatch){
-    return `<div class="card st-nocatch" data-loc="${loc.id}">
+    return `<div class="card st-nocatch" data-loc="${loc.id}"${frontierAttr}>
       <div class="card-top">
         <div><div class="loc-name">${escapeHtml(loc.name)}</div></div>
         <span class="chip silver">Kein Wildfang</span>
@@ -1415,7 +1497,7 @@ function routeCard(loc){
       ${monActionsHtml(loc)}
     </div>`;
   }
-  return `<div class="card ${cardClass(loc)}" data-loc="${loc.id}">
+  return `<div class="card ${cardClass(loc)}" data-loc="${loc.id}"${frontierAttr}>
     <div class="card-top">
       <div>
         <div class="loc-name">${escapeHtml(loc.name)}</div>
@@ -1978,6 +2060,7 @@ function render(){
   else if(activeTab==="box") renderBox();
   else if(activeTab==="grave") renderGrave();
   else if(activeTab==="settings") renderSettings();
+  if(activeTab!=="routes") document.getElementById("jumpFab").classList.remove("visible");
   document.getElementById("fabAdd").style.display = activeTab==="routes" ? "flex" : "none";
   fitNames();
 }
@@ -2334,6 +2417,16 @@ document.addEventListener("click", e=>{
   else if(act==="save-rival-nick"){
     const v = document.getElementById("editRivalNick").value.trim().slice(0,30);
     state.rivalNickname = v; saveState(); closeSheet(); render();
+  }
+  else if(act==="toggle-region-collapse"){
+    const key = t.dataset.region;
+    if(expandedRegions.has(key)) expandedRegions.delete(key); else expandedRegions.add(key);
+    render();
+  }
+  else if(act==="jump-to-frontier"){
+    const id = t.dataset.target;
+    const el = id && document.querySelector(`[data-loc="${id}"]`);
+    if(el) el.scrollIntoView({ behavior:"smooth", block:"center" });
   }
   else if(act==="open-starter-setup") openStarterSetupSheet();
   else if(act==="save-starters"){
