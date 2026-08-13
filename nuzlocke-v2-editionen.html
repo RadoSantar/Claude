@@ -87,49 +87,8 @@
   --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
   --shadow-up: 0 -1px 2px rgba(0,0,0,0.25), 0 -8px 22px rgba(0,0,0,0.32);
 }
-/* Edition-Farbschema: überschreibt nur die Akzentfarben, Hell/Dunkel bleibt unabhängig davon */
-:root[data-edition="smaragd"]{
-  --accent:#2E8B57; --accent-soft:#DCF0E3; --accent-shine:#EFFBF3; --accent-deep:#1F5E3B;
-  --gold:#2E8B57; --gold-soft:#DCF0E3; --gold-glow: 46,139,87;
-}
-@media (prefers-color-scheme: dark){
-  :root[data-edition="smaragd"]:not([data-theme="light"]){
-    --accent:#4FD182; --accent-soft:#173626; --accent-shine:#8CF0B0; --accent-deep:#2E8B57;
-    --gold:#4FD182; --gold-soft:#173626; --gold-glow: 79,209,130;
-  }
-}
-:root[data-edition="smaragd"][data-theme="dark"]{
-  --accent:#4FD182; --accent-soft:#173626; --accent-shine:#8CF0B0; --accent-deep:#2E8B57;
-  --gold:#4FD182; --gold-soft:#173626;
-}
-:root[data-edition="diamant-perl"]{
-  --accent:#4A7FC9; --accent-soft:#DCE7F7; --accent-shine:#F0F5FC; --accent-deep:#2F5A96;
-  --gold:#4A7FC9; --gold-soft:#DCE7F7; --gold-glow: 74,127,201;
-}
-@media (prefers-color-scheme: dark){
-  :root[data-edition="diamant-perl"]:not([data-theme="light"]){
-    --accent:#7FB0F0; --accent-soft:#1B2A3F; --accent-shine:#A8CCFA; --accent-deep:#4A7FC9;
-    --gold:#7FB0F0; --gold-soft:#1B2A3F; --gold-glow: 127,176,240;
-  }
-}
-:root[data-edition="diamant-perl"][data-theme="dark"]{
-  --accent:#7FB0F0; --accent-soft:#1B2A3F; --accent-shine:#A8CCFA; --accent-deep:#4A7FC9;
-  --gold:#7FB0F0; --gold-soft:#1B2A3F;
-}
-:root[data-edition="platin"]{
-  --accent:#6B7280; --accent-soft:#E4E6EA; --accent-shine:#F5F6F8; --accent-deep:#454B57;
-  --gold:#6B7280; --gold-soft:#E4E6EA; --gold-glow: 107,114,128;
-}
-@media (prefers-color-scheme: dark){
-  :root[data-edition="platin"]:not([data-theme="light"]){
-    --accent:#A8ADB8; --accent-soft:#2A2D33; --accent-shine:#D3D6DC; --accent-deep:#6B7280;
-    --gold:#A8ADB8; --gold-soft:#2A2D33; --gold-glow: 168,173,184;
-  }
-}
-:root[data-edition="platin"][data-theme="dark"]{
-  --accent:#A8ADB8; --accent-soft:#2A2D33; --accent-shine:#D3D6DC; --accent-deep:#6B7280;
-  --gold:#A8ADB8; --gold-soft:#2A2D33;
-}
+/* Edition-Farbschema: wird zur Laufzeit aus GAMES[...].theme generiert, siehe
+   injectEditionThemeCSS() im JS-Teil weiter unten - hier keine Regeln mehr von Hand pflegen. */
 *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
 html,body{margin:0; padding:0; height:100%; overflow:hidden;}
 body{
@@ -1044,7 +1003,7 @@ function buildVersionGames(baseBosses, regions, bossAfter, versions, starters){
     const remap = new Map(baseBosses.map((b,i)=>[b.id, bosses[i].id]));
     const remappedAfter = {};
     Object.entries(bossAfter).forEach(([loc, ids])=>{ remappedAfter[loc] = ids.map(id=>remap.get(id)); });
-    out[v.id] = { id:v.id, label:v.label, shortLabel:v.shortLabel, regions:v.regions||regions, bosses, bossAfter:remappedAfter, starters:v.starters||starters };
+    out[v.id] = { id:v.id, label:v.label, shortLabel:v.shortLabel, regions:v.regions||regions, bosses, bossAfter:remappedAfter, starters:v.starters||starters, theme:v.theme };
   });
   return out;
 }
@@ -1059,15 +1018,57 @@ const PLATIN_OVERRIDES = {
   "champion": { baseLevel:66 }
 };
 
-/* ---------- Editionen ---------- */
+/* ---------- Editionen ----------
+   So kommt eine neue Edition dazu (Ziel: nur dieses Gerüst füllen, kein neuer Code):
+   1. BOSSES-Array (Boss-Trainer je Standort, siehe bestehende Arrays als Vorlage) - bei einem
+      Versions-Trio/-Paar (z.B. künftig Rot/Blau/Gelb oder Gold/Silber/Kristall) EINMAL pro
+      Generation schreiben und über buildVersionGames() vervielfältigen, nicht pro Version.
+   2. LOCATIONS-Array (Standorte je Region; Sonderfälle als {name, note, noCatch}, siehe
+      parseLocationEntry()) - bei Versions-exklusiven Orten (wie Platins Zerrwelt) das
+      per-Version `regions`-Override in buildVersionGames() nutzen statt zu duplizieren.
+   3. BOSS_AFTER-Map (welcher Standort blendet welche Bosse ein).
+   4. starters:{grass,fire,water} (Vorbelegung für die Starterwahl-Karte).
+   5. theme:{light,dark} (Akzentfarben; wird unten automatisch zu CSS - siehe injectEditionThemeCSS()).
+   6. Trainer-Sprites in BOSS_SPRITES ergänzen (Bulbagarden-Archives-Workflow, siehe README/Notizen).
+   Danach validate-editions.js (im Repo) laufen lassen, bevor veröffentlicht wird. */
 const GAMES = {
   hgss: { id:"hgss", label:"HeartGold / SoulSilver", shortLabel:"HG/SS", regions:LOCATIONS_DEFAULT, bosses:BOSSES, bossAfter:BOSS_AFTER, starters:{ grass:"Endivie", fire:"Feurigel", water:"Karnimani" } },
-  smaragd: { id:"smaragd", label:"Smaragd", shortLabel:"Smaragd", regions:SMARAGD_LOCATIONS, bosses:SMARAGD_BOSSES, bossAfter:SMARAGD_BOSS_AFTER, starters:{ grass:"Geckarbor", fire:"Flemmli", water:"Hydropi" } },
-  "diamant-perl": { id:"diamant-perl", label:"Diamant / Perl", shortLabel:"Diamant/Perl", regions:SINNOH_LOCATIONS, bosses:SINNOH_BOSSES, bossAfter:SINNOH_BOSS_AFTER, starters:{ grass:"Chelast", fire:"Panflam", water:"Plinfa" } }
+  smaragd: { id:"smaragd", label:"Smaragd", shortLabel:"Smaragd", regions:SMARAGD_LOCATIONS, bosses:SMARAGD_BOSSES, bossAfter:SMARAGD_BOSS_AFTER, starters:{ grass:"Geckarbor", fire:"Flemmli", water:"Hydropi" },
+    theme:{ light:{ accent:"#2E8B57", accentSoft:"#DCF0E3", accentShine:"#EFFBF3", accentDeep:"#1F5E3B", glow:"46,139,87" },
+            dark:{ accent:"#4FD182", accentSoft:"#173626", accentShine:"#8CF0B0", accentDeep:"#2E8B57", glow:"79,209,130" } } },
+  "diamant-perl": { id:"diamant-perl", label:"Diamant / Perl", shortLabel:"Diamant/Perl", regions:SINNOH_LOCATIONS, bosses:SINNOH_BOSSES, bossAfter:SINNOH_BOSS_AFTER, starters:{ grass:"Chelast", fire:"Panflam", water:"Plinfa" },
+    theme:{ light:{ accent:"#4A7FC9", accentSoft:"#DCE7F7", accentShine:"#F0F5FC", accentDeep:"#2F5A96", glow:"74,127,201" },
+            dark:{ accent:"#7FB0F0", accentSoft:"#1B2A3F", accentShine:"#A8CCFA", accentDeep:"#4A7FC9", glow:"127,176,240" } } }
 };
 Object.assign(GAMES, buildVersionGames(SINNOH_BOSSES, SINNOH_LOCATIONS, SINNOH_BOSS_AFTER, [
-  { id:"platin", label:"Platin", shortLabel:"Platin", bossOverrides:PLATIN_OVERRIDES, regions:PLATIN_LOCATIONS }
+  { id:"platin", label:"Platin", shortLabel:"Platin", bossOverrides:PLATIN_OVERRIDES, regions:PLATIN_LOCATIONS,
+    theme:{ light:{ accent:"#6B7280", accentSoft:"#E4E6EA", accentShine:"#F5F6F8", accentDeep:"#454B57", glow:"107,114,128" },
+            dark:{ accent:"#A8ADB8", accentSoft:"#2A2D33", accentShine:"#D3D6DC", accentDeep:"#6B7280", glow:"168,173,184" } } }
 ], { grass:"Chelast", fire:"Panflam", water:"Plinfa" }));
+
+/* Erzeugt die :root[data-edition="..."]-Farbregeln aus GAMES[...].theme statt sie pro Edition von
+   Hand als CSS zu pflegen - eine neue Edition braucht dafür nur ein theme-Objekt, keine neue CSS-
+   Regel. --gold/--gold-soft spiegeln bei Editions-Themes immer --accent/--accent-soft (bisher bei
+   allen Editionen so), --gold-glow fehlte vorher im expliziten [data-theme="dark"]-Override - hier
+   jetzt konsistent für alle drei Blöcke gesetzt. */
+function injectEditionThemeCSS(){
+  const rules = t => `--accent:${t.accent}; --accent-soft:${t.accentSoft}; --accent-shine:${t.accentShine}; --accent-deep:${t.accentDeep}; --gold:${t.accent}; --gold-soft:${t.accentSoft}; --gold-glow: ${t.glow};`;
+  let css = "";
+  Object.values(GAMES).forEach(g=>{
+    if(!g.theme) return;
+    css += `:root[data-edition="${g.id}"]{ ${rules(g.theme.light)} }\n`;
+    css += `@media (prefers-color-scheme: dark){ :root[data-edition="${g.id}"]:not([data-theme="light"]){ ${rules(g.theme.dark)} } }\n`;
+    css += `:root[data-edition="${g.id}"][data-theme="dark"]{ ${rules(g.theme.dark)} }\n`;
+  });
+  const styleEl = document.createElement("style");
+  styleEl.textContent = css;
+  document.head.appendChild(styleEl);
+}
+/* VALIDATE-EDITIONS-BOUNDARY: tools/validate-editions.js schneidet den <script>-Inhalt hier ab
+   (GAMES ist an dieser Stelle vollständig zusammengebaut) - Marker nicht entfernen/verschieben,
+   ohne das Skript entsprechend anzupassen. */
+injectEditionThemeCSS();
+
 function currentGame(){ return GAMES[state.edition] || GAMES.hgss; }
 function bossById(id){ return currentGame().bosses.find(b=>b.id===id); }
 
