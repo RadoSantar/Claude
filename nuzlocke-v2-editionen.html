@@ -18,6 +18,7 @@
   --accent-deep:#48536A;
   --red:#B5392B;
   --red-soft:#F3D9D2;
+  --red-glow: 181,57,43;
   --good:#3F7A46;
   --good-soft:#DCEBDA;
   --good-glow: 63,122,70;
@@ -51,6 +52,7 @@
     --accent-deep:#8C6B2E;
     --red:#E2685A;
     --red-soft:#3A2222;
+    --red-glow: 226,104,90;
     --good:#74C17E;
     --good-soft:#20301F;
     --good-glow: 116,193,126;
@@ -67,7 +69,7 @@
   --bg:#F5EFDD; --surface:#FFFFFF; --surface-alt:#ECE1C4; --ink:#2A2118; --ink-soft:#6B5D45;
   --gold:#A9762E; --gold-soft:#EADCB8; --gold-glow: 169,118,46; --silver:#5C6A80; --silver-soft:#DFE3EA;
   --accent:#64738A; --accent-soft:#E1E5EC; --accent-shine:#F5F7FA; --accent-deep:#48536A;
-  --red:#B5392B; --red-soft:#F3D9D2; --good:#3F7A46; --good-soft:#DCEBDA; --good-glow: 63,122,70;
+  --red:#B5392B; --red-soft:#F3D9D2; --red-glow: 181,57,43; --good:#3F7A46; --good-soft:#DCEBDA; --good-glow: 63,122,70;
   --warn:#B5731E; --warn-soft:#F2DFC0; --evolve:#2E86C7; --evolve-soft:#D9ECFA; --evolve-glow: 118,187,240;
   --line: rgba(42,33,24,0.14);
   --shadow: 0 1px 2px rgba(42,33,24,0.08), 0 4px 14px rgba(42,33,24,0.06);
@@ -76,7 +78,7 @@
   --bg:#11151D; --surface:#1A212C; --surface-alt:#212938; --ink:#ECE6D8; --ink-soft:#9CA3B4;
   --gold:#DDB05F; --gold-soft:#3A3220; --gold-glow: 221,176,95; --silver:#9FADC2; --silver-soft:#232B3B;
   --accent:#DDB05F; --accent-soft:#3A3220; --accent-shine:#F6D998; --accent-deep:#8C6B2E;
-  --red:#E2685A; --red-soft:#3A2222; --good:#74C17E; --good-soft:#20301F; --good-glow: 116,193,126;
+  --red:#E2685A; --red-soft:#3A2222; --red-glow: 226,104,90; --good:#74C17E; --good-soft:#20301F; --good-glow: 116,193,126;
   --warn:#E3A758; --warn-soft:#382C18; --evolve:#6FB8ED; --evolve-soft:#1C3A50; --evolve-glow: 111,184,237;
   --line: rgba(236,230,216,0.14);
   --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
@@ -392,6 +394,17 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
     background-repeat:no-repeat;
     animation:hallOfFameSparkle 1100ms ease-out both;
   }
+
+  @keyframes hallOfFameDefeat{
+    0%{ box-shadow:0 0 0 0 rgba(var(--red-glow),0); filter:brightness(1) saturate(1); transform:translateX(0) translateY(0) rotate(0deg); }
+    12%{ box-shadow:0 0 0 3px rgba(var(--red-glow),.85), 0 0 22px 7px rgba(var(--red-glow),.5); filter:brightness(.82) saturate(.6); transform:translateX(-7px) rotate(-.6deg); }
+    24%{ transform:translateX(6px) rotate(.6deg); }
+    36%{ transform:translateX(-4px) rotate(-.3deg); }
+    48%{ box-shadow:0 0 0 2px rgba(var(--red-glow),.5), 0 0 14px 4px rgba(var(--red-glow),.3); transform:translateX(3px) rotate(.2deg); }
+    60%{ transform:translateX(-1px) rotate(0deg); }
+    100%{ box-shadow:0 0 0 0 rgba(var(--red-glow),0); filter:brightness(1) saturate(1); transform:translateX(0) translateY(3px) rotate(0deg); }
+  }
+  .final-rival-card.hall-of-fame-flash-loss{ animation:hallOfFameDefeat 900ms cubic-bezier(.36,.07,.19,.97); }
 }
 
 .fab{
@@ -1229,7 +1242,8 @@ function finalRivalCardHtml(boss){
   const flash = lastFinalRivalFlash;
   const won = state.hallOfFame.result !== "loss";
   const resultLabel = won ? "Sieg" : "Niederlage";
-  return `<div class="card final-rival-card final-rival-done${flash?" hall-of-fame-flash":""}">
+  const flashClass = flash ? (won ? " hall-of-fame-flash" : " hall-of-fame-flash-loss") : "";
+  return `<div class="card final-rival-card final-rival-done${flashClass}">
     <span class="chip gold">Finale</span>
     <div class="mon-line" style="margin-top:10px;">
       <div class="pvp-badge">VS</div>
