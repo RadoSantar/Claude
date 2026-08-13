@@ -230,6 +230,8 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 .card.st-box{ border-left-color:var(--gold); }
 .card.st-dead{ border-left-color:var(--red); opacity:.85; }
 .card.st-given{ border-left-color:var(--accent); opacity:.85; }
+.card.st-nocatch{ border-left-color:var(--line); opacity:.7; padding-bottom:14px; }
+.card.st-nocatch .loc-sub{ margin-top:4px; }
 
 .card-top{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
 .card-top > div:first-child{ min-width:0; }
@@ -668,9 +670,81 @@ const BOSSES = [
   { id:"red", sprite:"Red", name:"Rot", cls:"Champ", place:"Silberberg", ace:"Pikachu", baseLevel:88, group:"Sonstige Bosse" }
 ];
 
+/* Städte/Dörfer/Spezialorte sind, wo recherchierbar, mit Fangmethode (note) bzw. noCatch:true
+   (keine wilden Pokémon dort) ergänzt - siehe Bulbapedia/PokéWiki-Recherche. Reine Routen ohne
+   Objekt-Eintrag haben normale offene Wildbegegnungen wie gehabt. */
 const LOCATIONS_DEFAULT = [
-  ["Johto",["Route 29","Route 46","Route 30","Route 31","Dunkelhöhle (Viola-Seite)","Einheitstunnel","Route 32","Alph-Ruinen","Route 33","Route 34","Steineichenwald","Route 35","Nationalpark","Route 36","Route 37","Route 38","Route 39","Route 40","Route 41","Strudelinseln","Route 42","Kesselberg","Route 43","See des Zorns","Route 44","Eispfad","Route 45","Dunkelhöhle (Ebenholz-Seite)","Drachenhöhle","Route 26","Route 27","Route 28","Silberberg"]],
-  ["Kanto",["Route 1","Route 2","Digdas Höhle","Route 3","Mondberg","Route 4","Route 24","Route 25","Route 9","Route 10","Felstunnel","Route 5","Route 6","Route 11","Route 12","Route 13","Route 14","Route 15","Route 16","Route 17","Route 18","Azuria-Höhle","Route 19","Route 20","Route 21","Seeschauminseln","Route 22","Route 23","Kraftwerk","Route 7","Route 8"]]
+  ["Johto",[
+    {name:"Neuborkia", note:"Nur Headbutt-Bäume, Surfen, Angeln (kein Gras in der Stadt)."},
+    "Route 29",
+    {name:"Rosalia City", note:"Nur Headbutt-Bäume, Surfen, Angeln."},
+    "Route 46","Route 30","Route 31",
+    {name:"Viola City", note:"Nur Headbutt-Bäume, Surfen, Angeln + Geschenk: Togepi-Ei (nach Falkner-Sieg)."},
+    {name:"Knofensa-Turm", note:"Nur im Turm: Rattfratz (tags), Nebelas (nachts)."},
+    "Dunkelhöhle (Viola-Seite)","Einheitstunnel","Route 32",
+    {name:"Alph-Ruinen", note:"Inkl. Icognito-Rätselkammern."},
+    {name:"Sinjoh-Ruinen", note:"Keine regulären Fänge – nur per Mystery-Gift-Arceus-Event erreichbar.", noCatch:true},
+    {name:"Azalea City", note:"Nur Headbutt-Bäume."},
+    {name:"Flegmon-Brunnen", note:"Flegmon fast garantiert per Surfen."},
+    "Steineichenwald","Route 33",
+    {name:"Dukatia City", note:"Keine wilden Pokémon in der Stadt selbst.", noCatch:true},
+    {name:"Dukatia-Passage", note:"Keine wilden Pokémon.", noCatch:true},
+    "Route 34","Nationalpark","Route 35","Route 36","Route 37",
+    {name:"Teak City", note:"Nur Headbutt-Bäume, Surfen, Angeln."},
+    {name:"Turmruine", note:"Inkl. Suicune (Postgame-Story-Event)."},
+    {name:"Glockenklangpfad", note:"Keine wilden Pokémon.", noCatch:true},
+    {name:"Glockenturm", note:"Inkl. Ho-Oh (Regenbogenfeder + Klarglocke nötig)."},
+    "Route 38","Route 39",
+    {name:"Anemonia City", note:"Nur Surfen, Angeln."},
+    "Route 40","Route 41",
+    {name:"Strudelinseln", note:"Inkl. Lugia (Silberflügel nötig)."},
+    {name:"Oliviana City", note:"Nur Surfen, Angeln, Rock Smash."},
+    "Route 47","Route 48",
+    {name:"Safari-Zone", note:"Safari-Fänge in 6 Arealen (Gras/Surfen/Angeln je nach Areal)."},
+    "Route 42",
+    {name:"Kesselberg", note:"Geschenk: Tyrogol vom Großvater."},
+    {name:"Mahagonia City", note:"Nur Surfen, Angeln."},
+    {name:"Team-Rocket-Versteck", note:"Einmalige Fänge im Fallenboden (B1F)."},
+    "Route 43",
+    {name:"See des Zorns", note:"Inkl. rotem Garados (Story-Event)."},
+    "Route 44","Eispfad","Route 45",
+    {name:"Ebenholz City", note:"Nur Surfen, Angeln."},
+    "Dunkelhöhle (Ebenholz-Seite)",
+    {name:"Drachenhöhle", note:"Inkl. Geschenk-Dratini nach Quiz."},
+    "Route 26","Route 27","Tohjo-Fälle","Route 28",
+    {name:"Silberberg", note:"Nur Pokémon-Center, keine wilden Pokémon.", noCatch:true},
+    "Silberberghöhle"
+  ]],
+  ["Kanto",[
+    {name:"Alabastia", note:"Nur Surfen, Angeln + Geschenk: Kanto-Starter von Prof. Eich (nach Nationaldex)."},
+    "Route 1",
+    {name:"Vertania City", note:"Nur Surfen, Angeln, Headbutt-Bäume."},
+    "Route 2",
+    {name:"Vertania-Wald", note:"Gelegentlich Schwarm-Pokémon (Grillmak)."},
+    {name:"Marmoria City", note:"Nur Headbutt-Bäume; ansonsten kein Wildfang (nur ein Tausch-Pokémon)."},
+    "Digdas Höhle","Route 3","Mondberg","Route 4",
+    {name:"Azuria City", note:"Nur Surfen, Angeln, Headbutt-Bäume."},
+    "Route 24","Route 25","Route 9","Route 10","Felstunnel",
+    {name:"Lavandia", note:"Keine wilden Pokémon.", noCatch:true},
+    "Route 5",
+    {name:"Unterführung", note:"Keine wilden Pokémon.", noCatch:true},
+    "Route 6",
+    {name:"Orania City", note:"Keine wilden Pokémon dokumentiert.", noCatch:true},
+    "Route 11","Route 12","Route 13","Route 14","Route 15",
+    {name:"Fuchsania City", note:"Nur Surfen, Angeln, Headbutt-Bäume."},
+    "Route 16","Route 17",
+    {name:"Prismania City", note:"Nur Surfen, Headbutt-Bäume."},
+    "Route 18",
+    {name:"Azuria-Höhle", note:"Inkl. Mewtu (Postgame, nach Nationaldex)."},
+    "Route 19","Route 20","Route 21",
+    {name:"Seeschauminseln", note:"Inkl. Arktos (Postgame)."},
+    {name:"Zinnoberinsel", note:"Nur Surfen, Angeln."},
+    "Route 22","Route 23",
+    {name:"Siegesstraße", note:"Inkl. Rock-Smash-Fänge."},
+    {name:"Kraftwerk", note:"Inkl. Zapdos (Postgame)."},
+    "Route 7","Route 8",
+    {name:"Saffronia City", note:"Keine wilden Pokémon (nur Tausch-Pikachu).", noCatch:true}
+  ]]
 ];
 
 /* Bosstrainer werden nach dem jeweiligen Standort eingeblendet, an dem man ihnen im Spielverlauf begegnet */
@@ -686,7 +760,7 @@ const BOSS_AFTER = {
   "Johto|See des Zorns": ["rival4","proton1","petrel1","ariana1","archer1","petrel2","ariana2"],
   "Johto|Route 45": ["clair"],
   "Johto|Route 27": ["giovanni"],
-  "Johto|Silberberg": ["red"],
+  "Johto|Silberberghöhle": ["red"],
   "Kanto|Route 2": ["brock"],
   "Kanto|Mondberg": ["rival6"],
   "Kanto|Route 4": ["misty"],
@@ -960,21 +1034,48 @@ let activeTab = "routes";
 
 function slug(s){ return s.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,""); }
 
+/* Ein Standort-Eintrag ist entweder ein reiner Name (Standardfall) oder ein Objekt
+   {name, note, noCatch} für Orte mit besonderer Fangmethode (Angel, Surfen, Geschenk, …)
+   oder ganz ohne wilde Pokémon (noCatch:true). */
+function parseLocationEntry(region, entry){
+  const name = typeof entry === "string" ? entry : entry.name;
+  const note = typeof entry === "string" ? null : (entry.note || null);
+  const noCatch = typeof entry === "object" && !!entry.noCatch;
+  return {
+    id: slug(region+"-"+name),
+    name, region, custom:false, note, noCatch,
+    status:"pending", // pending | failed | caught
+    mon: null // {species, nickname, inTeam, dead}
+  };
+}
+
 function freshState(editionId){
   const edition = GAMES[editionId] ? editionId : "hgss";
   const locations = [];
   GAMES[edition].regions.forEach(([region, names])=>{
-    names.forEach(name=>{
-      locations.push({
-        id: slug(region+"-"+name),
-        name, region, custom:false,
-        status:"pending", // pending | failed | caught
-        mon: null // {species, nickname, inTeam, dead}
-      });
-    });
+    names.forEach(entry=>{ locations.push(parseLocationEntry(region, entry)); });
   });
   const gameStarters = GAMES[edition].starters || { grass:"", fire:"", water:"" };
   return { edition, runTitle:"Nuzlocke", locations, bossBoosts:{}, bossDefeated:{}, rivalNickname:"", duelPartnerName:"", dupesWarning:true, lastExportAt:null, evolutionCount:0, nicknameRequired:false, pvp:{}, hallOfFame:{ rivalTeam:[], playerTeam:[], defeatedAt:null, result:null }, starterNames:{ ...gameStarters }, starterChoice:null };
+}
+
+/* Ergänzt neu hinzugekommene Standorte (z.B. nachträglich eingefügte Städte) in einen bereits
+   laufenden, gespeicherten Run - ohne den Fortschritt an bestehenden Standorten zu verlieren. */
+function syncLocations(parsed){
+  const game = GAMES[parsed.edition];
+  if(!game || !Array.isArray(parsed.locations)) return;
+  const byId = new Map(parsed.locations.filter(l=>!l.custom && !l.starter).map(l=>[l.id, l]));
+  const rebuilt = [];
+  game.regions.forEach(([region, names])=>{
+    names.forEach(entry=>{
+      const fresh = parseLocationEntry(region, entry);
+      const existing = byId.get(fresh.id);
+      if(existing){ existing.note = fresh.note; existing.noCatch = fresh.noCatch; rebuilt.push(existing); }
+      else rebuilt.push(fresh);
+    });
+  });
+  const extras = parsed.locations.filter(l=>l.custom || l.starter);
+  parsed.locations = rebuilt.concat(extras);
 }
 
 function normalizeState(parsed){
@@ -992,6 +1093,7 @@ function normalizeState(parsed){
   else if(typeof parsed.hallOfFame.result === "undefined") parsed.hallOfFame.result = null;
   if(!parsed.starterNames) parsed.starterNames = { ...(GAMES[parsed.edition].starters || { grass:"", fire:"", water:"" }) };
   if(typeof parsed.starterChoice === "undefined") parsed.starterChoice = null;
+  syncLocations(parsed);
   return parsed;
 }
 
@@ -1134,6 +1236,15 @@ function renderRoutes(){
 }
 
 function routeCard(loc){
+  if(loc.noCatch){
+    return `<div class="card st-nocatch" data-loc="${loc.id}">
+      <div class="card-top">
+        <div><div class="loc-name">${escapeHtml(loc.name)}</div></div>
+        <span class="chip silver">Kein Wildfang</span>
+      </div>
+      <div class="loc-sub">${escapeHtml(loc.note || "Keine wilden Pokémon hier.")}</div>
+    </div>`;
+  }
   let body = "";
   if(loc.status==="pending"){
     body = `<div class="card-actions">
@@ -1160,6 +1271,7 @@ function routeCard(loc){
     <div class="card-top">
       <div>
         <div class="loc-name">${escapeHtml(loc.name)}</div>
+        ${loc.note ? `<div class="loc-sub">${escapeHtml(loc.note)}</div>` : ""}
       </div>
       <div style="display:flex; align-items:center; gap:6px; flex:none;">
         ${chipFor(loc)}
