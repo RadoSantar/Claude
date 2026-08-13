@@ -102,33 +102,19 @@
   --accent:#4FD182; --accent-soft:#173626; --accent-shine:#8CF0B0; --accent-deep:#2E8B57;
   --gold:#4FD182; --gold-soft:#173626;
 }
-:root[data-edition="diamant"]{
+:root[data-edition="diamant-perl"]{
   --accent:#4A7FC9; --accent-soft:#DCE7F7; --accent-shine:#F0F5FC; --accent-deep:#2F5A96;
   --gold:#4A7FC9; --gold-soft:#DCE7F7; --gold-glow: 74,127,201;
 }
 @media (prefers-color-scheme: dark){
-  :root[data-edition="diamant"]:not([data-theme="light"]){
+  :root[data-edition="diamant-perl"]:not([data-theme="light"]){
     --accent:#7FB0F0; --accent-soft:#1B2A3F; --accent-shine:#A8CCFA; --accent-deep:#4A7FC9;
     --gold:#7FB0F0; --gold-soft:#1B2A3F; --gold-glow: 127,176,240;
   }
 }
-:root[data-edition="diamant"][data-theme="dark"]{
+:root[data-edition="diamant-perl"][data-theme="dark"]{
   --accent:#7FB0F0; --accent-soft:#1B2A3F; --accent-shine:#A8CCFA; --accent-deep:#4A7FC9;
   --gold:#7FB0F0; --gold-soft:#1B2A3F;
-}
-:root[data-edition="perl"]{
-  --accent:#C9628F; --accent-soft:#F7DCE8; --accent-shine:#FCF0F5; --accent-deep:#96355F;
-  --gold:#C9628F; --gold-soft:#F7DCE8; --gold-glow: 201,98,143;
-}
-@media (prefers-color-scheme: dark){
-  :root[data-edition="perl"]:not([data-theme="light"]){
-    --accent:#F08FB5; --accent-soft:#3F1B29; --accent-shine:#FAB8D0; --accent-deep:#C9628F;
-    --gold:#F08FB5; --gold-soft:#3F1B29; --gold-glow: 240,143,181;
-  }
-}
-:root[data-edition="perl"][data-theme="dark"]{
-  --accent:#F08FB5; --accent-soft:#3F1B29; --accent-shine:#FAB8D0; --accent-deep:#C9628F;
-  --gold:#F08FB5; --gold-soft:#3F1B29;
 }
 :root[data-edition="platin"]{
   --accent:#6B7280; --accent-soft:#E4E6EA; --accent-shine:#F5F6F8; --accent-deep:#454B57;
@@ -843,11 +829,10 @@ const PLATIN_OVERRIDES = {
 /* ---------- Editionen ---------- */
 const GAMES = {
   hgss: { id:"hgss", label:"HeartGold / SoulSilver", shortLabel:"HG/SS", regions:LOCATIONS_DEFAULT, bosses:BOSSES, bossAfter:BOSS_AFTER },
-  smaragd: { id:"smaragd", label:"Smaragd", shortLabel:"Smaragd", regions:SMARAGD_LOCATIONS, bosses:SMARAGD_BOSSES, bossAfter:SMARAGD_BOSS_AFTER }
+  smaragd: { id:"smaragd", label:"Smaragd", shortLabel:"Smaragd", regions:SMARAGD_LOCATIONS, bosses:SMARAGD_BOSSES, bossAfter:SMARAGD_BOSS_AFTER },
+  "diamant-perl": { id:"diamant-perl", label:"Diamant / Perl", shortLabel:"Diamant/Perl", regions:SINNOH_LOCATIONS, bosses:SINNOH_BOSSES, bossAfter:SINNOH_BOSS_AFTER }
 };
 Object.assign(GAMES, buildVersionGames(SINNOH_BOSSES, SINNOH_LOCATIONS, SINNOH_BOSS_AFTER, [
-  { id:"diamant", label:"Diamant-Edition", shortLabel:"Diamant" },
-  { id:"perl", label:"Perl-Edition", shortLabel:"Perl" },
   { id:"platin", label:"Platin-Edition", shortLabel:"Platin", bossOverrides:PLATIN_OVERRIDES }
 ]));
 function currentGame(){ return GAMES[state.edition] || GAMES.hgss; }
