@@ -568,7 +568,7 @@ const BOSSES = [
   { id:"bruno", sprite:"Bruno", name:"Bruno", cls:"Top Vier", place:"Liga von Johto", ace:"Machomei", baseLevel:46, group:"Top Vier & Champion" },
   { id:"karen", sprite:"Karen", name:"Melanie", cls:"Top Vier", place:"Liga von Johto", ace:"Hundemon", baseLevel:47, group:"Top Vier & Champion" },
   { id:"lance", sprite:"Lance", name:"Siegfried", cls:"Champ", place:"Liga von Johto", ace:"Dragoran", baseLevel:50, group:"Top Vier & Champion" },
-  { id:"rival-final", sprite:"Rival", name:"Silvester", cls:"Finale", place:"Siegesstraße", group:"Rivale", final:true },
+  { id:"duel-final", cls:"Finale", place:"Siegesstraße", group:"Duell", final:true },
   { id:"brock", sprite:"Brock", name:"Rocko", cls:"Arenaleiter", place:"Marmoria City", ace:"Amoroso", baseLevel:53, group:"Kanto-Arenen", pvp:true },
   { id:"misty", sprite:"Misty", name:"Misty", cls:"Arenaleiterin", place:"Azuria City", ace:"Starmie", baseLevel:54, group:"Kanto-Arenen", pvp:true },
   { id:"surge", sprite:"Lt_Surge", name:"Major Bob", cls:"Arenaleiter", place:"Orania City", ace:"Elektek", baseLevel:53, group:"Kanto-Arenen", pvp:true },
@@ -599,7 +599,7 @@ const BOSS_AFTER = {
   "Johto|Route 33": ["rival2","bugsy"],
   "Johto|Steineichenwald": ["whitney"],
   "Johto|Route 37": ["rival3","morty"],
-  "Johto|Route 26": ["rival5","will","koga","bruno","karen","lance","rival-final"],
+  "Johto|Route 26": ["rival5","will","koga","bruno","karen","lance","duel-final"],
   "Johto|Strudelinseln": ["chuck","jasmine"],
   "Johto|Route 43": ["pryce"],
   "Johto|See des Zorns": ["rival4","proton1","petrel1","ariana1","archer1","petrel2","ariana2"],
@@ -644,7 +644,7 @@ const SMARAGD_BOSSES = [
   { id:"sm-e4-frosina", sprite:"SmFrosina", name:"Frosina", cls:"Top Vier", place:"Prachtpolis City", ace:"Walraisa", baseLevel:53, group:"Top Vier & Champion" },
   { id:"sm-e4-dragan", sprite:"SmDragan", name:"Dragan", cls:"Top Vier", place:"Prachtpolis City", ace:"Brutalanda", baseLevel:55, group:"Top Vier & Champion" },
   { id:"sm-champion", sprite:"SmWassili", name:"Wassili", cls:"Champ", place:"Prachtpolis City", ace:"Milotic", baseLevel:58, group:"Top Vier & Champion" },
-  { id:"sm-rival-final", sprite:"SmRival", name:"Maike", cls:"Finale", place:"Prachtpolis City", group:"Rivale", final:true }
+  { id:"sm-duel-final", cls:"Finale", place:"Prachtpolis City", group:"Duell", final:true }
 ];
 
 const SMARAGD_LOCATIONS = [
@@ -669,7 +669,7 @@ const SMARAGD_BOSS_AFTER = {
   "Hoenn|Route 126": ["sm-tateliza","sm-maxie3","sm-tabitha3"],
   "Hoenn|Tiefseehöhle": ["sm-archie","sm-shelly2"],
   "Hoenn|Route 128": ["sm-juan"],
-  "Hoenn|Siegesstraße": ["sm-e4-ulrich","sm-e4-antonia","sm-e4-frosina","sm-e4-dragan","sm-champion","sm-rival-final"]
+  "Hoenn|Siegesstraße": ["sm-e4-ulrich","sm-e4-antonia","sm-e4-frosina","sm-e4-dragan","sm-champion","sm-duel-final"]
 };
 
 /* ---------- Editionen ---------- */
@@ -802,13 +802,14 @@ function freshState(editionId){
       });
     });
   });
-  return { edition, runTitle:"Nuzlocke", locations, bossBoosts:{}, bossDefeated:{}, rivalNickname:"", dupesWarning:true, lastExportAt:null, evolutionCount:0, nicknameRequired:false, pvp:{}, hallOfFame:{ rivalTeam:[], playerTeam:[], defeatedAt:null } };
+  return { edition, runTitle:"Nuzlocke", locations, bossBoosts:{}, bossDefeated:{}, rivalNickname:"", duelPartnerName:"", dupesWarning:true, lastExportAt:null, evolutionCount:0, nicknameRequired:false, pvp:{}, hallOfFame:{ rivalTeam:[], playerTeam:[], defeatedAt:null } };
 }
 
 function normalizeState(parsed){
   if(!parsed.bossBoosts) parsed.bossBoosts = {};
   if(!parsed.bossDefeated) parsed.bossDefeated = {};
   if(typeof parsed.rivalNickname !== "string") parsed.rivalNickname = "";
+  if(typeof parsed.duelPartnerName !== "string") parsed.duelPartnerName = "";
   if(typeof parsed.dupesWarning !== "boolean") parsed.dupesWarning = true;
   if(typeof parsed.lastExportAt !== "number") parsed.lastExportAt = null;
   if(typeof parsed.evolutionCount !== "number") parsed.evolutionCount = 0;
@@ -1194,26 +1195,24 @@ function pvpCardHtml(boss){
   </div>`;
 }
 
-/* ---------- Ruhmeshalle: finaler Rivalenkampf nach dem Champion ---------- */
-function finalRivalDisplayName(boss){
-  const nick = (state.rivalNickname||"").trim();
-  return nick || boss.name;
-}
+/* ---------- Ruhmeshalle: finales Rivalenduell gegen den Duellpartner (nicht die Spielfigur!) nach dem Champion ---------- */
+function duelPartnerName(){ return (state.duelPartnerName||"").trim(); }
+function duelPartnerLabel(){ return duelPartnerName() || "deinen Duellpartner"; }
+function duelPartnerPossessive(){ const n = duelPartnerName(); return n ? n+"s" : "Das Team deines Duellpartners"; }
 
 function finalRivalCardHtml(boss){
   const done = isBossDefeated(boss.id);
-  const displayName = finalRivalDisplayName(boss);
   if(!done){
     return `<div class="card final-rival-card">
       <span class="chip gold">Finale</span>
-      <div class="mon-line" data-act="open-rival-rename" data-id="${boss.id}" style="margin-top:10px;">
-        ${bossSpriteHtml(boss, 70)}
+      <div class="mon-line" style="margin-top:10px;">
+        <div class="pvp-badge">VS</div>
         <div>
-          <div class="loc-name">${escapeHtml(displayName)}</div>
-          <div class="loc-sub">${escapeHtml(boss.cls)} · ${escapeHtml(boss.place)}</div>
+          <div class="loc-name">Finales Rivalenduell</div>
+          <div class="loc-sub">${escapeHtml(boss.place)}</div>
         </div>
       </div>
-      <div class="loc-sub" style="margin-top:12px;">Der letzte Kampf – direkt nach dem Champion. Trage danach das Team ein, um diesen Sieg dauerhaft in der Ruhmeshalle festzuhalten.</div>
+      <div class="loc-sub" style="margin-top:12px;">Das letzte Duell gegen ${escapeHtml(duelPartnerLabel())} – direkt nach dem Champion. Trage danach beide Teams ein, um diesen Sieg dauerhaft in der Ruhmeshalle festzuhalten.</div>
       <div class="card-actions">
         <button class="btn btn-primary btn-block" data-act="open-final-rival" data-id="${boss.id}">Team eintragen &amp; Sieg festhalten</button>
       </div>
@@ -1223,9 +1222,9 @@ function finalRivalCardHtml(boss){
   return `<div class="card final-rival-card final-rival-done${flash?" hall-of-fame-flash":""}">
     <span class="chip gold">Finale</span>
     <div class="mon-line" style="margin-top:10px;">
-      ${bossSpriteHtml(boss, 70, true)}
+      <div class="pvp-badge">VS</div>
       <div>
-        <div class="loc-name">${escapeHtml(displayName)}</div>
+        <div class="loc-name">Finales Rivalenduell</div>
         <div class="loc-sub">In der Ruhmeshalle festgehalten</div>
       </div>
     </div>
@@ -1237,7 +1236,6 @@ function finalRivalCardHtml(boss){
 }
 
 function openFinalRivalSheet(bossId){
-  const boss = bossById(bossId);
   const existing = state.hallOfFame.rivalTeam || [];
   let rows = "";
   for(let i=0;i<6;i++){
@@ -1253,8 +1251,8 @@ function openFinalRivalSheet(bossId){
     </div>`;
   }
   openSheet(`
-    <h3>${escapeHtml(finalRivalDisplayName(boss))}s Team</h3>
-    <div class="loc-sub" style="margin-bottom:14px;">Trage ein, welches Team dein:e Rival:in in diesem letzten Kampf hatte. Leere Felder werden übersprungen.</div>
+    <h3>${escapeHtml(duelPartnerPossessive())} Team</h3>
+    <div class="loc-sub" style="margin-bottom:14px;">Trage ein, welches Team ${escapeHtml(duelPartnerLabel())} in diesem letzten Duell hatte. Leere Felder werden übersprungen.</div>
     ${rows}
     <div class="sheet-footer">
       <button class="btn btn-secondary btn-block" data-act="close-sheet">Abbrechen</button>
@@ -1277,16 +1275,15 @@ function hallOfFameCardHtml(){
   const boss = currentGame().bosses.find(b=>b.final);
   if(!boss || !isBossDefeated(boss.id)) return "";
   const hof = state.hallOfFame;
-  const displayName = finalRivalDisplayName(boss);
   const dateLabel = hof.defeatedAt ? new Date(hof.defeatedAt).toLocaleDateString("de-DE") : "";
   const playerRow = (hof.playerTeam||[]).map(m=>`<div style="text-align:center; width:56px;">${spriteImgHtml(m.species,48)}<div class="mon-species">${escapeHtml(m.nickname||m.species)}</div></div>`).join("");
   const rivalRow = (hof.rivalTeam||[]).map(sp=>`<div style="text-align:center; width:56px;">${spriteImgHtml(sp,48)}<div class="mon-species">${escapeHtml(sp)}</div></div>`).join("");
   return `<div class="card hall-of-fame-card">
     <div class="loc-name" style="margin-bottom:2px;">Ruhmeshalle</div>
-    <div class="loc-sub" style="margin-bottom:14px;">Finaler Sieg über ${escapeHtml(displayName)}${dateLabel?" am "+dateLabel:""}</div>
+    <div class="loc-sub" style="margin-bottom:14px;">Finales Rivalenduell gegen ${escapeHtml(duelPartnerLabel())}${dateLabel?" am "+dateLabel:""}</div>
     <div class="loc-sub" style="margin-bottom:6px; font-weight:700;">Dein Team</div>
     <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px;">${playerRow || `<span class="loc-sub">Kein Team erfasst</span>`}</div>
-    <div class="loc-sub" style="margin-bottom:6px; font-weight:700;">${escapeHtml(displayName)}s Team</div>
+    <div class="loc-sub" style="margin-bottom:6px; font-weight:700;">${escapeHtml(duelPartnerPossessive())} Team</div>
     <div style="display:flex; gap:10px; flex-wrap:wrap;">${rivalRow}</div>
     <button class="btn-ghost" style="margin-top:12px;" data-act="open-final-rival" data-id="${boss.id}">Bearbeiten</button>
   </div>`;
@@ -1297,7 +1294,14 @@ function renderSettings(){
   const min = Math.min(...percents), max = Math.max(...percents);
   const percentLabel = min===max ? `${min>0?'+':''}${min}%` : `${min}%–${max}%`;
   const eff = effectiveTheme();
-  const html = statsCardHtml() + hallOfFameCardHtml() + `<div class="card boss-bulk">
+  const html = statsCardHtml() + hallOfFameCardHtml() + `<div class="card">
+    <div class="loc-name">Duellpartner</div>
+    <div class="loc-sub" style="margin-bottom:10px;">Name für die Rivalenduelle gegen deine:n echte:n Duellpartner:in (nicht die Spielfigur) – wird u. a. in der Ruhmeshalle verwendet.</div>
+    <div class="field" style="margin-bottom:0;">
+      <input id="duelPartnerInput" value="${escapeHtml(state.duelPartnerName||"")}" placeholder="z. B. Max" autocomplete="off" />
+    </div>
+  </div>
+  <div class="card boss-bulk">
     <div>
       <div class="loc-name">Alle Bosse</div>
       <div class="loc-sub">Level-Boost für alle Bosstrainer gleichzeitig anpassen</div>
@@ -1882,6 +1886,11 @@ document.getElementById("runTitle").addEventListener("input", e=>{ state.runTitl
 document.getElementById("runTitle").value = state.runTitle || "Nuzlocke";
 document.getElementById("editionBtn").addEventListener("click", openEditionSheet);
 applyEdition();
+
+/* Duellpartner-Namensfeld lebt in renderSettings() und wird bei jedem render() neu erzeugt -> delegiert */
+document.addEventListener("input", e=>{
+  if(e.target && e.target.id==="duelPartnerInput"){ state.duelPartnerName = e.target.value; saveState(); }
+});
 
 /* theme toggle: direct light <-> dark toggle (defaults to system preference until first click) */
 function effectiveTheme(){
