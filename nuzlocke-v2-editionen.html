@@ -833,7 +833,7 @@ const GAMES = {
   "diamant-perl": { id:"diamant-perl", label:"Diamant / Perl", shortLabel:"Diamant/Perl", regions:SINNOH_LOCATIONS, bosses:SINNOH_BOSSES, bossAfter:SINNOH_BOSS_AFTER }
 };
 Object.assign(GAMES, buildVersionGames(SINNOH_BOSSES, SINNOH_LOCATIONS, SINNOH_BOSS_AFTER, [
-  { id:"platin", label:"Platin-Edition", shortLabel:"Platin", bossOverrides:PLATIN_OVERRIDES }
+  { id:"platin", label:"Platin", shortLabel:"Platin", bossOverrides:PLATIN_OVERRIDES }
 ]));
 function currentGame(){ return GAMES[state.edition] || GAMES.hgss; }
 function bossById(id){ return currentGame().bosses.find(b=>b.id===id); }
