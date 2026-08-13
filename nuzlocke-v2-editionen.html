@@ -1185,6 +1185,7 @@ function starterNamesSet(){
   const s = state.starterNames || {};
   return STARTER_TYPES.every(t=>(s[t]||"").trim());
 }
+function removeStarterMon(){ state.locations = state.locations.filter(l=>!l.starter); }
 
 function starterCardHtml(){
   const names = state.starterNames || { grass:"", fire:"", water:"" };
@@ -2081,13 +2082,20 @@ document.addEventListener("click", e=>{
     const water = document.getElementById("inStarterWater").value.trim().slice(0,30);
     state.starterNames = { grass, fire, water };
     state.starterChoice = null;
+    removeStarterMon();
     saveState(); closeSheet(); render();
   }
   else if(act==="choose-starter"){
-    state.starterChoice = t.dataset.type; saveState(); render();
+    const type = t.dataset.type;
+    state.starterChoice = type;
+    removeStarterMon();
+    state.locations.unshift({ id:"starter-mon", name:"Starter", region:null, custom:false, starter:true, status:"caught", mon:{ species:(state.starterNames[type]||"").trim(), nickname:"", inTeam:false, dead:false } });
+    saveState(); render();
   }
   else if(act==="undo-starter-choice"){
-    state.starterChoice = null; saveState(); render();
+    state.starterChoice = null;
+    removeStarterMon();
+    saveState(); render();
   }
   else if(act==="save-location"){
     const name = document.getElementById("inLocName").value.trim();
