@@ -29,6 +29,7 @@
   --evolve-glow: 118,187,240;
   --line: rgba(42,33,24,0.14);
   --shadow: 0 1px 2px rgba(42,33,24,0.08), 0 4px 14px rgba(42,33,24,0.06);
+  --shadow-up: 0 -1px 2px rgba(42,33,24,0.06), 0 -6px 18px rgba(42,33,24,0.09);
   --radius: 16px;
   --font-display: ui-rounded, "SF Pro Rounded", "Segoe UI Rounded", "Century Gothic", sans-serif;
   --font-body: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", sans-serif;
@@ -63,6 +64,7 @@
     --evolve-glow: 111,184,237;
     --line: rgba(236,230,216,0.14);
     --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
+    --shadow-up: 0 -1px 2px rgba(0,0,0,0.25), 0 -8px 22px rgba(0,0,0,0.32);
   }
 }
 :root[data-theme="light"]{
@@ -73,6 +75,7 @@
   --warn:#B5731E; --warn-soft:#F2DFC0; --evolve:#2E86C7; --evolve-soft:#D9ECFA; --evolve-glow: 118,187,240;
   --line: rgba(42,33,24,0.14);
   --shadow: 0 1px 2px rgba(42,33,24,0.08), 0 4px 14px rgba(42,33,24,0.06);
+  --shadow-up: 0 -1px 2px rgba(42,33,24,0.06), 0 -6px 18px rgba(42,33,24,0.09);
 }
 :root[data-theme="dark"]{
   --bg:#11151D; --surface:#1A212C; --surface-alt:#212938; --ink:#ECE6D8; --ink-soft:#9CA3B4;
@@ -82,6 +85,7 @@
   --warn:#E3A758; --warn-soft:#382C18; --evolve:#6FB8ED; --evolve-soft:#1C3A50; --evolve-glow: 111,184,237;
   --line: rgba(236,230,216,0.14);
   --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
+  --shadow-up: 0 -1px 2px rgba(0,0,0,0.25), 0 -8px 22px rgba(0,0,0,0.32);
 }
 /* Edition-Farbschema: überschreibt nur die Akzentfarben, Hell/Dunkel bleibt unabhängig davon */
 :root[data-edition="smaragd"]{
@@ -464,15 +468,16 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 .tabbar{
   flex:none; background:var(--surface); border-top:1px solid var(--line); display:flex;
   padding:6px 6px calc(6px + env(safe-area-inset-bottom)); z-index:20;
+  box-shadow:var(--shadow-up); position:relative;
 }
 .tab{
   flex:1; background:none; border:none; display:flex; flex-direction:column; align-items:center; justify-content:center;
   gap:3px; padding:8px 4px; border-radius:12px; color:var(--ink-soft); font-size:.68rem; font-weight:700;
-  letter-spacing:.02em;
+  letter-spacing:.02em; transition:background-color .15s ease, color .15s ease;
 }
-.tab svg{ width:21px; height:21px; stroke:var(--ink-soft); fill:none; stroke-width:1.8; }
+.tab svg{ width:21px; height:21px; stroke:var(--ink-soft); fill:none; stroke-width:1.8; transition:stroke .15s ease; }
 .tab-icon-only svg{ width:27px; height:27px; }
-.tab.active{ color:var(--accent); }
+.tab.active{ color:var(--accent); background:var(--accent-soft); }
 .tab.active svg{ stroke:var(--accent); }
 .tab:active{ transform:scale(.95); }
 
@@ -567,7 +572,7 @@ datalist{}
 
   <div class="tabbar">
     <button class="tab" data-tab="box"><svg viewBox="0 0 24 24"><path d="M3 8l9-5 9 5-9 5-9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>Box</button>
-    <button class="tab" data-tab="team"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg>Team</button>
+    <button class="tab" data-tab="team"><svg viewBox="0 0 24 24"><circle cx="6" cy="7.5" r="2.4"/><circle cx="12" cy="7.5" r="2.4"/><circle cx="18" cy="7.5" r="2.4"/><circle cx="6" cy="16.5" r="2.4"/><circle cx="12" cy="16.5" r="2.4"/><circle cx="18" cy="16.5" r="2.4"/></svg>Team</button>
     <button class="tab tab-icon-only" data-tab="routes" aria-label="Hauptseite"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h5.1M15.9 12H21"/><circle cx="12" cy="12" r="2.3"/></svg></button>
     <button class="tab" data-tab="grave"><svg viewBox="0 0 24 24"><path d="M6 21V11a6 6 0 0112 0v10"/><path d="M6 21h12"/><path d="M10 8v3M14 8v3M9 10h3"/></svg>Friedhof</button>
     <button class="tab" data-tab="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 13a7.6 7.6 0 000-2l2-1.5-2-3.4-2.3.9a7.5 7.5 0 00-1.7-1l-.3-2.4h-4l-.3 2.4a7.5 7.5 0 00-1.7 1l-2.3-.9-2 3.4L6.6 11a7.6 7.6 0 000 2l-2 1.5 2 3.4 2.3-.9a7.5 7.5 0 001.7 1l.3 2.4h4l.3-2.4a7.5 7.5 0 001.7-1l2.3.9 2-3.4-2-1.5z"/></svg>Einstellungen</button>
