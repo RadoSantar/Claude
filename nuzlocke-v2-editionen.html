@@ -9,6 +9,7 @@
   --ink-soft:#6B5D45;
   --gold:#A9762E;
   --gold-soft:#EADCB8;
+  --gold-glow: 169,118,46;
   --silver:#5C6A80;
   --silver-soft:#DFE3EA;
   --accent:#64738A;
@@ -41,6 +42,7 @@
     --ink-soft:#9CA3B4;
     --gold:#DDB05F;
     --gold-soft:#3A3220;
+    --gold-glow: 221,176,95;
     --silver:#9FADC2;
     --silver-soft:#232B3B;
     --accent:#DDB05F;
@@ -63,7 +65,7 @@
 }
 :root[data-theme="light"]{
   --bg:#F5EFDD; --surface:#FFFFFF; --surface-alt:#ECE1C4; --ink:#2A2118; --ink-soft:#6B5D45;
-  --gold:#A9762E; --gold-soft:#EADCB8; --silver:#5C6A80; --silver-soft:#DFE3EA;
+  --gold:#A9762E; --gold-soft:#EADCB8; --gold-glow: 169,118,46; --silver:#5C6A80; --silver-soft:#DFE3EA;
   --accent:#64738A; --accent-soft:#E1E5EC; --accent-shine:#F5F7FA; --accent-deep:#48536A;
   --red:#B5392B; --red-soft:#F3D9D2; --good:#3F7A46; --good-soft:#DCEBDA; --good-glow: 63,122,70;
   --warn:#B5731E; --warn-soft:#F2DFC0; --evolve:#2E86C7; --evolve-soft:#D9ECFA; --evolve-glow: 118,187,240;
@@ -72,7 +74,7 @@
 }
 :root[data-theme="dark"]{
   --bg:#11151D; --surface:#1A212C; --surface-alt:#212938; --ink:#ECE6D8; --ink-soft:#9CA3B4;
-  --gold:#DDB05F; --gold-soft:#3A3220; --silver:#9FADC2; --silver-soft:#232B3B;
+  --gold:#DDB05F; --gold-soft:#3A3220; --gold-glow: 221,176,95; --silver:#9FADC2; --silver-soft:#232B3B;
   --accent:#DDB05F; --accent-soft:#3A3220; --accent-shine:#F6D998; --accent-deep:#8C6B2E;
   --red:#E2685A; --red-soft:#3A2222; --good:#74C17E; --good-soft:#20301F; --good-glow: 116,193,126;
   --warn:#E3A758; --warn-soft:#382C18; --evolve:#6FB8ED; --evolve-soft:#1C3A50; --evolve-glow: 111,184,237;
@@ -82,12 +84,12 @@
 /* Edition-Farbschema: überschreibt nur die Akzentfarben, Hell/Dunkel bleibt unabhängig davon */
 :root[data-edition="smaragd"]{
   --accent:#2E8B57; --accent-soft:#DCF0E3; --accent-shine:#EFFBF3; --accent-deep:#1F5E3B;
-  --gold:#2E8B57; --gold-soft:#DCF0E3;
+  --gold:#2E8B57; --gold-soft:#DCF0E3; --gold-glow: 46,139,87;
 }
 @media (prefers-color-scheme: dark){
   :root[data-edition="smaragd"]:not([data-theme="light"]){
     --accent:#4FD182; --accent-soft:#173626; --accent-shine:#8CF0B0; --accent-deep:#2E8B57;
-    --gold:#4FD182; --gold-soft:#173626;
+    --gold:#4FD182; --gold-soft:#173626; --gold-glow: 79,209,130;
   }
 }
 :root[data-edition="smaragd"][data-theme="dark"]{
@@ -312,6 +314,19 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 }
 .boss-defeat-badge svg{ width:15px; height:15px; stroke:#fff; stroke-width:2.6; fill:none; }
 
+.final-rival-card{
+  position:relative; border-left-color:var(--gold);
+  background:linear-gradient(165deg, var(--surface), var(--gold-soft) 145%);
+  box-shadow:var(--shadow), inset 0 0 0 1px rgba(var(--gold-glow),.25);
+}
+.final-rival-card .chip.gold{ letter-spacing:.05em; }
+.final-rival-card.final-rival-done .loc-name{ color:var(--gold); }
+.hall-of-fame-card{
+  border-left-color:var(--gold); background:linear-gradient(165deg, var(--surface), var(--gold-soft) 160%);
+  box-shadow:var(--shadow), inset 0 0 0 1px rgba(var(--gold-glow),.25);
+}
+.hall-of-fame-card .mon-species{ font-size:.68rem; color:var(--ink-soft); margin-top:2px; }
+
 @media (prefers-reduced-motion: no-preference){
   @keyframes evolveFlash{
     0%{ box-shadow:0 0 0 0 rgba(var(--evolve-glow),0); filter:brightness(1) saturate(1); transform:scale(1); }
@@ -350,6 +365,32 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
       radial-gradient(circle, rgba(var(--good-glow),.9) 0 3px, transparent 4px) 50% 6%;
     background-repeat:no-repeat;
     animation:bossSparkle 750ms ease-out both;
+  }
+
+  @keyframes hallOfFameBurst{
+    0%{ box-shadow:0 0 0 0 rgba(var(--gold-glow),0); filter:brightness(1) saturate(1); transform:scale(1) rotate(0deg); }
+    16%{ box-shadow:0 0 0 4px rgba(var(--gold-glow),1), 0 0 32px 12px rgba(var(--gold-glow),.75); filter:brightness(1.5) saturate(1.15); transform:scale(1.06) rotate(-1.2deg); }
+    40%{ transform:scale(.98) rotate(1deg); }
+    65%{ box-shadow:0 0 0 3px rgba(var(--gold-glow),.55), 0 0 20px 6px rgba(var(--gold-glow),.4); transform:scale(1.02) rotate(0deg); }
+    100%{ box-shadow:0 0 0 0 rgba(var(--gold-glow),0); filter:brightness(1) saturate(1); transform:scale(1) rotate(0deg); }
+  }
+  .final-rival-card.hall-of-fame-flash{ animation:hallOfFameBurst 1400ms cubic-bezier(.34,1.2,.32,1); }
+  @keyframes hallOfFameSparkle{
+    0%{ transform:scale(0) rotate(0deg); opacity:1; }
+    100%{ transform:scale(1.3) rotate(50deg); opacity:0; }
+  }
+  .final-rival-card.hall-of-fame-flash::after{
+    content:""; position:absolute; inset:0; border-radius:var(--radius); pointer-events:none;
+    background:
+      radial-gradient(circle, rgba(var(--gold-glow),.95) 0 4px, transparent 5px) 10% 14%,
+      radial-gradient(circle, rgba(var(--gold-glow),.95) 0 4px, transparent 5px) 88% 18%,
+      radial-gradient(circle, rgba(var(--gold-glow),.95) 0 4px, transparent 5px) 94% 62%,
+      radial-gradient(circle, rgba(var(--gold-glow),.95) 0 4px, transparent 5px) 6% 68%,
+      radial-gradient(circle, rgba(var(--gold-glow),.95) 0 4px, transparent 5px) 50% 4%,
+      radial-gradient(circle, rgba(var(--gold-glow),.95) 0 3px, transparent 4px) 30% 90%,
+      radial-gradient(circle, rgba(var(--gold-glow),.95) 0 3px, transparent 4px) 70% 88%;
+    background-repeat:no-repeat;
+    animation:hallOfFameSparkle 1100ms ease-out both;
   }
 }
 
@@ -527,6 +568,7 @@ const BOSSES = [
   { id:"bruno", sprite:"Bruno", name:"Bruno", cls:"Top Vier", place:"Liga von Johto", ace:"Machomei", baseLevel:46, group:"Top Vier & Champion" },
   { id:"karen", sprite:"Karen", name:"Melanie", cls:"Top Vier", place:"Liga von Johto", ace:"Hundemon", baseLevel:47, group:"Top Vier & Champion" },
   { id:"lance", sprite:"Lance", name:"Siegfried", cls:"Champ", place:"Liga von Johto", ace:"Dragoran", baseLevel:50, group:"Top Vier & Champion" },
+  { id:"rival-final", sprite:"Rival", name:"Silvester", cls:"Finale", place:"Siegesstraße", group:"Rivale", final:true },
   { id:"brock", sprite:"Brock", name:"Rocko", cls:"Arenaleiter", place:"Marmoria City", ace:"Amoroso", baseLevel:53, group:"Kanto-Arenen", pvp:true },
   { id:"misty", sprite:"Misty", name:"Misty", cls:"Arenaleiterin", place:"Azuria City", ace:"Starmie", baseLevel:54, group:"Kanto-Arenen", pvp:true },
   { id:"surge", sprite:"Lt_Surge", name:"Major Bob", cls:"Arenaleiter", place:"Orania City", ace:"Elektek", baseLevel:53, group:"Kanto-Arenen", pvp:true },
@@ -557,7 +599,7 @@ const BOSS_AFTER = {
   "Johto|Route 33": ["rival2","bugsy"],
   "Johto|Steineichenwald": ["whitney"],
   "Johto|Route 37": ["rival3","morty"],
-  "Johto|Route 26": ["rival5","will","koga","bruno","karen","lance"],
+  "Johto|Route 26": ["rival5","will","koga","bruno","karen","lance","rival-final"],
   "Johto|Strudelinseln": ["chuck","jasmine"],
   "Johto|Route 43": ["pryce"],
   "Johto|See des Zorns": ["rival4","proton1","petrel1","ariana1","archer1","petrel2","ariana2"],
@@ -601,7 +643,8 @@ const SMARAGD_BOSSES = [
   { id:"sm-e4-antonia", sprite:"SmAntonia", name:"Antonia", cls:"Top Vier", place:"Prachtpolis City", ace:"Zwirrklop", baseLevel:51, group:"Top Vier & Champion" },
   { id:"sm-e4-frosina", sprite:"SmFrosina", name:"Frosina", cls:"Top Vier", place:"Prachtpolis City", ace:"Walraisa", baseLevel:53, group:"Top Vier & Champion" },
   { id:"sm-e4-dragan", sprite:"SmDragan", name:"Dragan", cls:"Top Vier", place:"Prachtpolis City", ace:"Brutalanda", baseLevel:55, group:"Top Vier & Champion" },
-  { id:"sm-champion", sprite:"SmWassili", name:"Wassili", cls:"Champ", place:"Prachtpolis City", ace:"Milotic", baseLevel:58, group:"Top Vier & Champion" }
+  { id:"sm-champion", sprite:"SmWassili", name:"Wassili", cls:"Champ", place:"Prachtpolis City", ace:"Milotic", baseLevel:58, group:"Top Vier & Champion" },
+  { id:"sm-rival-final", sprite:"SmRival", name:"Maike", cls:"Finale", place:"Prachtpolis City", group:"Rivale", final:true }
 ];
 
 const SMARAGD_LOCATIONS = [
@@ -626,7 +669,7 @@ const SMARAGD_BOSS_AFTER = {
   "Hoenn|Route 126": ["sm-tateliza","sm-maxie3","sm-tabitha3"],
   "Hoenn|Tiefseehöhle": ["sm-archie","sm-shelly2"],
   "Hoenn|Route 128": ["sm-juan"],
-  "Hoenn|Siegesstraße": ["sm-e4-ulrich","sm-e4-antonia","sm-e4-frosina","sm-e4-dragan","sm-champion"]
+  "Hoenn|Siegesstraße": ["sm-e4-ulrich","sm-e4-antonia","sm-e4-frosina","sm-e4-dragan","sm-champion","sm-rival-final"]
 };
 
 /* ---------- Editionen ---------- */
@@ -692,6 +735,7 @@ function wireSpeciesPicker(inputId, resultsId, onSelect){
 
 let lastEvolvedId = null;
 let lastDefeatedId = null;
+let lastFinalRivalFlash = false;
 let pendingCatchData = null;
 
 function performCatch(id, species, nick){
@@ -758,7 +802,7 @@ function freshState(editionId){
       });
     });
   });
-  return { edition, runTitle:"Nuzlocke", locations, bossBoosts:{}, bossDefeated:{}, rivalNickname:"", dupesWarning:true, lastExportAt:null, evolutionCount:0, nicknameRequired:false, pvp:{} };
+  return { edition, runTitle:"Nuzlocke", locations, bossBoosts:{}, bossDefeated:{}, rivalNickname:"", dupesWarning:true, lastExportAt:null, evolutionCount:0, nicknameRequired:false, pvp:{}, hallOfFame:{ rivalTeam:[], playerTeam:[], defeatedAt:null } };
 }
 
 function normalizeState(parsed){
@@ -771,6 +815,7 @@ function normalizeState(parsed){
   if(typeof parsed.nicknameRequired !== "boolean") parsed.nicknameRequired = false;
   if(!parsed.pvp) parsed.pvp = {};
   if(typeof parsed.edition !== "string" || !GAMES[parsed.edition]) parsed.edition = "hgss";
+  if(!parsed.hallOfFame) parsed.hallOfFame = { rivalTeam:[], playerTeam:[], defeatedAt:null };
   return parsed;
 }
 
@@ -882,7 +927,11 @@ function renderRoutes(){
     locs.forEach(loc=>{
       html += routeCard(loc);
       const bossIds = game.bossAfter[region+"|"+loc.name];
-      if(bossIds) bossIds.forEach(id=>{ const boss=bossById(id); if(boss){ html += bossCardHtml(boss); if(boss.pvp) html += pvpCardHtml(boss); } });
+      if(bossIds) bossIds.forEach(id=>{
+        const boss=bossById(id); if(!boss) return;
+        if(boss.final){ html += finalRivalCardHtml(boss); return; }
+        html += bossCardHtml(boss); if(boss.pvp) html += pvpCardHtml(boss);
+      });
     });
   });
   const customs = state.locations.filter(l=>l.custom);
@@ -1145,12 +1194,110 @@ function pvpCardHtml(boss){
   </div>`;
 }
 
+/* ---------- Ruhmeshalle: finaler Rivalenkampf nach dem Champion ---------- */
+function finalRivalDisplayName(boss){
+  const nick = (state.rivalNickname||"").trim();
+  return nick || boss.name;
+}
+
+function finalRivalCardHtml(boss){
+  const done = isBossDefeated(boss.id);
+  const displayName = finalRivalDisplayName(boss);
+  if(!done){
+    return `<div class="card final-rival-card">
+      <span class="chip gold">Finale</span>
+      <div class="mon-line" data-act="open-rival-rename" data-id="${boss.id}" style="margin-top:10px;">
+        ${bossSpriteHtml(boss, 70)}
+        <div>
+          <div class="loc-name">${escapeHtml(displayName)}</div>
+          <div class="loc-sub">${escapeHtml(boss.cls)} · ${escapeHtml(boss.place)}</div>
+        </div>
+      </div>
+      <div class="loc-sub" style="margin-top:12px;">Der letzte Kampf – direkt nach dem Champion. Trage danach das Team ein, um diesen Sieg dauerhaft in der Ruhmeshalle festzuhalten.</div>
+      <div class="card-actions">
+        <button class="btn btn-primary btn-block" data-act="open-final-rival" data-id="${boss.id}">Team eintragen &amp; Sieg festhalten</button>
+      </div>
+    </div>`;
+  }
+  const flash = lastFinalRivalFlash;
+  return `<div class="card final-rival-card final-rival-done${flash?" hall-of-fame-flash":""}">
+    <span class="chip gold">Finale</span>
+    <div class="mon-line" style="margin-top:10px;">
+      ${bossSpriteHtml(boss, 70, true)}
+      <div>
+        <div class="loc-name">${escapeHtml(displayName)}</div>
+        <div class="loc-sub">In der Ruhmeshalle festgehalten</div>
+      </div>
+    </div>
+    <div class="card-actions">
+      <button class="btn btn-secondary" data-act="open-final-rival" data-id="${boss.id}">Bearbeiten</button>
+      <button class="btn btn-danger" data-act="undo-final-rival" data-id="${boss.id}">Zurücksetzen</button>
+    </div>
+  </div>`;
+}
+
+function openFinalRivalSheet(bossId){
+  const boss = bossById(bossId);
+  const existing = state.hallOfFame.rivalTeam || [];
+  let rows = "";
+  for(let i=0;i<6;i++){
+    const val = existing[i] || "";
+    const src = val ? spriteFor(val) : null;
+    rows += `<div class="field-row" style="margin-bottom:14px;">
+      <div class="sprite-preview" id="finalPreview${i}">${src ? `<img src="${src}" width="70" height="70" alt="" />` : `<span>?</span>`}</div>
+      <div class="field species-picker" style="margin-bottom:0;">
+        <label for="finalMon${i}">Pokémon ${i+1}</label>
+        <input id="finalMon${i}" value="${escapeHtml(val)}" placeholder="Optional" autocomplete="off" />
+        <div class="species-results" id="finalMonResults${i}"></div>
+      </div>
+    </div>`;
+  }
+  openSheet(`
+    <h3>${escapeHtml(finalRivalDisplayName(boss))}s Team</h3>
+    <div class="loc-sub" style="margin-bottom:14px;">Trage ein, welches Team dein:e Rival:in in diesem letzten Kampf hatte. Leere Felder werden übersprungen.</div>
+    ${rows}
+    <div class="sheet-footer">
+      <button class="btn btn-secondary btn-block" data-act="close-sheet">Abbrechen</button>
+      <button class="btn btn-primary btn-block" data-act="save-final-rival" data-id="${bossId}">Sieg festhalten</button>
+    </div>
+  `);
+  for(let i=0;i<6;i++){
+    const input = document.getElementById(`finalMon${i}`);
+    const updatePreview = ()=>{
+      const src = spriteFor(input.value);
+      document.getElementById(`finalPreview${i}`).innerHTML = src ? `<img src="${src}" width="70" height="70" alt="" />` : `<span>?</span>`;
+    };
+    input.addEventListener("input", updatePreview);
+    wireSpeciesPicker(`finalMon${i}`, `finalMonResults${i}`, updatePreview);
+  }
+  setTimeout(()=>document.getElementById("finalMon0").focus(), 50);
+}
+
+function hallOfFameCardHtml(){
+  const boss = currentGame().bosses.find(b=>b.final);
+  if(!boss || !isBossDefeated(boss.id)) return "";
+  const hof = state.hallOfFame;
+  const displayName = finalRivalDisplayName(boss);
+  const dateLabel = hof.defeatedAt ? new Date(hof.defeatedAt).toLocaleDateString("de-DE") : "";
+  const playerRow = (hof.playerTeam||[]).map(m=>`<div style="text-align:center; width:56px;">${spriteImgHtml(m.species,48)}<div class="mon-species">${escapeHtml(m.nickname||m.species)}</div></div>`).join("");
+  const rivalRow = (hof.rivalTeam||[]).map(sp=>`<div style="text-align:center; width:56px;">${spriteImgHtml(sp,48)}<div class="mon-species">${escapeHtml(sp)}</div></div>`).join("");
+  return `<div class="card hall-of-fame-card">
+    <div class="loc-name" style="margin-bottom:2px;">Ruhmeshalle</div>
+    <div class="loc-sub" style="margin-bottom:14px;">Finaler Sieg über ${escapeHtml(displayName)}${dateLabel?" am "+dateLabel:""}</div>
+    <div class="loc-sub" style="margin-bottom:6px; font-weight:700;">Dein Team</div>
+    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px;">${playerRow || `<span class="loc-sub">Kein Team erfasst</span>`}</div>
+    <div class="loc-sub" style="margin-bottom:6px; font-weight:700;">${escapeHtml(displayName)}s Team</div>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">${rivalRow}</div>
+    <button class="btn-ghost" style="margin-top:12px;" data-act="open-final-rival" data-id="${boss.id}">Bearbeiten</button>
+  </div>`;
+}
+
 function renderSettings(){
   const percents = currentGame().bosses.map(b=>bossPercent(b.id));
   const min = Math.min(...percents), max = Math.max(...percents);
   const percentLabel = min===max ? `${min>0?'+':''}${min}%` : `${min}%–${max}%`;
   const eff = effectiveTheme();
-  const html = statsCardHtml() + `<div class="card boss-bulk">
+  const html = statsCardHtml() + hallOfFameCardHtml() + `<div class="card boss-bulk">
     <div>
       <div class="loc-name">Alle Bosse</div>
       <div class="loc-sub">Level-Boost für alle Bosstrainer gleichzeitig anpassen</div>
@@ -1544,6 +1691,35 @@ document.addEventListener("click", e=>{
     if(!wasDefeated) lastDefeatedId = id;
     render();
     lastDefeatedId = null;
+  }
+  else if(act==="open-final-rival"){
+    openFinalRivalSheet(id);
+  }
+  else if(act==="save-final-rival"){
+    const team = [];
+    for(let i=0;i<6;i++){
+      const v = (document.getElementById(`finalMon${i}`)?.value||"").trim();
+      if(v) team.push(v);
+    }
+    if(!team.length) return;
+    const playerTeam = state.locations
+      .filter(l=>l.mon && l.mon.inTeam && !l.mon.dead && !l.mon.given)
+      .map(l=>({ species:l.mon.species, nickname:l.mon.nickname }));
+    state.hallOfFame = { rivalTeam:team, playerTeam, defeatedAt:Date.now() };
+    state.bossDefeated[id] = true;
+    saveState();
+    closeSheet();
+    lastFinalRivalFlash = true;
+    render();
+    lastFinalRivalFlash = false;
+  }
+  else if(act==="undo-final-rival"){
+    openConfirmSheet("Ruhmeshalle zurücksetzen", "Wirklich den Eintrag zu diesem finalen Kampf löschen? Die eingetragenen Teams gehen dabei verloren.", "Zurücksetzen", "confirm-undo-final-rival", id);
+  }
+  else if(act==="confirm-undo-final-rival"){
+    state.bossDefeated[id] = false;
+    state.hallOfFame = { rivalTeam:[], playerTeam:[], defeatedAt:null };
+    saveState(); closeSheet(); render();
   }
   else if(act==="delete-catch"){ const loc=findLoc(id); loc.mon=null; loc.status="pending"; saveState(); closeSheet(); render(); }
   else if(act==="save-nick"){
