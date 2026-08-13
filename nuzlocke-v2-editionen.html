@@ -255,6 +255,18 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
   font-weight:800; font-size:.85rem; letter-spacing:.03em;
 }
 .pvp-actions{ display:flex; gap:8px; margin-top:12px; }
+
+.starter-card{ border-left-color:var(--evolve); }
+.starter-card.starter-resolved{ border-left-color:var(--good); }
+.starter-pick-row{ display:flex; gap:8px; margin-top:12px; }
+.starter-pick-btn{
+  flex:1; display:flex; flex-direction:column; align-items:center; gap:4px;
+  background:var(--surface-alt); border:none; border-radius:12px; padding:10px 6px;
+  font-size:.78rem; font-weight:700; color:var(--ink); text-align:center; min-width:0;
+}
+.starter-pick-btn:active{ transform:scale(.96); }
+.starter-pick-btn span{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
+.starter-pick-btn .starter-type{ font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-soft); }
 .pvp-actions .btn{ flex:1; }
 
 .card-actions{ display:flex; gap:8px; margin-top:12px; }
@@ -804,14 +816,14 @@ const SINNOH_BOSS_AFTER = {
 
 /* Fabrik für Versions-Trios: ein gemeinsamer Basis-Datensatz erzeugt mehrere GAMES-Einträge,
    mit punktuellen Level/Team-Overrides pro Version statt vollständiger Dopplung. */
-function buildVersionGames(baseBosses, regions, bossAfter, versions){
+function buildVersionGames(baseBosses, regions, bossAfter, versions, starters){
   const out = {};
   versions.forEach(v=>{
     const bosses = baseBosses.map(b=>({ ...b, id:`${v.id}-${b.id}`, ...(v.bossOverrides?.[b.id]||{}) }));
     const remap = new Map(baseBosses.map((b,i)=>[b.id, bosses[i].id]));
     const remappedAfter = {};
     Object.entries(bossAfter).forEach(([loc, ids])=>{ remappedAfter[loc] = ids.map(id=>remap.get(id)); });
-    out[v.id] = { id:v.id, label:v.label, shortLabel:v.shortLabel, regions, bosses, bossAfter:remappedAfter };
+    out[v.id] = { id:v.id, label:v.label, shortLabel:v.shortLabel, regions, bosses, bossAfter:remappedAfter, starters:v.starters||starters };
   });
   return out;
 }
@@ -828,13 +840,13 @@ const PLATIN_OVERRIDES = {
 
 /* ---------- Editionen ---------- */
 const GAMES = {
-  hgss: { id:"hgss", label:"HeartGold / SoulSilver", shortLabel:"HG/SS", regions:LOCATIONS_DEFAULT, bosses:BOSSES, bossAfter:BOSS_AFTER },
-  smaragd: { id:"smaragd", label:"Smaragd", shortLabel:"Smaragd", regions:SMARAGD_LOCATIONS, bosses:SMARAGD_BOSSES, bossAfter:SMARAGD_BOSS_AFTER },
-  "diamant-perl": { id:"diamant-perl", label:"Diamant / Perl", shortLabel:"Diamant/Perl", regions:SINNOH_LOCATIONS, bosses:SINNOH_BOSSES, bossAfter:SINNOH_BOSS_AFTER }
+  hgss: { id:"hgss", label:"HeartGold / SoulSilver", shortLabel:"HG/SS", regions:LOCATIONS_DEFAULT, bosses:BOSSES, bossAfter:BOSS_AFTER, starters:{ grass:"Endivie", fire:"Feurigel", water:"Karnimani" } },
+  smaragd: { id:"smaragd", label:"Smaragd", shortLabel:"Smaragd", regions:SMARAGD_LOCATIONS, bosses:SMARAGD_BOSSES, bossAfter:SMARAGD_BOSS_AFTER, starters:{ grass:"Geckarbor", fire:"Flemmli", water:"Hydropi" } },
+  "diamant-perl": { id:"diamant-perl", label:"Diamant / Perl", shortLabel:"Diamant/Perl", regions:SINNOH_LOCATIONS, bosses:SINNOH_BOSSES, bossAfter:SINNOH_BOSS_AFTER, starters:{ grass:"Chelast", fire:"Panflam", water:"Plinfa" } }
 };
 Object.assign(GAMES, buildVersionGames(SINNOH_BOSSES, SINNOH_LOCATIONS, SINNOH_BOSS_AFTER, [
   { id:"platin", label:"Platin", shortLabel:"Platin", bossOverrides:PLATIN_OVERRIDES }
-]));
+], { grass:"Chelast", fire:"Panflam", water:"Plinfa" }));
 function currentGame(){ return GAMES[state.edition] || GAMES.hgss; }
 function bossById(id){ return currentGame().bosses.find(b=>b.id===id); }
 
@@ -961,7 +973,8 @@ function freshState(editionId){
       });
     });
   });
-  return { edition, runTitle:"Nuzlocke", locations, bossBoosts:{}, bossDefeated:{}, rivalNickname:"", duelPartnerName:"", dupesWarning:true, lastExportAt:null, evolutionCount:0, nicknameRequired:false, pvp:{}, hallOfFame:{ rivalTeam:[], playerTeam:[], defeatedAt:null, result:null } };
+  const gameStarters = GAMES[edition].starters || { grass:"", fire:"", water:"" };
+  return { edition, runTitle:"Nuzlocke", locations, bossBoosts:{}, bossDefeated:{}, rivalNickname:"", duelPartnerName:"", dupesWarning:true, lastExportAt:null, evolutionCount:0, nicknameRequired:false, pvp:{}, hallOfFame:{ rivalTeam:[], playerTeam:[], defeatedAt:null, result:null }, starterNames:{ ...gameStarters }, starterChoice:null };
 }
 
 function normalizeState(parsed){
@@ -977,6 +990,8 @@ function normalizeState(parsed){
   if(typeof parsed.edition !== "string" || !GAMES[parsed.edition]) parsed.edition = "hgss";
   if(!parsed.hallOfFame) parsed.hallOfFame = { rivalTeam:[], playerTeam:[], defeatedAt:null, result:null };
   else if(typeof parsed.hallOfFame.result === "undefined") parsed.hallOfFame.result = null;
+  if(!parsed.starterNames) parsed.starterNames = { ...(GAMES[parsed.edition].starters || { grass:"", fire:"", water:"" }) };
+  if(typeof parsed.starterChoice === "undefined") parsed.starterChoice = null;
   return parsed;
 }
 
@@ -1095,6 +1110,7 @@ function renderHeaderTeam(){
 function renderRoutes(){
   let html = "";
   const game = currentGame();
+  html += starterCardHtml();
   game.regions.forEach(([region])=>{
     const locs = state.locations.filter(l=>l.region===region);
     if(!locs.length) return;
@@ -1152,6 +1168,96 @@ function routeCard(loc){
     </div>
     ${body}
   </div>`;
+}
+
+/* ---------- Starterwahl: Pflanze schlägt Wasser, Feuer schlägt Pflanze, Wasser schlägt Feuer ---------- */
+const STARTER_TYPES = ["grass","fire","water"];
+const STARTER_TYPE_LABELS = { grass:"Pflanze", fire:"Feuer", water:"Wasser" };
+const STARTER_RIVAL_GETS = { grass:"fire", fire:"water", water:"grass" };
+
+function mainRivalBoss(){ return currentGame().bosses.find(b=>b.group==="Rivale"); }
+function rivalDisplayName(){
+  const boss = mainRivalBoss();
+  if(!boss) return "Rivale";
+  return (state.rivalNickname||"").trim() || boss.name;
+}
+function starterNamesSet(){
+  const s = state.starterNames || {};
+  return STARTER_TYPES.every(t=>(s[t]||"").trim());
+}
+
+function starterCardHtml(){
+  const names = state.starterNames || { grass:"", fire:"", water:"" };
+  if(!starterNamesSet()){
+    return `<div class="card starter-card">
+      <div class="card-top"><div><div class="loc-name">Starterwahl</div></div></div>
+      <div class="loc-sub">Trage die drei möglichen Starter dieser Edition ein.</div>
+      <div class="card-actions"><button class="btn btn-primary btn-block" data-act="open-starter-setup">Starter eintragen</button></div>
+    </div>`;
+  }
+  if(!state.starterChoice){
+    const opts = STARTER_TYPES.map(t=>`
+      <button class="starter-pick-btn" data-act="choose-starter" data-type="${t}">
+        ${spriteImgHtml(names[t], 56)}
+        <span>${escapeHtml(names[t])}</span>
+        <span class="starter-type">${STARTER_TYPE_LABELS[t]}</span>
+      </button>`).join("");
+    return `<div class="card starter-card">
+      <div class="card-top">
+        <div><div class="loc-name">Starterwahl</div><div class="loc-sub">Welchen hast du gewählt?</div></div>
+        ${iconBtn("tone-neutral","open-starter-setup",null,ICON_EDIT,"Starter bearbeiten",false,true)}
+      </div>
+      <div class="starter-pick-row">${opts}</div>
+    </div>`;
+  }
+  const chosen = state.starterChoice;
+  const rivalType = STARTER_RIVAL_GETS[chosen];
+  const leftoverType = STARTER_TYPES.find(t=>t!==chosen && t!==rivalType);
+  return `<div class="card starter-card starter-resolved">
+    <div class="card-top">
+      <div class="mon-line">
+        ${spriteImgHtml(names[chosen], 64)}
+        <div>
+          <div class="loc-name">Dein Starter: ${escapeHtml(names[chosen])}</div>
+          <div class="loc-sub">${STARTER_TYPE_LABELS[chosen]}</div>
+        </div>
+      </div>
+      ${iconBtn("tone-neutral","undo-starter-choice",null,ICON_UNDO,"Rückgängig machen",false,true)}
+    </div>
+    <div class="loc-sub" style="margin-top:10px;">${escapeHtml(rivalDisplayName())} erhält: ${escapeHtml(names[rivalType])} (${STARTER_TYPE_LABELS[rivalType]})</div>
+    <div class="loc-sub">${escapeHtml(names[leftoverType])} (${STARTER_TYPE_LABELS[leftoverType]}) bleibt beim Professor.</div>
+  </div>`;
+}
+
+function openStarterSetupSheet(){
+  const names = state.starterNames || { grass:"", fire:"", water:"" };
+  openSheet(`
+    <h3>Starter eintragen</h3>
+    <div class="loc-sub" style="margin-bottom:12px;">Die drei möglichen Starter dieser Edition. Feld 1 = Pflanze, Feld 2 = Feuer, Feld 3 = Wasser.</div>
+    <div class="field species-picker">
+      <label for="inStarterGrass">Starter 1 · Pflanze</label>
+      <input id="inStarterGrass" value="${escapeHtml(names.grass||"")}" autocomplete="off" />
+      <div class="species-results" id="inStarterGrassResults"></div>
+    </div>
+    <div class="field species-picker">
+      <label for="inStarterFire">Starter 2 · Feuer</label>
+      <input id="inStarterFire" value="${escapeHtml(names.fire||"")}" autocomplete="off" />
+      <div class="species-results" id="inStarterFireResults"></div>
+    </div>
+    <div class="field species-picker">
+      <label for="inStarterWater">Starter 3 · Wasser</label>
+      <input id="inStarterWater" value="${escapeHtml(names.water||"")}" autocomplete="off" />
+      <div class="species-results" id="inStarterWaterResults"></div>
+    </div>
+    <div class="sheet-footer">
+      <button class="btn btn-secondary btn-block" data-act="close-sheet">Abbrechen</button>
+      <button class="btn btn-primary btn-block" data-act="save-starters">Speichern</button>
+    </div>
+  `);
+  wireSpeciesPicker("inStarterGrass","inStarterGrassResults", ()=>{});
+  wireSpeciesPicker("inStarterFire","inStarterFireResults", ()=>{});
+  wireSpeciesPicker("inStarterWater","inStarterWaterResults", ()=>{});
+  setTimeout(()=>document.getElementById("inStarterGrass").focus(), 50);
 }
 
 function renderTeam(){
@@ -1967,6 +2073,21 @@ document.addEventListener("click", e=>{
   else if(act==="save-rival-nick"){
     const v = document.getElementById("editRivalNick").value.trim().slice(0,30);
     state.rivalNickname = v; saveState(); closeSheet(); render();
+  }
+  else if(act==="open-starter-setup") openStarterSetupSheet();
+  else if(act==="save-starters"){
+    const grass = document.getElementById("inStarterGrass").value.trim().slice(0,30);
+    const fire = document.getElementById("inStarterFire").value.trim().slice(0,30);
+    const water = document.getElementById("inStarterWater").value.trim().slice(0,30);
+    state.starterNames = { grass, fire, water };
+    state.starterChoice = null;
+    saveState(); closeSheet(); render();
+  }
+  else if(act==="choose-starter"){
+    state.starterChoice = t.dataset.type; saveState(); render();
+  }
+  else if(act==="undo-starter-choice"){
+    state.starterChoice = null; saveState(); render();
   }
   else if(act==="save-location"){
     const name = document.getElementById("inLocName").value.trim();
