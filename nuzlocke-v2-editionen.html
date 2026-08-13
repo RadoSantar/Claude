@@ -405,6 +405,19 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
     100%{ box-shadow:0 0 0 0 rgba(var(--red-glow),0); filter:brightness(1) saturate(1); transform:translateX(0) translateY(3px) rotate(0deg); }
   }
   .final-rival-card.hall-of-fame-flash-loss{ animation:hallOfFameDefeat 900ms cubic-bezier(.36,.07,.19,.97); }
+
+  @keyframes confettiFall{
+    0%{ transform:translateY(-12vh) translateX(0) rotate(0deg); opacity:1; }
+    85%{ opacity:1; }
+    100%{ transform:translateY(112vh) translateX(var(--drift,0px)) rotate(var(--spin,540deg)); opacity:.85; }
+  }
+  .confetti-layer{
+    position:fixed; inset:0; z-index:60; pointer-events:none; overflow:hidden;
+  }
+  .confetti-piece{
+    position:absolute; top:0; left:0; opacity:0;
+    animation-name:confettiFall; animation-timing-function:cubic-bezier(.36,.2,.4,1); animation-fill-mode:forwards;
+  }
 }
 
 .fab{
@@ -1216,6 +1229,31 @@ function pvpCardHtml(boss){
 }
 
 /* ---------- Ruhmeshalle: finales Rivalenduell gegen den Duellpartner (nicht die Spielfigur!) nach dem Champion ---------- */
+const CONFETTI_COLORS = ["var(--gold)","var(--evolve)","var(--good)","var(--accent)","var(--red)"];
+function spawnConfetti(){
+  if(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const layer = document.createElement("div");
+  layer.className = "confetti-layer";
+  for(let i=0;i<80;i++){
+    const piece = document.createElement("span");
+    piece.className = "confetti-piece";
+    const size = 6 + Math.random()*6;
+    const round = Math.random() < 0.5;
+    piece.style.left = (Math.random()*100)+"%";
+    piece.style.width = size+"px";
+    piece.style.height = (round ? size : size*1.7)+"px";
+    piece.style.borderRadius = round ? "50%" : "2px";
+    piece.style.background = CONFETTI_COLORS[Math.floor(Math.random()*CONFETTI_COLORS.length)];
+    piece.style.animationDuration = (2.2 + Math.random()*1.6)+"s";
+    piece.style.animationDelay = (Math.random()*0.5)+"s";
+    piece.style.setProperty("--drift", (Math.random()*140-70)+"px");
+    piece.style.setProperty("--spin", (360 + Math.random()*540)+"deg");
+    layer.appendChild(piece);
+  }
+  document.body.appendChild(layer);
+  setTimeout(()=>layer.remove(), 4300);
+}
+
 function duelPartnerName(){ return (state.duelPartnerName||"").trim(); }
 function duelPartnerLabel(){ return duelPartnerName() || "deinen Duellpartner"; }
 function duelPartnerTeamLabel(){ const n = duelPartnerName(); return n ? `${n}s Team` : "Das Team deines Duellpartners"; }
@@ -1743,6 +1781,7 @@ document.addEventListener("click", e=>{
     saveState();
     closeSheet();
     lastFinalRivalFlash = true;
+    if(result==="win") spawnConfetti();
     render();
     lastFinalRivalFlash = false;
   }
