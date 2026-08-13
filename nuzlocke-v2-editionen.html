@@ -1206,7 +1206,7 @@ function pvpKey(bossId){ return "pvp-"+bossId; }
 function pvpTitle(prefix){
   const label = prefix || "Rivalenduell";
   const partner = duelPartnerName();
-  return partner ? `${label} gegen "${escapeHtml(partner)}"` : label;
+  return partner ? `${label} gegen ${escapeHtml(partner)}` : label;
 }
 
 function pvpCardHtml(boss){
