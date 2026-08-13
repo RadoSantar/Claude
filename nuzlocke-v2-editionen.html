@@ -860,7 +860,8 @@ const SMARAGD_LOCATIONS = [
     "Route 132","Route 133","Route 134",
     {name:"Prachtpolis City", note:"Nur Surfen, Angeln."},
     {name:"Siegelkammer", note:"Keine wilden Pokémon (nur Braille-Rätsel).", noCatch:true},
-    "Siegesstraße"
+    "Siegesstraße",
+    {name:"Pokémon-Liga", note:"Keine wilden Pokémon (nur Top-Vier-Kämpfe).", noCatch:true}
   ]]
 ];
 
@@ -882,7 +883,7 @@ const SMARAGD_BOSS_AFTER = {
   "Hoenn|Route 126": ["sm-tateliza","sm-maxie3","sm-tabitha3"],
   "Hoenn|Tiefseehöhle": ["sm-archie","sm-shelly2"],
   "Hoenn|Route 128": ["sm-juan"],
-  "Hoenn|Siegesstraße": ["sm-wally2","sm-e4-ulrich","sm-e4-antonia","sm-e4-frosina","sm-e4-dragan","sm-champion","sm-duel-final"]
+  "Hoenn|Pokémon-Liga": ["sm-wally2","sm-e4-ulrich","sm-e4-antonia","sm-e4-frosina","sm-e4-dragan","sm-champion","sm-duel-final"]
 };
 
 /* ---------- Sinnoh (Diamant/Perl/Platin) ---------- */
@@ -921,8 +922,98 @@ const SINNOH_BOSSES = [
   { id:"duel-final", cls:"Finale", place:"Pokémon-Liga", group:"Duell", final:true }
 ];
 
+/* Basis-Standortliste, gemeinsam für Diamant/Perl. Platin bekommt über PLATIN_LOCATIONS zwei
+   echte Exklusiv-Orte (Zerrwelt, Eisenruinen) dazu - siehe buildVersionGames()-Aufruf unten, das
+   Regions-Override-Feld (v.regions) macht das für zukünftige Editionen mit Versions-exklusiven
+   Orten generell nutzbar, ohne die Fabrik selbst anzufassen. */
 const SINNOH_LOCATIONS = [
-  ["Sinnoh",["Route 201","Route 202","Route 203","Route 204","Ewigwald","Route 205","Route 206","Route 207","Route 208","Route 209","Route 210","Route 211","Route 212","Route 213","Route 214","Route 215","Route 216","Route 217","Route 218","Route 219","Route 220","Route 221","Kraterberg","Route 222","Route 223","Siegesstraße"]]
+  ["Sinnoh",[
+    {name:"Zweiblattdorf", note:"Keine wilden Pokémon.", noCatch:true},
+    "Route 201",
+    {name:"See der Wahrheit", note:"Inkl. Mesprit (Story-Event, Verity-Grotte)."},
+    {name:"Sandgemme", note:"Keine wilden Pokémon.", noCatch:true},
+    "Route 202",
+    {name:"Jubelstadt", note:"Keine wilden Pokémon.", noCatch:true},
+    "Route 203",
+    "Erzelingen-Tor",
+    {name:"Erzelingen", note:"Keine wilden Pokémon.", noCatch:true},
+    "Erzelingen-Mine","Route 204","Verwüsteter Pfad",
+    {name:"Flori", note:"Keine wilden Pokémon.", noCatch:true},
+    {name:"Auen von Flori", note:"Nur Honigbaum."},
+    {name:"Windkraftwerk", note:"Inkl. wöchentlichem Drifloon (freitags, nach Mars-Kampf)."},
+    "Feuriohütte","Ewigwald",
+    {name:"Alte Villa", note:"Inkl. Rotom (2F, nachts)."},
+    "Route 205",
+    {name:"Ewigenau", note:"Keine wilden Pokémon.", noCatch:true},
+    "Route 206",
+    {name:"Bizarre Höhle", note:"Einziger Wildfundort von Kaumalat in Sinnoh."},
+    "Route 207","Route 208",
+    {name:"Herzhofen", note:"Keine wilden Pokémon.", noCatch:true},
+    {name:"Platz der Treue", note:"Keine wilden Pokémon (nur eigenes Team spazieren führen).", noCatch:true},
+    "Route 209",
+    {name:"Turm der Ruhenden"},
+    {name:"Trostu", note:"Keine wilden Pokémon.", noCatch:true},
+    {name:"Trostu-Ruinen", note:"Nur Icognito (alle Formen)."},
+    "Route 210",
+    {name:"Elyses", note:"Keine wilden Pokémon.", noCatch:true},
+    "Route 211","Route 212",
+    {name:"Pokémon-Landgut", note:"Keine wilden Pokémon (Trophäengarten liegt dahinter).", noCatch:true},
+    {name:"Trophäengarten", note:"Täglich rotierendes Sonderpokémon von Herrn Backlot (nach Nationaldex)."},
+    "Route 213",
+    {name:"Weideburg", note:"Keine wilden Pokémon.", noCatch:true},
+    {name:"Großmoor", note:"Safari-Fänge (eigene Bälle, 6 Zonen)."},
+    "Route 214",
+    {name:"Maniac-Tunnel", note:"Nur Icognito (+ Hippopotas je mehr Formen gesehen wurden)."},
+    {name:"Frühlingspfad", note:"Keine wilden Pokémon (reiner Verbindungsweg).", noCatch:true},
+    "Scheidequelle",
+    {name:"Höhle der Umkehr", note:"Inkl. Static-Giratina (Herkunftsform)."},
+    "Kühnheitsufer",
+    {name:"See der Kühnheit", note:"Inkl. Azelf (Story-Event, Kühnheits-Grotte)."},
+    "Route 215",
+    {name:"Schleiede", note:"Keine wilden Pokémon.", noCatch:true},
+    "Route 216","Route 217","Stärkeufer",
+    {name:"See der Stärke", note:"Inkl. Uxie (Story-Event, Stärke-Grotte)."},
+    {name:"Blizzach", note:"Keine wilden Pokémon.", noCatch:true},
+    {name:"Blizzach-Tempel", note:"Inkl. Static-Regigigas (Regirock/Regice/Registeel im Team nötig)."},
+    "Route 218",
+    {name:"Fleetburg", note:"Keine wilden Pokémon.", noCatch:true},
+    {name:"Eiseninsel", note:"Geschenk: Riolu von Riley."},
+    {name:"Vollmond-Insel", note:"Keine wilden Pokémon (Cresselia hier nicht fangbar).", noCatch:true},
+    {name:"Neumond-Insel", note:"Nur Darkrai (Event: Mitgliedskarte nötig)."},
+    "Route 219","Route 220","Route 221",
+    {name:"Kraterberg", note:"Inkl. Dialga oder Palkia (Story-Event, Speersäule) + Feebas (Seetiles B1F)."},
+    "Route 222",
+    {name:"Sonnewik", note:"Keine wilden Pokémon.", noCatch:true},
+    "Route 223","Siegesstraße",
+    {name:"Pokémon-Liga", note:"Keine wilden Pokémon (nur Top-Vier-Kämpfe).", noCatch:true},
+    "Route 224",
+    {name:"Buhnenpfad", note:"Keine wilden Pokémon (reiner Verbindungsweg, nur mit Event-Item zugänglich).", noCatch:true},
+    {name:"Blumenparadies", note:"Nur Shaymin (Event: Oaks Brief nötig)."},
+    {name:"Kampfareal", note:"Keine wilden Pokémon.", noCatch:true},
+    "Route 225",
+    {name:"Überlebensareal", note:"Keine wilden Pokémon.", noCatch:true},
+    "Route 226","Route 227",
+    {name:"Kahlberg", note:"Inkl. Static-Heatran (innerste Kammer)."},
+    "Route 228","Route 229",
+    {name:"Erholungsareal", note:"Nur Angeln."},
+    "Route 230"
+  ]]
+];
+
+/* Platin-exklusiv: Zerrwelt (Zugang nach dem Kraterberg-Story-Kampf) und die Eisenruinen
+   (Registeel-Schrein) existieren in Diamant/Perl nicht als begehbare Orte. */
+const PLATIN_LOCATIONS = [
+  ["Sinnoh", (function(){
+    const base = SINNOH_LOCATIONS[0][1].slice();
+    const withZerrwelt = [];
+    base.forEach(entry=>{
+      withZerrwelt.push(entry);
+      const name = typeof entry === "string" ? entry : entry.name;
+      if(name==="Kraterberg") withZerrwelt.push({name:"Zerrwelt", note:"Nur Static-Giratina (Herkunftsform)."});
+      if(name==="Eiseninsel") withZerrwelt.push({name:"Eisenruinen", note:"Nur Static-Registeel (benötigt Regigigas im Team)."});
+    });
+    return withZerrwelt;
+  })() ]
 ];
 
 const SINNOH_BOSS_AFTER = {
@@ -941,7 +1032,7 @@ const SINNOH_BOSS_AFTER = {
   "Sinnoh|Route 220": ["cyrus1"],
   "Sinnoh|Route 222": ["volkner"],
   "Sinnoh|Kraterberg": ["cyrus2"],
-  "Sinnoh|Siegesstraße": ["rival5","e4-herbaro","e4-teresa","e4-ignaz","e4-lucian","champion","duel-final"]
+  "Sinnoh|Pokémon-Liga": ["rival5","e4-herbaro","e4-teresa","e4-ignaz","e4-lucian","champion","duel-final"]
 };
 
 /* Fabrik für Versions-Trios: ein gemeinsamer Basis-Datensatz erzeugt mehrere GAMES-Einträge,
@@ -953,7 +1044,7 @@ function buildVersionGames(baseBosses, regions, bossAfter, versions, starters){
     const remap = new Map(baseBosses.map((b,i)=>[b.id, bosses[i].id]));
     const remappedAfter = {};
     Object.entries(bossAfter).forEach(([loc, ids])=>{ remappedAfter[loc] = ids.map(id=>remap.get(id)); });
-    out[v.id] = { id:v.id, label:v.label, shortLabel:v.shortLabel, regions, bosses, bossAfter:remappedAfter, starters:v.starters||starters };
+    out[v.id] = { id:v.id, label:v.label, shortLabel:v.shortLabel, regions:v.regions||regions, bosses, bossAfter:remappedAfter, starters:v.starters||starters };
   });
   return out;
 }
@@ -975,7 +1066,7 @@ const GAMES = {
   "diamant-perl": { id:"diamant-perl", label:"Diamant / Perl", shortLabel:"Diamant/Perl", regions:SINNOH_LOCATIONS, bosses:SINNOH_BOSSES, bossAfter:SINNOH_BOSS_AFTER, starters:{ grass:"Chelast", fire:"Panflam", water:"Plinfa" } }
 };
 Object.assign(GAMES, buildVersionGames(SINNOH_BOSSES, SINNOH_LOCATIONS, SINNOH_BOSS_AFTER, [
-  { id:"platin", label:"Platin", shortLabel:"Platin", bossOverrides:PLATIN_OVERRIDES }
+  { id:"platin", label:"Platin", shortLabel:"Platin", bossOverrides:PLATIN_OVERRIDES, regions:PLATIN_LOCATIONS }
 ], { grass:"Chelast", fire:"Panflam", water:"Plinfa" }));
 function currentGame(){ return GAMES[state.edition] || GAMES.hgss; }
 function bossById(id){ return currentGame().bosses.find(b=>b.id===id); }
