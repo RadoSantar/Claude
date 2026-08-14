@@ -2226,6 +2226,13 @@ function renderSettings(){
     <div class="loc-name">Mehrere Runs</div>
     <div class="loc-sub" style="margin-bottom:10px;">Zwischen Spielständen wechseln oder einen neuen anlegen, ohne den aktuellen zu verlieren.</div>
     <button class="btn btn-primary btn-block" data-act="open-saves-sheet">Spielstände verwalten</button>
+  </div>
+  <div class="card">
+    <div class="loc-name">Sichern &amp; Zurücksetzen</div>
+    <div class="loc-sub" style="margin-bottom:10px;">Zuletzt exportiert: ${formatRelativeTime(state.lastExportAt)}</div>
+    <button class="btn btn-secondary btn-block" style="margin-bottom:8px;" data-act="export-data">Fortschritt exportieren (JSON)</button>
+    <button class="btn btn-secondary btn-block" style="margin-bottom:8px;" data-act="import-data">Fortschritt importieren</button>
+    <button class="btn btn-danger btn-block" data-act="reset-run">Run zurücksetzen</button>
   </div>`);
 
   html += settingsGroupHtml("duel-bosses", "Duell & Bosse", `
@@ -2275,15 +2282,6 @@ function renderSettings(){
     <div class="loc-name">Pokédex</div>
     <div class="loc-sub">Typen-Rechner &amp; Nachschlagewerk öffnen</div>
     <a class="btn btn-primary btn-block" style="display:flex; align-items:center; justify-content:center; margin-top:12px; text-decoration:none;" href="https://dexora.adrianhoppler.chatgpt.site/" target="_blank" rel="noopener noreferrer">Pokédex öffnen</a>
-  </div>`);
-
-  html += settingsGroupHtml("data", "Daten", `
-  <div class="card">
-    <div class="loc-name">Sichern &amp; Zurücksetzen</div>
-    <div class="loc-sub" style="margin-bottom:10px;">Zuletzt exportiert: ${formatRelativeTime(state.lastExportAt)}</div>
-    <button class="btn btn-secondary btn-block" style="margin-bottom:8px;" data-act="export-data">Fortschritt exportieren (JSON)</button>
-    <button class="btn btn-secondary btn-block" style="margin-bottom:8px;" data-act="import-data">Fortschritt importieren</button>
-    <button class="btn btn-danger btn-block" data-act="reset-run">Run zurücksetzen</button>
   </div>`);
 
   html += settingsGroupHtml("app-info", "App-Info", `
