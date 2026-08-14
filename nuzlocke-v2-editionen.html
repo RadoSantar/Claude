@@ -143,18 +143,18 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 }
 .icon-btn:active{ transform:scale(.92); }
 .icon-btn svg{ width:19px; height:19px; stroke:var(--ink-soft); fill:none; stroke-width:1.8; }
-.stats-row{
-  display:flex; gap:8px; margin-top:12px; flex-wrap:wrap;
+.stat-grid{
+  display:grid; grid-template-columns:repeat(2, 1fr); gap:8px; margin-top:12px;
 }
-.stat-pill{
-  font-family:var(--font-mono); font-variant-numeric:tabular-nums; font-size:.78rem;
-  background:var(--surface); border:1px solid var(--line); border-radius:999px;
-  padding:6px 12px; white-space:nowrap; color:var(--ink-soft); display:flex; gap:6px; align-items:center;
+.stat-tile{
+  background:var(--surface-alt); border-radius:12px; padding:10px 12px;
+  display:flex; flex-direction:column; gap:3px; min-width:0;
 }
-.stat-pill b{ color:var(--ink); font-weight:700; }
-.stat-pill.dot-good b{ color:var(--good); }
-.stat-pill.dot-red b{ color:var(--red); }
-.stat-pill.dot-gold b{ color:var(--accent); }
+.stat-tile .stat-label{ font-size:.72rem; font-weight:600; color:var(--ink-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.stat-tile .stat-value{ font-family:var(--font-mono); font-variant-numeric:tabular-nums; font-size:1.2rem; font-weight:700; color:var(--ink); }
+.stat-tile.dot-good .stat-value{ color:var(--good); }
+.stat-tile.dot-red .stat-value{ color:var(--red); }
+.stat-tile.dot-gold .stat-value{ color:var(--accent); }
 .progress-label-row{
   display:flex; align-items:baseline; justify-content:space-between; margin-top:14px;
   font-size:.78rem; font-weight:700; color:var(--ink-soft);
@@ -191,6 +191,11 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
   font-family:var(--font-display); font-size:.72rem; font-weight:700; letter-spacing:.08em;
   text-transform:uppercase; color:var(--ink-soft); padding:14px 2px 8px;
 }
+.settings-group-header{
+  display:flex; align-items:center; justify-content:space-between; width:100%;
+  border:none; background:none;
+}
+.settings-group-header .collapse-chevron{ flex:none; stroke:var(--ink-soft); }
 .card{
   background:var(--surface); border-radius:var(--radius); box-shadow:var(--shadow);
   padding:14px; margin-bottom:10px; border-left:4px solid var(--line);
@@ -1212,6 +1217,7 @@ let lastDefeatedId = null;
 let lastFinalRivalFlash = false;
 let pendingCatchData = null;
 let expandedRegions = new Set(); // welche Regionen ihre abgeschlossene Historie ausgeklappt haben - bewusst nicht persistiert, jeder Reload startet eingeklappt
+let expandedSettingsGroups = new Set(); // welche Einstellungs-Gruppen aufgeklappt sind - ebenfalls nicht persistiert, "Fortschritt" bleibt immer sichtbar
 
 function performCatch(id, species, nick){
   const loc = findLoc(id);
@@ -1417,23 +1423,31 @@ function completionPercent(){
   return total ? Math.round((locsDone+bossesDone)/total*100) : 0;
 }
 
+function statTileHtml(tone, label, value){
+  return `<div class="stat-tile ${tone||""}">
+    <span class="stat-label">${escapeHtml(label)}</span>
+    <span class="stat-value">${escapeHtml(String(value))}</span>
+  </div>`;
+}
+
 function statsCardHtml(){
   const pct = completionPercent();
   const caught = aliveCount()+deadCount();
   const survivalRate = caught>0 ? Math.round(aliveCount()/caught*100) : null;
   const bossesDefeated = currentGame().bosses.filter(b=>isBossDefeated(b.id)).length;
   const duelTally = rivalDuelTally();
+  const tiles = [
+    statTileHtml("", "Gefangen", caught),
+    statTileHtml("dot-red", "Gestorben", deadCount()),
+    statTileHtml("dot-good", "Überlebensrate", survivalRate===null?"–":survivalRate+"%"),
+    statTileHtml("dot-gold", "Bosse besiegt", `${bossesDefeated}/${currentGame().bosses.length}`),
+    statTileHtml("", "Entwicklungen", state.evolutionCount||0),
+    statTileHtml("dot-good", "Duelle gewonnen", duelTally.wins),
+    statTileHtml("dot-red", "Duelle verloren", duelTally.losses),
+  ].join("");
   return `<div class="card">
     <div class="loc-name" style="margin-bottom:10px;">Statistik</div>
-    <div class="stats-row">
-      <span class="stat-pill">Gefangen <b>${caught}</b></span>
-      <span class="stat-pill dot-red">Gestorben <b>${deadCount()}</b></span>
-      <span class="stat-pill dot-good">Überlebensrate <b>${survivalRate===null?"–":survivalRate+"%"}</b></span>
-      <span class="stat-pill dot-gold">Bosse besiegt <b>${bossesDefeated}/${currentGame().bosses.length}</b></span>
-      <span class="stat-pill">Entwicklungen <b>${state.evolutionCount||0}</b></span>
-      <span class="stat-pill dot-good">Rivalenduelle gewonnen <b>${duelTally.wins}</b></span>
-      <span class="stat-pill dot-red">Rivalenduelle verloren <b>${duelTally.losses}</b></span>
-    </div>
+    <div class="stat-grid">${tiles}</div>
     <div class="progress-label-row">
       <span>Gesamtabschluss</span>
       <span class="progress-pct">${pct}%</span>
@@ -2079,14 +2093,24 @@ function hallOfFameCardHtml(){
   </div>`;
 }
 
+function settingsGroupHtml(key, label, bodyHtml){
+  const expanded = expandedSettingsGroups.has(key);
+  const header = `<button class="region-header settings-group-header" data-act="toggle-settings-group" data-group="${key}">
+    <span>${escapeHtml(label)}</span>
+    <svg class="collapse-chevron${expanded?" open":""}" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
+  </button>`;
+  return header + (expanded ? bodyHtml : "");
+}
+
 function renderSettings(){
   const percents = currentGame().bosses.map(b=>bossPercent(b.id));
   const min = Math.min(...percents), max = Math.max(...percents);
   const percentLabel = min===max ? `${min>0?'+':''}${min}%` : `${min}%–${max}%`;
   const eff = effectiveTheme();
-  const html = `<div class="region-header">Fortschritt</div>`
-  + statsCardHtml() + hallOfFameCardHtml()
-  + `<div class="region-header">Duell &amp; Bosse</div>
+
+  let html = `<div class="region-header">Fortschritt</div>` + statsCardHtml() + hallOfFameCardHtml();
+
+  html += settingsGroupHtml("duel-bosses", "Duell & Bosse", `
   <div class="card">
     <div class="loc-name">Duellpartner</div>
     <div class="loc-sub" style="margin-bottom:10px;">Name für die Rivalenduelle gegen deine:n echte:n Duellpartner:in (nicht die Spielfigur) – wird u. a. in der Ruhmeshalle verwendet.</div>
@@ -2104,8 +2128,9 @@ function renderSettings(){
       <button class="btn btn-secondary" data-act="boss-dec-all">-5% Alle</button>
       <button class="btn btn-primary" data-act="boss-inc-all">+5% Alle</button>
     </div>
-  </div>
-  <div class="region-header">Regeln</div>
+  </div>`);
+
+  html += settingsGroupHtml("rules", "Regeln", `
   <div class="card">
     <div class="loc-name">Dupes-Clause-Warnung</div>
     <div class="loc-sub">Warnt beim Fangen, wenn die Spezies schon existiert (Team/Box/Friedhof)</div>
@@ -2115,8 +2140,9 @@ function renderSettings(){
     <div class="loc-name">Nickname-Pflicht</div>
     <div class="loc-sub">Erzwingt einen Spitznamen beim Fangen eines Pokémon</div>
     <button class="btn ${state.nicknameRequired?"btn-primary":"btn-secondary"} btn-block" style="margin-top:10px;" data-act="toggle-nickname-required">${state.nicknameRequired?"Aktiviert":"Deaktiviert"}</button>
-  </div>
-  <div class="region-header">Darstellung</div>
+  </div>`);
+
+  html += settingsGroupHtml("appearance", "Darstellung", `
   <div class="card">
     <div class="loc-name">Farbschema</div>
     <div class="loc-sub" style="margin-bottom:10px;">Hell oder dunkel wählen</div>
@@ -2124,26 +2150,30 @@ function renderSettings(){
       <button class="btn ${eff==="light"?"btn-primary":"btn-secondary"}" data-act="set-theme" data-id="light">Hell</button>
       <button class="btn ${eff==="dark"?"btn-primary":"btn-secondary"}" data-act="set-theme" data-id="dark">Dunkel</button>
     </div>
-  </div>
-  <div class="region-header">Werkzeuge</div>
+  </div>`);
+
+  html += settingsGroupHtml("tools", "Werkzeuge", `
   <div class="card">
     <div class="loc-name">Pokédex</div>
     <div class="loc-sub">Typen-Rechner &amp; Nachschlagewerk öffnen</div>
     <a class="btn btn-primary btn-block" style="display:flex; align-items:center; justify-content:center; margin-top:12px; text-decoration:none;" href="https://dexora.adrianhoppler.chatgpt.site/" target="_blank" rel="noopener noreferrer">Pokédex öffnen</a>
-  </div>
-  <div class="region-header">Daten</div>
+  </div>`);
+
+  html += settingsGroupHtml("data", "Daten", `
   <div class="card">
     <div class="loc-name">Sichern &amp; Zurücksetzen</div>
     <div class="loc-sub" style="margin-bottom:10px;">Zuletzt exportiert: ${formatRelativeTime(state.lastExportAt)}</div>
     <button class="btn btn-secondary btn-block" style="margin-bottom:8px;" data-act="export-data">Fortschritt exportieren (JSON)</button>
     <button class="btn btn-secondary btn-block" style="margin-bottom:8px;" data-act="import-data">Fortschritt importieren</button>
     <button class="btn btn-danger btn-block" data-act="reset-run">Run zurücksetzen</button>
-  </div>
-  <div class="region-header">App-Info</div>
+  </div>`);
+
+  html += settingsGroupHtml("app-info", "App-Info", `
   <div class="card">
     <div class="loc-name">Nuzlocke</div>
     <div class="loc-sub">Version ${escapeHtml(APP_VERSION)}</div>
-  </div>`;
+  </div>`);
+
   document.getElementById("content").innerHTML = html;
 }
 
@@ -2566,6 +2596,11 @@ document.addEventListener("click", e=>{
   else if(act==="toggle-region-collapse"){
     const key = t.dataset.region;
     if(expandedRegions.has(key)) expandedRegions.delete(key); else expandedRegions.add(key);
+    render();
+  }
+  else if(act==="toggle-settings-group"){
+    const key = t.dataset.group;
+    if(expandedSettingsGroups.has(key)) expandedSettingsGroups.delete(key); else expandedSettingsGroups.add(key);
     render();
   }
   else if(act==="jump-to-current-loc"){
