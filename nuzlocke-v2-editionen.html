@@ -1753,8 +1753,8 @@ function routeCard(loc, isCurrent){
           ${loc.mon.nickname ? `<div class="mon-species">${escapeHtml(loc.mon.species)}</div>` : ""}
         </div>
       `)}
-      ${monActionsHtml(loc)}
-    </div>`;
+    </div>
+    ${monActionsHtml(loc)}`;
   }
   return `<div class="card ${cardClass(loc)}" data-loc="${loc.id}"${currentAttr}>
     <div class="card-top">
