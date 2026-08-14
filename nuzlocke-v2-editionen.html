@@ -196,6 +196,14 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
   border:none; background:none;
 }
 .settings-group-header .collapse-chevron{ flex:none; stroke:var(--ink-soft); }
+.settings-group-body{
+  display:grid; grid-template-rows:0fr; transition:grid-template-rows .32s cubic-bezier(.4,0,.2,1);
+}
+.settings-group-body.expanded{ grid-template-rows:1fr; }
+.settings-group-body-inner{ overflow:hidden; min-height:0; }
+@media (prefers-reduced-motion: reduce){
+  .settings-group-body{ transition:none; }
+}
 .card{
   background:var(--surface); border-radius:var(--radius); box-shadow:var(--shadow);
   padding:14px; margin-bottom:10px; border-left:4px solid var(--line);
@@ -2210,7 +2218,15 @@ function settingsGroupHtml(key, label, bodyHtml){
     <span>${escapeHtml(label)}</span>
     <svg class="collapse-chevron${expanded?" open":""}" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
   </button>`;
-  return header + (expanded ? bodyHtml : "");
+  /* Der Inhalt liegt immer im DOM (statt bei expanded:false komplett wegzulassen) und wird über
+     grid-template-rows 0fr<->1fr auf- bzw. zugefahren - das braucht keine bekannte/gemessene Höhe
+     und funktioniert damit auch bei variabel langem Karteninhalt. Wichtig: der Klick-Handler für
+     toggle-settings-group ruft bewusst NICHT render() auf, sondern schaltet die Klasse direkt am
+     bestehenden DOM-Knoten um - ein volles innerHTML-Replacement würde das Element neu erzeugen,
+     bevor der Browser die alte Höhe als Ausgangspunkt für die Transition sehen kann, wodurch keine
+     Animation sichtbar wäre, sondern nur ein sofortiges Umschalten. */
+  const body = `<div class="settings-group-body${expanded?" expanded":""}" data-group-body="${key}"${expanded?"":" inert"}><div class="settings-group-body-inner">${bodyHtml}</div></div>`;
+  return header + body;
 }
 
 function renderSettings(){
@@ -2741,8 +2757,12 @@ document.addEventListener("click", e=>{
   }
   else if(act==="toggle-settings-group"){
     const key = t.dataset.group;
-    if(expandedSettingsGroups.has(key)) expandedSettingsGroups.delete(key); else expandedSettingsGroups.add(key);
-    render();
+    const willExpand = !expandedSettingsGroups.has(key);
+    if(willExpand) expandedSettingsGroups.add(key); else expandedSettingsGroups.delete(key);
+    const bodyEl = document.querySelector(`[data-group-body="${key}"]`);
+    if(bodyEl){ bodyEl.classList.toggle("expanded", willExpand); bodyEl.toggleAttribute("inert", !willExpand); }
+    const chevron = t.querySelector(".collapse-chevron");
+    if(chevron) chevron.classList.toggle("open", willExpand);
   }
   else if(act==="jump-to-current-loc"){
     const id = t.dataset.target;
