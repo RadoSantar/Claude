@@ -1068,6 +1068,13 @@ const PLATIN_OVERRIDES = {
    3. BOSS_AFTER-Map (welcher Standort blendet welche Bosse ein).
    4. starters:{grass,fire,water} (Vorbelegung für die Starterwahl-Karte).
    5. theme:{light,dark} (Akzentfarben; wird unten automatisch zu CSS - siehe injectEditionThemeCSS()).
+      Bei einem zusammengefassten Versionspaar (zwei Spiele zu einer Edition wie HG/SS oder
+      Diamant/Perl): NICHT beide Versionen mit derselben Farbfamilie in nur unterschiedlicher
+      Helligkeit abbilden. Stattdessen festlegen, welche Version den Hell-Modus und welche den
+      Dunkel-Modus repräsentiert, und deren jeweils eigene Farbidentität dafür nutzen (siehe HG/SS:
+      Hell = silbern/SoulSilver, Dunkel = golden/HeartGold; Diamant/Perl: Hell = rosé/Perl,
+      Dunkel = blau/Diamant). Kein zusätzlicher Umschalter nötig, folgt dem bestehenden
+      Hell/Dunkel-Toggle der App.
    6. Trainer-Sprites in BOSS_SPRITES ergänzen (Bulbagarden-Archives-Workflow, siehe README/Notizen).
    Danach validate-editions.js (im Repo) laufen lassen, bevor veröffentlicht wird. */
 const GAMES = {
