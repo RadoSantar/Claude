@@ -2224,15 +2224,11 @@ function renderSettings(){
   html += settingsGroupHtml("saves", "Spielstände", `
   <div class="card">
     <div class="loc-name">Mehrere Runs</div>
-    <div class="loc-sub" style="margin-bottom:10px;">Zwischen Spielständen wechseln oder einen neuen anlegen, ohne den aktuellen zu verlieren.</div>
-    <button class="btn btn-primary btn-block" data-act="open-saves-sheet">Spielstände verwalten</button>
-  </div>
-  <div class="card">
-    <div class="loc-name">Sichern &amp; Zurücksetzen</div>
-    <div class="loc-sub" style="margin-bottom:10px;">Zuletzt exportiert: ${formatRelativeTime(state.lastExportAt)}</div>
+    <div class="loc-sub" style="margin-bottom:10px;">Zwischen Spielständen wechseln oder einen neuen anlegen, ohne den aktuellen zu verlieren. Zuletzt exportiert: ${formatRelativeTime(state.lastExportAt)}</div>
+    <button class="btn btn-primary btn-block" style="margin-bottom:8px;" data-act="open-saves-sheet">Spielstände verwalten</button>
     <button class="btn btn-secondary btn-block" style="margin-bottom:8px;" data-act="export-data">Fortschritt exportieren (JSON)</button>
     <button class="btn btn-secondary btn-block" style="margin-bottom:8px;" data-act="import-data">Fortschritt importieren</button>
-    <button class="btn btn-danger btn-block" data-act="reset-run">Run zurücksetzen</button>
+    <button class="btn btn-danger btn-block" data-act="reset-run">Aktuellen Spielstand zurücksetzen</button>
   </div>`);
 
   html += settingsGroupHtml("duel-bosses", "Duell & Bosse", `
@@ -2835,7 +2831,7 @@ document.addEventListener("click", e=>{
     saveState(); render();
   }
   else if(act==="reset-run"){
-    openConfirmSheet("Run zurücksetzen", "Wirklich den gesamten Run zurücksetzen? Das kann nicht rückgängig gemacht werden.", "Zurücksetzen", "confirm-reset-run");
+    openConfirmSheet("Spielstand zurücksetzen", "Wirklich den gesamten Fortschritt dieses Spielstands zurücksetzen? Er bleibt als Spielstand erhalten, startet aber wieder bei null. Das kann nicht rückgängig gemacht werden.", "Zurücksetzen", "confirm-reset-run");
   }
   else if(act==="confirm-reset-run"){
     state = freshState(state.edition); saveState(); closeSheet(); render();
