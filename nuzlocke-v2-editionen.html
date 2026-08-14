@@ -1437,13 +1437,14 @@ function statsCardHtml(){
   const bossesDefeated = currentGame().bosses.filter(b=>isBossDefeated(b.id)).length;
   const duelTally = rivalDuelTally();
   const tiles = [
-    statTileHtml("", "Gefangen", caught),
-    statTileHtml("dot-red", "Gestorben", deadCount()),
+    // Reihenfolge: positiv (grün) -> neutral (weiß) -> negativ (rot) -> Fortschritt (gold)
     statTileHtml("dot-good", "Überlebensrate", survivalRate===null?"–":survivalRate+"%"),
-    statTileHtml("dot-gold", "Bosse besiegt", `${bossesDefeated}/${currentGame().bosses.length}`),
-    statTileHtml("", "Entwicklungen", state.evolutionCount||0),
     statTileHtml("dot-good", "Duelle gewonnen", duelTally.wins),
+    statTileHtml("", "Gefangen", caught),
+    statTileHtml("", "Entwicklungen", state.evolutionCount||0),
+    statTileHtml("dot-red", "Gestorben", deadCount()),
     statTileHtml("dot-red", "Duelle verloren", duelTally.losses),
+    statTileHtml("dot-gold", "Bosse besiegt", `${bossesDefeated}/${currentGame().bosses.length}`),
   ].join("");
   return `<div class="card">
     <div class="loc-name" style="margin-bottom:10px;">Statistik</div>
