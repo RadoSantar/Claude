@@ -196,13 +196,17 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
   border:none; background:none;
 }
 .settings-group-header .collapse-chevron{ flex:none; stroke:var(--ink-soft); }
-.settings-group-body{
+/* Wiederverwendete Auf-/Zuklapp-Animation für alles Einklappbare (Einstellungs-Gruppen, erledigte
+   Standort-Blöcke im Routen-Tab, ...): Inhalt bleibt immer im DOM, grid-template-rows animiert
+   zwischen 0fr und 1fr - braucht keine bekannte/gemessene Höhe, funktioniert also unabhängig von
+   variabel langem Karteninhalt. */
+.collapsible-body{
   display:grid; grid-template-rows:0fr; transition:grid-template-rows .32s cubic-bezier(.4,0,.2,1);
 }
-.settings-group-body.expanded{ grid-template-rows:1fr; }
-.settings-group-body-inner{ overflow:hidden; min-height:0; }
+.collapsible-body.expanded{ grid-template-rows:1fr; }
+.collapsible-body-inner{ overflow:hidden; min-height:0; }
 @media (prefers-reduced-motion: reduce){
-  .settings-group-body{ transition:none; }
+  .collapsible-body{ transition:none; }
 }
 .card{
   background:var(--surface); border-radius:var(--radius); box-shadow:var(--shadow);
@@ -1608,11 +1612,13 @@ function locationBlockHtml(loc, region, game, isCurrent){
   return html;
 }
 
-function collapseToggleHtml(segKey, count, expanded){
-  return `<button class="collapse-toggle" data-act="toggle-region-collapse" data-region="${segKey}">
+function collapseToggleHtml(segKey, count, expanded, bodyHtml){
+  const toggle = `<button class="collapse-toggle" data-act="toggle-region-collapse" data-region="${segKey}" data-count="${count}">
     <svg class="collapse-chevron${expanded?" open":""}" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
     <span>${count} abgeschlossene ${count===1?"Standort":"Standorte"} ${expanded?"ausblenden":"anzeigen"}</span>
   </button>`;
+  const body = `<div class="collapsible-body${expanded?" expanded":""}" data-collapse-body="${segKey}"${expanded?"":" inert"}><div class="collapsible-body-inner">${bodyHtml}</div></div>`;
+  return toggle + body;
 }
 
 /* Der Standort, zu dem der "Zum aktuellen Standort"-Button springt: die manuelle Markierung
@@ -1682,10 +1688,9 @@ function renderRoutes(){
         const collapseEnd = j-2;
         const segKey = `${regionKey}-${i}`;
         const expanded = expandedRegions.has(segKey);
-        html += collapseToggleHtml(segKey, collapseEnd-i, expanded);
-        if(expanded){
-          for(let k=i;k<collapseEnd;k++) html += locationBlockHtml(locs[k], region, game, locs[k].id===currentId);
-        }
+        let collapsedBody = "";
+        for(let k=i;k<collapseEnd;k++) collapsedBody += locationBlockHtml(locs[k], region, game, locs[k].id===currentId);
+        html += collapseToggleHtml(segKey, collapseEnd-i, expanded, collapsedBody);
         for(let k=collapseEnd;k<j;k++) html += locationBlockHtml(locs[k], region, game, locs[k].id===currentId);
       } else {
         for(let k=i;k<j;k++) html += locationBlockHtml(locs[k], region, game, locs[k].id===currentId);
@@ -2225,7 +2230,7 @@ function settingsGroupHtml(key, label, bodyHtml){
      bestehenden DOM-Knoten um - ein volles innerHTML-Replacement würde das Element neu erzeugen,
      bevor der Browser die alte Höhe als Ausgangspunkt für die Transition sehen kann, wodurch keine
      Animation sichtbar wäre, sondern nur ein sofortiges Umschalten. */
-  const body = `<div class="settings-group-body${expanded?" expanded":""}" data-group-body="${key}"${expanded?"":" inert"}><div class="settings-group-body-inner">${bodyHtml}</div></div>`;
+  const body = `<div class="collapsible-body${expanded?" expanded":""}" data-group-body="${key}"${expanded?"":" inert"}><div class="collapsible-body-inner">${bodyHtml}</div></div>`;
   return header + body;
 }
 
@@ -2752,8 +2757,20 @@ document.addEventListener("click", e=>{
   }
   else if(act==="toggle-region-collapse"){
     const key = t.dataset.region;
-    if(expandedRegions.has(key)) expandedRegions.delete(key); else expandedRegions.add(key);
-    render();
+    const willExpand = !expandedRegions.has(key);
+    if(willExpand) expandedRegions.add(key); else expandedRegions.delete(key);
+    const bodyEl = document.querySelector(`[data-collapse-body="${key}"]`);
+    if(bodyEl){
+      bodyEl.classList.toggle("expanded", willExpand);
+      bodyEl.toggleAttribute("inert", !willExpand);
+      updateJumpButtonVisibility();
+      bodyEl.addEventListener("transitionend", updateJumpButtonVisibility, {once:true});
+    }
+    const chevron = t.querySelector(".collapse-chevron");
+    if(chevron) chevron.classList.toggle("open", willExpand);
+    const label = t.querySelector("span");
+    const count = Number(t.dataset.count);
+    if(label) label.textContent = `${count} abgeschlossene ${count===1?"Standort":"Standorte"} ${willExpand?"ausblenden":"anzeigen"}`;
   }
   else if(act==="toggle-settings-group"){
     const key = t.dataset.group;
