@@ -1106,7 +1106,15 @@ function injectEditionThemeCSS(){
   let css = "";
   Object.values(GAMES).forEach(g=>{
     if(!g.theme) return;
+    /* :root[data-edition="x"] (2 Selektoren) hat dieselbe Spezifität wie die App-eigene
+       Basisregel :root[data-theme="light"] (auch 2 Selektoren) - bei Spezifitäts-Gleichstand
+       entscheidet die Reihenfolge im Dokument, und die kann je nach Hosting-Umgebung (z.B. wenn
+       der Artifact-Viewer den veröffentlichten Inhalt in eine eigene Kopf-Struktur einbettet)
+       variieren. Deshalb hier zusätzlich explizit [data-theme="light"] mit anhängen (3 Selektoren,
+       wie beim ohnehin schon vorhandenen [data-theme="dark"]-Fall weiter unten) - gewinnt dann
+       unabhängig von der Dokumentreihenfolge rein über Spezifität. */
     css += `:root[data-edition="${g.id}"]{ ${rules(g.theme.light)} }\n`;
+    css += `:root[data-edition="${g.id}"][data-theme="light"]{ ${rules(g.theme.light)} }\n`;
     css += `@media (prefers-color-scheme: dark){ :root[data-edition="${g.id}"]:not([data-theme="light"]){ ${rules(g.theme.dark)} } }\n`;
     css += `:root[data-edition="${g.id}"][data-theme="dark"]{ ${rules(g.theme.dark)} }\n`;
   });
