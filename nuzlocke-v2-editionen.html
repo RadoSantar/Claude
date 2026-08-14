@@ -1262,7 +1262,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.0";
+const APP_VERSION = "1.1";
 const STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
 let state = loadState();
 let activeTab = "routes";
@@ -1418,7 +1418,6 @@ function completionPercent(){
 }
 
 function statsCardHtml(){
-  const total = state.locations.length;
   const pct = completionPercent();
   const caught = aliveCount()+deadCount();
   const survivalRate = caught>0 ? Math.round(aliveCount()/caught*100) : null;
@@ -1432,7 +1431,6 @@ function statsCardHtml(){
       <span class="stat-pill dot-good">Überlebensrate <b>${survivalRate===null?"–":survivalRate+"%"}</b></span>
       <span class="stat-pill dot-gold">Bosse besiegt <b>${bossesDefeated}/${currentGame().bosses.length}</b></span>
       <span class="stat-pill">Entwicklungen <b>${state.evolutionCount||0}</b></span>
-      <span class="stat-pill dot-gold">Fortschritt <b>${resolvedCount()}/${total}</b></span>
       <span class="stat-pill dot-good">Rivalenduelle gewonnen <b>${duelTally.wins}</b></span>
       <span class="stat-pill dot-red">Rivalenduelle verloren <b>${duelTally.losses}</b></span>
     </div>
@@ -2086,7 +2084,10 @@ function renderSettings(){
   const min = Math.min(...percents), max = Math.max(...percents);
   const percentLabel = min===max ? `${min>0?'+':''}${min}%` : `${min}%–${max}%`;
   const eff = effectiveTheme();
-  const html = statsCardHtml() + hallOfFameCardHtml() + `<div class="card">
+  const html = `<div class="region-header">Fortschritt</div>`
+  + statsCardHtml() + hallOfFameCardHtml()
+  + `<div class="region-header">Duell &amp; Bosse</div>
+  <div class="card">
     <div class="loc-name">Duellpartner</div>
     <div class="loc-sub" style="margin-bottom:10px;">Name für die Rivalenduelle gegen deine:n echte:n Duellpartner:in (nicht die Spielfigur) – wird u. a. in der Ruhmeshalle verwendet.</div>
     <div class="field" style="margin-bottom:0;">
@@ -2104,19 +2105,7 @@ function renderSettings(){
       <button class="btn btn-primary" data-act="boss-inc-all">+5% Alle</button>
     </div>
   </div>
-  <div class="card">
-    <div class="loc-name">Pokédex</div>
-    <div class="loc-sub">Typen-Rechner &amp; Nachschlagewerk öffnen</div>
-    <a class="btn btn-primary btn-block" style="display:flex; align-items:center; justify-content:center; margin-top:12px; text-decoration:none;" href="https://dexora.adrianhoppler.chatgpt.site/" target="_blank" rel="noopener noreferrer">Pokédex öffnen</a>
-  </div>
-  <div class="card">
-    <div class="loc-name">Darstellung</div>
-    <div class="loc-sub" style="margin-bottom:10px;">Farbschema wählen</div>
-    <div style="display:flex; gap:8px;">
-      <button class="btn ${eff==="light"?"btn-primary":"btn-secondary"}" data-act="set-theme" data-id="light">Hell</button>
-      <button class="btn ${eff==="dark"?"btn-primary":"btn-secondary"}" data-act="set-theme" data-id="dark">Dunkel</button>
-    </div>
-  </div>
+  <div class="region-header">Regeln</div>
   <div class="card">
     <div class="loc-name">Dupes-Clause-Warnung</div>
     <div class="loc-sub">Warnt beim Fangen, wenn die Spezies schon existiert (Team/Box/Friedhof)</div>
@@ -2127,16 +2116,32 @@ function renderSettings(){
     <div class="loc-sub">Erzwingt einen Spitznamen beim Fangen eines Pokémon</div>
     <button class="btn ${state.nicknameRequired?"btn-primary":"btn-secondary"} btn-block" style="margin-top:10px;" data-act="toggle-nickname-required">${state.nicknameRequired?"Aktiviert":"Deaktiviert"}</button>
   </div>
+  <div class="region-header">Darstellung</div>
   <div class="card">
-    <div class="loc-name">Daten</div>
+    <div class="loc-name">Farbschema</div>
+    <div class="loc-sub" style="margin-bottom:10px;">Hell oder dunkel wählen</div>
+    <div style="display:flex; gap:8px;">
+      <button class="btn ${eff==="light"?"btn-primary":"btn-secondary"}" data-act="set-theme" data-id="light">Hell</button>
+      <button class="btn ${eff==="dark"?"btn-primary":"btn-secondary"}" data-act="set-theme" data-id="dark">Dunkel</button>
+    </div>
+  </div>
+  <div class="region-header">Werkzeuge</div>
+  <div class="card">
+    <div class="loc-name">Pokédex</div>
+    <div class="loc-sub">Typen-Rechner &amp; Nachschlagewerk öffnen</div>
+    <a class="btn btn-primary btn-block" style="display:flex; align-items:center; justify-content:center; margin-top:12px; text-decoration:none;" href="https://dexora.adrianhoppler.chatgpt.site/" target="_blank" rel="noopener noreferrer">Pokédex öffnen</a>
+  </div>
+  <div class="region-header">Daten</div>
+  <div class="card">
+    <div class="loc-name">Sichern &amp; Zurücksetzen</div>
     <div class="loc-sub" style="margin-bottom:10px;">Zuletzt exportiert: ${formatRelativeTime(state.lastExportAt)}</div>
     <button class="btn btn-secondary btn-block" style="margin-bottom:8px;" data-act="export-data">Fortschritt exportieren (JSON)</button>
     <button class="btn btn-secondary btn-block" style="margin-bottom:8px;" data-act="import-data">Fortschritt importieren</button>
     <button class="btn btn-danger btn-block" data-act="reset-run">Run zurücksetzen</button>
   </div>
+  <div class="region-header">App-Info</div>
   <div class="card">
-    <div class="loc-name">App-Info</div>
-    <div class="loc-sub" style="margin-top:6px;">Nuzlocke</div>
+    <div class="loc-name">Nuzlocke</div>
     <div class="loc-sub">Version ${escapeHtml(APP_VERSION)}</div>
   </div>`;
   document.getElementById("content").innerHTML = html;
