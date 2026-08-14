@@ -203,6 +203,7 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 .card.st-given{ border-left-color:var(--accent); opacity:.85; }
 .card.st-nocatch{ border-left-color:var(--line); opacity:.7; padding-bottom:14px; }
 .card.st-nocatch .loc-sub{ margin-top:4px; }
+.card[data-current="true"]{ box-shadow:var(--shadow), inset 0 0 0 1.5px var(--accent); }
 
 .card-top{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
 .card-top > div:first-child{ min-width:0; }
@@ -464,7 +465,8 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
   transition:opacity .2s ease, transform .2s ease;
 }
 .jump-fab.visible{ opacity:1; pointer-events:auto; transform:translateY(0); }
-.jump-fab svg{ width:18px; height:18px; stroke:var(--accent); fill:none; stroke-width:2.2; flex:none; }
+.jump-fab svg{ width:18px; height:18px; stroke:var(--accent); fill:none; stroke-width:2.2; flex:none; transition:transform .2s ease; }
+.jump-fab.point-up svg{ transform:rotate(180deg); }
 .jump-fab:active{ transform:scale(.95); }
 
 .collapse-toggle{
@@ -603,7 +605,7 @@ datalist{}
   </div>
 
   <button class="fab" id="fabAdd" title="Standort hinzufügen">+</button>
-  <button class="jump-fab" id="jumpFab" data-act="jump-to-frontier" title="Zum aktuellen Standort">
+  <button class="jump-fab" id="jumpFab" data-act="jump-to-current-loc" title="Zum aktuellen Standort">
     <svg viewBox="0 0 24 24"><path d="M12 4v14M6 12l6 6 6-6"/></svg>
     <span>Aktueller Standort</span>
   </button>
@@ -1183,6 +1185,8 @@ const ICON_GRAVE = '<svg viewBox="0 0 24 24"><path d="M6 21V11a6 6 0 0112 0v10"/
 const ICON_TRASH = '<svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4.6c0-.3.3-.6.6-.6h4.8c.3 0 .6.3.6.6V7M6.5 7l.7 12.4c0 .6.5 1.1 1.1 1.1h7.4c.6 0 1.1-.5 1.1-1.1L17.5 7"/><path d="M10 11v6M14 11v6"/></svg>';
 const ICON_UNDO = '<svg viewBox="0 0 24 24"><path d="M9 5L4 9l5 4"/><path d="M4 9h9a6.5 6.5 0 110 13h-1"/></svg>';
 const ICON_EDIT = '<svg viewBox="0 0 24 24"><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/><path d="M14.5 5.5l4 4"/></svg>';
+const ICON_FLAG = '<svg viewBox="0 0 24 24"><path d="M6 21V4" stroke-linecap="round"/><path d="M6 4h12l-3.5 4.5L18 13H6"/></svg>';
+const ICON_FLAG_FILLED = '<svg viewBox="0 0 24 24"><path d="M6 21V4" stroke-linecap="round"/><path d="M6 4h12l-3.5 4.5L18 13H6" fill="currentColor"/></svg>';
 
 function iconBtn(tone, act, id, iconSvg, label, disabled, small){
   const cls = "icon-act " + tone + (small?" small":"");
@@ -1242,7 +1246,7 @@ function freshState(editionId){
     names.forEach(entry=>{ locations.push(parseLocationEntry(region, entry)); });
   });
   const gameStarters = GAMES[edition].starters || { grass:"", fire:"", water:"" };
-  return { edition, runTitle:"Nuzlocke", locations, bossBoosts:{}, bossDefeated:{}, rivalNickname:"", duelPartnerName:"", dupesWarning:true, lastExportAt:null, evolutionCount:0, nicknameRequired:false, pvp:{}, hallOfFame:{ rivalTeam:[], playerTeam:[], defeatedAt:null, result:null }, starterNames:{ ...gameStarters }, starterChoice:null };
+  return { edition, runTitle:"Nuzlocke", locations, bossBoosts:{}, bossDefeated:{}, rivalNickname:"", duelPartnerName:"", dupesWarning:true, lastExportAt:null, evolutionCount:0, nicknameRequired:false, pvp:{}, hallOfFame:{ rivalTeam:[], playerTeam:[], defeatedAt:null, result:null }, starterNames:{ ...gameStarters }, starterChoice:null, currentLocId:null };
 }
 
 /* Ergänzt neu hinzugekommene Standorte (z.B. nachträglich eingefügte Städte) in einen bereits
@@ -1279,6 +1283,7 @@ function normalizeState(parsed){
   else if(typeof parsed.hallOfFame.result === "undefined") parsed.hallOfFame.result = null;
   if(!parsed.starterNames) parsed.starterNames = { ...(GAMES[parsed.edition].starters || { grass:"", fire:"", water:"" }) };
   if(typeof parsed.starterChoice === "undefined") parsed.starterChoice = null;
+  if(typeof parsed.currentLocId === "undefined") parsed.currentLocId = null;
   syncLocations(parsed);
   return parsed;
 }
@@ -1416,8 +1421,8 @@ function renderHeaderTeam(){
    auch wenn ihr status technisch nie aus "pending" rauskommt (es gibt dort ja nichts zu tun). */
 function isLocResolved(loc){ return loc.noCatch || loc.status!=="pending"; }
 
-function locationBlockHtml(loc, region, game, isFrontier){
-  let html = routeCard(loc, isFrontier);
+function locationBlockHtml(loc, region, game, isCurrent){
+  let html = routeCard(loc, isCurrent);
   const bossIds = game.bossAfter[region+"|"+loc.name];
   if(bossIds) bossIds.forEach(id=>{
     const boss=bossById(id); if(!boss) return;
@@ -1427,20 +1432,36 @@ function locationBlockHtml(loc, region, game, isFrontier){
   return html;
 }
 
-function collapseToggleHtml(regionKey, count, expanded){
-  return `<button class="collapse-toggle" data-act="toggle-region-collapse" data-region="${regionKey}">
+function collapseToggleHtml(segKey, count, expanded){
+  return `<button class="collapse-toggle" data-act="toggle-region-collapse" data-region="${segKey}">
     <svg class="collapse-chevron${expanded?" open":""}" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
     <span>${count} abgeschlossene ${count===1?"Standort":"Standorte"} ${expanded?"ausblenden":"anzeigen"}</span>
   </button>`;
 }
 
-/* "Zum aktuellen Standort"-Button: zeigt/versteckt sich je nachdem, ob der erste noch offene
-   Standort (frontierLocId) gerade im sichtbaren Bereich ist - siehe updateJumpButtonVisibility(),
-   die bei jedem Scroll-Event neu prüft, welches Element gerade unter data-frontier="true" steht. */
-function updateJumpButton(frontierLocId){
+/* Der Standort, zu dem der "Zum aktuellen Standort"-Button springt: die manuelle Markierung
+   (state.currentLocId, per Flaggen-Icon auf jeder Karte gesetzt), sofern vorhanden und noch nicht
+   erledigt - sonst automatisch der erste noch offene Standort in Regionen-Reihenfolge. Die manuelle
+   Markierung ist nötig, weil mehrere Standorte gleichzeitig offen bleiben können (z.B. ein Ort, der
+   erst später mit einem HM/Item erreichbar ist) - "der erste offene" ist dann nicht zwangsläufig der
+   Standort, an dem der Spieler gerade tatsächlich ist. */
+function effectiveCurrentLocId(){
+  if(state.currentLocId){
+    const marked = findLoc(state.currentLocId);
+    if(marked && !isLocResolved(marked)) return marked.id;
+  }
+  const game = currentGame();
+  for(const [region] of game.regions){
+    const found = state.locations.find(l=>l.region===region && !isLocResolved(l));
+    if(found) return found.id;
+  }
+  return null;
+}
+
+function updateJumpButton(){
   const btn = document.getElementById("jumpFab");
   if(!btn) return;
-  btn.dataset.target = frontierLocId || "";
+  btn.dataset.target = effectiveCurrentLocId() || "";
   updateJumpButtonVisibility();
 }
 function updateJumpButtonVisibility(){
@@ -1451,50 +1472,71 @@ function updateJumpButtonVisibility(){
   const rect = el.getBoundingClientRect();
   const inView = rect.top < innerHeight*0.85 && rect.bottom > innerHeight*0.15;
   btn.classList.toggle("visible", !inView);
+  if(!inView) btn.classList.toggle("point-up", rect.bottom <= innerHeight*0.15);
 }
 document.getElementById("content").addEventListener("scroll", ()=>requestAnimationFrame(updateJumpButtonVisibility), {passive:true});
 
+/* Einklappen läuft pro zusammenhängendem Block erledigter Standorte, nicht mehr pro Region als
+   Ganzes: sonst würde ein einzelner dauerhaft offener Standort (z.B. weil er erst später mit Surfen
+   erreichbar ist) das Einklappen aller danach folgenden, längst erledigten Standorte blockieren.
+   Jeder Block von mehr als 2 erledigten Standorten in Folge klappt zusammen (die letzten 2 als
+   Kontext sichtbar), offene Standorte unterbrechen einen Block und bleiben immer sichtbar. */
 function renderRoutes(){
   let html = "";
   const game = currentGame();
   html += starterCardHtml();
-  let frontierLocId = null;
+  const currentId = effectiveCurrentLocId();
   game.regions.forEach(([region])=>{
     const locs = state.locations.filter(l=>l.region===region);
     if(!locs.length) return;
     html += `<div class="region-header">${escapeHtml(region)}</div>`;
+    const regionKey = slug(region);
 
-    let frontierIdx = locs.findIndex(l=>!isLocResolved(l));
-    if(frontierIdx===-1) frontierIdx = locs.length;
-    if(frontierLocId===null && frontierIdx<locs.length) frontierLocId = locs[frontierIdx].id;
-    const collapseEnd = Math.max(0, frontierIdx-2); // die letzten 2 erledigten Standorte bleiben sichtbar
-
-    if(collapseEnd>0){
-      const regionKey = slug(region);
-      const expanded = expandedRegions.has(regionKey);
-      html += collapseToggleHtml(regionKey, collapseEnd, expanded);
-      if(expanded){
-        for(let i=0;i<collapseEnd;i++) html += locationBlockHtml(locs[i], region, game, false);
+    let i = 0;
+    while(i<locs.length){
+      if(!isLocResolved(locs[i])){
+        html += locationBlockHtml(locs[i], region, game, locs[i].id===currentId);
+        i++;
+        continue;
       }
+      let j = i;
+      while(j<locs.length && isLocResolved(locs[j])) j++;
+      const runLen = j-i;
+      if(runLen>2){
+        const collapseEnd = j-2;
+        const segKey = `${regionKey}-${i}`;
+        const expanded = expandedRegions.has(segKey);
+        html += collapseToggleHtml(segKey, collapseEnd-i, expanded);
+        if(expanded){
+          for(let k=i;k<collapseEnd;k++) html += locationBlockHtml(locs[k], region, game, locs[k].id===currentId);
+        }
+        for(let k=collapseEnd;k<j;k++) html += locationBlockHtml(locs[k], region, game, locs[k].id===currentId);
+      } else {
+        for(let k=i;k<j;k++) html += locationBlockHtml(locs[k], region, game, locs[k].id===currentId);
+      }
+      i = j;
     }
-    for(let i=collapseEnd;i<locs.length;i++) html += locationBlockHtml(locs[i], region, game, i===frontierIdx);
   });
   const customs = state.locations.filter(l=>l.custom);
   if(customs.length){
     html += `<div class="region-header">Eigene Fundorte</div>`;
-    customs.forEach(loc=>{ html += routeCard(loc); });
+    customs.forEach(loc=>{ html += routeCard(loc, loc.id===currentId); });
   }
   document.getElementById("content").innerHTML = html || emptyState("Keine Standorte","Füge über + einen eigenen Fundort hinzu.");
-  updateJumpButton(frontierLocId);
+  updateJumpButton();
 }
 
-function routeCard(loc, isFrontier){
-  const frontierAttr = isFrontier ? ` data-frontier="true"` : "";
+function routeCard(loc, isCurrent){
+  const currentAttr = isCurrent ? ` data-current="true"` : "";
+  const flagBtn = iconBtn(isCurrent?"tone-good":"tone-neutral","toggle-current-loc",loc.id,isCurrent?ICON_FLAG_FILLED:ICON_FLAG,isCurrent?"Nicht mehr aktueller Standort":"Als aktuellen Standort markieren",false,true);
   if(loc.noCatch){
-    return `<div class="card st-nocatch" data-loc="${loc.id}"${frontierAttr}>
+    return `<div class="card st-nocatch" data-loc="${loc.id}"${currentAttr}>
       <div class="card-top">
         <div><div class="loc-name">${escapeHtml(loc.name)}</div></div>
-        <span class="chip silver">Kein Wildfang</span>
+        <div style="display:flex; align-items:center; gap:6px; flex:none;">
+          <span class="chip silver">Kein Wildfang</span>
+          ${flagBtn}
+        </div>
       </div>
       <div class="loc-sub">${escapeHtml(loc.note || "Keine wilden Pokémon hier.")}</div>
     </div>`;
@@ -1521,7 +1563,7 @@ function routeCard(loc, isFrontier){
       ${monActionsHtml(loc)}
     </div>`;
   }
-  return `<div class="card ${cardClass(loc)}" data-loc="${loc.id}"${frontierAttr}>
+  return `<div class="card ${cardClass(loc)}" data-loc="${loc.id}"${currentAttr}>
     <div class="card-top">
       <div>
         <div class="loc-name">${escapeHtml(loc.name)}</div>
@@ -1529,6 +1571,7 @@ function routeCard(loc, isFrontier){
       </div>
       <div style="display:flex; align-items:center; gap:6px; flex:none;">
         ${chipFor(loc)}
+        ${flagBtn}
         ${loc.custom ? iconBtn("tone-red","delete-location",loc.id,ICON_TRASH,"Fundort löschen",false,true) : ""}
       </div>
     </div>
@@ -2475,10 +2518,14 @@ document.addEventListener("click", e=>{
     if(expandedRegions.has(key)) expandedRegions.delete(key); else expandedRegions.add(key);
     render();
   }
-  else if(act==="jump-to-frontier"){
+  else if(act==="jump-to-current-loc"){
     const id = t.dataset.target;
     const el = id && document.querySelector(`[data-loc="${id}"]`);
     if(el) el.scrollIntoView({ behavior:"smooth", block:"center" });
+  }
+  else if(act==="toggle-current-loc"){
+    state.currentLocId = (state.currentLocId===id) ? null : id;
+    saveState(); render();
   }
   else if(act==="open-starter-setup") openStarterSetupSheet();
   else if(act==="save-starters"){
@@ -2494,7 +2541,7 @@ document.addEventListener("click", e=>{
     const type = t.dataset.type;
     state.starterChoice = type;
     removeStarterMon();
-    state.locations.unshift({ id:"starter-mon", name:"Starter", region:null, custom:false, starter:true, status:"caught", mon:{ species:(state.starterNames[type]||"").trim(), nickname:"", inTeam:false, dead:false } });
+    state.locations.unshift({ id:"starter-mon", name:"Starter", region:null, custom:false, starter:true, status:"caught", mon:{ species:(state.starterNames[type]||"").trim(), nickname:"", inTeam:true, dead:false } });
     saveState(); render();
   }
   else if(act==="undo-starter-choice"){
