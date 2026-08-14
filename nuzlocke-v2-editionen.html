@@ -591,6 +591,11 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
   width:100%; text-align:left; background:var(--surface-alt); border:none; border-radius:12px;
   padding:14px 16px; font-size:.92rem; font-weight:600; margin-bottom:8px; min-height:48px;
 }
+.sheet-group-header{
+  font-family:var(--font-display); font-size:.72rem; font-weight:700; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--ink-soft); padding:14px 2px 8px;
+}
+.sheet-group-header:first-child{ padding-top:0; }
 .sheet-option.danger{ background:var(--red-soft); color:var(--red); }
 .sheet-option.accent{ background:var(--accent-soft); color:var(--accent); }
 .sheet-option.evolve-opt{ background:var(--evolve-soft); color:var(--evolve); }
@@ -1074,14 +1079,14 @@ const SINNOH_BOSS_AFTER = {
 
 /* Fabrik für Versions-Trios: ein gemeinsamer Basis-Datensatz erzeugt mehrere GAMES-Einträge,
    mit punktuellen Level/Team-Overrides pro Version statt vollständiger Dopplung. */
-function buildVersionGames(baseBosses, regions, bossAfter, versions, starters){
+function buildVersionGames(baseBosses, regions, bossAfter, versions, starters, generation){
   const out = {};
   versions.forEach(v=>{
     const bosses = baseBosses.map(b=>({ ...b, id:`${v.id}-${b.id}`, ...(v.bossOverrides?.[b.id]||{}) }));
     const remap = new Map(baseBosses.map((b,i)=>[b.id, bosses[i].id]));
     const remappedAfter = {};
     Object.entries(bossAfter).forEach(([loc, ids])=>{ remappedAfter[loc] = ids.map(id=>remap.get(id)); });
-    out[v.id] = { id:v.id, label:v.label, shortLabel:v.shortLabel, regions:v.regions||regions, bosses, bossAfter:remappedAfter, starters:v.starters||starters, theme:v.theme };
+    out[v.id] = { id:v.id, label:v.label, shortLabel:v.shortLabel, regions:v.regions||regions, bosses, bossAfter:remappedAfter, starters:v.starters||starters, theme:v.theme, generation:v.generation||generation };
   });
   return out;
 }
@@ -1115,17 +1120,23 @@ const PLATIN_OVERRIDES = {
       Dunkel = blau/Diamant). Kein zusätzlicher Umschalter nötig, folgt dem bestehenden
       Hell/Dunkel-Toggle der App.
    6. Trainer-Sprites in BOSS_SPRITES ergänzen (Bulbagarden-Archives-Workflow, siehe README/Notizen).
+   7. generation:N setzen (bei buildVersionGames() als letztes Argument fürs ganze Versions-Trio,
+      sonst direkt im GAMES-Eintrag) - steuert nur die Gruppierung in der Spielstände-Neuanlage
+      (siehe GENERATION_LABELS), keine Spiellogik. Bei Bedarf neue Generation in GENERATION_LABELS
+      ergänzen (Zielumfang ist Gen 1-9 inkl. regulärer Remakes, siehe Kommentar dort).
    Danach validate-editions.js (im Repo) laufen lassen, bevor veröffentlicht wird. */
+/* Generationen-Zuordnung nur für die gruppierte Anzeige in der Spielstände-Neuanlage (siehe
+   GENERATION_LABELS/openNewSaveSheet) - hat keinen Einfluss auf Spiellogik/Speicherformat. */
 const GAMES = {
-  hgss: { id:"hgss", label:"HeartGold / SoulSilver", shortLabel:"HG/SS", regions:LOCATIONS_DEFAULT, bosses:BOSSES, bossAfter:BOSS_AFTER, starters:{ grass:"Endivie", fire:"Feurigel", water:"Karnimani" } },
-  smaragd: { id:"smaragd", label:"Smaragd", shortLabel:"Smaragd", regions:SMARAGD_LOCATIONS, bosses:SMARAGD_BOSSES, bossAfter:SMARAGD_BOSS_AFTER, starters:{ grass:"Geckarbor", fire:"Flemmli", water:"Hydropi" },
+  hgss: { id:"hgss", label:"HeartGold / SoulSilver", shortLabel:"HG/SS", regions:LOCATIONS_DEFAULT, bosses:BOSSES, bossAfter:BOSS_AFTER, starters:{ grass:"Endivie", fire:"Feurigel", water:"Karnimani" }, generation:2 },
+  smaragd: { id:"smaragd", label:"Smaragd", shortLabel:"Smaragd", regions:SMARAGD_LOCATIONS, bosses:SMARAGD_BOSSES, bossAfter:SMARAGD_BOSS_AFTER, starters:{ grass:"Geckarbor", fire:"Flemmli", water:"Hydropi" }, generation:3,
     theme:{ light:{ accent:"#2E8B57", accentSoft:"#DCF0E3", accentShine:"#EFFBF3", accentDeep:"#1F5E3B", glow:"46,139,87" },
             dark:{ accent:"#4FD182", accentSoft:"#173626", accentShine:"#8CF0B0", accentDeep:"#2E8B57", glow:"79,209,130" } } },
   /* Bei zusammengefassten Versionspaaren steht (analog zu HG/SS, wo der Akzent im Hell-Modus
      silbern und im Dunkel-Modus golden ist) je eine Version fürs Hell- und fürs Dunkel-Theme:
      Perl = hell (Rosé), Diamant = dunkel (Blau) - kein separater Umschalter, folgt einfach dem
      bestehenden Hell/Dunkel-Modus der App. */
-  "diamant-perl": { id:"diamant-perl", label:"Diamant / Perl", shortLabel:"Diamant/Perl", regions:SINNOH_LOCATIONS, bosses:SINNOH_BOSSES, bossAfter:SINNOH_BOSS_AFTER, starters:{ grass:"Chelast", fire:"Panflam", water:"Plinfa" },
+  "diamant-perl": { id:"diamant-perl", label:"Diamant / Perl", shortLabel:"Diamant/Perl", regions:SINNOH_LOCATIONS, bosses:SINNOH_BOSSES, bossAfter:SINNOH_BOSS_AFTER, starters:{ grass:"Chelast", fire:"Panflam", water:"Plinfa" }, generation:4,
     theme:{ light:{ accent:"#C9628F", accentSoft:"#F7DCE8", accentShine:"#FCF0F5", accentDeep:"#96355F", glow:"201,98,143" },
             dark:{ accent:"#7FB0F0", accentSoft:"#1B2A3F", accentShine:"#A8CCFA", accentDeep:"#4A7FC9", glow:"127,176,240" } } }
 };
@@ -1133,7 +1144,24 @@ Object.assign(GAMES, buildVersionGames(SINNOH_BOSSES, SINNOH_LOCATIONS, SINNOH_B
   { id:"platin", label:"Platin", shortLabel:"Platin", bossOverrides:PLATIN_OVERRIDES, regions:PLATIN_LOCATIONS,
     theme:{ light:{ accent:"#6B7280", accentSoft:"#E4E6EA", accentShine:"#F5F6F8", accentDeep:"#454B57", glow:"107,114,128" },
             dark:{ accent:"#A8ADB8", accentSoft:"#2A2D33", accentShine:"#D3D6DC", accentDeep:"#6B7280", glow:"168,173,184" } } }
-], { grass:"Chelast", fire:"Panflam", water:"Plinfa" }));
+], { grass:"Chelast", fire:"Panflam", water:"Plinfa" }, 4));
+
+/* Anzeigereihenfolge/-titel der Generationen-Gruppen in der Spielstände-Neuanlage - Ziel-Umfang
+   ist am Ende Gen 1-9 (Hauptspiele + reguläre Remakes, siehe Checkliste oben; Let's Go Pikachu/
+   Evoli und Legenden Arceus bewusst ausgeschlossen, da sie spielerisch nicht ins Standort/Bosse-
+   Schema passen). Ein Eintrag hier ohne zugehörige GAMES-Edition zeigt einfach keine Gruppe an -
+   nichts weiter einzutragen, bis die erste Edition dieser Generation existiert. */
+const GENERATION_LABELS = {
+  1: "Generation 1 – Rot / Blau / Gelb",
+  2: "Generation 2 – Gold / Silber / Kristall",
+  3: "Generation 3 – Rubin / Saphir / Smaragd",
+  4: "Generation 4 – Diamant / Perl / Platin",
+  5: "Generation 5 – Schwarz / Weiß",
+  6: "Generation 6 – X / Y",
+  7: "Generation 7 – Sonne / Mond",
+  8: "Generation 8 – Schwert / Schild",
+  9: "Generation 9 – Karmesin / Purpur",
+};
 
 /* Erzeugt die :root[data-edition="..."]-Farbregeln aus GAMES[...].theme statt sie pro Edition von
    Hand als CSS zu pflegen - eine neue Edition braucht dafür nur ein theme-Objekt, keine neue CSS-
@@ -2685,13 +2713,23 @@ function openSavesSheet(){
 }
 
 function openNewSaveSheet(){
-  const opts = Object.values(GAMES).map(g=>
-    `<button class="sheet-option" data-act="create-save" data-id="${g.id}">${escapeHtml(g.label)}</button>`
-  ).join("");
+  const byGen = new Map();
+  Object.values(GAMES).forEach(g=>{
+    const gen = g.generation || 0;
+    if(!byGen.has(gen)) byGen.set(gen, []);
+    byGen.get(gen).push(g);
+  });
+  const groupsHtml = [...byGen.keys()].sort((a,b)=>a-b).map(gen=>{
+    const label = GENERATION_LABELS[gen] || `Generation ${gen}`;
+    const opts = byGen.get(gen).map(g=>
+      `<button class="sheet-option" data-act="create-save" data-id="${g.id}">${escapeHtml(g.label)}</button>`
+    ).join("");
+    return `<div class="sheet-group-header">${escapeHtml(label)}</div>${opts}`;
+  }).join("");
   openSheet(`
     <h3>Neuer Spielstand</h3>
     <div class="loc-sub" style="margin-bottom:14px;">Edition für den neuen Run wählen.</div>
-    ${opts}
+    ${groupsHtml}
     <div class="sheet-footer">
       <button class="btn btn-secondary btn-block" data-act="open-saves-sheet">Zurück</button>
     </div>
