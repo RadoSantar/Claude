@@ -1354,9 +1354,24 @@ function bossLevel(boss){ return Math.ceil(boss.baseLevel * (1 + bossPercent(bos
 
 function findLoc(id){ return state.locations.find(l=>l.id===id); }
 
+/* Dupes-Clause gilt für die ganze Entwicklungsreihe, nicht nur identische Spezies (Standard-
+   Nuzlocke-Regel: schon ein Glumanda gefangen -> auch Glutexo/Glurak zählen als Dupe). EVOLUTIONS
+   bildet nur Eltern->Kinder ab (inkl. Verzweigungen wie Evoli); hier umgekehrt aufgelöst, um von
+   jeder Spezies aus zur Basis der Reihe hochzulaufen - zwei Spezies sind ein Dupe, wenn sie zur
+   selben Basis gehören. */
+const EVOLUTION_PARENT_LOOKUP = new Map();
+Object.entries(EVOLUTIONS).forEach(([parent, children])=>{
+  children.forEach(child=>EVOLUTION_PARENT_LOOKUP.set(child.toLowerCase(), parent.toLowerCase()));
+});
+function evolutionFamilyRoot(speciesName){
+  let cur = String(speciesName||"").trim().toLowerCase();
+  let guard = 0;
+  while(EVOLUTION_PARENT_LOOKUP.has(cur) && guard++ < 10) cur = EVOLUTION_PARENT_LOOKUP.get(cur);
+  return cur;
+}
 function findDuplicateSpecies(species, excludeLocId){
-  const target = species.trim().toLowerCase();
-  return state.locations.find(l=>l.id!==excludeLocId && l.mon && l.mon.species.trim().toLowerCase()===target) || null;
+  const targetRoot = evolutionFamilyRoot(species);
+  return state.locations.find(l=>l.id!==excludeLocId && l.mon && evolutionFamilyRoot(l.mon.species)===targetRoot) || null;
 }
 
 function formatRelativeTime(ts){
@@ -2475,7 +2490,11 @@ document.addEventListener("click", e=>{
       if(dupe){
         pendingCatchData = {id, species, nick};
         const where = dupe.mon.dead ? "im Friedhof" : dupe.mon.inTeam ? "im Team" : "in der Box";
-        openConfirmSheet("Bereits gefangen", `${species} ist schon vorhanden (${dupe.name}, ${where}). Trotzdem fangen?`, "Trotzdem fangen", "confirm-save-catch-dupe");
+        const sameSpecies = dupe.mon.species.trim().toLowerCase()===species.trim().toLowerCase();
+        const msg = sameSpecies
+          ? `${species} ist schon vorhanden (${dupe.name}, ${where}). Trotzdem fangen?`
+          : `${species} gehört zur selben Entwicklungsreihe wie dein bereits gefangenes ${dupe.mon.species} (${dupe.name}, ${where}). Trotzdem fangen?`;
+        openConfirmSheet("Bereits gefangen", msg, "Trotzdem fangen", "confirm-save-catch-dupe");
         return;
       }
     }
