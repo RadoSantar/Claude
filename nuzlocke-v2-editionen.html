@@ -577,6 +577,14 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 }
 .preset-chip:active{ transform:scale(.96); }
 
+.save-row{
+  display:flex; align-items:center; gap:8px; background:var(--surface-alt);
+  border-radius:12px; padding:10px 12px; margin-bottom:8px;
+}
+.save-row.active{ box-shadow: inset 0 0 0 1.5px var(--accent); }
+.save-row-main{ flex:1; min-width:0; text-align:left; background:none; border:none; padding:0; }
+.save-row-title{ font-weight:700; font-size:.92rem; display:flex; align-items:center; gap:6px; }
+
 datalist{}
 ::selection{ background:var(--accent-soft); }
 </style>
@@ -1269,8 +1277,12 @@ function monActionsHtml(loc, small, showDelete){
 }
 
 const APP_VERSION = "1.1";
-const STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
-let state = loadState();
+const SAVES_INDEX_KEY = "nuzlocke-saves-index";
+const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
+const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
+let activeSaveId = null;
+let state;
+bootstrapActiveSave();
 let activeTab = "routes";
 
 function slug(s){ return s.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,""); }
@@ -1339,14 +1351,97 @@ function normalizeState(parsed){
   return parsed;
 }
 
-function loadState(){
+/* ---------- Mehrere Spielstände ----------
+   Bis Version 1.1 gab es genau einen state unter LEGACY_STORAGE_KEY - ein Editionswechsel
+   überschrieb ihn komplett (freshState(id)), man konnte den alten Run nur durch vorheriges
+   manuelles JSON-Exportieren retten. Jetzt lebt jeder Run als eigener Spielstand unter einem
+   eigenen localStorage-Key, dazu ein schlanker Index (Titel/Edition/Zeitstempel, ohne die vollen
+   Standort-Daten) für die Spielstände-Übersicht, damit die nicht bei jedem Rendern alle Spielstände
+   komplett einlesen muss. Ein Wechsel lädt einfach einen anderen bereits gespeicherten Spielstand,
+   statt den aktuellen zu ersetzen - nichts geht mehr verloren, unabhängig vom JSON-Export. */
+function saveStorageKey(id){ return "nuzlocke-save-"+id; }
+function newSaveId(){ return "save-"+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+
+function loadSavesIndex(){
   try{
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(SAVES_INDEX_KEY);
+    if(raw){ const arr = JSON.parse(raw); if(Array.isArray(arr)) return arr; }
+  }catch(e){}
+  return [];
+}
+function persistSavesIndex(index){ localStorage.setItem(SAVES_INDEX_KEY, JSON.stringify(index)); }
+
+function loadSaveState(id){
+  try{
+    const raw = localStorage.getItem(saveStorageKey(id));
     if(raw) return normalizeState(JSON.parse(raw));
   }catch(e){}
-  return freshState("hgss");
+  return null;
 }
-function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+function writeSave(id, saveData){
+  localStorage.setItem(saveStorageKey(id), JSON.stringify(saveData));
+  const index = loadSavesIndex();
+  const meta = { id, title: saveData.runTitle||"Nuzlocke", edition: saveData.edition, updatedAt: Date.now() };
+  const entry = index.find(s=>s.id===id);
+  if(entry) Object.assign(entry, meta); else index.push(meta);
+  persistSavesIndex(index);
+}
+
+function createSave(editionId){
+  const id = newSaveId();
+  writeSave(id, freshState(editionId));
+  return id;
+}
+
+function deleteSave(id){
+  let index = loadSavesIndex().filter(s=>s.id!==id);
+  localStorage.removeItem(saveStorageKey(id));
+  persistSavesIndex(index);
+  if(id===activeSaveId){
+    const nextId = index.length ? index[0].id : createSave("hgss");
+    switchToSave(nextId);
+  }
+}
+
+function switchToSave(id){
+  const loaded = loadSaveState(id);
+  if(!loaded) return false;
+  activeSaveId = id;
+  localStorage.setItem(ACTIVE_SAVE_KEY, id);
+  state = loaded;
+  return true;
+}
+
+/* Einmalige Migration: existiert noch kein Spielstände-Index, aber ein alter Einzel-state -
+   diesen als ersten Spielstand übernehmen statt ihn stillschweigend zu verwerfen. */
+function migrateLegacyStateIfNeeded(){
+  if(loadSavesIndex().length) return;
+  let legacy = null;
+  try{
+    const raw = localStorage.getItem(LEGACY_STORAGE_KEY);
+    if(raw) legacy = normalizeState(JSON.parse(raw));
+  }catch(e){}
+  const id = newSaveId();
+  writeSave(id, legacy || freshState("hgss"));
+  localStorage.setItem(ACTIVE_SAVE_KEY, id);
+  if(legacy) localStorage.removeItem(LEGACY_STORAGE_KEY);
+}
+
+function bootstrapActiveSave(){
+  migrateLegacyStateIfNeeded();
+  const index = loadSavesIndex();
+  let id = localStorage.getItem(ACTIVE_SAVE_KEY);
+  if(!id || !index.some(s=>s.id===id)) id = index[0] ? index[0].id : null;
+  const loaded = id ? loadSaveState(id) : null;
+  if(loaded){ activeSaveId = id; localStorage.setItem(ACTIVE_SAVE_KEY, id); state = loaded; return; }
+  // Index leer oder Spielstand-Daten defekt/verschwunden -> sauberen neuen Spielstand anlegen
+  activeSaveId = createSave("hgss");
+  localStorage.setItem(ACTIVE_SAVE_KEY, activeSaveId);
+  state = loadSaveState(activeSaveId);
+}
+
+function saveState(){ writeSave(activeSaveId, state); }
 
 function bossPercent(id){ return state.bossBoosts[id] || 0; }
 function isBossDefeated(id){ return !!state.bossDefeated[id]; }
@@ -2126,6 +2221,13 @@ function renderSettings(){
 
   let html = `<div class="region-header">Fortschritt</div>` + statsCardHtml() + hallOfFameCardHtml();
 
+  html += settingsGroupHtml("saves", "Spielstände", `
+  <div class="card">
+    <div class="loc-name">Mehrere Runs</div>
+    <div class="loc-sub" style="margin-bottom:10px;">Zwischen Spielständen wechseln oder einen neuen anlegen, ohne den aktuellen zu verlieren.</div>
+    <button class="btn btn-primary btn-block" data-act="open-saves-sheet">Spielstände verwalten</button>
+  </div>`);
+
   html += settingsGroupHtml("duel-bosses", "Duell & Bosse", `
   <div class="card">
     <div class="loc-name">Duellpartner</div>
@@ -2441,14 +2543,39 @@ function openAddLocationSheet(){
   setTimeout(()=>document.getElementById("inLocName").focus(), 50);
 }
 
-function openEditionSheet(){
+function openSavesSheet(){
+  const saves = loadSavesIndex().slice().sort((a,b)=>b.updatedAt-a.updatedAt);
+  const canDelete = saves.length > 1;
+  const rows = saves.map(s=>{
+    const isActive = s.id===activeSaveId;
+    const game = GAMES[s.edition];
+    return `<div class="save-row${isActive?" active":""}">
+      <button class="save-row-main" data-act="switch-save" data-id="${s.id}">
+        <div class="save-row-title">${escapeHtml(s.title||"Nuzlocke")}${isActive?` <span class="chip accent">Aktiv</span>`:""}</div>
+        <div class="loc-sub">${escapeHtml(game?game.shortLabel:s.edition)} · ${formatRelativeTime(s.updatedAt)}</div>
+      </button>
+      ${canDelete ? iconBtn("tone-red","delete-save",s.id,ICON_TRASH,"Spielstand löschen",false,true) : ""}
+    </div>`;
+  }).join("");
+  openSheet(`
+    <h3>Spielstände</h3>
+    <div class="loc-sub" style="margin-bottom:14px;">Zwischen mehreren Runs wechseln, ohne dass Fortschritt verloren geht.</div>
+    ${rows}
+    <button class="btn btn-primary btn-block" style="margin-top:6px;" data-act="open-new-save">+ Neuer Spielstand</button>
+  `);
+}
+
+function openNewSaveSheet(){
   const opts = Object.values(GAMES).map(g=>
-    `<button class="sheet-option${g.id===state.edition?" accent":""}" data-act="switch-edition" data-id="${g.id}">${escapeHtml(g.label)}${g.id===state.edition?" (aktiv)":""}</button>`
+    `<button class="sheet-option" data-act="create-save" data-id="${g.id}">${escapeHtml(g.label)}</button>`
   ).join("");
   openSheet(`
-    <h3>Edition wählen</h3>
-    <div class="loc-sub" style="margin-bottom:14px;">Ein Wechsel startet einen neuen Run in der gewählten Edition und ersetzt den aktuellen.</div>
+    <h3>Neuer Spielstand</h3>
+    <div class="loc-sub" style="margin-bottom:14px;">Edition für den neuen Run wählen.</div>
     ${opts}
+    <div class="sheet-footer">
+      <button class="btn btn-secondary btn-block" data-act="open-saves-sheet">Zurück</button>
+    </div>
   `);
 }
 
@@ -2715,12 +2842,24 @@ document.addEventListener("click", e=>{
   else if(act==="confirm-reset-run"){
     state = freshState(state.edition); saveState(); closeSheet(); render();
   }
-  else if(act==="switch-edition"){
-    if(id===state.edition){ closeSheet(); return; }
-    openConfirmSheet("Edition wechseln", `Wirklich zu ${GAMES[id].label} wechseln? Der aktuelle Run wird dabei ersetzt.`, "Wechseln", "confirm-switch-edition", id);
+  else if(act==="open-saves-sheet") openSavesSheet();
+  else if(act==="open-new-save") openNewSaveSheet();
+  else if(act==="create-save"){
+    const newId = createSave(id);
+    switchToSave(newId);
+    closeSheet(); render();
   }
-  else if(act==="confirm-switch-edition"){
-    state = freshState(id); saveState(); closeSheet(); render();
+  else if(act==="switch-save"){
+    if(id===activeSaveId){ closeSheet(); return; }
+    switchToSave(id);
+    closeSheet(); render();
+  }
+  else if(act==="delete-save"){
+    openConfirmSheet("Spielstand löschen", "Wirklich diesen Spielstand dauerhaft löschen? Das kann nicht rückgängig gemacht werden.", "Löschen", "confirm-delete-save", id);
+  }
+  else if(act==="confirm-delete-save"){
+    deleteSave(id);
+    closeSheet(); render();
   }
 });
 
@@ -2803,7 +2942,7 @@ document.getElementById("fabAdd").addEventListener("click", openAddLocationSheet
 
 document.getElementById("runTitle").addEventListener("input", e=>{ state.runTitle = e.target.value; saveState(); });
 document.getElementById("runTitle").value = state.runTitle || "Nuzlocke";
-document.getElementById("editionBtn").addEventListener("click", openEditionSheet);
+document.getElementById("editionBtn").addEventListener("click", openSavesSheet);
 applyEdition();
 
 /* Duellpartner-Namensfeld lebt in renderSettings() und wird bei jedem render() neu erzeugt -> delegiert */
