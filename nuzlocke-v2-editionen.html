@@ -1075,8 +1075,12 @@ const GAMES = {
   smaragd: { id:"smaragd", label:"Smaragd", shortLabel:"Smaragd", regions:SMARAGD_LOCATIONS, bosses:SMARAGD_BOSSES, bossAfter:SMARAGD_BOSS_AFTER, starters:{ grass:"Geckarbor", fire:"Flemmli", water:"Hydropi" },
     theme:{ light:{ accent:"#2E8B57", accentSoft:"#DCF0E3", accentShine:"#EFFBF3", accentDeep:"#1F5E3B", glow:"46,139,87" },
             dark:{ accent:"#4FD182", accentSoft:"#173626", accentShine:"#8CF0B0", accentDeep:"#2E8B57", glow:"79,209,130" } } },
+  /* Bei zusammengefassten Versionspaaren steht (analog zu HG/SS, wo der Akzent im Hell-Modus
+     silbern und im Dunkel-Modus golden ist) je eine Version fürs Hell- und fürs Dunkel-Theme:
+     Perl = hell (Rosé), Diamant = dunkel (Blau) - kein separater Umschalter, folgt einfach dem
+     bestehenden Hell/Dunkel-Modus der App. */
   "diamant-perl": { id:"diamant-perl", label:"Diamant / Perl", shortLabel:"Diamant/Perl", regions:SINNOH_LOCATIONS, bosses:SINNOH_BOSSES, bossAfter:SINNOH_BOSS_AFTER, starters:{ grass:"Chelast", fire:"Panflam", water:"Plinfa" },
-    theme:{ light:{ accent:"#4A7FC9", accentSoft:"#DCE7F7", accentShine:"#F0F5FC", accentDeep:"#2F5A96", glow:"74,127,201" },
+    theme:{ light:{ accent:"#C9628F", accentSoft:"#F7DCE8", accentShine:"#FCF0F5", accentDeep:"#96355F", glow:"201,98,143" },
             dark:{ accent:"#7FB0F0", accentSoft:"#1B2A3F", accentShine:"#A8CCFA", accentDeep:"#4A7FC9", glow:"127,176,240" } } }
 };
 Object.assign(GAMES, buildVersionGames(SINNOH_BOSSES, SINNOH_LOCATIONS, SINNOH_BOSS_AFTER, [
