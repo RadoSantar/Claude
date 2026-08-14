@@ -259,7 +259,7 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 .mon-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:2px; }
 .mon-name{ font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
 .mon-species{ font-size:.8rem; color:var(--ink-soft); font-family:var(--font-mono); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
-.mon-line{ display:flex; align-items:center; gap:10px; min-width:0; }
+.mon-line{ display:flex; align-items:center; gap:10px; min-width:0; color:inherit; text-decoration:none; }
 .mon-line > div:last-child{ min-width:0; }
 .mon-sprite{
   flex:none; image-rendering:pixelated; image-rendering:-moz-crisp-edges; image-rendering:crisp-edges;
@@ -487,7 +487,7 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 }
 .slot.filled{ border-style:solid; border-color:var(--good); justify-content:space-between; }
 .slot-empty{ color:var(--ink-soft); text-align:center; font-size:.85rem; }
-.slot-sprite-wrap{ flex:1; min-height:0; width:100%; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+.slot-sprite-wrap{ flex:1; min-height:0; width:100%; display:flex; align-items:center; justify-content:center; cursor:pointer; color:inherit; text-decoration:none; }
 .slot-sprite-wrap img{ width:auto; height:auto; max-width:100%; max-height:100%; object-fit:contain; }
 .slot-info{ width:100%; text-align:center; }
 .slot .mon-name{ font-size:.9rem; }
@@ -1136,6 +1136,30 @@ function spriteFor(speciesName){
   const dex = SPECIES_LOOKUP.get(String(speciesName).trim().toLowerCase());
   return dex ? SPRITES[dex] : null;
 }
+
+/* Externer Pokédex (DEXORA): die Nummer im Query-Parameter ?pokemon= entspricht der regulären
+   Nationalen Pokédex-Nummer (die Seite ruft sie direkt als PokeAPI-Spezies-ID ab) - dieselbe
+   Nummer, die SPECIES_LOOKUP oben bereits pro Art führt, hier nur wiederverwendet.
+   Als echtes <a href target="_blank"> verlinkt statt per window.open() - im Claude-Artifact-
+   Preview läuft die App in einer sandboxed iframe, deren eigenes Frame-Runtime-Skript gezielt
+   Klicks auf <a href>-Elemente abfängt und für die Cross-Origin-Navigation an das Elternfenster
+   weiterreicht; window.open() hat dort keinen entsprechenden Mechanismus und würde vermutlich
+   ins Leere laufen. Ein echter Link funktioniert in beiden Kontexten (Artifact wie eigenständige
+   Netlify/PWA-Installation). */
+const POKEDEX_BASE_URL = "https://pokemon-typen-labor.adrianhoppler.chatgpt.site/?pokemon=";
+function dexNumberFor(speciesName){
+  if(!speciesName) return null;
+  return SPECIES_LOOKUP.get(String(speciesName).trim().toLowerCase()) || null;
+}
+function pokedexUrlFor(speciesName){
+  const dex = dexNumberFor(speciesName);
+  return dex ? POKEDEX_BASE_URL + dex : null;
+}
+function monLinkHtml(cls, species, inner){
+  const href = pokedexUrlFor(species);
+  if(href) return `<a class="${cls}" href="${href}" target="_blank" rel="noopener" title="Pokédex-Eintrag öffnen">${inner}</a>`;
+  return `<div class="${cls}">${inner}</div>`;
+}
 function spriteImgHtml(speciesName, size, flash){
   size = size || 64;
   const src = spriteFor(speciesName);
@@ -1219,10 +1243,12 @@ function monActionsHtml(loc, small, showDelete){
   if(m.given){
     html += `<span class="loc-sub">An deinen Freund abgegeben</span>`;
   } else if(m.dead){
+    html += iconBtn("tone-neutral","open-rename",loc.id,ICON_EDIT,"Umbenennen",false,small);
     html += iconBtn("tone-neutral","revive",loc.id,ICON_UNDO,"Rückgängig machen",false,small);
     if(showDelete) html += iconBtn("tone-red","delete-catch",loc.id,ICON_TRASH,"Fang löschen",false,small);
   } else {
     const full = teamCount()>=6;
+    html += iconBtn("tone-neutral","open-rename",loc.id,ICON_EDIT,"Umbenennen",false,small);
     if(m.inTeam){
       html += iconBtn("tone-gold","remove-from-team",loc.id,ICON_POKEBALL_FILLED,"Aus dem Team nehmen",false,small);
     } else {
@@ -1574,13 +1600,13 @@ function routeCard(loc, isCurrent){
   } else if(loc.mon){
     const flash = loc.id === lastEvolvedId;
     body = `<div class="mon-block">
-      <div class="mon-line" data-act="open-rename" data-id="${loc.id}">
+      ${monLinkHtml("mon-line", loc.mon.species, `
         ${spriteImgHtml(loc.mon.species, 64, flash)}
         <div>
           <div class="mon-name">${escapeHtml(loc.mon.nickname || loc.mon.species)}</div>
           ${loc.mon.nickname ? `<div class="mon-species">${escapeHtml(loc.mon.species)}</div>` : ""}
         </div>
-      </div>
+      `)}
       ${monActionsHtml(loc)}
     </div>`;
   }
@@ -1699,9 +1725,7 @@ function renderTeam(){
     if(loc){
       const flash = loc.id === lastEvolvedId;
       html += `<div class="slot filled">
-        <div class="slot-sprite-wrap" data-act="open-rename" data-id="${loc.id}">
-          ${spriteImgHtml(loc.mon.species, 64, flash)}
-        </div>
+        ${monLinkHtml("slot-sprite-wrap", loc.mon.species, spriteImgHtml(loc.mon.species, 64, flash))}
         <div class="slot-info">
           <div class="mon-name">${escapeHtml(loc.mon.nickname||loc.mon.species)}</div>
           ${loc.mon.nickname? `<div class="mon-species">${escapeHtml(loc.mon.species)}</div>`:""}
@@ -1725,13 +1749,13 @@ function renderBox(){
     const flash = loc.id === lastEvolvedId;
     html += `<div class="card st-box" data-loc="${loc.id}">
       <div class="card-top">
-        <div class="mon-line" data-act="open-rename" data-id="${loc.id}">
+        ${monLinkHtml("mon-line", loc.mon.species, `
           ${spriteImgHtml(loc.mon.species, 64, flash)}
           <div>
             <div class="loc-name">${escapeHtml(loc.mon.nickname||loc.mon.species)}</div>
             <div class="loc-sub">${loc.mon.nickname? escapeHtml(loc.mon.species)+" · ":""}${escapeHtml(loc.name)}</div>
           </div>
-        </div>
+        `)}
         <span class="chip gold">Box</span>
       </div>
       ${monActionsHtml(loc, false, false)}
@@ -1750,13 +1774,13 @@ function renderGrave(){
     deadLocs.forEach(loc=>{
       html += `<div class="card st-dead" data-loc="${loc.id}">
         <div class="card-top">
-          <div class="mon-line" data-act="open-rename" data-id="${loc.id}">
+          ${monLinkHtml("mon-line", loc.mon.species, `
             ${spriteImgHtml(loc.mon.species, 64)}
             <div>
               <div class="loc-name">${escapeHtml(loc.mon.nickname||loc.mon.species)}</div>
               <div class="loc-sub">${loc.mon.nickname? escapeHtml(loc.mon.species)+" · ":""}gefangen bei ${escapeHtml(loc.name)}</div>
             </div>
-          </div>
+          `)}
           <span class="chip red">R.I.P.</span>
         </div>
         ${monActionsHtml(loc, false, false)}
@@ -1768,13 +1792,13 @@ function renderGrave(){
     givenLocs.forEach(loc=>{
       html += `<div class="card st-given" data-loc="${loc.id}">
         <div class="card-top">
-          <div class="mon-line" data-act="open-rename" data-id="${loc.id}">
+          ${monLinkHtml("mon-line", loc.mon.species, `
             ${spriteImgHtml(loc.mon.species, 64)}
             <div>
               <div class="loc-name">${escapeHtml(loc.mon.nickname||loc.mon.species)}</div>
               <div class="loc-sub">${loc.mon.nickname? escapeHtml(loc.mon.species)+" · ":""}an deinen Freund abgegeben</div>
             </div>
-          </div>
+          `)}
           <span class="chip accent">Abgegeben</span>
         </div>
       </div>`;
