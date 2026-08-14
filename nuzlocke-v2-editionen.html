@@ -1185,7 +1185,13 @@ function spriteFor(speciesName){
    weiterreicht; window.open() hat dort keinen entsprechenden Mechanismus und würde vermutlich
    ins Leere laufen. Ein echter Link funktioniert in beiden Kontexten (Artifact wie eigenständige
    Netlify/PWA-Installation). */
-const POKEDEX_BASE_URL = "https://pokemon-typen-labor.adrianhoppler.chatgpt.site/?pokemon=";
+/* Dieselbe Domain wie der "Pokédex öffnen"-Button in den Einstellungen (siehe renderSettings) -
+   pokemon-typen-labor.adrianhoppler.chatgpt.site ist dieselbe App unter einer anderen Domain,
+   aber wenn der Nutzer die App als installierte PWA unter dexora.adrianhoppler.chatgpt.site
+   eingerichtet hat, erkennt Android/iOS nur Links zu GENAU dieser Domain als "gehört zur
+   installierten App" und öffnet sie dort statt im Browser - eine andere Domain mit identischem
+   Inhalt zählt dafür nicht. Beide Stellen müssen deshalb dieselbe Domain verwenden. */
+const POKEDEX_BASE_URL = "https://dexora.adrianhoppler.chatgpt.site/?pokemon=";
 function dexNumberFor(speciesName){
   if(!speciesName) return null;
   return SPECIES_LOOKUP.get(String(speciesName).trim().toLowerCase()) || null;
@@ -1305,7 +1311,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.2";
+const APP_VERSION = "1.2.1";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
