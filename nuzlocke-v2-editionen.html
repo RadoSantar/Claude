@@ -557,6 +557,14 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
   padding:12px 14px; font-size:1rem; outline:none;
 }
 .field input:focus{ border-color:var(--accent); }
+.box-controls{ margin-top:14px; margin-bottom:4px; }
+.box-search-input{
+  width:100%; border:1.5px solid var(--line); background:var(--surface); border-radius:12px;
+  padding:12px 14px; font-size:1rem; outline:none; margin-bottom:10px;
+}
+.box-search-input:focus{ border-color:var(--accent); }
+.box-sort-row{ display:flex; gap:8px; }
+.box-sort-row .btn{ padding:9px 14px; min-height:auto; font-size:.82rem; flex:none; }
 .species-picker{ position:relative; }
 .species-results{
   margin-top:8px; max-height:236px; overflow-y:auto; border:1.5px solid var(--line); border-radius:12px;
@@ -1238,11 +1246,13 @@ let lastFinalRivalFlash = false;
 let pendingCatchData = null;
 let expandedRegions = new Set(); // welche Regionen ihre abgeschlossene Historie ausgeklappt haben - bewusst nicht persistiert, jeder Reload startet eingeklappt
 let expandedSettingsGroups = new Set(); // welche Einstellungs-Gruppen aufgeklappt sind - ebenfalls nicht persistiert, "Fortschritt" bleibt immer sichtbar
+let boxSearchQuery = ""; // Box-Suche - nicht persistiert, jeder Tab-Wechsel startet leer
+let boxSortMode = "default"; // "default" (Routen-Reihenfolge) | "name" | "caught"
 
 function performCatch(id, species, nick){
   const loc = findLoc(id);
   loc.status="caught";
-  loc.mon={ species, nickname:nick, inTeam:false, dead:false };
+  loc.mon={ species, nickname:nick, inTeam:false, dead:false, caughtAt:Date.now() };
   saveState(); closeSheet(); render();
 }
 
@@ -1853,9 +1863,34 @@ function openStarterSetupSheet(){
   setTimeout(()=>document.getElementById("inStarterGrass").focus(), 50);
 }
 
+/* Levelcap-Regel (verbreitete Nuzlocke-Hausregel: Team darf das Level des nächsten Bosses nicht
+   überschreiten) - reine Info-Anzeige, keine Markierung einzelner Team-Mitglieder, da die App das
+   Level der eigenen Pokémon nirgends erfasst (nur Fangort/Status/Team-Zugehörigkeit). "duel-final"
+   hat bewusst kein baseLevel (manuell eingetragenes Ergebnis statt Level-Tracking) und wird hier
+   deshalb übersprungen. */
+function nextLevelCapBoss(){
+  return currentGame().bosses.find(b=>!isBossDefeated(b.id) && typeof b.baseLevel==="number") || null;
+}
+function levelCapCardHtml(){
+  const boss = nextLevelCapBoss();
+  if(!boss) return "";
+  const isRival = boss.group==="Rivale";
+  const displayName = (isRival && (state.rivalNickname||"").trim()) || boss.name;
+  return `<div class="card">
+    <div class="card-top">
+      <div>
+        <div class="loc-name">Levelcap</div>
+        <div class="loc-sub">${escapeHtml(displayName)} · ${escapeHtml(boss.place)}</div>
+      </div>
+      <span class="chip accent">Lv. ${bossLevel(boss)}</span>
+    </div>
+  </div>`;
+}
+
 function renderTeam(){
   const teamLocs = state.locations.filter(l=>l.mon && l.mon.inTeam && !l.mon.dead && !l.mon.given);
-  let html = `<div class="team-grid">`;
+  let html = levelCapCardHtml();
+  html += `<div class="team-grid">`;
   for(let i=0;i<6;i++){
     const loc = teamLocs[i];
     if(loc){
@@ -1877,13 +1912,20 @@ function renderTeam(){
   document.getElementById("content").innerHTML = html;
 }
 
-function renderBox(){
-  const boxLocs = state.locations.filter(l=>l.mon && !l.mon.inTeam && !l.mon.dead && !l.mon.given);
-  if(!boxLocs.length){ document.getElementById("content").innerHTML = emptyState("Box ist leer","Gefangene Pokémon, die nicht im Team sind, landen hier."); return; }
-  let html = "";
-  boxLocs.forEach(loc=>{
-    const flash = loc.id === lastEvolvedId;
-    html += `<div class="card st-box" data-loc="${loc.id}">
+const BOX_SORT_OPTIONS = [["default","Route"],["name","Name"],["caught","Fangdatum"]];
+function boxControlsHtml(){
+  const sortBtns = BOX_SORT_OPTIONS.map(([key,label])=>
+    `<button class="btn ${boxSortMode===key?"btn-primary":"btn-secondary"}" data-act="set-box-sort" data-id="${key}">${escapeHtml(label)}</button>`
+  ).join("");
+  return `<div class="box-controls">
+    <input type="search" id="boxSearchInput" class="box-search-input" placeholder="Pokémon suchen..." value="${escapeHtml(boxSearchQuery)}" autocomplete="off" />
+    <div class="box-sort-row">${sortBtns}</div>
+  </div>`;
+}
+
+function boxCardHtml(loc){
+  const flash = loc.id === lastEvolvedId;
+  return `<div class="card st-box" data-loc="${loc.id}">
       <div class="card-top">
         ${monLinkHtml("mon-line", loc.mon.species, `
           ${spriteImgHtml(loc.mon.species, 64, flash)}
@@ -1896,8 +1938,30 @@ function renderBox(){
       </div>
       ${monActionsHtml(loc, false, false)}
     </div>`;
-  });
-  document.getElementById("content").innerHTML = html;
+}
+
+/* Sucht/sortiert innerhalb der bereits gefangenen Box-Pokémon - eigenständige Funktion (nicht Teil
+   von renderBox()), damit der Such-Input bei jedem Tastendruck NUR die Ergebnisliste (#boxResults)
+   austauschen kann statt über ein volles render() auch sich selbst neu zu erzeugen, was den Fokus/
+   die Eingabeposition im Feld sofort verlieren würde. */
+function boxResultsHtml(boxLocs){
+  const q = boxSearchQuery.trim().toLowerCase();
+  let filtered = q
+    ? boxLocs.filter(l => (l.mon.nickname||"").toLowerCase().includes(q) || l.mon.species.toLowerCase().includes(q))
+    : boxLocs.slice();
+  if(boxSortMode==="name"){
+    filtered.sort((a,b)=>(a.mon.nickname||a.mon.species).localeCompare(b.mon.nickname||b.mon.species, "de"));
+  } else if(boxSortMode==="caught"){
+    filtered.sort((a,b)=>(b.mon.caughtAt||0)-(a.mon.caughtAt||0));
+  }
+  if(!filtered.length) return emptyState("Keine Treffer","Kein Pokémon in der Box passt zur Suche.");
+  return filtered.map(boxCardHtml).join("");
+}
+
+function renderBox(){
+  const boxLocs = state.locations.filter(l=>l.mon && !l.mon.inTeam && !l.mon.dead && !l.mon.given);
+  if(!boxLocs.length){ document.getElementById("content").innerHTML = emptyState("Box ist leer","Gefangene Pokémon, die nicht im Team sind, landen hier."); return; }
+  document.getElementById("content").innerHTML = boxControlsHtml() + `<div id="boxResults">${boxResultsHtml(boxLocs)}</div>`;
 }
 
 function renderGrave(){
@@ -2673,7 +2737,7 @@ document.addEventListener("click", e=>{
     const species = document.getElementById("inPvpSpecies").value.trim();
     if(!species) return;
     const locId = "pvp-win-"+id+"-"+Date.now();
-    state.locations.push({ id:locId, name:"PvP-Sieg", region:null, custom:true, status:"caught", mon:{ species, nickname:"", inTeam:false, dead:false, given:false } });
+    state.locations.push({ id:locId, name:"PvP-Sieg", region:null, custom:true, status:"caught", mon:{ species, nickname:"", inTeam:false, dead:false, given:false, caughtAt:Date.now() } });
     state.pvp[id] = { winner:"me", wonSpecies:species, locId };
     saveState(); closeSheet(); render();
   }
@@ -2804,7 +2868,7 @@ document.addEventListener("click", e=>{
     const type = t.dataset.type;
     state.starterChoice = type;
     removeStarterMon();
-    state.locations.unshift({ id:"starter-mon", name:"Starter", region:null, custom:false, starter:true, status:"caught", mon:{ species:(state.starterNames[type]||"").trim(), nickname:"", inTeam:true, dead:false } });
+    state.locations.unshift({ id:"starter-mon", name:"Starter", region:null, custom:false, starter:true, status:"caught", mon:{ species:(state.starterNames[type]||"").trim(), nickname:"", inTeam:true, dead:false, caughtAt:Date.now() } });
     saveState(); render();
   }
   else if(act==="undo-starter-choice"){
@@ -2859,6 +2923,7 @@ document.addEventListener("click", e=>{
     localStorage.setItem("hgss-theme-mode", id);
     applyTheme(); render();
   }
+  else if(act==="set-box-sort"){ boxSortMode = id; render(); }
   else if(act==="toggle-dupes-warning"){
     state.dupesWarning = !state.dupesWarning;
     saveState(); render();
@@ -2979,6 +3044,12 @@ applyEdition();
 /* Duellpartner-Namensfeld lebt in renderSettings() und wird bei jedem render() neu erzeugt -> delegiert */
 document.addEventListener("input", e=>{
   if(e.target && e.target.id==="duelPartnerInput"){ state.duelPartnerName = e.target.value; saveState(); }
+  if(e.target && e.target.id==="boxSearchInput"){
+    boxSearchQuery = e.target.value;
+    const boxLocs = state.locations.filter(l=>l.mon && !l.mon.inTeam && !l.mon.dead && !l.mon.given);
+    const resultsEl = document.getElementById("boxResults");
+    if(resultsEl) resultsEl.innerHTML = boxResultsHtml(boxLocs);
+  }
 });
 
 /* theme toggle: direct light <-> dark toggle (defaults to system preference until first click) */
