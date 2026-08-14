@@ -1567,8 +1567,10 @@ function routeCard(loc, isCurrent){
       <button class="btn btn-secondary" data-act="mark-failed" data-id="${loc.id}">Kein Fang</button>
     </div>`;
   } else if(loc.status==="failed"){
-    body = `<div class="mon-row"><span class="loc-sub">Kein Pokémon gefangen</span>
-      <button class="btn-ghost" data-act="reset-loc" data-id="${loc.id}">Rückgängig</button></div>`;
+    body = `<div class="mon-block">
+      <span class="loc-sub">Kein Pokémon gefangen</span>
+      <div class="mon-actions">${iconBtn("tone-neutral","reset-loc",loc.id,ICON_UNDO,"Rückgängig machen",false,false)}</div>
+    </div>`;
   } else if(loc.mon){
     const flash = loc.id === lastEvolvedId;
     body = `<div class="mon-block">
