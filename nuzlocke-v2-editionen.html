@@ -1561,7 +1561,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.4.1";
+const APP_VERSION = "1.4.2";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -2061,13 +2061,17 @@ function starterCardHtml(){
      Standort-Fang getrennter Eintrag (starter-mon), damit z.B. Alabastia weiterhin unabhängig
      für einen normalen wilden Fang (Angeln) nutzbar bleibt. */
   if(gameStarters.fixed){
+    /* fixed bleibt der Edition-Standard (z.B. "Pikachu"), state.starterNames.fixed die tatsächlich
+       verwendete Art - trennt beides, damit ein Randomizer-Run (andere Startart als vorgegeben)
+       über den Bearbeiten-Stift überschreibbar ist, ohne die Editionsdaten selbst anzufassen. */
+    const species = (state.starterNames && state.starterNames.fixed) || gameStarters.fixed;
     if(state.starterChoice){
       return `<div class="card starter-card starter-resolved">
         <div class="card-top">
           <div class="mon-line">
-            ${spriteImgHtml(gameStarters.fixed, 64)}
+            ${spriteImgHtml(species, 64)}
             <div>
-              <div class="loc-name">Dein Starter: ${escapeHtml(gameStarters.fixed)}</div>
+              <div class="loc-name">Dein Starter: ${escapeHtml(species)}</div>
               <div class="loc-sub">Kein Auswahlmenü in dieser Edition.</div>
             </div>
           </div>
@@ -2077,11 +2081,14 @@ function starterCardHtml(){
       </div>`;
     }
     return `<div class="card starter-card">
-      <div class="card-top"><div><div class="loc-name">Dein Starter</div><div class="loc-sub">Kein Auswahlmenü in dieser Edition - bestätige den Fang.</div></div></div>
+      <div class="card-top">
+        <div><div class="loc-name">Dein Starter</div><div class="loc-sub">Kein Auswahlmenü in dieser Edition - bestätige den Fang.</div></div>
+        ${iconBtn("tone-neutral","open-starter-setup",null,ICON_EDIT,"Starter bearbeiten (z.B. Randomizer)",false,true)}
+      </div>
       <div class="starter-pick-row">
         <button class="starter-pick-btn" data-act="choose-starter" data-type="fixed">
-          ${spriteImgHtml(gameStarters.fixed, 56)}
-          <span>${escapeHtml(gameStarters.fixed)}</span>
+          ${spriteImgHtml(species, 56)}
+          <span>${escapeHtml(species)}</span>
         </button>
       </div>
     </div>`;
@@ -2129,6 +2136,25 @@ function starterCardHtml(){
 }
 
 function openStarterSetupSheet(){
+  const gameStarters = currentGame().starters || {};
+  if(gameStarters.fixed){
+    const current = (state.starterNames && state.starterNames.fixed) || gameStarters.fixed;
+    openSheet(`
+      <h3>Starter anpassen</h3>
+      <div class="loc-sub" style="margin-bottom:12px;">Weicht dein Run vom vorgegebenen Starter ab (z.B. Randomizer), hier eintragen. Standard dieser Edition: ${escapeHtml(gameStarters.fixed)}.</div>
+      <div class="field species-picker">
+        <label for="inStarterFixed">Starter</label>
+        <input id="inStarterFixed" value="${escapeHtml(current)}" autocomplete="off" />
+        <div class="species-results" id="inStarterFixedResults"></div>
+      </div>
+      <div class="sheet-footer">
+        <button class="btn btn-secondary btn-block" data-act="close-sheet">Abbrechen</button>
+        <button class="btn btn-primary btn-block" data-act="save-starter-fixed">Speichern</button>
+      </div>
+    `);
+    wireSpeciesPicker("inStarterFixed","inStarterFixedResults", ()=>{});
+    return;
+  }
   const names = state.starterNames || { grass:"", fire:"", water:"" };
   openSheet(`
     <h3>Starter eintragen</h3>
@@ -3198,11 +3224,18 @@ document.addEventListener("click", e=>{
     removeStarterMon();
     saveState(); closeSheet(); render();
   }
+  else if(act==="save-starter-fixed"){
+    const fixed = document.getElementById("inStarterFixed").value.trim().slice(0,30);
+    state.starterNames = { ...(state.starterNames||{}), fixed };
+    state.starterChoice = null;
+    removeStarterMon();
+    saveState(); closeSheet(); render();
+  }
   else if(act==="choose-starter"){
     const type = t.dataset.type;
     state.starterChoice = type;
     removeStarterMon();
-    const species = type==="fixed" ? (currentGame().starters.fixed||"").trim() : (state.starterNames[type]||"").trim();
+    const species = type==="fixed" ? ((state.starterNames && state.starterNames.fixed) || currentGame().starters.fixed || "").trim() : (state.starterNames[type]||"").trim();
     state.locations.unshift({ id:"starter-mon", name:"Starter", region:null, custom:false, starter:true, status:"caught", mon:{ species, nickname:"", inTeam:true, dead:false, caughtAt:Date.now() } });
     saveState(); render();
   }
