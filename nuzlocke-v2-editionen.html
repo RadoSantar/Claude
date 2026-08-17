@@ -1727,15 +1727,15 @@ Object.assign(GAMES, buildVersionGames(HOENN_RS_BOSSES, SMARAGD_LOCATIONS, HOENN
    Schema passen). Ein Eintrag hier ohne zugehörige GAMES-Edition zeigt einfach keine Gruppe an -
    nichts weiter einzutragen, bis die erste Edition dieser Generation existiert. */
 const GENERATION_LABELS = {
-  1: "Generation 1 – Rot / Blau / Gelb",
-  2: "Generation 2 – Gold / Silber / Kristall",
-  3: "Generation 3 – Rubin / Saphir / Smaragd / Feuerrot / Blattgrün",
-  4: "Generation 4 – Diamant / Perl / Platin / HeartGold / SoulSilver",
-  5: "Generation 5 – Schwarz / Weiß",
-  6: "Generation 6 – X / Y",
-  7: "Generation 7 – Sonne / Mond",
-  8: "Generation 8 – Schwert / Schild",
-  9: "Generation 9 – Karmesin / Purpur",
+  1: "Generation 1",
+  2: "Generation 2",
+  3: "Generation 3",
+  4: "Generation 4",
+  5: "Generation 5",
+  6: "Generation 6",
+  7: "Generation 7",
+  8: "Generation 8",
+  9: "Generation 9",
 };
 
 /* Erzeugt die :root[data-edition="..."]-Farbregeln aus GAMES[...].theme statt sie pro Edition von
@@ -1914,7 +1914,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.6";
+const APP_VERSION = "1.6.1";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
