@@ -1191,7 +1191,7 @@ const KANTO_RB_BOSS_AFTER = {
      Top Vier + Champion sind dagegen identisch zu Rot/Blau (gleiche Level/Spezies). */
 const KANTO_YELLOW_LOCATIONS = [
   ["Kanto",[
-    {name:"Alabastia", note:"Nur Angeln + Geschenk: Pikachu (dein fester Starter, keine Wahl) von Prof. Eich, inkl. optionalem ersten Rivalenkampf im Labor (Rivale erhält Evoli)."},
+    {name:"Alabastia", note:"Nur Angeln (Pikachu als fester Starter steht oben in der eigenen Starter-Karte, kein Wahlmenü) + optionaler erster Rivalenkampf im Labor (Rivale erhält Evoli)."},
     "Route 1",
     {name:"Vertania City", note:"Arena erst ganz am Ende des Spiels zugänglich (Giovanni) - siehe Vertania-Arena weiter unten."},
     "Route 22",
@@ -1351,12 +1351,14 @@ const GAMES = {
   "rot-blau": { id:"rot-blau", label:"Rote / Blaue Edition", shortLabel:"Rot/Blau", regions:KANTO_RB_LOCATIONS, bosses:KANTO_RB_BOSSES, bossAfter:KANTO_RB_BOSS_AFTER, starters:{ grass:"Bisasam", fire:"Glumanda", water:"Schiggy" }, generation:1,
     theme:{ light:{ accent:"#E0393C", accentSoft:"#FBDEDE", accentShine:"#FDF2F2", accentDeep:"#A32621", glow:"224,57,60" },
             dark:{ accent:"#4E8FE0", accentSoft:"#17233A", accentShine:"#A9C8F5", accentDeep:"#2F5FAE", glow:"78,143,224" } } },
-  /* Kein starters-Feld: Gelb hat keine Dreier-Starterwahl (siehe Kommentar bei KANTO_YELLOW_*
-     oben) - starterCardHtml() blendet die Starterwahl-Karte deshalb für diese Edition komplett
-     aus, Pikachu wird stattdessen ganz normal als Standort-Fang in Alabastia getrackt. Eigenständiges
+  /* starters:{fixed,rivalGets} statt {grass,fire,water}: Gelb hat keine Dreier-Starterwahl, Pikachu
+     ist fix vorgegeben (siehe Kommentar bei KANTO_YELLOW_* oben) - starterCardHtml() zeigt dafür
+     eine vereinfachte Ein-Pokémon-Karte statt drei Auswahlknöpfen. Bewusst weiterhin als eigener,
+     von Alabastia getrennter starter-mon-Eintrag getrackt (nicht als Standort-Fang), da Alabastia
+     selbst weiterhin für einen unabhängigen wilden Fang (Angeln) nutzbar bleibt. Eigenständiges
      Gelb-Thema (nicht wie Rot/Blau als Hell/Dunkel-Paar zweier Versionen, da Gelb nur eine einzelne
      Version ist) - warmes Gelb/Gold in beiden Modi, je nur unterschiedlich hell. */
-  gelb: { id:"gelb", label:"Gelbe Edition", shortLabel:"Gelb", regions:KANTO_YELLOW_LOCATIONS, bosses:KANTO_YELLOW_BOSSES, bossAfter:KANTO_YELLOW_BOSS_AFTER, generation:1,
+  gelb: { id:"gelb", label:"Gelbe Edition", shortLabel:"Gelb", regions:KANTO_YELLOW_LOCATIONS, bosses:KANTO_YELLOW_BOSSES, bossAfter:KANTO_YELLOW_BOSS_AFTER, starters:{ fixed:"Pikachu", rivalGets:"Evoli" }, generation:1,
     theme:{ light:{ accent:"#E3A712", accentSoft:"#FBF0D2", accentShine:"#FEFBF0", accentDeep:"#8F6A0A", glow:"227,167,18" },
             dark:{ accent:"#F5CB4C", accentSoft:"#2E2410", accentShine:"#FCE9A0", accentDeep:"#C99A1E", glow:"245,203,76" } } }
 };
@@ -1559,7 +1561,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.4";
+const APP_VERSION = "1.4.1";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -2051,10 +2053,39 @@ function starterNamesSet(){
 function removeStarterMon(){ state.locations = state.locations.filter(l=>!l.starter); }
 
 function starterCardHtml(){
-  /* Editionen ohne echte Dreier-Starterwahl (z.B. Gelb: Pikachu ist fix vorgegeben) lassen
-     starters einfach weg - der Starter wird dort stattdessen als normaler Standort-Fang mit
-     erklärendem Hinweistext getrackt, ganz ohne diese Karte. */
-  if(!currentGame().starters) return "";
+  const gameStarters = currentGame().starters;
+  if(!gameStarters) return "";
+  /* Editionen ohne echte Dreier-Starterwahl (z.B. Gelb: Pikachu ist fix vorgegeben) nutzen
+     starters:{fixed,rivalGets} statt {grass,fire,water} - eigener, deutlich einfacherer Kartentyp
+     mit nur einem Pokémon statt drei Auswahlknöpfen. Bleibt trotzdem ein eigener, vom
+     Standort-Fang getrennter Eintrag (starter-mon), damit z.B. Alabastia weiterhin unabhängig
+     für einen normalen wilden Fang (Angeln) nutzbar bleibt. */
+  if(gameStarters.fixed){
+    if(state.starterChoice){
+      return `<div class="card starter-card starter-resolved">
+        <div class="card-top">
+          <div class="mon-line">
+            ${spriteImgHtml(gameStarters.fixed, 64)}
+            <div>
+              <div class="loc-name">Dein Starter: ${escapeHtml(gameStarters.fixed)}</div>
+              <div class="loc-sub">Kein Auswahlmenü in dieser Edition.</div>
+            </div>
+          </div>
+          ${iconBtn("tone-neutral","undo-starter-choice",null,ICON_UNDO,"Rückgängig machen",false,true)}
+        </div>
+        ${gameStarters.rivalGets ? `<div class="loc-sub" style="margin-top:10px;">${escapeHtml(rivalDisplayName())} erhält: ${escapeHtml(gameStarters.rivalGets)} (kein Wahlrecht).</div>` : ""}
+      </div>`;
+    }
+    return `<div class="card starter-card">
+      <div class="card-top"><div><div class="loc-name">Dein Starter</div><div class="loc-sub">Kein Auswahlmenü in dieser Edition - bestätige den Fang.</div></div></div>
+      <div class="starter-pick-row">
+        <button class="starter-pick-btn" data-act="choose-starter" data-type="fixed">
+          ${spriteImgHtml(gameStarters.fixed, 56)}
+          <span>${escapeHtml(gameStarters.fixed)}</span>
+        </button>
+      </div>
+    </div>`;
+  }
   const names = state.starterNames || { grass:"", fire:"", water:"" };
   if(!starterNamesSet()){
     return `<div class="card starter-card">
@@ -3171,7 +3202,8 @@ document.addEventListener("click", e=>{
     const type = t.dataset.type;
     state.starterChoice = type;
     removeStarterMon();
-    state.locations.unshift({ id:"starter-mon", name:"Starter", region:null, custom:false, starter:true, status:"caught", mon:{ species:(state.starterNames[type]||"").trim(), nickname:"", inTeam:true, dead:false, caughtAt:Date.now() } });
+    const species = type==="fixed" ? (currentGame().starters.fixed||"").trim() : (state.starterNames[type]||"").trim();
+    state.locations.unshift({ id:"starter-mon", name:"Starter", region:null, custom:false, starter:true, status:"caught", mon:{ species, nickname:"", inTeam:true, dead:false, caughtAt:Date.now() } });
     saveState(); render();
   }
   else if(act==="undo-starter-choice"){
