@@ -1495,7 +1495,11 @@ const PLATIN_OVERRIDES = {
 /* Generationen-Zuordnung nur für die gruppierte Anzeige in der Spielstände-Neuanlage (siehe
    GENERATION_LABELS/openNewSaveSheet) - hat keinen Einfluss auf Spiellogik/Speicherformat. */
 const GAMES = {
-  hgss: { id:"hgss", label:"HeartGold / SoulSilver", shortLabel:"HG/SS", regions:LOCATIONS_DEFAULT, bosses:BOSSES, bossAfter:BOSS_AFTER, starters:{ grass:"Endivie", fire:"Feurigel", water:"Karnimani" }, generation:2 },
+  /* HG/SS ist ein Gen4-DS-Remake von Gold/Silber (Gen2) - generation:4 (Erscheinungsjahr/-generation
+     der Edition selbst), nicht 2 (Generation des Original-Spiels, das hier neu aufgelegt wird).
+     Gruppierung in der Spielstände-Neuanlage folgt also der Release-Generation, nicht dem
+     inhaltlichen Vorbild - analog künftig bei Feuerrot/Blattgrün (Gen3-Remake von Gen1). */
+  hgss: { id:"hgss", label:"HeartGold / SoulSilver", shortLabel:"HG/SS", regions:LOCATIONS_DEFAULT, bosses:BOSSES, bossAfter:BOSS_AFTER, starters:{ grass:"Endivie", fire:"Feurigel", water:"Karnimani" }, generation:4 },
   smaragd: { id:"smaragd", label:"Smaragd", shortLabel:"Smaragd", regions:SMARAGD_LOCATIONS, bosses:SMARAGD_BOSSES, bossAfter:SMARAGD_BOSS_AFTER, starters:{ grass:"Geckarbor", fire:"Flemmli", water:"Hydropi" }, generation:3,
     theme:{ light:{ accent:"#2E8B57", accentSoft:"#DCF0E3", accentShine:"#EFFBF3", accentDeep:"#1F5E3B", glow:"46,139,87" },
             dark:{ accent:"#4FD182", accentSoft:"#173626", accentShine:"#8CF0B0", accentDeep:"#2E8B57", glow:"79,209,130" } } },
@@ -1523,14 +1527,17 @@ const GAMES = {
   gelb: { id:"gelb", label:"Gelbe Edition", shortLabel:"Gelb", regions:KANTO_YELLOW_LOCATIONS, bosses:KANTO_YELLOW_BOSSES, bossAfter:KANTO_YELLOW_BOSS_AFTER, starters:{ fixed:"Pikachu", rivalGets:"Evoli" }, generation:1,
     theme:{ light:{ accent:"#E3A712", accentSoft:"#FBF0D2", accentShine:"#FEFBF0", accentDeep:"#8F6A0A", glow:"227,167,18" },
             dark:{ accent:"#F5CB4C", accentSoft:"#2E2410", accentShine:"#FCE9A0", accentDeep:"#C99A1E", glow:"245,203,76" } } },
-  /* Gold, Silber und Kristall haben laut Recherche identische Teams/Level - deshalb wie
-     Diamant/Perl EIN gemeinsamer Eintrag statt dreier separater Editionen (kein Versions-Trio-
-     Merge über buildVersionGames nötig, da schlicht keine Overrides existieren). Eigenes
-     Kristall-Türkis-Thema statt Silber/Gold-Wiederverwendung, damit sich die Edition in der Auswahl
-     klar von HG/SS unterscheidet (Hell/Dunkel hier nur Helligkeitsstufen derselben Farbidentität,
-     nicht zwei verschiedene Versionsfarben wie bei HG/SS oder Rot/Blau - passend, weil alle drei
-     Versionen hier gleich sind statt sich farblich zu unterscheiden). */
-  "gold-silber-kristall": { id:"gold-silber-kristall", label:"Gold / Silber / Kristall", shortLabel:"Gold/Silber/Kristall", regions:GSC_LOCATIONS, bosses:GSC_BOSSES, bossAfter:GSC_BOSS_AFTER, starters:{ grass:"Endivie", fire:"Feurigel", water:"Karnimani" }, generation:2,
+  /* Durchgängiges Muster für alle Generationen mit "Partner-Paar + dritte Solo-Edition": das
+     zeitgleich erschienene Versionspaar wird zusammengefasst (Hell/Dunkel = je eigene Farbidentität
+     der beiden Partner-Versionen, hier Silber/Gold), die später erschienene dritte Version bleibt
+     eigenständig (Rot/Blau+Gelb, künftig Rubin/Saphir+Smaragd). Gold, Silber UND Kristall haben
+     laut Recherche zwar identische Teams/Level (ein Bulbapedia-Wikitext-Header für alle drei) - die
+     Trennung hier ist also rein strukturell/nach Erscheinungsreihenfolge, nicht weil sich die Daten
+     unterscheiden (beide Einträge nutzen deshalb bewusst denselben GSC_*-Datensatz). */
+  "gold-silber": { id:"gold-silber", label:"Gold / Silber", shortLabel:"Gold/Silber", regions:GSC_LOCATIONS, bosses:GSC_BOSSES, bossAfter:GSC_BOSS_AFTER, starters:{ grass:"Endivie", fire:"Feurigel", water:"Karnimani" }, generation:2,
+    theme:{ light:{ accent:"#9BA4AE", accentSoft:"#E7EAED", accentShine:"#F5F6F8", accentDeep:"#5F6B76", glow:"155,164,174" },
+            dark:{ accent:"#D9A536", accentSoft:"#2E2410", accentShine:"#F0D488", accentDeep:"#A67C1E", glow:"217,165,54" } } },
+  kristall: { id:"kristall", label:"Kristall-Edition", shortLabel:"Kristall", regions:GSC_LOCATIONS, bosses:GSC_BOSSES, bossAfter:GSC_BOSS_AFTER, starters:{ grass:"Endivie", fire:"Feurigel", water:"Karnimani" }, generation:2,
     theme:{ light:{ accent:"#2FA6A0", accentSoft:"#D8F1EF", accentShine:"#F0FAF9", accentDeep:"#1E6E6A", glow:"47,166,160" },
             dark:{ accent:"#5FD6CE", accentSoft:"#123332", accentShine:"#A6EDE8", accentDeep:"#2FA6A0", glow:"95,214,206" } } }
 };
@@ -1548,8 +1555,8 @@ Object.assign(GAMES, buildVersionGames(SINNOH_BOSSES, SINNOH_LOCATIONS, SINNOH_B
 const GENERATION_LABELS = {
   1: "Generation 1 – Rot / Blau / Gelb",
   2: "Generation 2 – Gold / Silber / Kristall",
-  3: "Generation 3 – Rubin / Saphir / Smaragd",
-  4: "Generation 4 – Diamant / Perl / Platin",
+  3: "Generation 3 – Rubin / Saphir / Smaragd / Feuerrot / Blattgrün",
+  4: "Generation 4 – Diamant / Perl / Platin / HeartGold / SoulSilver",
   5: "Generation 5 – Schwarz / Weiß",
   6: "Generation 6 – X / Y",
   7: "Generation 7 – Sonne / Mond",
@@ -1733,7 +1740,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.5";
+const APP_VERSION = "1.5.1";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
