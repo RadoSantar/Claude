@@ -1207,6 +1207,13 @@ const PLATIN_OVERRIDES = {
       Dunkel = blau/Diamant). Kein zusätzlicher Umschalter nötig, folgt dem bestehenden
       Hell/Dunkel-Toggle der App.
    6. Trainer-Sprites in BOSS_SPRITES ergänzen (Bulbagarden-Archives-Workflow, siehe README/Notizen).
+      Stil-Entscheidung (Rechercheergebnis, siehe Chat): offizielle 2D-Pixel-Trainersprites gibt es
+      nur bis Gen 5 (Spr_BW_X/Spr_B2W2_X, gleiches 80x80-Format wie die bereits genutzten
+      Spr_HGSS_X/Spr_RS_X/Spr_E_X/Spr_DP_X/Spr_Pt_X) - ab Gen 6 (X/Y) sind die Spiele komplett 3D,
+      es existiert kein Pixel-Sprite-Äquivalent mehr. Deshalb: Gen 1-5 weiterhin Pixel-Sprites,
+      ab Gen 6 auf Spr_Masters_X (Pokémon Masters EX, einheitlicher Chibi-Portrait-Stil, deckt
+      praktisch jeden Gen1-9-Charakter ab) umsteigen - bewusster Stilbruch an der Generation 5/6-
+      Grenze, spiegelt den echten 2D/3D-Wechsel der Hauptspiele selbst.
    7. generation:N setzen (bei buildVersionGames() als letztes Argument fürs ganze Versions-Trio,
       sonst direkt im GAMES-Eintrag) - steuert nur die Gruppierung in der Spielstände-Neuanlage
       (siehe GENERATION_LABELS), keine Spiellogik. Bei Bedarf neue Generation in GENERATION_LABELS
