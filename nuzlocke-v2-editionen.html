@@ -1275,6 +1275,168 @@ const KANTO_YELLOW_BOSS_AFTER = {
   "Kanto|Pokémon-Liga": ["e4-lorelei","e4-bruno","e4-agathe","e4-lance","duel-final"]
 };
 
+/* ---------- Johto/Kanto (Gold/Silber/Kristall, Original) ----------
+   Gold, Silber und Kristall haben laut Recherche (Bulbapedia-Wikitext, gemeinsamer
+   {{game2|Gold|Silver|Crystal}}-Header bei praktisch jedem Trainer) exakt identische Teams/Level -
+   deshalb EIN gemeinsamer Datensatz für alle drei Versionen statt Duplizierung, analog zu
+   Diamant/Perl. Karte weitgehend identisch zu HGSS (LOCATIONS_DEFAULT/BOSS_AFTER oben) - deshalb
+   hier als Kopie mit den recherchierten Original-Unterschieden statt komplettem Neuaufbau:
+   - Sinjoh-Ruinen existieren nicht (HGSS/Gen4-exklusives Arceus-Event, kein Gen2-Inhalt).
+   - Die Johto-"Safari-Zone" bei Route 47/48 ist eine HGSS-exklusive Neuerung (ersetzt dort Pal
+     Park) - im Original liegt die klassische Safari-Zone stattdessen in Kanto bei Fuchsania City
+     (wie schon in Rot/Blau/Gelb), hier entsprechend verschoben.
+   - "Nationaldex"-Formulierungen bei Postgame-Hinweisen entfernt (Generation-4-Begriff, den es in
+     Gen 2 so nicht gibt) - stattdessen allgemeiner "nach Johto-Sieg"/"Postgame" formuliert.
+   Levelunterschiede zu HGSS sind erwartet (eigenständiges Rebalancing im DS-Remake) und kein Fehler
+   - siehe Chat-Recherche für die vollständige Gegenprüfung. Rocket-Vorstände sind im Original
+   namenlos ("Executive") - die hier verwendeten deutschen Namen (Lance/Lambda/Athena/Atlas)
+   stammen offiziell erst aus HGSS, werden hier aber der Konsistenz halber trotzdem verwendet (wie
+   im Rest der App), der einfache Rüpel am Flegmon-Brunnen bleibt bewusst namenlos. Giovanni taucht
+   in Gold/Silber/Kristall gar nicht als Kampf auf (bestätigt: sein Verbleib ist ungeklärter Teil
+   der Handlung, erst HGSS löst das per Zeitreise-Event auf) - deshalb kein Giovanni-Eintrag hier. */
+const GSC_LOCATIONS = [
+  ["Johto",[
+    {name:"Neuborkia", note:"Nur Kopfnuss-Bäume, Surfen, Angeln (kein Gras in der Stadt)."},
+    "Route 29",
+    {name:"Rosalia City", note:"Nur Kopfnuss-Bäume, Surfen, Angeln."},
+    "Route 46","Route 30","Route 31",
+    {name:"Viola City", note:"Nur Kopfnuss-Bäume, Surfen, Angeln + Geschenk: Togepi-Ei (nach Falkner-Sieg)."},
+    {name:"Knofensa-Turm", note:"Nur im Turm: Rattfratz (tags), Nebelas (nachts)."},
+    "Dunkelhöhle (Viola-Seite)","Einheitstunnel","Route 32",
+    {name:"Alph-Ruinen", note:"Inkl. Icognito-Rätselkammern."},
+    {name:"Azalea City", note:"Nur Kopfnuss-Bäume + Doppelkampf gegen einen Team-Rocket-Rüpel."},
+    {name:"Flegmon-Brunnen", note:"Flegmon fast garantiert per Surfen. Hier auch der erste Team-Rocket-Kampf (Rüpel)."},
+    "Steineichenwald","Route 33",
+    {name:"Dukatia City", note:"Keine wilden Pokémon in der Stadt selbst.", noCatch:true},
+    {name:"Dukatia-Passage", note:"Keine wilden Pokémon.", noCatch:true},
+    "Route 34","Nationalpark","Route 35","Route 36","Route 37",
+    {name:"Teak City", note:"Nur Kopfnuss-Bäume, Surfen, Angeln."},
+    {name:"Turmruine", note:"Inkl. Suicune (Postgame-Story-Event)."},
+    {name:"Glockenklangpfad", note:"Keine wilden Pokémon.", noCatch:true},
+    {name:"Glockenturm", note:"Inkl. Ho-Oh (Buntschwinge + Klarglocke nötig)."},
+    "Route 38","Route 39",
+    {name:"Anemonia City", note:"Nur Surfen, Angeln."},
+    "Route 40","Route 41",
+    {name:"Strudelinseln", note:"Inkl. Lugia (Silberflügel nötig)."},
+    {name:"Oliviana City", note:"Nur Surfen, Angeln, Zertrümmerer."},
+    "Route 47","Route 48",
+    "Route 42",
+    {name:"Kesselberg", note:"Geschenk: Tyrogol vom Großvater."},
+    {name:"Mahagonia City", note:"Nur Surfen, Angeln."},
+    {name:"Team-Rocket-Versteck", note:"Einmalige Fänge im Fallenboden. Hier + im Rundfunkturm von Dukatia City der gesamte restliche Team-Rocket-Handlungsbogen (siehe Standort See des Zorns)."},
+    "Route 43",
+    {name:"See des Zorns", note:"Inkl. rotem Garados (Story-Event) - bündelt hier auch den gesamten weiteren Team-Rocket-Handlungsbogen (Versteck + Rundfunkturm), da diese Orte im Spielverlauf mehrfach hin und her besucht werden."},
+    "Route 44","Eispfad","Route 45",
+    {name:"Ebenholz City", note:"Nur Surfen, Angeln."},
+    "Dunkelhöhle (Ebenholz-Seite)",
+    {name:"Drachenhöhle", note:"Inkl. Geschenk-Dratini nach Quiz."},
+    "Route 26","Route 27","Tohjo-Fälle","Route 28",
+    {name:"Silberberg", note:"Nur Pokémon-Center, keine wilden Pokémon.", noCatch:true},
+    "Silberberghöhle"
+  ]],
+  ["Kanto",[
+    {name:"Alabastia", note:"Nur Surfen, Angeln + Geschenk: Kanto-Starter von Prof. Eich (nach Ankunft in Kanto)."},
+    "Route 1",
+    {name:"Vertania City", note:"Nur Surfen, Angeln, Kopfnuss-Bäume."},
+    "Route 2",
+    "Vertania-Wald",
+    {name:"Marmoria City", note:"Nur Kopfnuss-Bäume; ansonsten kein Wildfang (nur ein Tausch-Pokémon)."},
+    "Digdas Höhle","Route 3","Mondberg","Route 4",
+    {name:"Azuria City", note:"Nur Surfen, Angeln, Kopfnuss-Bäume."},
+    "Route 24","Route 25","Route 9","Route 10","Felstunnel",
+    {name:"Lavandia", note:"Keine wilden Pokémon.", noCatch:true},
+    "Route 5",
+    {name:"Unterführung", note:"Keine wilden Pokémon.", noCatch:true},
+    "Route 6",
+    {name:"Orania City", note:"Keine wilden Pokémon dokumentiert.", noCatch:true},
+    "Route 11","Route 12","Route 13","Route 14","Route 15",
+    {name:"Fuchsania City", note:"Nur Surfen, Angeln, Kopfnuss-Bäume."},
+    {name:"Safari-Zone", note:"Klassische Kanto-Safari-Zone (eigene Bälle, Schrittlimit) - anders als HGSS, wo hier stattdessen Pal Park liegt."},
+    "Route 16","Route 17",
+    {name:"Prismania City", note:"Nur Surfen, Kopfnuss-Bäume."},
+    "Route 18",
+    {name:"Azuria-Höhle", note:"Inkl. Mewtu (Postgame)."},
+    "Route 19","Route 20","Route 21",
+    {name:"Seeschauminseln", note:"Inkl. Arktos (Postgame)."},
+    {name:"Zinnoberinsel", note:"Nur Surfen, Angeln."},
+    "Route 22","Route 23",
+    {name:"Siegesstraße", note:"Inkl. Zertrümmerer-Fänge."},
+    {name:"Kraftwerk", note:"Inkl. Zapdos (Postgame)."},
+    "Route 7","Route 8",
+    {name:"Saffronia City", note:"Keine wilden Pokémon.", noCatch:true}
+  ]]
+];
+
+/* Level/Teams gegengeprüft via Bulbapedia-Wikitext (Original Gold/Silber/Kristall, nicht HGSS).
+   Zwei Asse weichen vom "letztes Team-Mitglied = stärkstes" Muster ab (im Original-Spiel selbst so,
+   nicht recherchebedingt): Morty (Gengar Lv25 auf Platz 3 von 4, nicht das letzte Haunter Lv23) und
+   der "Radiodirektor" alias Lambda im Rundfunkturm (Smogmog Lv32 auf Platz 5 von 6). Rot am
+   Silberberg führt sein Team sogar mit dem stärksten Glied an (Pikachu Lv81 an Position 1, nicht
+   letzte Position) - alle drei bewusst mit dem tatsächlich stärksten Pokémon als ace/baseLevel
+   abgebildet, nicht stur nach Listenposition. */
+const GSC_BOSSES = [
+  { id:"rival1", sprite:"Rival", name:"Silvester", cls:"Rivale", place:"Rosalia City", ace:null, baseLevel:5, group:"Rivale" },
+  { id:"falkner", sprite:"Falkner", name:"Falk", cls:"Arenaleiter", place:"Viola City", ace:"Tauboga", baseLevel:9, group:"Johto-Arenen", pvp:true },
+  { id:"slowpokewell-rowdy", name:"Rüpel", cls:"Rüpel", place:"Flegmon-Brunnen", ace:"Smogon", baseLevel:14, group:"Team Rocket" },
+  { id:"rival2", sprite:"Rival", name:"Silvester", cls:"Rivale", place:"Azalea City", ace:null, baseLevel:16, group:"Rivale" },
+  { id:"bugsy", sprite:"Bugsy", name:"Kai", cls:"Arenaleiter", place:"Azalea City", ace:"Sichlor", baseLevel:16, group:"Johto-Arenen", pvp:true },
+  { id:"whitney", sprite:"Whitney", name:"Bianka", cls:"Arenaleiterin", place:"Dukatia City", ace:"Miltank", baseLevel:20, group:"Johto-Arenen", pvp:true },
+  { id:"rival3", sprite:"Rival", name:"Silvester", cls:"Rivale", place:"Brandturm, Teak City", ace:null, baseLevel:22, group:"Rivale" },
+  { id:"morty", sprite:"Morty", name:"Jens", cls:"Arenaleiter", place:"Teak City", ace:"Gengar", baseLevel:25, group:"Johto-Arenen", pvp:true },
+  { id:"chuck", sprite:"Chuck", name:"Hartwig", cls:"Arenaleiter", place:"Anemonia City", ace:"Quappo", baseLevel:30, group:"Johto-Arenen", pvp:true },
+  { id:"jasmine", sprite:"Jasmine", name:"Jasmin", cls:"Arenaleiterin", place:"Oliviana City", ace:"Stahlos", baseLevel:35, group:"Johto-Arenen", pvp:true },
+  { id:"pryce", sprite:"Pryce", name:"Norbert", cls:"Arenaleiter", place:"Mahagonia City", ace:"Keifel", baseLevel:31, group:"Johto-Arenen", pvp:true },
+  { id:"rival4", sprite:"Rival", name:"Silvester", cls:"Rivale", place:"Dukatia-Passage", ace:null, baseLevel:32, group:"Rivale", pvp:true },
+  { id:"ariana1", sprite:"Ariana", name:"Athena", cls:"Vorstand", place:"Team-Rocket-Versteck, Mahagonia City", ace:"Kramurx", baseLevel:25, group:"Team Rocket" },
+  { id:"petrel1", sprite:"Petrel", name:"Lambda", cls:"Vorstand", place:"Team-Rocket-Versteck, Mahagonia City", ace:"Rattikarl", baseLevel:24, group:"Team Rocket" },
+  { id:"proton1", sprite:"Proton", name:"Lance", cls:"Vorstand", place:"Rundfunkturm, Dukatia City", ace:"Golbat", baseLevel:36, group:"Team Rocket" },
+  { id:"petrel2", sprite:"Petrel", name:"Lambda", cls:"Vorstand", place:"Rundfunkturm, Dukatia City (als \"Radiodirektor\" getarnt)", ace:"Smogmog", baseLevel:32, group:"Team Rocket" },
+  { id:"ariana2", sprite:"Ariana", name:"Athena", cls:"Vorstand", place:"Rundfunkturm, Dukatia City", ace:"Kramurx", baseLevel:32, group:"Team Rocket" },
+  { id:"archer1", sprite:"Archer", name:"Atlas", cls:"Vorstand", place:"Rundfunkturm, Dukatia City", ace:"Hundemon", baseLevel:35, group:"Team Rocket" },
+  { id:"clair", sprite:"Clair", name:"Sandra", cls:"Arenaleiterin", place:"Ebenholz City", ace:"Seedraking", baseLevel:40, group:"Johto-Arenen", pvp:true },
+  { id:"rival5", sprite:"Rival", name:"Silvester", cls:"Rivale", place:"Siegesstraße", ace:null, baseLevel:38, group:"Rivale", pvp:true },
+  { id:"will", sprite:"Will", name:"Willi", cls:"Top Vier", place:"Pokémon-Liga", ace:"Xatu", baseLevel:42, group:"Top Vier & Champion" },
+  { id:"koga", sprite:"Koga", name:"Koga", cls:"Top Vier", place:"Pokémon-Liga", ace:"Iksbat", baseLevel:44, group:"Top Vier & Champion" },
+  { id:"bruno", sprite:"Bruno", name:"Bruno", cls:"Top Vier", place:"Pokémon-Liga", ace:"Machomei", baseLevel:46, group:"Top Vier & Champion" },
+  { id:"karen", sprite:"Karen", name:"Melanie", cls:"Top Vier", place:"Pokémon-Liga", ace:"Hundemon", baseLevel:47, group:"Top Vier & Champion" },
+  { id:"lance", sprite:"Lance", name:"Siegfried", cls:"Champ", place:"Pokémon-Liga", ace:"Dragoran", baseLevel:50, group:"Top Vier & Champion" },
+  { id:"duel-final", cls:"Finale", place:"Pokémon-Liga", group:"Duell", final:true },
+  { id:"brock", sprite:"Brock", name:"Rocko", cls:"Arenaleiter", place:"Marmoria City", ace:"Onix", baseLevel:44, group:"Kanto-Arenen", pvp:true },
+  { id:"rival6", sprite:"Rival", name:"Silvester", cls:"Rivale", place:"Mondberg", ace:null, baseLevel:45, group:"Rivale" },
+  { id:"misty", sprite:"Misty", name:"Misty", cls:"Arenaleiterin", place:"Azuria City", ace:"Starmie", baseLevel:47, group:"Kanto-Arenen", pvp:true },
+  { id:"surge", sprite:"Lt_Surge", name:"Major Bob", cls:"Arenaleiter", place:"Orania City", ace:"Elektek", baseLevel:46, group:"Kanto-Arenen", pvp:true },
+  { id:"erika", sprite:"Erika", name:"Erika", cls:"Arenaleiterin", place:"Prismania City", ace:"Blubella", baseLevel:46, group:"Kanto-Arenen", pvp:true },
+  { id:"janine", sprite:"Janine", name:"Janina", cls:"Arenaleiterin", place:"Fuchsania City", ace:"Omot", baseLevel:39, group:"Kanto-Arenen", pvp:true },
+  { id:"sabrina", sprite:"Sabrina", name:"Sabrina", cls:"Arenaleiterin", place:"Saffronia City", ace:"Simsala", baseLevel:48, group:"Kanto-Arenen", pvp:true },
+  { id:"blaine", sprite:"Blaine", name:"Pyro", cls:"Arenaleiter", place:"Zinnoberinsel", ace:"Gallopa", baseLevel:50, group:"Kanto-Arenen", pvp:true },
+  { id:"blue", sprite:"Blue", name:"Blau", cls:"Arenaleiter", place:"Vertania City", ace:"Arkani", baseLevel:58, group:"Kanto-Arenen", pvp:true },
+  { id:"red", sprite:"Red", name:"Rot", cls:"Champ", place:"Silberberg", ace:"Pikachu", baseLevel:81, group:"Sonstige Bosse" }
+];
+
+const GSC_BOSS_AFTER = {
+  "Johto|Route 29": ["rival1"],
+  "Johto|Route 31": ["falkner"],
+  "Johto|Flegmon-Brunnen": ["slowpokewell-rowdy"],
+  "Johto|Route 33": ["rival2","bugsy"],
+  "Johto|Steineichenwald": ["whitney"],
+  "Johto|Route 37": ["rival3","morty"],
+  "Johto|Strudelinseln": ["chuck","jasmine"],
+  "Johto|Route 43": ["pryce"],
+  "Johto|See des Zorns": ["rival4","ariana1","petrel1","proton1","petrel2","ariana2","archer1"],
+  "Johto|Route 45": ["clair"],
+  "Johto|Route 26": ["rival5","will","koga","bruno","karen","lance","duel-final"],
+  "Johto|Silberberghöhle": ["red"],
+  "Kanto|Route 2": ["brock"],
+  "Kanto|Mondberg": ["rival6"],
+  "Kanto|Route 4": ["misty"],
+  "Kanto|Route 11": ["surge"],
+  "Kanto|Route 15": ["erika"],
+  "Kanto|Route 18": ["janine"],
+  "Kanto|Kraftwerk": ["sabrina"],
+  "Kanto|Seeschauminseln": ["blaine"],
+  "Kanto|Route 8": ["blue"]
+};
+
 /* Fabrik für Versions-Trios: ein gemeinsamer Basis-Datensatz erzeugt mehrere GAMES-Einträge,
    mit punktuellen Level/Team-Overrides pro Version statt vollständiger Dopplung. */
 function buildVersionGames(baseBosses, regions, bossAfter, versions, starters, generation){
@@ -1360,7 +1522,17 @@ const GAMES = {
      Version ist) - warmes Gelb/Gold in beiden Modi, je nur unterschiedlich hell. */
   gelb: { id:"gelb", label:"Gelbe Edition", shortLabel:"Gelb", regions:KANTO_YELLOW_LOCATIONS, bosses:KANTO_YELLOW_BOSSES, bossAfter:KANTO_YELLOW_BOSS_AFTER, starters:{ fixed:"Pikachu", rivalGets:"Evoli" }, generation:1,
     theme:{ light:{ accent:"#E3A712", accentSoft:"#FBF0D2", accentShine:"#FEFBF0", accentDeep:"#8F6A0A", glow:"227,167,18" },
-            dark:{ accent:"#F5CB4C", accentSoft:"#2E2410", accentShine:"#FCE9A0", accentDeep:"#C99A1E", glow:"245,203,76" } } }
+            dark:{ accent:"#F5CB4C", accentSoft:"#2E2410", accentShine:"#FCE9A0", accentDeep:"#C99A1E", glow:"245,203,76" } } },
+  /* Gold, Silber und Kristall haben laut Recherche identische Teams/Level - deshalb wie
+     Diamant/Perl EIN gemeinsamer Eintrag statt dreier separater Editionen (kein Versions-Trio-
+     Merge über buildVersionGames nötig, da schlicht keine Overrides existieren). Eigenes
+     Kristall-Türkis-Thema statt Silber/Gold-Wiederverwendung, damit sich die Edition in der Auswahl
+     klar von HG/SS unterscheidet (Hell/Dunkel hier nur Helligkeitsstufen derselben Farbidentität,
+     nicht zwei verschiedene Versionsfarben wie bei HG/SS oder Rot/Blau - passend, weil alle drei
+     Versionen hier gleich sind statt sich farblich zu unterscheiden). */
+  "gold-silber-kristall": { id:"gold-silber-kristall", label:"Gold / Silber / Kristall", shortLabel:"Gold/Silber/Kristall", regions:GSC_LOCATIONS, bosses:GSC_BOSSES, bossAfter:GSC_BOSS_AFTER, starters:{ grass:"Endivie", fire:"Feurigel", water:"Karnimani" }, generation:2,
+    theme:{ light:{ accent:"#2FA6A0", accentSoft:"#D8F1EF", accentShine:"#F0FAF9", accentDeep:"#1E6E6A", glow:"47,166,160" },
+            dark:{ accent:"#5FD6CE", accentSoft:"#123332", accentShine:"#A6EDE8", accentDeep:"#2FA6A0", glow:"95,214,206" } } }
 };
 Object.assign(GAMES, buildVersionGames(SINNOH_BOSSES, SINNOH_LOCATIONS, SINNOH_BOSS_AFTER, [
   { id:"platin", label:"Platin", shortLabel:"Platin", bossOverrides:PLATIN_OVERRIDES, regions:PLATIN_LOCATIONS,
@@ -1561,7 +1733,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.4.2";
+const APP_VERSION = "1.5";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
