@@ -1,7 +1,7 @@
 {
   "name": "Nuzlocke Tracker",
   "short_name": "Nuzlocke",
-  "description": "Offline-Tracker für Pokémon-Nuzlocke-Runs über mehrere Editionen (HG/SS, Smaragd, Diamant/Perl, Platin): Routen, Team, Box, Friedhof und Bosse.",
+  "description": "Offline-Tracker für Pokémon-Nuzlocke-Runs über mehrere Editionen (Gen 1-4: Rot/Blau, Gelb, Gold/Silber, Kristall, Rubin, Saphir, Smaragd, FeuerRot/BlattGrün, Diamant/Perl, Platin, HG/SS): Routen, Team, Box, Friedhof und Bosse.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
