@@ -2080,7 +2080,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.7";
+const APP_VERSION = "1.7.1";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -2565,6 +2565,14 @@ function rivalDisplayName(){
   if(!boss) return "Rivale";
   return (state.rivalNickname||"").trim() || boss.name;
 }
+/* Editionen mit zwei Rivalen unterschiedlichen Namens (z.B. Schwarz/Weiß: Cheren + Bell) geben den
+   Typnachteil-Starter an den zweiten Rivalen statt ihn beim Professor zu lassen. */
+function secondRivalDisplayName(){
+  const main = mainRivalBoss();
+  if(!main) return null;
+  const other = currentGame().bosses.find(b=>b.group==="Rivale" && b.name!==main.name);
+  return other ? other.name : null;
+}
 function starterNamesSet(){
   const s = state.starterNames || {};
   return STARTER_TYPES.every(t=>(s[t]||"").trim());
@@ -2650,7 +2658,7 @@ function starterCardHtml(){
       ${iconBtn("tone-neutral","undo-starter-choice",null,ICON_UNDO,"Rückgängig machen",false,true)}
     </div>
     <div class="loc-sub" style="margin-top:10px;">${escapeHtml(rivalDisplayName())} erhält: ${escapeHtml(names[rivalType])} (${STARTER_TYPE_LABELS[rivalType]})</div>
-    <div class="loc-sub">${escapeHtml(names[leftoverType])} (${STARTER_TYPE_LABELS[leftoverType]}) bleibt beim Professor.</div>
+    <div class="loc-sub">${secondRivalDisplayName() ? `${escapeHtml(secondRivalDisplayName())} erhält: ${escapeHtml(names[leftoverType])} (${STARTER_TYPE_LABELS[leftoverType]})` : `${escapeHtml(names[leftoverType])} (${STARTER_TYPE_LABELS[leftoverType]}) bleibt beim Professor`}.</div>
   </div>`;
 }
 
