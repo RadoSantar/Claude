@@ -2102,7 +2102,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.7.2";
+const APP_VERSION = "1.7.3";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -2415,13 +2415,13 @@ function renderHeaderTeam(){
    auch wenn ihr status technisch nie aus "pending" rauskommt (es gibt dort ja nichts zu tun). */
 function isLocResolved(loc){ return loc.noCatch || loc.status!=="pending"; }
 
-function locationBlockHtml(loc, region, game, isCurrent){
-  let html = routeCard(loc, isCurrent);
+function locationBlockHtml(loc, region, game, currentId){
+  let html = routeCard(loc, loc.id===currentId);
   const bossIds = game.bossAfter[region+"|"+loc.name];
   if(bossIds) bossIds.forEach(id=>{
     const boss=bossById(id); if(!boss) return;
-    if(boss.final){ html += finalRivalCardHtml(boss); return; }
-    html += bossCardHtml(boss); if(boss.pvp) html += pvpCardHtml(boss);
+    if(boss.final){ html += finalRivalCardHtml(boss, boss.id===currentId); return; }
+    html += bossCardHtml(boss, boss.id===currentId); if(boss.pvp) html += pvpCardHtml(boss);
   });
   return html;
 }
@@ -2435,17 +2435,39 @@ function collapseToggleHtml(segKey, count, expanded, bodyHtml){
   return toggle + body;
 }
 
+/* Flaggen ist nicht mehr auf Standort-Kacheln beschränkt - auch Boss- und Finale-Kacheln tragen
+   eine eigene Boss-ID als state.currentLocId. isBossSettled() spiegelt für Bosse, was isLocResolved()
+   für Standorte ist: erst wenn Bosskampf (und ein angehängter PvP-Kampf) abgeschlossen sind, gilt die
+   Markierung als "erledigt" und wird beim nächsten Fortschritt automatisch ersetzt. */
+function isBossSettled(boss){
+  if(!isBossDefeated(boss.id)) return false;
+  if(boss.pvp && !state.pvp[pvpKey(boss.id)]) return false;
+  return true;
+}
+function isCurrentTargetResolved(id){
+  const loc = findLoc(id);
+  if(loc) return isLocResolved(loc);
+  const boss = bossById(id);
+  if(boss) return isBossSettled(boss);
+  return true;
+}
+/* Ein Standort gilt fürs Einklappen erst als abgeschlossen, wenn zusätzlich alle an ihn angehängten
+   Bosskämpfe (bossAfter) erledigt sind - sonst würde ein noch offener Bosskampf, der an einem
+   längst gefangenen Standort hängt, versehentlich im eingeklappten Bereich verschwinden. */
+function locationFullySettled(loc, region, game){
+  if(!isLocResolved(loc)) return false;
+  const bossIds = game.bossAfter[region+"|"+loc.name];
+  if(!bossIds) return true;
+  return bossIds.every(id=>{ const boss = bossById(id); return !boss || isBossSettled(boss); });
+}
 /* Der Standort, zu dem der "Zum aktuellen Standort"-Button springt: die manuelle Markierung
-   (state.currentLocId, per Flaggen-Icon auf jeder Karte gesetzt), sofern vorhanden und noch nicht
-   erledigt - sonst automatisch der erste noch offene Standort in Regionen-Reihenfolge. Die manuelle
-   Markierung ist nötig, weil mehrere Standorte gleichzeitig offen bleiben können (z.B. ein Ort, der
-   erst später mit einem HM/Item erreichbar ist) - "der erste offene" ist dann nicht zwangsläufig der
-   Standort, an dem der Spieler gerade tatsächlich ist. */
+   (state.currentLocId, per Flaggen-Icon auf jeder Kachel gesetzt - Standort, Boss oder Finale),
+   sofern vorhanden und noch nicht erledigt - sonst automatisch der erste noch offene Standort in
+   Regionen-Reihenfolge. Die manuelle Markierung ist nötig, weil mehrere Standorte gleichzeitig
+   offen bleiben können (z.B. ein Ort, der erst später mit einem HM/Item erreichbar ist) - "der
+   erste offene" ist dann nicht zwangsläufig der Standort, an dem der Spieler gerade tatsächlich ist. */
 function effectiveCurrentLocId(){
-  if(state.currentLocId){
-    const marked = findLoc(state.currentLocId);
-    if(marked && !isLocResolved(marked)) return marked.id;
-  }
+  if(state.currentLocId && !isCurrentTargetResolved(state.currentLocId)) return state.currentLocId;
   const game = currentGame();
   for(const [region] of game.regions){
     const found = state.locations.find(l=>l.region===region && !isLocResolved(l));
@@ -2463,7 +2485,7 @@ function updateJumpButton(){
 function updateJumpButtonVisibility(){
   const btn = document.getElementById("jumpFab");
   if(!btn || activeTab!=="routes" || !btn.dataset.target){ if(btn) btn.classList.remove("visible"); return; }
-  const el = document.querySelector(`[data-loc="${btn.dataset.target}"]`);
+  const el = document.querySelector(`[data-loc="${btn.dataset.target}"], [data-boss="${btn.dataset.target}"]`);
   if(!el){ btn.classList.remove("visible"); return; }
   const rect = el.getBoundingClientRect();
   const inView = rect.top < innerHeight*0.85 && rect.bottom > innerHeight*0.15;
@@ -2472,11 +2494,14 @@ function updateJumpButtonVisibility(){
 }
 document.getElementById("content").addEventListener("scroll", ()=>requestAnimationFrame(updateJumpButtonVisibility), {passive:true});
 
-/* Einklappen läuft pro zusammenhängendem Block erledigter Standorte, nicht mehr pro Region als
-   Ganzes: sonst würde ein einzelner dauerhaft offener Standort (z.B. weil er erst später mit Surfen
-   erreichbar ist) das Einklappen aller danach folgenden, längst erledigten Standorte blockieren.
-   Jeder Block von mehr als 2 erledigten Standorten in Folge klappt zusammen (die letzten 2 als
-   Kontext sichtbar), offene Standorte unterbrechen einen Block und bleiben immer sichtbar. */
+/* Einklappen läuft pro zusammenhängendem Block vollständig abgeschlossener Standorte (samt ihrer
+   angehängten Bosskämpfe, siehe locationFullySettled), nicht mehr pro Region als Ganzes: sonst würde
+   ein einzelner dauerhaft offener Standort (z.B. weil er erst später mit Surfen erreichbar ist) das
+   Einklappen aller danach folgenden, längst erledigten Standorte blockieren. Die Kontextgröße (wie
+   viele Standorte am Ende des Blocks sichtbar bleiben) sinkt bei kurzen Blöcken auf 1: sonst könnten
+   z.B. zwei Standorte mit mehreren, dazwischenliegenden, längst besiegten Bossen nie einklappen, nur
+   weil beide zusammen als "Kontext" gälten. Offene Standorte unterbrechen einen Block und bleiben
+   immer sichtbar. */
 function renderRoutes(){
   let html = "";
   const game = currentGame();
@@ -2490,24 +2515,29 @@ function renderRoutes(){
 
     let i = 0;
     while(i<locs.length){
-      if(!isLocResolved(locs[i])){
-        html += locationBlockHtml(locs[i], region, game, locs[i].id===currentId);
+      if(!locationFullySettled(locs[i], region, game)){
+        html += locationBlockHtml(locs[i], region, game, currentId);
         i++;
         continue;
       }
       let j = i;
-      while(j<locs.length && isLocResolved(locs[j])) j++;
+      while(j<locs.length && locationFullySettled(locs[j], region, game)) j++;
       const runLen = j-i;
-      if(runLen>2){
-        const collapseEnd = j-2;
+      /* Kontextgröße: bei mindestens 3 Standorten wie bisher die letzten 2 sichtbar lassen; bei
+         genau 2 nur den letzten (sonst könnte ein schwerer erster Standort mit vielen Bossen nie
+         einklappen, weil er als "einer von zwei Kontext-Standorten" mitgezählt würde); bei nur
+         einem Standort insgesamt gibt es nichts einzuklappen. */
+      const contextSize = Math.max(1, Math.min(2, runLen-1));
+      const collapseEnd = j - contextSize;
+      if(collapseEnd>i){
         const segKey = `${regionKey}-${i}`;
         const expanded = expandedRegions.has(segKey);
         let collapsedBody = "";
-        for(let k=i;k<collapseEnd;k++) collapsedBody += locationBlockHtml(locs[k], region, game, locs[k].id===currentId);
+        for(let k=i;k<collapseEnd;k++) collapsedBody += locationBlockHtml(locs[k], region, game, currentId);
         html += collapseToggleHtml(segKey, collapseEnd-i, expanded, collapsedBody);
-        for(let k=collapseEnd;k<j;k++) html += locationBlockHtml(locs[k], region, game, locs[k].id===currentId);
+        for(let k=collapseEnd;k<j;k++) html += locationBlockHtml(locs[k], region, game, currentId);
       } else {
-        for(let k=i;k<j;k++) html += locationBlockHtml(locs[k], region, game, locs[k].id===currentId);
+        for(let k=i;k<j;k++) html += locationBlockHtml(locs[k], region, game, currentId);
       }
       i = j;
     }
@@ -2912,13 +2942,18 @@ function bossSpriteHtml(boss, size, frozen){
   return `<img class="boss-sprite" src="${shownSrc}" width="${size}" height="${size}" alt="" />`;
 }
 
-function bossCardHtml(boss){
+function bossCardHtml(boss, isCurrent){
   const percent = bossPercent(boss.id);
   const lvl = bossLevel(boss);
   const defeated = isBossDefeated(boss.id);
   const flash = boss.id === lastDefeatedId;
   const cls = "card boss-card" + (defeated?" boss-done":"") + (flash?" boss-defeat-flash":"");
+  const currentAttr = isCurrent ? ` data-current="true"` : "";
   const badge = defeated ? `<div class="boss-defeat-badge" aria-hidden="true">${ICON_CHECK}</div>` : "";
+  /* Kein Flaggen-Icon für bereits besiegte Bosse: würde optisch mit dem Sieg-Badge (ebenfalls
+     oben rechts) kollidieren und eine erledigte Kachel lässt sich ohnehin nicht als "aktuell"
+     halten (isCurrentTargetResolved räumt die Markierung sofort wieder ab). */
+  const flagBtn = defeated ? "" : iconBtn(isCurrent?"tone-good":"tone-neutral","toggle-current-loc",boss.id,isCurrent?ICON_FLAG_FILLED:ICON_FLAG,isCurrent?"Nicht mehr aktueller Standort":"Als aktuellen Standort markieren",false,true);
   const bottom = `<div class="boss-actions">
         <button class="btn ${defeated?"btn-secondary":"btn-primary"} btn-block" data-act="toggle-boss-defeat" data-id="${boss.id}">
           ${defeated ? "Sieg zurücknehmen" : "Als besiegt markieren"}
@@ -2928,7 +2963,7 @@ function bossCardHtml(boss){
   const rivalNick = isRival ? (state.rivalNickname||"").trim() : "";
   const displayName = rivalNick || boss.name;
   const rivalAttr = isRival ? `data-act="open-rival-rename" data-id="${boss.id}"` : "";
-  return `<div class="${cls}" data-boss="${boss.id}">
+  return `<div class="${cls}" data-boss="${boss.id}"${currentAttr}>
     ${badge}
     <div class="card-top">
       <div class="mon-line" ${rivalAttr}>
@@ -2938,6 +2973,7 @@ function bossCardHtml(boss){
           <div class="loc-sub">${escapeHtml(boss.cls)} · ${escapeHtml(boss.place)}</div>
         </div>
       </div>
+      ${flagBtn}
     </div>
     <div class="boss-level-row">
       <div class="boss-level-main">
@@ -3037,12 +3073,17 @@ function duelPartnerName(){ return (state.duelPartnerName||"").trim(); }
 function duelPartnerLabel(){ return duelPartnerName() || "deinen Duellpartner"; }
 function duelPartnerTeamLabel(){ const n = duelPartnerName(); return n ? `${n}s Team` : "Das Team deines Duellpartners"; }
 
-function finalRivalCardHtml(boss){
+function finalRivalCardHtml(boss, isCurrent){
   const done = isBossDefeated(boss.id);
   const title = pvpTitle("Finales Rivalenduell");
   if(!done){
-    return `<div class="card final-rival-card">
-      <span class="chip gold">Finale</span>
+    const currentAttr = isCurrent ? ` data-current="true"` : "";
+    const flagBtn = iconBtn(isCurrent?"tone-good":"tone-neutral","toggle-current-loc",boss.id,isCurrent?ICON_FLAG_FILLED:ICON_FLAG,isCurrent?"Nicht mehr aktueller Standort":"Als aktuellen Standort markieren",false,true);
+    return `<div class="card final-rival-card" data-boss="${boss.id}"${currentAttr}>
+      <div style="display:flex; align-items:center; justify-content:space-between;">
+        <span class="chip gold">Finale</span>
+        ${flagBtn}
+      </div>
       <div class="mon-line" style="margin-top:10px;">
         <div class="pvp-badge">VS</div>
         <div>
@@ -3755,7 +3796,7 @@ document.addEventListener("click", e=>{
   }
   else if(act==="jump-to-current-loc"){
     const id = t.dataset.target;
-    const el = id && document.querySelector(`[data-loc="${id}"]`);
+    const el = id && document.querySelector(`[data-loc="${id}"], [data-boss="${id}"]`);
     if(el) el.scrollIntoView({ behavior:"smooth", block:"center" });
   }
   else if(act==="toggle-current-loc"){
