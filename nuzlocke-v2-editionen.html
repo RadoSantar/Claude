@@ -2034,7 +2034,29 @@ function performCatch(id, species, nick){
   const loc = findLoc(id);
   loc.status="caught";
   loc.mon={ species, nickname:nick, inTeam:false, dead:false, caughtAt:Date.now() };
-  saveState(); closeSheet(); render();
+  saveState(); render();
+  /* Team ist beim Fangen bereits voll - statt den Fang stillschweigend in der Box zu versenken,
+     direkt fragen: ins Team (dann Ersatz wählen wie beim manuellen "Ins Team aufnehmen") oder
+     bewusst auf die Bank. Ist noch Platz frei, bleibt der Fang wie bisher einfach in der Box. */
+  if(teamCount()>=6) openCatchTeamFullSheet(id); else closeSheet();
+}
+
+function openCatchTeamFullSheet(locId){
+  const loc = findLoc(locId);
+  if(!loc || !loc.mon) return;
+  openSheet(`
+    <div class="sheet-mon-header">
+      ${spriteImgHtml(loc.mon.species, 64)}
+      <div>
+        <h3>Team ist voll</h3>
+        <div class="loc-sub">${escapeHtml(loc.mon.nickname||loc.mon.species)} ist gefangen. Ins Team aufnehmen (dafür ein Mitglied ersetzen) oder auf die Bank schicken?</div>
+      </div>
+    </div>
+    <div class="sheet-footer">
+      <button class="btn btn-secondary btn-block" data-act="close-sheet">Auf die Bank</button>
+      <button class="btn btn-primary btn-block" data-act="add-to-team" data-id="${locId}">Ins Team aufnehmen</button>
+    </div>
+  `);
 }
 
 const ICON_POKEBALL = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h5.1M15.9 12H21"/><circle cx="12" cy="12" r="2.3"/></svg>';
@@ -2080,7 +2102,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.7.1";
+const APP_VERSION = "1.8";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
