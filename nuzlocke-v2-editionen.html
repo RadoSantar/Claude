@@ -2276,7 +2276,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.8.20";
+const APP_VERSION = "1.8.21";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -2614,7 +2614,7 @@ function locationBlockHtml(loc, region, game, currentId){
 function collapseToggleHtml(segKey, count, expanded, bodyHtml){
   const toggle = `<button class="collapse-toggle" data-act="toggle-region-collapse" data-region="${segKey}" data-count="${count}">
     <svg class="collapse-chevron${expanded?" open":""}" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
-    <span>${count} abgeschlossene ${count===1?"Standort":"Standorte"} ${expanded?"ausblenden":"anzeigen"}</span>
+    <span>${count} ${count===1?"abgeschlossener Standort":"abgeschlossene Standorte"} ${expanded?"ausblenden":"anzeigen"}</span>
   </button>`;
   const body = `<div class="collapsible-body${expanded?" expanded":""}" data-collapse-body="${segKey}"${expanded?"":" inert"}><div class="collapsible-body-inner">${bodyHtml}</div></div>`;
   return toggle + body;
@@ -2682,11 +2682,11 @@ document.getElementById("content").addEventListener("scroll", ()=>requestAnimati
 /* Einklappen läuft pro zusammenhängendem Block vollständig abgeschlossener Standorte (samt ihrer
    angehängten Bosskämpfe, siehe locationFullySettled), nicht mehr pro Region als Ganzes: sonst würde
    ein einzelner dauerhaft offener Standort (z.B. weil er erst später mit Surfen erreichbar ist) das
-   Einklappen aller danach folgenden, längst erledigten Standorte blockieren. Die Kontextgröße (wie
-   viele Standorte am Ende des Blocks sichtbar bleiben) sinkt bei kurzen Blöcken auf 1: sonst könnten
-   z.B. zwei Standorte mit mehreren, dazwischenliegenden, längst besiegten Bossen nie einklappen, nur
-   weil beide zusammen als "Kontext" gälten. Offene Standorte unterbrechen einen Block und bleiben
-   immer sichtbar. */
+   Einklappen aller danach folgenden, längst erledigten Standorte blockieren. Ein Standort klappt sofort
+   ein, sobald er (samt Bossen) abgeschlossen ist - keine "zuletzt erledigt bleibt noch sichtbar"-
+   Ausnahme mehr, da erledigte Kacheln laut Nutzer-Feedback nicht offen herumstehen sollen und bei
+   Bedarf jederzeit über den Ausklapp-Toggle wieder einsehbar sind. Offene Standorte unterbrechen einen
+   Block und bleiben immer sichtbar. */
 function renderRoutes(){
   let html = "";
   const game = currentGame();
@@ -2708,23 +2708,11 @@ function renderRoutes(){
       }
       let j = i;
       while(j<locs.length && locationFullySettled(locs[j], region, game)) j++;
-      const runLen = j-i;
-      /* Kontextgröße: bei mindestens 3 Standorten wie bisher die letzten 2 sichtbar lassen; bei
-         genau 2 nur den letzten (sonst könnte ein schwerer erster Standort mit vielen Bossen nie
-         einklappen, weil er als "einer von zwei Kontext-Standorten" mitgezählt würde); bei nur
-         einem Standort insgesamt gibt es nichts einzuklappen. */
-      const contextSize = Math.max(1, Math.min(2, runLen-1));
-      const collapseEnd = j - contextSize;
-      if(collapseEnd>i){
-        const segKey = `${regionKey}-${i}`;
-        const expanded = expandedRegions.has(segKey);
-        let collapsedBody = "";
-        for(let k=i;k<collapseEnd;k++) collapsedBody += locationBlockHtml(locs[k], region, game, currentId);
-        html += collapseToggleHtml(segKey, collapseEnd-i, expanded, collapsedBody);
-        for(let k=collapseEnd;k<j;k++) html += locationBlockHtml(locs[k], region, game, currentId);
-      } else {
-        for(let k=i;k<j;k++) html += locationBlockHtml(locs[k], region, game, currentId);
-      }
+      const segKey = `${regionKey}-${i}`;
+      const expanded = expandedRegions.has(segKey);
+      let collapsedBody = "";
+      for(let k=i;k<j;k++) collapsedBody += locationBlockHtml(locs[k], region, game, currentId);
+      html += collapseToggleHtml(segKey, j-i, expanded, collapsedBody);
       i = j;
     }
   });
