@@ -566,6 +566,7 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 .empty-state{ text-align:center; padding:60px 20px; color:var(--ink-soft); }
 .empty-state h3{ color:var(--ink); margin-bottom:6px; font-size:1.05rem; }
 .empty-state p{ font-size:.85rem; margin:0; }
+.empty-illustration{ width:88px; height:88px; margin:0 auto 18px; color:var(--ink-faint); display:block; }
 
 /* Tab bar */
 .tabbar{
@@ -2271,7 +2272,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.8.5";
+const APP_VERSION = "1.8.6";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -3096,8 +3097,23 @@ function renderGrave(){
   document.getElementById("content").innerHTML = html;
 }
 
+/* Etwas Charme für leere Zustände (Box/Friedhof direkt nach Run-Start, Routen ohne eigene
+   Fundorte, Box-Suche ohne Treffer) statt nur nackten Text - ein handgezeichneter Pokeball statt
+   der scharfen Header-Variante, mit ein paar Funkeln drumherum. */
 function emptyState(title, sub){
-  return `<div class="empty-state"><h3>${escapeHtml(title)}</h3><p>${escapeHtml(sub)}</p></div>`;
+  return `<div class="empty-state">
+    <svg class="empty-illustration" viewBox="0 0 120 120" aria-hidden="true">
+      <path d="M96 28l3 8 8 3-8 3-3 8-3-8-8-3 8-3z" fill="currentColor" opacity="0.55"/>
+      <circle cx="26" cy="90" r="3.2" fill="currentColor" opacity="0.4"/>
+      <circle cx="30" cy="24" r="2.4" fill="currentColor" opacity="0.5"/>
+      <g transform="rotate(-8 60 62)">
+        <circle cx="60" cy="62" r="33" fill="none" stroke="currentColor" stroke-width="3.5"/>
+        <path d="M27 62h19a14 14 0 0028 0h19" fill="none" stroke="currentColor" stroke-width="3.5"/>
+        <circle cx="60" cy="62" r="7" fill="var(--bg)" stroke="currentColor" stroke-width="3.5"/>
+      </g>
+    </svg>
+    <h3>${escapeHtml(title)}</h3><p>${escapeHtml(sub)}</p>
+  </div>`;
 }
 
 const frozenSpriteCache = {};
