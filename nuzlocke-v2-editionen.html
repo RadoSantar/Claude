@@ -318,6 +318,18 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 .icon-act.small{ width:32px; height:32px; border-radius:9px; }
 .icon-act.small svg{ width:15px; height:15px; }
 
+.event-row{ display:flex; align-items:flex-start; gap:10px; padding:9px 0; border-bottom:1px solid var(--line); }
+.event-row:last-child{ border-bottom:none; }
+.event-icon{ width:30px; height:30px; border-radius:9px; flex:none; display:flex; align-items:center; justify-content:center; }
+.event-icon svg{ width:15px; height:15px; stroke-width:2; fill:none; }
+.event-icon.tone-gold{ background:var(--gold-soft); } .event-icon.tone-gold svg{ stroke:var(--gold); }
+.event-icon.tone-good{ background:var(--good-soft); } .event-icon.tone-good svg{ stroke:var(--good); }
+.event-icon.tone-red{ background:var(--red-soft); } .event-icon.tone-red svg{ stroke:var(--red); }
+.event-icon.tone-neutral{ background:var(--surface-alt); } .event-icon.tone-neutral svg{ stroke:var(--ink-soft); }
+.event-icon.tone-evolve{ background:var(--evolve-soft); } .event-icon.tone-evolve svg{ stroke:var(--evolve); }
+.event-text{ font-size:.86rem; font-weight:600; line-height:1.4; }
+.event-time{ font-size:.72rem; color:var(--ink-soft); margin-top:2px; }
+
 .boss-sprite{ image-rendering:pixelated; background:var(--surface-alt); border-radius:10px; padding:2px; flex:none; }
 .boss-level-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:12px; padding-top:12px; border-top:1px solid var(--line); }
 .boss-level-main{ display:flex; align-items:baseline; gap:8px; }
@@ -2155,6 +2167,7 @@ function performCatch(id, species, nick){
   const loc = findLoc(id);
   loc.status="caught";
   loc.mon={ species, nickname:nick, inTeam:false, dead:false, caughtAt:Date.now() };
+  logEvent("catch", `${nick ? `${nick} (${species})` : species} auf ${loc.name} gefangen`);
   saveState(); render();
   /* Team ist beim Fangen bereits voll - statt den Fang stillschweigend in der Box zu versenken,
      direkt fragen: ins Team (dann Ersatz wählen wie beim manuellen "Ins Team aufnehmen") oder
@@ -2223,7 +2236,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.8";
+const APP_VERSION = "1.8.1";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -2256,7 +2269,7 @@ function freshState(editionId){
     names.forEach(entry=>{ locations.push(parseLocationEntry(region, entry)); });
   });
   const gameStarters = GAMES[edition].starters || { grass:"", fire:"", water:"" };
-  return { edition, runTitle:"Nuzlocke", locations, bossBoosts:{}, bossDefeated:{}, rivalNickname:"", duelPartnerName:"", dupesWarning:true, lastExportAt:null, evolutionCount:0, nicknameRequired:false, pvp:{}, hallOfFame:{ rivalTeam:[], playerTeam:[], defeatedAt:null, result:null }, starterNames:{ ...gameStarters }, starterChoice:null, currentLocId:null };
+  return { edition, runTitle:"Nuzlocke", locations, bossBoosts:{}, bossDefeated:{}, rivalNickname:"", duelPartnerName:"", dupesWarning:true, lastExportAt:null, evolutionCount:0, nicknameRequired:false, pvp:{}, hallOfFame:{ rivalTeam:[], playerTeam:[], defeatedAt:null, result:null }, starterNames:{ ...gameStarters }, starterChoice:null, currentLocId:null, eventLog:[] };
 }
 
 /* Ergänzt neu hinzugekommene Standorte (z.B. nachträglich eingefügte Städte) in einen bereits
@@ -2294,6 +2307,7 @@ function normalizeState(parsed){
   if(!parsed.starterNames) parsed.starterNames = { ...(GAMES[parsed.edition].starters || { grass:"", fire:"", water:"" }) };
   if(typeof parsed.starterChoice === "undefined") parsed.starterChoice = null;
   if(typeof parsed.currentLocId === "undefined") parsed.currentLocId = null;
+  if(!Array.isArray(parsed.eventLog)) parsed.eventLog = [];
   syncLocations(parsed);
   return parsed;
 }
@@ -2427,6 +2441,15 @@ function formatRelativeTime(ts){
   const diffD = Math.floor(diffH/24);
   if(diffD === 1) return "gestern";
   return `vor ${diffD} Tagen`;
+}
+
+/* Verlauf: chronologisches Log wichtiger Ereignisse (gefangen, gestorben, entwickelt, Boss
+   besiegt, Duelle, Starter). Text wird beim Eintreten fertig formatiert gespeichert statt aus
+   IDs rekonstruiert - einfacher und stabil auch wenn sich z.B. ein Spitzname später ändert.
+   Cap bei 400 Einträgen, älteste zuerst raus, damit der Spielstand nicht unbegrenzt wächst. */
+function logEvent(type, text){
+  state.eventLog.push({ ts:Date.now(), type, text });
+  if(state.eventLog.length > 400) state.eventLog.splice(0, state.eventLog.length - 400);
 }
 
 function teamCount(){ return state.locations.filter(l=>l.mon && l.mon.inTeam && !l.mon.dead).length; }
@@ -3331,6 +3354,36 @@ function settingsGroupHtml(key, label, bodyHtml){
   return header + body;
 }
 
+const EVENT_TYPE_META = {
+  catch:  { tone:"tone-gold",  icon:ICON_POKEBALL },
+  dead:   { tone:"tone-red",   icon:ICON_GRAVE },
+  evolve: { tone:"tone-evolve",icon:ICON_EVOLVE },
+  boss:   { tone:"tone-good",  icon:ICON_CHECK },
+  pvp:    { tone:"tone-neutral",icon:ICON_POKEBALL },
+  final:  { tone:"tone-gold",  icon:ICON_CHECK }
+};
+function openEventLogSheet(){
+  const entries = state.eventLog.slice().reverse();
+  const rows = entries.map(ev=>{
+    const meta = EVENT_TYPE_META[ev.type] || EVENT_TYPE_META.catch;
+    return `<div class="event-row">
+      <div class="event-icon ${meta.tone}">${meta.icon}</div>
+      <div>
+        <div class="event-text">${escapeHtml(ev.text)}</div>
+        <div class="event-time">${formatRelativeTime(ev.ts)}</div>
+      </div>
+    </div>`;
+  }).join("");
+  openSheet(`
+    <h3>Verlauf</h3>
+    <div class="loc-sub" style="margin-bottom:14px;">${entries.length ? `${entries.length} Ereignisse, neueste zuerst.` : ""}</div>
+    ${rows || `<div class="loc-sub">Noch keine Ereignisse - fange dein erstes Pokémon oder besiege einen Boss.</div>`}
+    <div class="sheet-footer">
+      <button class="btn btn-secondary btn-block" data-act="close-sheet">Schließen</button>
+    </div>
+  `);
+}
+
 function renderSettings(){
   const percents = currentGame().bosses.map(b=>bossPercent(b.id));
   const min = Math.min(...percents), max = Math.max(...percents);
@@ -3396,6 +3449,11 @@ function renderSettings(){
     <div class="loc-name">Pokédex</div>
     <div class="loc-sub">Typen-Rechner &amp; Nachschlagewerk öffnen</div>
     <a class="btn btn-primary btn-block" style="display:flex; align-items:center; justify-content:center; margin-top:12px; text-decoration:none;" href="https://dexora.adrianhoppler.chatgpt.site/" target="_blank" rel="noopener noreferrer">Pokédex öffnen</a>
+  </div>
+  <div class="card">
+    <div class="loc-name">Verlauf</div>
+    <div class="loc-sub">Chronologisches Log aller Fänge, Tode, Entwicklungen und Bosssiege (${state.eventLog.length} Einträge)</div>
+    <button class="btn btn-secondary btn-block" style="margin-top:12px;" data-act="open-event-log">Verlauf öffnen</button>
   </div>`);
 
   html += settingsGroupHtml("app-info", "App-Info", `
@@ -3593,8 +3651,10 @@ function evolveMon(locId, newSpecies){
   newSpecies = (newSpecies||"").trim();
   if(!newSpecies) return;
   const loc = findLoc(locId);
+  const oldSpecies = loc.mon.species;
   loc.mon.species = newSpecies;
   state.evolutionCount = (state.evolutionCount||0) + 1;
+  logEvent("evolve", `${loc.mon.nickname || oldSpecies} hat sich zu ${newSpecies} entwickelt`);
   saveState();
   closeSheet();
   lastEvolvedId = locId;
@@ -3799,7 +3859,12 @@ document.addEventListener("click", e=>{
     saveState(); closeSheet(); render();
   }
   else if(act==="remove-from-team"){ findLoc(id).mon.inTeam=false; saveState(); closeSheet(); render(); }
-  else if(act==="mark-dead"){ const m=findLoc(id).mon; m.dead=true; m.inTeam=false; saveState(); closeSheet(); render(); }
+  else if(act==="mark-dead"){
+    const loc = findLoc(id); const m = loc.mon;
+    m.dead=true; m.inTeam=false;
+    logEvent("dead", `${m.nickname || m.species} ist gestorben (${loc.name})`);
+    saveState(); closeSheet(); render();
+  }
   else if(act==="revive"){ findLoc(id).mon.dead=false; saveState(); closeSheet(); render(); }
   else if(act==="pvp-win") openPvpWinSheet(id);
   else if(act==="pvp-lose") openPvpLoseSheet(id);
@@ -3809,6 +3874,7 @@ document.addEventListener("click", e=>{
     const locId = "pvp-win-"+id+"-"+Date.now();
     state.locations.push({ id:locId, name:"PvP-Sieg", region:null, custom:true, status:"caught", mon:{ species, nickname:"", inTeam:false, dead:false, given:false, caughtAt:Date.now() } });
     state.pvp[id] = { winner:"me", wonSpecies:species, locId };
+    logEvent("pvp", `Rivalenduell gewonnen - ${species} erhalten`);
     saveState(); closeSheet(); render();
   }
   else if(act==="save-pvp-lose"){
@@ -3817,6 +3883,7 @@ document.addEventListener("click", e=>{
     if(!loc || !loc.mon) return;
     loc.mon.given = true; loc.mon.inTeam = false;
     state.pvp[id] = { winner:"friend", givenLocId:locId };
+    logEvent("pvp", `Rivalenduell verloren - ${loc.mon.nickname || loc.mon.species} abgegeben`);
     saveState(); closeSheet(); render();
   }
   else if(act==="pvp-undo"){
@@ -3843,6 +3910,10 @@ document.addEventListener("click", e=>{
   else if(act==="toggle-boss-defeat"){
     const wasDefeated = isBossDefeated(id);
     state.bossDefeated[id] = !wasDefeated;
+    if(!wasDefeated){
+      const boss = bossById(id);
+      if(boss) logEvent("boss", `${boss.name || boss.cls} besiegt (${boss.place})`);
+    }
     saveState();
     if(!wasDefeated) lastDefeatedId = id;
     render();
@@ -3864,6 +3935,7 @@ document.addEventListener("click", e=>{
       .map(l=>({ species:l.mon.species, nickname:l.mon.nickname }));
     state.hallOfFame = { rivalTeam:team, playerTeam, defeatedAt:Date.now(), result };
     state.bossDefeated[id] = true;
+    logEvent("final", `Finales Duell gegen ${duelPartnerLabel()}: ${result==="win" ? "Sieg" : "Niederlage"}`);
     saveState();
     closeSheet();
     lastFinalRivalFlash = true;
@@ -3948,6 +4020,7 @@ document.addEventListener("click", e=>{
     removeStarterMon();
     const species = type==="fixed" ? ((state.starterNames && state.starterNames.fixed) || currentGame().starters.fixed || "").trim() : (state.starterNames[type]||"").trim();
     state.locations.unshift({ id:"starter-mon", name:"Starter", region:null, custom:false, starter:true, status:"caught", mon:{ species, nickname:"", inTeam:true, dead:false, caughtAt:Date.now() } });
+    logEvent("catch", `${species} als Starter gewählt`);
     saveState(); render();
   }
   else if(act==="undo-starter-choice"){
@@ -4018,6 +4091,7 @@ document.addEventListener("click", e=>{
     state = freshState(state.edition); saveState(); closeSheet(); render();
   }
   else if(act==="open-saves-sheet") openSavesSheet();
+  else if(act==="open-event-log") openEventLogSheet();
   else if(act==="open-new-save") openNewSaveSheet();
   else if(act==="create-save"){
     const newId = createSave(id);
