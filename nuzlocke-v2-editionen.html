@@ -2273,7 +2273,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.8.8";
+const APP_VERSION = "1.8.9";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -3283,7 +3283,11 @@ function finalStoryBoss(){
   const game = currentGame();
   for(const key in game.bossAfter){
     const ids = game.bossAfter[key];
-    const idx = ids.indexOf("duel-final");
+    /* Bosse aus buildVersionGames() (Diamant/Perl/Platin, Rubin/Saphir, Schwarz/Weiß) tragen ein
+       "${versionId}-"-Präfix auf JEDER ID, auch auf "duel-final" selbst (z.B. "schwarz-duel-final")
+       - ein exakter Vergleich fand diese Editionen deshalb nie, endsWith() funktioniert für beide
+       Fälle (mit und ohne Präfix). */
+    const idx = ids.findIndex(id=>id==="duel-final" || id.endsWith("-duel-final"));
     if(idx > 0) return bossById(ids[idx-1]);
   }
   return null;
