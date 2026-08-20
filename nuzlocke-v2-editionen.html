@@ -599,7 +599,8 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 }
 .sheet::-webkit-scrollbar{ display:none; }
 .sheet-backdrop.active .sheet{ transform:translateY(0); }
-.sheet-handle{ width:36px; height:4px; background:var(--line); border-radius:999px; margin:6px auto 14px; }
+.sheet-handle{ width:36px; height:4px; background:var(--line); border-radius:999px; margin:6px auto 14px; position:relative; }
+.sheet-handle::after{ content:""; position:absolute; inset:-18px -44px; }
 .sheet h3{ font-size:1.05rem; margin-bottom:4px; }
 .sheet .loc-sub{ margin-bottom:14px; }
 .field{ margin-bottom:14px; }
@@ -2273,7 +2274,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.8.9";
+const APP_VERSION = "1.8.10";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -3688,6 +3689,40 @@ const sheetEl = document.getElementById("sheet");
 function openSheet(html){ sheetEl.innerHTML = `<div class="sheet-handle"></div>` + html; sheetBackdrop.classList.add("active"); }
 function closeSheet(){ sheetBackdrop.classList.remove("active"); }
 sheetBackdrop.addEventListener("click", e=>{ if(e.target===sheetBackdrop) closeSheet(); });
+
+/* Herunterziehen am Griff zum Schließen - gilt generisch für JEDES Sheet (Editionswahl,
+   Spielstände, Verlauf, Run-Rückblick, Fangen, ...), da alle über openSheet() laufen. Der Griff
+   selbst wird bei jedem openSheet()-Aufruf neu erzeugt (innerHTML-Ersatz), deshalb per Event-
+   Delegation auf dem stabilen sheetEl statt einer direkten Referenz auf .sheet-handle. Während des
+   Ziehens läuft die Transition bewusst aus (folgt dem Finger 1:1), erst beim Loslassen greift sie
+   wieder - sowohl fürs Zurückschnappen als auch fürs Zuende-Schließen. */
+(function(){
+  const DISMISS_DISTANCE = 90, DISMISS_VELOCITY = 0.55;
+  let dragging=false, startY=0, startTime=0, curDy=0;
+  sheetEl.addEventListener("touchstart", e=>{
+    if(!e.target.closest(".sheet-handle") || e.touches.length!==1) return;
+    dragging = true; curDy = 0;
+    startY = e.touches[0].clientY;
+    startTime = Date.now();
+    sheetEl.style.transition = "none";
+  }, {passive:true});
+  sheetEl.addEventListener("touchmove", e=>{
+    if(!dragging) return;
+    curDy = Math.max(0, e.touches[0].clientY - startY);
+    sheetEl.style.transform = `translateY(${curDy}px)`;
+  }, {passive:true});
+  function release(){
+    if(!dragging) return;
+    dragging = false;
+    sheetEl.style.transition = "";
+    const elapsed = Math.max(1, Date.now()-startTime);
+    const velocity = curDy/elapsed;
+    if(curDy > DISMISS_DISTANCE || velocity > DISMISS_VELOCITY) closeSheet();
+    sheetEl.style.transform = "";
+  }
+  sheetEl.addEventListener("touchend", release);
+  sheetEl.addEventListener("touchcancel", release);
+})();
 
 function openCatchSheet(locId){
   const loc = findLoc(locId);
