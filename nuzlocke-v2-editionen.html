@@ -850,7 +850,7 @@ const BOSS_AFTER = {
   "Johto|See des Zorns": ["rival4","proton1","petrel1","ariana1","archer1","petrel2","ariana2"],
   "Johto|Route 45": ["clair"],
   "Johto|Route 27": ["giovanni"],
-  "Johto|Silberberghöhle": ["red"],
+  "Johto|Silberberg": ["red"],
   "Kanto|Route 2": ["brock"],
   "Kanto|Mondberg": ["rival6"],
   "Kanto|Route 4": ["misty"],
@@ -878,8 +878,8 @@ const SMARAGD_BOSSES = [
   { id:"sm-winona", sprite:"SmWinona", name:"Wibke", cls:"Arenaleiterin", place:"Baumhausen City", ace:"Altaria", baseLevel:33, group:"Hoenn-Arenen", pvp:true },
   { id:"sm-tateliza", sprite:"SmTateLiza", name:"Ben & Svenja", cls:"Arenaleiter-Duo", place:"Moosbach City", ace:"Sonnfel", baseLevel:42, group:"Hoenn-Arenen", pvp:true },
   { id:"sm-juan", sprite:"SmJuan", name:"Juan", cls:"Arenaleiter", place:"Xeneroville", ace:"Seedraking", baseLevel:46, group:"Hoenn-Arenen", pvp:true },
-  { id:"sm-tabitha1", sprite:"SmTabitha", name:"Kalle", cls:"Vorstand", place:"Feuerberg", ace:"Zubat", baseLevel:22, group:"Team Magma" },
-  { id:"sm-maxie1", sprite:"SmMaxie", name:"Marc", cls:"Teamboss", place:"Feuerberg", ace:"Camerupt", baseLevel:25, group:"Team Magma" },
+  { id:"sm-tabitha1", sprite:"SmTabitha", name:"Kalle", cls:"Vorstand", place:"Schlotberg", ace:"Zubat", baseLevel:22, group:"Team Magma" },
+  { id:"sm-maxie1", sprite:"SmMaxie", name:"Marc", cls:"Teamboss", place:"Schlotberg", ace:"Camerupt", baseLevel:25, group:"Team Magma" },
   { id:"sm-tabitha2", sprite:"SmTabitha", name:"Kalle", cls:"Vorstand", place:"Steilpass (Magma-Versteck)", ace:"Camerupt", baseLevel:33, group:"Team Magma" },
   { id:"sm-maxie2", sprite:"SmMaxie", name:"Marc", cls:"Teamboss", place:"Steilpass (Magma-Versteck)", ace:"Camerupt", baseLevel:39, group:"Team Magma" },
   { id:"sm-tabitha3", sprite:"SmTabitha", name:"Kalle", cls:"Vorstand", place:"Raumfahrtzentrum, Moosbach City", ace:"Camerupt", baseLevel:44, group:"Team Magma" },
@@ -924,7 +924,7 @@ const SMARAGD_LOCATIONS = [
     {name:"Wüstenruine", note:"Nur Static-Fang: Regirock (einmalig)."},
     "Feuriger Pfad","Route 112","Route 113",
     {name:"Laubwechselfeld", note:"Keine wilden Pokémon.", noCatch:true},
-    "Route 114","Meteorfälle","Feuerberg","Steilpass",
+    "Route 114","Meteorfälle","Schlotberg","Steilpass",
     {name:"Bad Lavastadt", note:"Geschenk: Isso-Ei."},
     "Route 115","Route 117","Route 118","Route 119",
     {name:"Baumhausen City", note:"Keine wilden Pokémon (nur Tausch).", noCatch:true},
@@ -966,15 +966,13 @@ const SMARAGD_BOSS_AFTER = {
   "Hoenn|Faustauhaven": ["sm-brawly"],
   "Hoenn|Route 110": ["sm-rival2","sm-wally1"],
   "Hoenn|Malvenfroh City": ["sm-wattson"],
-  "Hoenn|Feuerberg": ["sm-maxie1","sm-tabitha1"],
+  "Hoenn|Schlotberg": ["sm-maxie1","sm-tabitha1"],
   "Hoenn|Bad Lavastadt": ["sm-flannery"],
-  "Hoenn|Steilpass": ["sm-norman"],
+  "Hoenn|Steilpass": ["sm-maxie2","sm-tabitha2","sm-norman"],
   "Hoenn|Route 119": ["sm-shelly1","sm-rival3"],
   "Hoenn|Baumhausen City": ["sm-winona"],
   "Hoenn|Seegrasulb City": ["sm-rival4"],
-  "Hoenn|Route 124": ["sm-maxie2","sm-tabitha2"],
-  "Hoenn|Moosbach City": ["sm-tateliza"],
-  "Hoenn|Route 126": ["sm-maxie3","sm-tabitha3"],
+  "Hoenn|Moosbach City": ["sm-tateliza","sm-maxie3","sm-tabitha3"],
   "Hoenn|Tiefseehöhle": ["sm-archie","sm-shelly2"],
   "Hoenn|Xeneroville": ["sm-juan"],
   "Hoenn|Pokémon-Liga": ["sm-wally2","sm-e4-ulrich","sm-e4-antonia","sm-e4-frosina","sm-e4-dragan","sm-champion","sm-duel-final"]
@@ -1478,7 +1476,7 @@ const GSC_BOSS_AFTER = {
   "Johto|See des Zorns": ["rival4","ariana1","petrel1","proton1","petrel2","ariana2","archer1"],
   "Johto|Route 45": ["clair"],
   "Johto|Route 26": ["rival5","will","koga","bruno","karen","lance","duel-final"],
-  "Johto|Silberberghöhle": ["red"],
+  "Johto|Silberberg": ["red"],
   "Kanto|Route 2": ["brock"],
   "Kanto|Mondberg": ["rival6"],
   "Kanto|Route 4": ["misty"],
@@ -1514,8 +1512,8 @@ const HOENN_RS_BOSSES = [
   { id:"roxanne", sprite:"SmRoxanne", name:"Felizia", cls:"Arenaleiterin", place:"Metarost City", ace:"Nasgnet", baseLevel:15, group:"Hoenn-Arenen", pvp:true },
   { id:"brawly", sprite:"SmBrawly", name:"Kamillo", cls:"Arenaleiter", place:"Faustauhaven", ace:"Makuhita", baseLevel:18, group:"Hoenn-Arenen", pvp:true },
   { id:"wally1", sprite:"SmWally", name:"Heiko", cls:"Herausforderer", place:"Malvenfroh City", ace:"Kirlia", baseLevel:16, group:"Sonstige Bosse" },
-  { id:"villain-admin1", sprite:"SmTabitha", name:"Kalle", cls:"Vorstand", place:"Feuerberg", ace:"Camaub", baseLevel:20, group:"Team Magma" },
-  { id:"villain-boss1", sprite:"SmMaxie", name:"Marc", cls:"Teamboss", place:"Feuerberg", ace:"Camerupt", baseLevel:25, group:"Team Magma" },
+  { id:"villain-admin1", sprite:"SmTabitha", name:"Kalle", cls:"Vorstand", place:"Schlotberg", ace:"Camaub", baseLevel:20, group:"Team Magma" },
+  { id:"villain-boss1", sprite:"SmMaxie", name:"Marc", cls:"Teamboss", place:"Schlotberg", ace:"Camerupt", baseLevel:25, group:"Team Magma" },
   { id:"rival2", sprite:"SmRival", name:"Maike", cls:"Rivale", place:"Route 110", ace:null, baseLevel:20, group:"Rivale" },
   { id:"wattson", sprite:"SmWattson", name:"Walter", cls:"Arenaleiter", place:"Malvenfroh City", ace:"Magneton", baseLevel:23, group:"Hoenn-Arenen", pvp:true },
   { id:"villain-admin2", sprite:"RSCourtney", name:"Jördis", cls:"Vorstand", place:"Klima-Institut", ace:"Magnayen", baseLevel:28, group:"Team Magma" },
@@ -1541,7 +1539,7 @@ const HOENN_RS_BOSS_AFTER = {
   "Hoenn|Route 103": ["rival1"],
   "Hoenn|Metarost City": ["roxanne"],
   "Hoenn|Faustauhaven": ["brawly"],
-  "Hoenn|Feuerberg": ["villain-admin1","villain-boss1"],
+  "Hoenn|Schlotberg": ["villain-admin1","villain-boss1"],
   "Hoenn|Route 110": ["rival2","wally1"],
   "Hoenn|Malvenfroh City": ["wattson"],
   "Hoenn|Route 119": ["villain-admin2","rival3"],
@@ -2280,7 +2278,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.8.13";
+const APP_VERSION = "1.8.14";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
