@@ -2236,7 +2236,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.8.1";
+const APP_VERSION = "1.8.2";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -3334,7 +3334,65 @@ function hallOfFameCardHtml(){
     ${hofGridHtml(hof.playerTeam||[], true)}
     <div class="loc-sub" style="margin-bottom:6px; font-weight:700;">${escapeHtml(duelPartnerTeamLabel())}</div>
     ${hofGridHtml(hof.rivalTeam||[], false)}
+    <div class="card-actions" style="margin-top:4px;">
+      <button class="btn btn-secondary btn-block" data-act="open-run-recap">Run-Rückblick ansehen</button>
+    </div>
   </div>`;
+}
+
+/* Run-Rückblick: teilbare Zusammenfassung am Ende eines Runs, nur sichtbar sobald das finale
+   Duell erfasst ist (gleiche Bedingung wie die Ruhmeshalle-Karte). Nutzt bewusst das im finalen
+   Duell erfasste Team-Snapshot (hallOfFame.playerTeam) statt des aktuell lebenden Teams, da das
+   sich danach noch ändern kann - der Rückblick soll den Stand am Run-Ende festhalten. */
+function runRecapStats(){
+  const caught = aliveCount()+deadCount();
+  const survivalRate = caught>0 ? Math.round(aliveCount()/caught*100) : null;
+  const bossesDefeated = currentGame().bosses.filter(b=>isBossDefeated(b.id)).length;
+  const totalBosses = currentGame().bosses.length;
+  const duelTally = rivalDuelTally();
+  const hof = state.hallOfFame;
+  return { caught, survivalRate, bossesDefeated, totalBosses, duelTally, won: hof.result!=="loss" };
+}
+
+function openRunRecapSheet(){
+  const s = runRecapStats();
+  const hof = state.hallOfFame;
+  openSheet(`
+    <h3>Run-Rückblick</h3>
+    <div class="loc-sub" style="margin-bottom:14px;">${escapeHtml(state.runTitle||"Nuzlocke")} · ${escapeHtml(currentGame().shortLabel)} · ${s.won?"Sieg":"Niederlage"} im finalen Duell</div>
+    <div class="loc-sub" style="margin-bottom:6px; font-weight:700;">Team im finalen Duell</div>
+    ${hofGridHtml(hof.playerTeam||[], true)}
+    <div class="stat-grid" style="margin-top:2px;">
+      ${statTileHtml("dot-good", "Überlebensrate", s.survivalRate===null?"–":s.survivalRate+"%")}
+      ${statTileHtml("", "Gefangen", s.caught)}
+      ${statTileHtml("dot-red", "Gestorben", deadCount())}
+      ${statTileHtml("dot-gold", "Bosse besiegt", `${s.bossesDefeated}/${s.totalBosses}`)}
+      ${statTileHtml("dot-good", "Duelle gewonnen", s.duelTally.wins)}
+      ${statTileHtml("dot-red", "Duelle verloren", s.duelTally.losses)}
+    </div>
+    <div class="sheet-footer">
+      <button class="btn btn-secondary btn-block" data-act="close-sheet">Schließen</button>
+      <button class="btn btn-primary btn-block" data-act="copy-run-recap">Als Text kopieren</button>
+    </div>
+  `);
+}
+
+function runRecapText(){
+  const s = runRecapStats();
+  const hof = state.hallOfFame;
+  const team = (hof.playerTeam||[]).map(m=>`- ${m.nickname ? `${m.nickname} (${m.species})` : m.species}`).join("\n") || "- (kein Team erfasst)";
+  return [
+    `${state.runTitle||"Nuzlocke"} - ${currentGame().shortLabel}`,
+    `${s.won ? "Sieg" : "Niederlage"} im finalen Duell`,
+    "",
+    "Team:",
+    team,
+    "",
+    `Überlebensrate: ${s.survivalRate===null?"-":s.survivalRate+"%"}`,
+    `Gefangen: ${s.caught}  ·  Gestorben: ${deadCount()}`,
+    `Bosse besiegt: ${s.bossesDefeated}/${s.totalBosses}`,
+    `Duelle: ${s.duelTally.wins} Siege, ${s.duelTally.losses} Niederlagen`
+  ].join("\n");
 }
 
 function settingsGroupHtml(key, label, bodyHtml){
@@ -4092,6 +4150,27 @@ document.addEventListener("click", e=>{
   }
   else if(act==="open-saves-sheet") openSavesSheet();
   else if(act==="open-event-log") openEventLogSheet();
+  else if(act==="open-run-recap") openRunRecapSheet();
+  else if(act==="copy-run-recap"){
+    const text = runRecapText();
+    const done = ()=>{
+      openSheet(`
+        <h3>Kopiert</h3>
+        <div class="loc-sub" style="margin-bottom:14px;">Der Run-Rückblick liegt als Text in der Zwischenablage.</div>
+        <div class="sheet-footer"><button class="btn btn-primary btn-block" data-act="close-sheet">OK</button></div>
+      `);
+    };
+    const failed = ()=>{
+      openSheet(`
+        <h3>Kopieren nicht möglich</h3>
+        <div class="loc-sub" style="margin-bottom:14px;">Der Browser hat den Zugriff auf die Zwischenablage verweigert. Text zum manuellen Kopieren:</div>
+        <textarea readonly style="width:100%; min-height:140px; border:1.5px solid var(--line); border-radius:12px; padding:12px; font-size:.85rem; background:var(--bg); color:var(--ink);">${escapeHtml(text)}</textarea>
+        <div class="sheet-footer" style="margin-top:14px;"><button class="btn btn-primary btn-block" data-act="close-sheet">Schließen</button></div>
+      `);
+    };
+    if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, failed);
+    else failed();
+  }
   else if(act==="open-new-save") openNewSaveSheet();
   else if(act==="create-save"){
     const newId = createSave(id);
