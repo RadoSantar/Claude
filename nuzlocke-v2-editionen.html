@@ -599,7 +599,7 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 }
 .sheet::-webkit-scrollbar{ display:none; }
 .sheet-backdrop.active .sheet{ transform:translateY(0); }
-.sheet-handle{ width:36px; height:4px; background:var(--line); border-radius:999px; margin:6px auto 14px; position:relative; }
+.sheet-handle{ width:36px; height:4px; background:var(--line); border-radius:999px; margin:6px auto 14px; position:relative; touch-action:none; }
 .sheet-handle::after{ content:""; position:absolute; inset:-18px -44px; }
 .sheet h3{ font-size:1.05rem; margin-bottom:4px; }
 .sheet .loc-sub{ margin-bottom:14px; }
@@ -2278,7 +2278,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.8.14";
+const APP_VERSION = "1.8.15";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -2373,7 +2373,7 @@ function loadSavesIndex(){
   }catch(e){}
   return [];
 }
-function persistSavesIndex(index){ localStorage.setItem(SAVES_INDEX_KEY, JSON.stringify(index)); }
+function persistSavesIndex(index){ try{ localStorage.setItem(SAVES_INDEX_KEY, JSON.stringify(index)); }catch(e){} }
 
 function loadSaveState(id){
   try{
@@ -2384,7 +2384,7 @@ function loadSaveState(id){
 }
 
 function writeSave(id, saveData){
-  localStorage.setItem(saveStorageKey(id), JSON.stringify(saveData));
+  try{ localStorage.setItem(saveStorageKey(id), JSON.stringify(saveData)); }catch(e){}
   const index = loadSavesIndex();
   const meta = { id, title: saveData.runTitle||"Nuzlocke", edition: saveData.edition, updatedAt: Date.now() };
   const entry = index.find(s=>s.id===id);
