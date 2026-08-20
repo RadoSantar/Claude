@@ -864,7 +864,8 @@ const SMARAGD_BOSSES = [
   { id:"sm-rival1", sprite:"SmRival", name:"Maike", cls:"Rivale", place:"Route 103", ace:null, baseLevel:5, group:"Rivale" },
   { id:"sm-rival2", sprite:"SmRival", name:"Maike", cls:"Rivale", place:"Route 110", ace:null, baseLevel:18, group:"Rivale" },
   { id:"sm-rival3", sprite:"SmRival", name:"Maike", cls:"Rivale", place:"Route 119", ace:null, baseLevel:28, group:"Rivale", pvp:true },
-  { id:"sm-rival4", sprite:"SmRival", name:"Maike", cls:"Rivale", place:"Pyroberg", ace:null, baseLevel:32, group:"Rivale", pvp:true },
+  { id:"sm-rival4", sprite:"SmRival", name:"Maike", cls:"Rivale", place:"Seegrasulb City", ace:null, baseLevel:32, group:"Rivale", pvp:true },
+  { id:"sm-rival-rustboro", sprite:"SmRival", name:"Maike", cls:"Rivale", place:"Metarost City (optional, leicht zu verpassen)", ace:null, baseLevel:14, group:"Rivale", pvp:true },
   { id:"sm-wally1", sprite:"SmWally", name:"Heiko", cls:"Herausforderer", place:"Malvenfroh City", ace:"Kirlia", baseLevel:16, group:"Sonstige Bosse" },
   { id:"sm-wally2", sprite:"SmWally", name:"Heiko", cls:"Herausforderer", place:"Pokémon-Liga", ace:"Guardevoir", baseLevel:45, group:"Sonstige Bosse", pvp:true },
   { id:"sm-roxanne", sprite:"SmRoxanne", name:"Felizia", cls:"Arenaleiterin", place:"Metarost City", ace:"Nasgnet", baseLevel:15, group:"Hoenn-Arenen", pvp:true },
@@ -900,7 +901,7 @@ const SMARAGD_LOCATIONS = [
     "Route 102","Route 103",
     {name:"Blütenburg City", note:"Nur Surfen, Angeln."},
     "Blütenburgwald",
-    {name:"Metarost City", note:"Keine wilden Pokémon.", noCatch:true},
+    {name:"Metarost City", note:"Keine wilden Pokémon. Optionaler, leicht zu verpassender Rivalenkampf (nur Smaragd).", noCatch:true},
     "Route 104","Metaflurtunnel",
     {name:"Wiesenflur", note:"Keine wilden Pokémon.", noCatch:true},
     "Route 116","Route 105",
@@ -959,6 +960,7 @@ const SMARAGD_LOCATIONS = [
    ein Abgleich, da hier aus Platzgründen vereinfacht wurde. */
 const SMARAGD_BOSS_AFTER = {
   "Hoenn|Route 103": ["sm-rival1"],
+  "Hoenn|Metarost City": ["sm-rival-rustboro"],
   "Hoenn|Blütenburgwald": ["sm-roxanne"],
   "Hoenn|Route 106": ["sm-brawly"],
   "Hoenn|Route 110": ["sm-rival2","sm-wattson","sm-wally1"],
@@ -966,7 +968,7 @@ const SMARAGD_BOSS_AFTER = {
   "Hoenn|Steilpass": ["sm-flannery","sm-norman"],
   "Hoenn|Route 119": ["sm-shelly1","sm-rival3"],
   "Hoenn|Route 120": ["sm-winona"],
-  "Hoenn|Pyroberg": ["sm-rival4"],
+  "Hoenn|Seegrasulb City": ["sm-rival4"],
   "Hoenn|Route 124": ["sm-maxie2","sm-tabitha2"],
   "Hoenn|Route 126": ["sm-tateliza","sm-maxie3","sm-tabitha3"],
   "Hoenn|Tiefseehöhle": ["sm-archie","sm-shelly2"],
@@ -1517,7 +1519,7 @@ const HOENN_RS_BOSSES = [
   { id:"norman", sprite:"SmNorman", name:"Norman", cls:"Arenaleiter", place:"Blütenburg City", ace:"Letarking", baseLevel:31, group:"Hoenn-Arenen", pvp:true },
   { id:"winona", sprite:"SmWinona", name:"Wibke", cls:"Arenaleiterin", place:"Baumhausen City", ace:"Altaria", baseLevel:33, group:"Hoenn-Arenen", pvp:true },
   { id:"villain-admin3", sprite:"SmTabitha", name:"Kalle", cls:"Vorstand", place:"Team-Magma-Versteck, Seegrasulb City", ace:"Camerupt", baseLevel:32, group:"Team Magma" },
-  { id:"rival4", sprite:"SmRival", name:"Maike", cls:"Rivale", place:"Pyroberg", ace:null, baseLevel:34, group:"Rivale", pvp:true },
+  { id:"rival4", sprite:"SmRival", name:"Maike", cls:"Rivale", place:"Seegrasulb City", ace:null, baseLevel:34, group:"Rivale", pvp:true },
   { id:"wallace", sprite:"SmWassili", name:"Wassili", cls:"Arenaleiter", place:"Xeneroville", ace:"Milotic", baseLevel:43, group:"Hoenn-Arenen", pvp:true },
   { id:"villain-admin4", sprite:"RSCourtney", name:"Jördis", cls:"Vorstand", place:"Tiefseehöhle (Zugang)", ace:"Magnayen", baseLevel:38, group:"Team Magma" },
   { id:"villain-boss2", sprite:"SmMaxie", name:"Marc", cls:"Teamboss", place:"Tiefseehöhle", ace:"Camerupt", baseLevel:43, group:"Team Magma" },
@@ -1539,8 +1541,7 @@ const HOENN_RS_BOSS_AFTER = {
   "Hoenn|Route 119": ["villain-admin2","rival3"],
   "Hoenn|Steilpass": ["flannery","norman"],
   "Hoenn|Route 120": ["winona"],
-  "Hoenn|Seegrasulb City": ["villain-admin3"],
-  "Hoenn|Pyroberg": ["rival4"],
+  "Hoenn|Seegrasulb City": ["rival4","villain-admin3"],
   "Hoenn|Route 128": ["wallace"],
   "Hoenn|Tiefseehöhle": ["villain-admin4","villain-boss2"],
   "Hoenn|Pokémon-Liga": ["wally2","e4-ulrich","e4-antonia","e4-frosina","e4-dragan","champion","duel-final"]
@@ -2272,7 +2273,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.8.7";
+const APP_VERSION = "1.8.8";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
