@@ -475,7 +475,35 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
     position:absolute; top:0; left:0; opacity:0;
     animation-name:confettiFall; animation-timing-function:cubic-bezier(.36,.2,.4,1); animation-fill-mode:forwards;
   }
+
+  @keyframes championCardIn{
+    0%{ transform:scale(.85) translateY(10px); opacity:0; }
+    100%{ transform:scale(1) translateY(0); opacity:1; }
+  }
+  @keyframes championTrophyPop{
+    0%{ transform:scale(0) rotate(-20deg); }
+    60%{ transform:scale(1.25) rotate(6deg); }
+    100%{ transform:scale(1) rotate(0deg); }
+  }
+  .champion-card{ animation:championCardIn 420ms cubic-bezier(.34,1.2,.32,1) both; }
+  .champion-trophy{ animation:championTrophyPop 700ms cubic-bezier(.34,1.56,.64,1) 150ms both; }
 }
+
+.champion-overlay{
+  position:fixed; inset:0; z-index:70; display:flex; align-items:center; justify-content:center;
+  padding:24px; background:rgba(10,8,4,0.55); backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px);
+}
+.champion-card{
+  background:var(--surface); border-radius:24px; padding:32px 26px 26px; max-width:360px; width:100%;
+  text-align:center; box-shadow:0 20px 60px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(var(--gold-glow),.3);
+}
+.champion-trophy{ font-size:3.2rem; line-height:1; margin-bottom:6px; }
+.champion-card h2{ font-size:1.3rem; font-weight:800; margin:4px 0 4px; }
+.champion-sub{ font-size:.88rem; color:var(--ink-soft); margin-bottom:20px; }
+.champion-stats{ display:flex; gap:10px; margin-bottom:22px; }
+.champion-stats > div{ flex:1; background:var(--surface-alt); border-radius:14px; padding:12px 8px; }
+.champion-stats span{ display:block; font-family:var(--font-mono); font-variant-numeric:tabular-nums; font-size:1.15rem; font-weight:800; color:var(--gold); }
+.champion-stats label{ display:block; font-size:.68rem; color:var(--ink-soft); margin-top:3px; }
 
 .fab{
   position:absolute; right:18px; bottom:calc(88px + env(safe-area-inset-bottom)); z-index:15;
@@ -2236,7 +2264,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.8.2";
+const APP_VERSION = "1.8.3";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -3213,6 +3241,49 @@ function spawnConfetti(){
   setTimeout(()=>layer.remove(), 4300);
 }
 
+/* Der "Champion" ist nicht überall gleich klassifiziert - in den Kanto-Editionen trägt Lance
+   z.B. cls:"Top Vier" statt "Champ", da er im Original als letztes Top-Vier-Mitglied gilt statt
+   als eigener Champion. Universeller und zuverlässiger: der Boss, der in seiner Standort-Liste
+   direkt vor der "duel-final"-Markierung steht, ist in JEDER Edition der letzte reguläre Kampf
+   vor dem Abschluss - unabhängig von cls. */
+function finalStoryBoss(){
+  const game = currentGame();
+  for(const key in game.bossAfter){
+    const ids = game.bossAfter[key];
+    const idx = ids.indexOf("duel-final");
+    if(idx > 0) return bossById(ids[idx-1]);
+  }
+  return null;
+}
+
+/* Eigener Abschluss-Screen speziell für den Champion-Sieg (nicht zu verwechseln mit der
+   Ruhmeshalle/Konfetti beim finalen Rivalenduell danach) - ein Vollbild-Overlay statt nur einer
+   Karten-Animation, da der Champion-Sieg der eigentliche Abschluss des Hauptspiels ist. */
+function showChampionCelebration(boss){
+  document.querySelector(".champion-overlay")?.remove();
+  spawnConfetti();
+  const bossesDefeated = currentGame().bosses.filter(b=>isBossDefeated(b.id)).length;
+  const totalBosses = currentGame().bosses.length;
+  const caught = aliveCount()+deadCount();
+  const survivalRate = caught>0 ? Math.round(aliveCount()/caught*100) : null;
+  const overlay = document.createElement("div");
+  overlay.className = "champion-overlay";
+  overlay.dataset.act = "close-champion-overlay";
+  overlay.innerHTML = `
+    <div class="champion-card">
+      <div class="champion-trophy" aria-hidden="true">🏆</div>
+      <h2>Champion besiegt!</h2>
+      <div class="champion-sub">${escapeHtml(boss.name || boss.cls)} · ${escapeHtml(currentGame().shortLabel)}</div>
+      <div class="champion-stats">
+        <div><span>${survivalRate===null?"–":survivalRate+"%"}</span><label>Überlebensrate</label></div>
+        <div><span>${bossesDefeated}/${totalBosses}</span><label>Bosse besiegt</label></div>
+      </div>
+      <button class="btn btn-primary btn-block" data-act="close-champion-overlay">Weiter</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+}
+
 function duelPartnerName(){ return (state.duelPartnerName||"").trim(); }
 function duelPartnerLabel(){ return duelPartnerName() || "deinen Duellpartner"; }
 function duelPartnerTeamLabel(){ const n = duelPartnerName(); return n ? `${n}s Team` : "Das Team deines Duellpartners"; }
@@ -3968,15 +4039,18 @@ document.addEventListener("click", e=>{
   else if(act==="toggle-boss-defeat"){
     const wasDefeated = isBossDefeated(id);
     state.bossDefeated[id] = !wasDefeated;
-    if(!wasDefeated){
-      const boss = bossById(id);
-      if(boss) logEvent("boss", `${boss.name || boss.cls} besiegt (${boss.place})`);
-    }
+    const boss = bossById(id);
+    if(!wasDefeated && boss) logEvent("boss", `${boss.name || boss.cls} besiegt (${boss.place})`);
     saveState();
     if(!wasDefeated) lastDefeatedId = id;
     render();
     lastDefeatedId = null;
+    if(!wasDefeated && boss){
+      const finalBoss = finalStoryBoss();
+      if(finalBoss && boss.id===finalBoss.id) showChampionCelebration(boss);
+    }
   }
+  else if(act==="close-champion-overlay"){ document.querySelector(".champion-overlay")?.remove(); }
   else if(act==="open-final-rival"){
     openFinalRivalSheet(id);
   }
