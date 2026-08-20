@@ -112,7 +112,7 @@ button{ -webkit-user-select:none; user-select:none; cursor:pointer; }
 h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 .app{
   max-width:640px; margin:0 auto; position:relative;
-  height:100vh; height:100dvh; display:flex; flex-direction:column;
+  height:100vh; height:100dvh; height:var(--app-height, 100dvh); display:flex; flex-direction:column;
 }
 
 /* Top bar */
@@ -2276,7 +2276,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.8.19";
+const APP_VERSION = "1.8.20";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -4512,6 +4512,21 @@ document.getElementById("themeBtn").addEventListener("click", ()=>{
   applyTheme();
 });
 applyTheme();
+
+/* iOS Safari (v.a. in Standalone-/Home-Bildschirm-Modus) berechnet 100dvh auf manchen Geräten/
+   Versionen minimal zu klein, wodurch unter der Tab-Bar eine Lücke bis zum Bildschirmrand bleibt
+   statt dass die Tab-Bar bis zum echten unteren Rand reicht (auf Android nicht reproduzierbar).
+   Robuster Fix: tatsächliche sichtbare Höhe per JS messen (visualViewport, wenn verfügbar) und als
+   CSS-Variable setzen, die .app per var(--app-height, 100dvh) mit Vorrang vor dem reinen dvh-Wert
+   nutzt - reagiert zusätzlich auf Rotation/Tastatur-Ein-/Ausblenden. */
+function setAppHeight(){
+  const h = (window.visualViewport ? window.visualViewport.height : window.innerHeight);
+  document.documentElement.style.setProperty("--app-height", h + "px");
+}
+setAppHeight();
+window.addEventListener("resize", setAppHeight);
+window.addEventListener("orientationchange", setAppHeight);
+if(window.visualViewport) window.visualViewport.addEventListener("resize", setAppHeight);
 
 render();
 Object.keys(BOSS_SPRITES).forEach(key=>freezeSpriteSrc(key, BOSS_SPRITES[key]));
