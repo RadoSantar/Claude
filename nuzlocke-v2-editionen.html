@@ -226,6 +226,11 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 .card-top > div:first-child{ min-width:0; }
 .loc-name{ font-weight:700; font-size:.98rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
 .loc-sub{ font-size:.82rem; color:var(--ink-soft); margin-top:2px; }
+.loc-note{
+  font-size:.82rem; font-style:italic; color:var(--ink-soft); margin-top:10px; padding:8px 10px;
+  background:var(--surface-alt); border-left:3px solid var(--gold); border-radius:8px;
+  white-space:pre-wrap; word-break:break-word;
+}
 .chip{
   font-size:.7rem; font-weight:700; letter-spacing:.03em; text-transform:uppercase;
   padding:4px 9px; border-radius:999px; white-space:nowrap; flex:none;
@@ -2231,6 +2236,8 @@ const ICON_UNDO = '<svg viewBox="0 0 24 24"><path d="M9 5L4 9l5 4"/><path d="M4 
 const ICON_EDIT = '<svg viewBox="0 0 24 24"><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/><path d="M14.5 5.5l4 4"/></svg>';
 const ICON_FLAG = '<svg viewBox="0 0 24 24"><path d="M6 21V4" stroke-linecap="round"/><path d="M6 4h12l-3.5 4.5L18 13H6"/></svg>';
 const ICON_FLAG_FILLED = '<svg viewBox="0 0 24 24"><path d="M6 21V4" stroke-linecap="round"/><path d="M6 4h12l-3.5 4.5L18 13H6" fill="currentColor"/></svg>';
+const ICON_NOTE = '<svg viewBox="0 0 24 24"><path d="M6 3h9l5 5v12a1 1 0 01-1 1H6a1 1 0 01-1-1V4a1 1 0 011-1z"/><path d="M14.5 3v5.5H20"/><path d="M8 13h8M8 17h5"/></svg>';
+const ICON_NOTE_FILLED = '<svg viewBox="0 0 24 24"><path d="M6 3h9l5 5v12a1 1 0 01-1 1H6a1 1 0 01-1-1V4a1 1 0 011-1z" fill="currentColor"/><path d="M14.5 3v5.5H20" fill="var(--surface)"/><path d="M8 13h8M8 17h5" stroke="var(--surface)"/></svg>';
 const ICON_KEBAB = '<svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.7" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.7" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="1.7" fill="currentColor" stroke="none"/></svg>';
 
 function iconBtn(tone, act, id, iconSvg, label, disabled, small){
@@ -2264,7 +2271,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.8.4";
+const APP_VERSION = "1.8.5";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -2728,16 +2735,21 @@ function renderRoutes(){
 function routeCard(loc, isCurrent){
   const currentAttr = isCurrent ? ` data-current="true"` : "";
   const flagBtn = iconBtn(isCurrent?"tone-good":"tone-neutral","toggle-current-loc",loc.id,isCurrent?ICON_FLAG_FILLED:ICON_FLAG,isCurrent?"Nicht mehr aktueller Standort":"Als aktuellen Standort markieren",false,true);
+  const hasNote = !!(loc.customNote||"").trim();
+  const noteBtn = iconBtn(hasNote?"tone-gold":"tone-neutral","open-location-note",loc.id,hasNote?ICON_NOTE_FILLED:ICON_NOTE,hasNote?"Notiz bearbeiten":"Notiz hinzufügen",false,true);
+  const noteHtml = hasNote ? `<div class="loc-note">${escapeHtml(loc.customNote)}</div>` : "";
   if(loc.noCatch){
     return `<div class="card st-nocatch" data-loc="${loc.id}"${currentAttr}>
       <div class="card-top">
         <div><div class="loc-name">${escapeHtml(loc.name)}</div></div>
         <div style="display:flex; align-items:center; gap:6px; flex:none;">
           <span class="chip silver">Kein Wildfang</span>
+          ${noteBtn}
           ${flagBtn}
         </div>
       </div>
       <div class="loc-sub">${escapeHtml(loc.note || "Keine wilden Pokémon hier.")}</div>
+      ${noteHtml}
     </div>`;
   }
   let body = "";
@@ -2772,10 +2784,12 @@ function routeCard(loc, isCurrent){
       </div>
       <div style="display:flex; align-items:center; gap:6px; flex:none;">
         ${chipFor(loc)}
+        ${noteBtn}
         ${flagBtn}
         ${loc.custom ? iconBtn("tone-red","delete-location",loc.id,ICON_TRASH,"Fundort löschen",false,true) : ""}
       </div>
     </div>
+    ${noteHtml}
     ${body}
   </div>`;
 }
@@ -3715,6 +3729,26 @@ function renameSheet(locId){
   setTimeout(()=>document.getElementById("editNick").focus(), 50);
 }
 
+function openLocationNoteSheet(locId){
+  const loc = findLoc(locId);
+  if(!loc) return;
+  openSheet(`
+    <h3>Notiz</h3>
+    <div class="loc-sub" style="margin-bottom:14px;">${escapeHtml(loc.name)} - Freitext für kleine Anekdoten, z.B. ein knapper Fang oder eine lustige Randomizer-Fügung.</div>
+    <div class="field">
+      <textarea id="editLocNote" maxlength="300" placeholder="Notiz eintragen..." style="width:100%; min-height:110px; border:1.5px solid var(--line); background:var(--bg); border-radius:12px; padding:12px 14px; font-size:1rem; font-family:inherit; resize:vertical;">${escapeHtml(loc.customNote||"")}</textarea>
+    </div>
+    <div class="sheet-footer" style="flex-direction:column; gap:10px;">
+      ${loc.customNote ? `<button class="btn btn-danger btn-block" data-act="delete-location-note" data-id="${locId}">Notiz löschen</button>` : ""}
+      <div style="display:flex; gap:10px;">
+        <button class="btn btn-secondary btn-block" data-act="close-sheet">Abbrechen</button>
+        <button class="btn btn-primary btn-block" data-act="save-location-note" data-id="${locId}">Speichern</button>
+      </div>
+    </div>
+  `);
+  setTimeout(()=>document.getElementById("editLocNote").focus(), 50);
+}
+
 /* Team-Kachel zeigt bewusst keine Aktions-Icons mehr, damit das Sprite groß/zentral bleibt (Name
    und Fangort dürfen sichtbar bleiben) - die Aktionen leben stattdessen in diesem Kontextmenü,
    das über das kleine "⋯"-Icon in der Kachelecke geöffnet wird. Der Sprite selbst bleibt weiterhin
@@ -4105,6 +4139,16 @@ document.addEventListener("click", e=>{
   else if(act==="save-nick"){
     const v = document.getElementById("editNick").value.trim().slice(0,30);
     findLoc(id).mon.nickname = v; saveState(); closeSheet(); render();
+  }
+  else if(act==="open-location-note") openLocationNoteSheet(id);
+  else if(act==="save-location-note"){
+    const v = document.getElementById("editLocNote").value.trim().slice(0,300);
+    findLoc(id).customNote = v;
+    saveState(); closeSheet(); render();
+  }
+  else if(act==="delete-location-note"){
+    findLoc(id).customNote = "";
+    saveState(); closeSheet(); render();
   }
   else if(act==="open-rival-rename") openRivalRenameSheet();
   else if(act==="save-rival-nick"){
