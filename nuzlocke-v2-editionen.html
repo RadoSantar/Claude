@@ -335,6 +335,51 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 .event-text{ font-size:.86rem; font-weight:600; line-height:1.4; }
 .event-time{ font-size:.72rem; color:var(--ink-soft); margin-top:2px; }
 
+/* Änderungsprotokoll-Sheet: Inhalt (CHANGELOG_HTML) stammt 1:1 aus dem separat veröffentlichten
+   Changelog-Artifact, hier nur mit App-eigenen Design-Tokens statt dessen eigener Palette
+   nachgestylt, damit es sich hell/dunkel wie der Rest der App verhält. */
+.changelog-sheet{ font-size:.92rem; }
+.changelog-sheet .lede{ font-size:.88rem; line-height:1.6; color:var(--ink-soft); margin:0 0 18px; }
+.changelog-sheet .lede strong{ color:var(--ink); font-weight:650; }
+.changelog-sheet .stats{ display:grid; grid-template-columns:repeat(2,1fr); gap:1px; background:var(--line); border:1px solid var(--line); border-radius:10px; overflow:hidden; margin-bottom:24px; }
+.changelog-sheet .stat{ background:var(--surface); padding:12px 10px; text-align:center; }
+.changelog-sheet .stat .n{ font-size:1.2rem; font-weight:800; color:var(--accent); line-height:1.1; }
+.changelog-sheet .stat .l{ font-size:.62rem; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft); margin-top:4px; }
+.changelog-sheet .log{ position:relative; }
+.changelog-sheet .log::before{ content:""; position:absolute; left:7px; top:10px; bottom:10px; width:1.5px; background:var(--line); }
+.changelog-sheet .entry{ position:relative; padding:0 0 28px 30px; }
+.changelog-sheet .entry:last-child{ padding-bottom:0; }
+.changelog-sheet .entry::before{ content:""; position:absolute; left:0; top:5px; width:13px; height:13px; border-radius:50%; background:var(--surface); border:2.5px solid var(--accent); }
+.changelog-sheet .entry.baseline::before{ border-color:var(--ink-soft); background:var(--surface-alt); }
+.changelog-sheet .entry-head{ display:flex; align-items:baseline; gap:9px; flex-wrap:wrap; margin-bottom:7px; }
+.changelog-sheet .ver{ font-family:var(--font-mono); font-size:1rem; font-weight:700; color:var(--ink); }
+.changelog-sheet .baseline .ver{ color:var(--ink-soft); }
+.changelog-sheet .tag{ font-size:.62rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; padding:2.5px 8px; border-radius:20px; }
+.changelog-sheet .tag-feat{ background:var(--good-soft); color:var(--good); }
+.changelog-sheet .tag-fix{ background:var(--warn-soft); color:var(--warn); }
+.changelog-sheet .tag-note{ background:var(--accent-soft); color:var(--accent); }
+.changelog-sheet .entry h3{ font-size:.95rem; font-weight:700; margin:0 0 6px; line-height:1.4; }
+.changelog-sheet .entry p{ font-size:.86rem; line-height:1.58; color:var(--ink-soft); margin:0 0 8px; }
+.changelog-sheet .entry p:last-child{ margin-bottom:0; }
+.changelog-sheet .entry ul{ margin:6px 0 8px; padding-left:18px; }
+.changelog-sheet .entry li{ font-size:.86rem; line-height:1.55; color:var(--ink-soft); margin-bottom:4px; }
+.changelog-sheet .entry li:last-child{ margin-bottom:0; }
+.changelog-sheet .entry code{ font-family:var(--font-mono); font-size:.88em; background:var(--surface-alt); padding:.1em .4em; border-radius:5px; color:var(--ink); }
+.changelog-sheet .chips{ display:flex; flex-wrap:wrap; gap:5px; margin-top:10px; }
+.changelog-sheet .chip{ display:inline-flex; align-items:center; gap:5px; font-size:.72rem; font-weight:600; padding:3px 9px 3px 7px; border-radius:20px; background:var(--surface-alt); border:1px solid var(--line); color:var(--ink-soft); }
+.changelog-sheet .dot{ width:7px; height:7px; border-radius:50%; flex:none; }
+.changelog-sheet .fork-divider{ position:relative; padding:0 0 28px 30px; margin-top:2px; }
+.changelog-sheet .fork-divider::before{ content:""; position:absolute; left:0; top:5px; width:13px; height:13px; border-radius:50%; background:var(--ink-soft); }
+.changelog-sheet .fork-divider h2{ font-size:.9rem; font-weight:700; margin:0 0 5px; }
+.changelog-sheet .fork-divider p{ font-size:.8rem; line-height:1.55; color:var(--ink-soft); margin:0; }
+.changelog-sheet .followups{ margin-top:32px; padding-top:20px; border-top:1px solid var(--line); }
+.changelog-sheet .followups + .followups{ margin-top:20px; padding-top:0; border-top:none; }
+.changelog-sheet .followups h2{ font-size:.68rem; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-soft); font-weight:700; margin:0 0 12px; }
+.changelog-sheet .followup-item{ background:var(--surface-alt); border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:8px; padding:11px 13px; font-size:.82rem; line-height:1.55; color:var(--ink-soft); margin-bottom:8px; }
+.changelog-sheet .followup-item:last-child{ margin-bottom:0; }
+.changelog-sheet .followup-item strong{ color:var(--ink); }
+.changelog-sheet footer{ margin-top:32px; padding-top:14px; border-top:1px solid var(--line); font-size:.72rem; color:var(--ink-soft); }
+
 .boss-sprite{ image-rendering:pixelated; background:var(--surface-alt); border-radius:10px; padding:2px; flex:none; }
 .boss-level-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:12px; padding-top:12px; border-top:1px solid var(--line); }
 .boss-level-main{ display:flex; align-items:baseline; gap:8px; }
@@ -2276,7 +2321,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.8.22";
+const APP_VERSION = "1.8.23";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -3519,6 +3564,541 @@ const EVENT_TYPE_META = {
   pvp:    { tone:"tone-neutral",icon:ICON_POKEBALL },
   final:  { tone:"tone-gold",  icon:ICON_CHECK }
 };
+const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einfachen Routen-/Team-Trackers für einen einzelnen Johto-Run über dessen zwei eingefrorene Zwischenstände (als Prototyp- und Vorgängerprojekt weiter unten dokumentiert) bis zum aktuellen Tracker mit <strong>14 Editionen über die vollständigen Generationen 1–5</strong> — jede mit eigens recherchierten Original-Leveln, Bossen und deutschen Namen statt wiederverwendeter Remake-Daten, dazu Mehrfach-Speicherstände, Ruhmeshalle, Box-Suche und Offline-Installation als PWA.</p>
+
+  <div class="stats">
+    <div class="stat"><div class="n">14</div><div class="l">Editionen</div></div>
+    <div class="stat"><div class="n">649</div><div class="l">Pokémon-Arten</div></div>
+    <div class="stat"><div class="n">26</div><div class="l">Versions&shy;stände</div></div>
+    <div class="stat"><div class="n">Gen 1–5</div><div class="l">Vollständig</div></div>
+  </div>
+
+  <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.23</span><span class="tag tag-feat">Neu</span></div>
+      <h3>Änderungsprotokoll öffnet jetzt nativ in der App</h3>
+      <p>„Änderungsprotokoll öffnen" in Einstellungen → Werkzeuge verließ bisher die App und öffnete diese Seite extern im Browser - bei der installierten Offline-PWA funktionierte das ohne Internetverbindung gar nicht. Der komplette Inhalt dieser Seite ist jetzt direkt in die App eingebettet und öffnet sich als natives Sheet, passend zu Hell-/Dunkel-Theme eingefärbt, komplett offline nutzbar.</p>
+      <p>Dieses Sheet wird ab jetzt bei jeder zukünftigen Änderung zusammen mit dieser externen Seite aktuell gehalten.</p>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.22</span><span class="tag tag-fix">Fix</span></div>
+      <h3>Team-Rocket-Rüpel am Flegmon-Brunnen (Gold/Silber/Kristall) entfernt</h3>
+      <p>Nutzerbestätigt: der einfache, namenlose Rüpel am Flegmon-Brunnen war kein echter Bosskampf und sollte nicht als Boss-Karte getrackt werden - anders als die übrigen dort erfassten, benannten Team-Rocket-Begegnungen (Proton, Petrel, Ariana, Archer). Bosseintrag, Standort-Zuordnung und zugehörige Hinweise entfernt. Betrifft Gold/Silber und Kristall gleichermaßen (gemeinsamer Datensatz).</p>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.21</span><span class="tag tag-feat">Neu</span></div>
+      <h3>Erledigte Standort-Kacheln klappen sofort ein</h3>
+      <p>Bisher blieben die letzten 1-2 abgeschlossenen Standorte eines Blocks immer sichtbar (als „Kontext" gedacht), statt direkt einzuklappen - ein einzelner abgeschlossener Standort klappte dadurch sogar nie ein. Auf Nutzer-Feedback entfernt: jeder zusammenhängende Block abgeschlossener Standorte (samt Bossen) klappt jetzt vollständig und sofort ein, bei Bedarf weiterhin über den Ausklapp-Toggle einsehbar.</p>
+      <p>Kein separater „Besucht"-Button für fangfreie Orte nötig - die waren bereits automatisch als abgeschlossen markiert und profitieren direkt vom selben Fix. Nebenbei eine Singular/Plural-Falschgrammatik im Toggle-Text behoben („1 abgeschlossene Standort" → „1 abgeschlossener Standort").</p>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.20</span><span class="tag tag-fix">Fix</span></div>
+      <h3>iOS-Lücke zwischen Tab-Bar und Bildschirmrand behoben</h3>
+      <p>Auf manchen iPhones/iOS-Versionen berechnete <code>100dvh</code> die Höhe der App minimal zu klein, wodurch unter der Tab-Bar eine beige Lücke bis zum echten unteren Bildschirmrand blieb statt dass die Tab-Bar bündig abschließt (auf Android nicht reproduzierbar, per Nutzer-Screenshot gemeldet). Robuster Fix statt reiner CSS-Einheit: tatsächliche sichtbare Höhe per JS messen (<code>window.visualViewport</code>) und als CSS-Variable setzen, die mit Vorrang vor dem reinen dvh-Wert genutzt wird - reagiert zusätzlich auf Rotation sowie Ein-/Ausblenden der Tastatur oder Safaris Adressleiste.</p>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.19</span><span class="tag tag-fix">Fix</span></div>
+      <h3>Platins Top-Vier-Level für Teresa/Ignaz/Lucian korrigiert</h3>
+      <p>Nutzerbestätigte Platin-spezifische Werte: Teresa 61→55, Ignaz 64→57, Lucian 65→59 (Herbaro und Champion Cynthia waren bereits korrekt). Damit ist die zuvor aufgefallene, inzwischen widerlegte Annahme „Platin ist immer höher als Diamant/Perl" für den kompletten Top-Vier-Abschnitt aufgeräumt.</p>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.18</span><span class="tag tag-fix">Fix</span></div>
+      <h3>Diamant/Perl-Level für Rivale, Arenaleiter, Team Galaktik und Top Vier korrigiert</h3>
+      <p>Nutzergegengeprüfte Korrekturen aus der breiten Recherche-Prüfung über alle 14 Editionen: Barrys fünf Rivalenkämpfe (Lv.&nbsp;5→9, 19→21, 32→28, 44→35, 51→43), sechs Arenaleiter (Hilda/Maylene, Marinus/Wake, Lamina/Fantina, Adam/Byron, Frida/Candice, Volkner), Team Galaktik (Jupiter, Zyrus/Cyrus, Mars' zweiter und Saturns zweiter Kampf - Mars' dritter Kampf bleibt bei Lv.&nbsp;46, nutzerbestätigt korrekt) sowie alle drei übrigen Top-Vier-Mitglieder (Teresa/Bertha, Ignaz/Flint, Lucian).</p>
+      <p>Platins entsprechende Top-Vier-Overrides beruhen vermutlich auf derselben inzwischen widerlegten Annahme „Platin ist immer höher" wie die bereits korrigierten Champion-/Herbaro-Overrides - noch offen, da keine verifizierten Platin-spezifischen Werte vorliegen.</p>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.17</span><span class="tag tag-fix">Fix</span></div>
+      <h3>Fehlende Arena 2 (Mica) in Schwarz 2/Weiß 2 ergänzt</h3>
+      <p>Cheren war fälschlich als Arenaleiter von Vapydro City (Arena 1) eingetragen - seine echte Arena ist laut Bulbapedia in Eventura City (seine Team-/Levelwerte waren dabei bereits korrekt, nur der Ort falsch). Was bisher als „Cheren-Kampf" bei Vapydro City geführt wurde, ist eigentlich Arena 2 unter einer komplett anderen Arenaleiterin: Mica (Gift-Typ, Rollum Lv.&nbsp;18) - als neuer Bosseintrag ergänzt, inklusive offiziellem Trainer-Sprite von Bulbagarden Archives.</p>
+      <p>Zusätzlich gegengeprüft und bestätigt korrekt (keine Änderung nötig): Rubius' Verortung bei Marea City stimmt bereits mit dem echten Rood/Zorua-Ereignis in Driftveil City überein.</p>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.16</span><span class="tag tag-fix">Fix</span></div>
+      <h3>Fabrizierten FRLG-Boss „Ingo" entfernt, mehrere Level-/Ortsfehler korrigiert</h3>
+      <p>FeuerRot/BlattGrün hatte einen kompletten erfundenen Bosskampf: „Ingo" im Punktloch (Dotted Hole) existiert in FRLG nicht - der reale Charakter dort (Gideon) kämpft gar nicht, sondern gibt nur eines von zwei Passwörtern fürs Rocket-Lager. Boss entfernt, Notizen korrigiert. Das Punktloch selbst war zusätzlich der falschen Insel zugeordnet (Eiland Sieben statt Eiland Sechs) - gegengeprüft per Bulbapedia.</p>
+      <p>HG/SS: Rockos Ass beim Kanto-Postgame-Rückkampf war Amoroso (Omastar, Lv.&nbsp;53) angegeben, obwohl sein tatsächlich stärkstes Pokémon Onix (Lv.&nbsp;54) ist. Der erste Rivalenkampf zeigte „Route 29" als Ort, findet aber am Ortseingang von Rosalia City statt (in Gold/Silber/Kristall bereits korrekt so hinterlegt).</p>
+      <p>Diamant/Perl: Champion Cynthias und Herbaros (Aaron) Ass-Level waren zu niedrig angegeben (Cynthia 62→66, Herbaro 53→57) - gegen Bulbapedia verifiziert. Da Platins entsprechende Overrides ursprünglich auf der Annahme „Platin ist immer höher" beruhten, diese mit den jetzt korrigierten DP-Werten abgeglichen: Platins Cynthia-Kampf ist tatsächlich <em>niedriger</em> als in Diamant/Perl (Lv.&nbsp;62, andere Teamzusammensetzung), Herbaro identisch zur korrigierten DP-Basis (Lv.&nbsp;53).</p>
+      <p>Ausgangspunkt: eine breite Recherche-Prüfung über alle 14 Editionen hinweg (Level, Namen, Übersetzungen). Weitere Funde (u.&nbsp;a. eine fehlende Arena in Schwarz 2/Weiß 2) werden noch geprüft, bevor sie umgesetzt werden.</p>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.15</span><span class="tag tag-fix">Fix</span></div>
+      <h3>Android-Touch-Fix für Sheet-Drag, Absicherung gegen Speicher-Fehler</h3>
+      <p>Der Ziehgriff der Sheets (swipe-to-dismiss, seit v1.8.10) hatte kein <code>touch-action</code> gesetzt - auf Android Chrome konnte das dazu führen, dass der Browser parallel zur eigenen Drag-Logik sein natives Scroll-Gesten-Handling startet (ruckeliges Doppel-Scrollen). Jetzt <code>touch-action:none</code> auf dem Ziehgriff, damit die App die Geste komplett selbst steuert.</p>
+      <p>Zusätzlich: die beiden zentralen Speicher-Schreibfunktionen fangen jetzt Fehler von <code>localStorage.setItem</code> ab, statt bei vollem/gesperrtem Speicher mit einer unbehandelten Exception mitten im Fang-/Speicher-Flow abzustürzen.</p>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.14</span><span class="tag tag-fix">Fix</span></div>
+      <h3>Schlotberg statt Feuerberg, Team-Magma-Verortung, Rot korrigiert</h3>
+      <p>Der Berg mit Team Magmas erstem Versteck heißt in der deutschen Lokalisierung „Schlotberg" (Mt. Chimney), nicht „Feuerberg" (ein unverwandter Mystery-Dungeon-Ort) - falscher Name in Smaragd und Rubin/Saphir korrigiert, gegengeprüft per PokéWiki.</p>
+      <p>Team Magmas 2. Begegnung (Marc/Kalle) war an Route 124 gehängt statt an ihr eigentliches Versteck bei Steilpass, die 3. Begegnung an Route 126 statt ans Raumfahrtzentrum bei Moosbach City - nach Spielkenntnis-Korrektur jetzt an die richtige Location gehängt (Smaragd).</p>
+      <p>Rot (Champion-Postgame-Kampf) hing an „Silberberghöhle" statt „Silberberg" in HG/SS und Gold/Silber/Kristall - ebenfalls angepasst.</p>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.13</span><span class="tag tag-fix">Fix</span></div>
+      <h3>Weitere Arenen-/Bossstandorte in HG/SS, Gold/Silber/Kristall, Diamant/Perl/Platin und Smaragd/Rubin/Saphir korrigiert</h3>
+      <p>Gleiche Bugklasse wie die Hoenn-Fixes aus v1.8.11/v1.8.12, jetzt editionsübergreifend geprüft: Kai (Bugsy) + Rivale 2, Jasmin, Norbert (Pryce), Major Bob (Surge), Janina und Blau waren in HG/SS und Gold/Silber/Kristall an die ihrer Stadt vorgelagerte Route gehängt statt an die Stadt selbst.</p>
+      <p>Dabei zusätzlich gefunden: Hartwig (Chuck) und Jasmin hatten in Gold/Silber/Kristall vertauschte Standort-Angaben (Chuck zeigte „Anemonia City" statt Oliviana City, Jasmin umgekehrt) - an HG/SS als Referenz angeglichen.</p>
+      <p>Diamant/Perl/Platin: Veit (Roark), Lamina (Fantina), Frida (Candice) und Zyrus' erste Konfrontation waren ebenfalls an die vorgelagerte Route statt an Erzelingen/Herzhofen/Blizzach/Schleiede gehängt.</p>
+      <p>Smaragd: Ben &amp; Svenja (Tate &amp; Liza) und Juan waren an Route 126/128 gehängt statt an Moosbach City/Xeneroville. Rubin/Saphir: Wassili (Wallace) ebenso an Xeneroville statt Route 128.</p>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.12</span><span class="tag tag-fix">Fix</span></div>
+      <h3>Weitere Hoenn-Arenen falsch verortet, Editionsreihenfolge korrigiert</h3>
+      <p>Dieselbe Bugklasse wie bei Wibke (v1.8.11) betraf in Smaragd/Rubin/Saphir auch Felizia (Roxanne), Kamillo (Brawly), Walter (Wattson) und Flavia (Flannery) - alle an die ihrer Stadt vorgelagerte Route/Location gehängt statt an die Stadt selbst. Jetzt direkt an Metarost City, Faustauhaven, Malvenfroh City bzw. Bad Lavastadt verortet. Normans Kampf bei Steilpass bewusst unverändert gelassen - der spiegelt ein echtes Story-Gate wider (Rückkehr nach Blütenburg City erst später im Spiel möglich).</p>
+      <p>Die Editionswahl bei „Neuer Spielstand" sortierte innerhalb einer Generation nach technischer Einfügereihenfolge statt nach echtem Erscheinungsjahr - ab Generation 3 dadurch durcheinander (z.&nbsp;B. Smaragd vor Rubin/Saphir). Jede Edition bekommt jetzt ein explizites Erscheinungsjahr-Feld für korrekte chronologische Sortierung innerhalb jeder Generation.</p>
+      <p>Werkzeuge-Bereich der Einstellungen bekommt einen Link zu diesem Änderungsprotokoll, analog zum bestehenden Pokédex-Link.</p>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.11</span><span class="tag tag-fix">Fix</span></div>
+      <h3>App-Icon geschärft + Wibkes Arena falsch verortet</h3>
+      <p>Das Mittelband des App-Icons war zu dick und der Glanzeffekt kaum sichtbar. Band von 52px auf 28px verschmälert (proportional auch beim maskable-Icon), Glanzlicht heller (#FF8A78 → #FFB4A4) und größer gemacht.</p>
+      <p>Wibkes (Winona) Arenakampf war in Smaragd, Rubin und Saphir an „Route 120" verortet statt an ihrer eigenen Stadt Baumhausen City, wodurch die Kampfkarte zu spät in der Routenliste erschien - gleiche Bugklasse wie die bereits bekannte Roxanne-Verortung. Jetzt direkt an Baumhausen City gehängt.</p>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.10</span><span class="tag tag-feat">Neu</span></div>
+      <h3>Sheets per Herunterziehen schließen</h3>
+      <p>Der Ziehgriff oben an jedem Sheet sah bisher aus wie ein Zieh-Handle, tat aber nichts - Schließen ging nur über Backdrop-Tap oder einen expliziten Button. Jetzt generisch für JEDES Sheet nachgerüstet, da alle über dieselbe <code>openSheet()</code>-Funktion laufen: Editionswahl, Spielstände-Verwaltung, Verlauf, Run-Rückblick, Fangen-Formular usw. eingeschlossen. Zieht man weit oder schnell genug, schließt das Sheet mit Restanimation; sonst schnappt es sauber zurück.</p>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.9</span><span class="tag tag-fix">Fix</span></div>
+      <h3>Champion-Abschluss-Screen erschien in 6 Editionen nie</h3>
+      <p><code>finalStoryBoss()</code> suchte per exaktem String-Vergleich nach der ID „duel-final", um den letzten regulären Boss vor dem Abschluss zu finden. Editionen aus der Versions-Trio-Fabrik (Diamant/Perl/Platin, Rubin/Saphir, Schwarz/Weiß) hängen aber ein <code>{versionId}-</code>-Präfix an JEDE Boss-ID an, auch an „duel-final" selbst (z.&nbsp;B. „schwarz-duel-final") - der exakte Vergleich fand dort also nie einen Treffer, wodurch der in v1.8.3 eingeführte Champion-Screen in genau diesen sechs Editionen nie ausgelöst wurde (nur in den nicht über die Fabrik erzeugten Editionen wie Gelb funktionierte er). Jetzt per <code>endsWith()</code> geprüft, das beide Fälle abdeckt.</p>
+      <p>Gefunden durch einen Report: Champion-Sieg in Schwarz (Lauro) zeigte nichts an, derselbe Test in Gelb funktionierte - genau der Unterschied zwischen Fabrik- und Einzeleditionen.</p>
+      <div class="chips">
+        <span class="chip"><span class="dot" style="background:#C9628F"></span>Diamant/Perl</span>
+        <span class="chip"><span class="dot" style="background:#6B7280"></span>Platin</span>
+        <span class="chip"><span class="dot" style="background:#B4193F"></span>Rubin</span>
+        <span class="chip"><span class="dot" style="background:#1856B8"></span>Saphir</span>
+        <span class="chip"><span class="dot" style="background:#5C4A8A"></span>Schwarz</span>
+        <span class="chip"><span class="dot" style="background:#4A90D6"></span>Weiß</span>
+      </div>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.8</span><span class="tag tag-fix">Fix</span></div>
+      <h3>Smaragds/Rubins/Saphirs 4. Rivalenkampf falsch verortet + fehlender Rustboro-Kampf ergänzt</h3>
+      <p>Letzter offener Punkt von der Ideenliste, gegengeprüft: der vierte Rivalenkampf gegen Maike stand bei „Pyroberg" (Fallarbor Town), tatsächlich findet er laut Recherche aber in Seegrasulb City (Lilycove City) auf der Treppe zum Kaufhaus statt, bevor man das Team-Magma/Aqua-Versteck dort betritt. Betrifft Smaragd und Rubin/Saphir gleichermaßen.</p>
+      <p>Zusätzlich bestätigt: Smaragd (nicht Rubin/Saphir) hat tatsächlich einen optionalen, leicht zu übersehenden Rivalenkampf in Metarost City (Rustboro City) nach einer kleinen Erledigung - als neuer Bosseintrag ergänzt.</p>
+      <p>Beim Verifizieren zusätzlich entdeckt (behoben in v1.8.12): Roxannes Arenakampf war an „Blütenburgwald" (Petalburg Woods) statt an „Metarost City" (Rustboro City) angehängt, obwohl der Anzeigetext bereits korrekt „Metarost City" nannte.</p>
+      <div class="chips">
+        <span class="chip"><span class="dot" style="background:#2E8B57"></span>Smaragd</span>
+        <span class="chip"><span class="dot" style="background:#B4193F"></span>Rubin</span>
+        <span class="chip"><span class="dot" style="background:#1856B8"></span>Saphir</span>
+      </div>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.7</span><span class="tag tag-feat">Neu</span></div>
+      <h3>Icon-Politur: metallischer Glanz für das App-Icon</h3>
+      <p>Letzter Punkt von der Ideenliste des Vorgängerprojekts: die vier PWA-Icon-Dateien (normal + maskable, je 192/512px) bekommen einen leichten Glanz-Gradient statt der bisherigen flachen Farbflächen - hellere Farbverläufe auf Rot- und Weißfläche, ein metallischer Grau-Schwarz-Verlauf für Band und Mittelknopf, dazu eine sanft verwischte Glanz-Ellipse oben links für den Glas-/Metallic-Look. Proportionen und Silhouette bleiben unverändert, damit das Icon wiedererkennbar bleibt.</p>
+      <p>Nebenbei die veraltete Manifest-Beschreibung korrigiert - sie nannte noch „Gen 1-4" und eine alte, unvollständige Editionsliste ohne Generation 5.</p>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.6</span><span class="tag tag-feat">Neu</span></div>
+      <h3>Illustration für leere Zustände</h3>
+      <p>Der bisher rein textuelle Leerer-Zustand (Box direkt nach Run-Start, Friedhof ohne Verluste, Routen ohne eigene Fundorte, Box-Suche ohne Treffer) bekommt jetzt eine handgezeichnete Pokeball-Illustration mit ein paar Funkeln drumherum statt nur Überschrift und Text - über <code>currentColor</code>/<code>var(--bg)</code> automatisch hell/dunkel-tauglich.</p>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.5</span><span class="tag tag-feat">Neu</span></div>
+      <h3>Notizfeld pro Fundort</h3>
+      <p>Letzter noch offener Feature-Punkt von der Ideenliste des Vorgängerprojekts: jede Standort-Karte bekommt ein neues Notiz-Icon zum Eintragen eines Freitexts (bis 300 Zeichen) - für kleine Anekdoten wie einen knappen Fang oder eine lustige Randomizer-Fügung. Vorhandene Notizen werden als eigener Block unter der Karte angezeigt, das Icon füllt sich golden.</p>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.4</span><span class="tag tag-feat">Neu</span></div>
+      <h3>Regionen ein-/ausblenden (Kanto ein-/ausblenden)</h3>
+      <p>Neue Einstellungen-Gruppe „Regionen" - nur sichtbar bei Editionen mit mehr als einer Region (z.&nbsp;B. Johto+Kanto bei HGSS/GSC) - erlaubt es, einzelne Regionen aus der Routen-Liste auszublenden. Rein visuell: Statistik und Gesamtabschluss zählen weiterhin den echten Fortschritt der versteckten Region mit, nichts geht verloren.</p>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.3</span><span class="tag tag-feat">Neu</span></div>
+      <h3>Eigener Abschluss-Screen für den Champion-Sieg</h3>
+      <p>Bisher gab es nur Konfetti beim finalen Rivalenduell danach (Ruhmeshalle), aber keine eigene Feier für den Champion-Sieg selbst - den eigentlichen Abschluss des Hauptspiels. Neues Vollbild-Overlay mit Pokal-Animation, Konfetti und einer kurzen Statistik (Überlebensrate, besiegte Bosse), das genau beim Besiegen des letzten regulären Bosses vor der Top-Vier-Route erscheint.</p>
+      <p>Die Erkennung nutzt bewusst nicht <code>cls==="Champ"</code>, da der Champion nicht überall so klassifiziert ist - in den Kanto-Editionen trägt Lance z.&nbsp;B. <code>cls:"Top Vier"</code>, weil er im Original als letztes Top-Vier-Mitglied statt als eigener Champion gilt. Stattdessen sucht eine neue Hilfsfunktion generisch den Boss, der in seiner Standort-Liste direkt vor der „duel-final"-Markierung steht - das ist in jeder Edition zuverlässig der letzte reguläre Kampf vor dem Abschluss, unabhängig von der cls-Bezeichnung.</p>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.2</span><span class="tag tag-feat">Neu</span></div>
+      <h3>Run-Rückblick/Abschluss-Karte</h3>
+      <p>Sobald das finale Duell erfasst ist, bietet die Ruhmeshalle-Karte jetzt einen „Run-Rückblick ansehen"-Button: zeigt das im finalen Duell festgehaltene Team (bewusst der Snapshot aus dem Duell-Zeitpunkt, nicht das aktuell lebende Team, das sich danach noch ändern kann) zusammen mit Überlebensrate, Fang-/Todeszahlen, besiegten Bossen und Duell-Bilanz. „Als Text kopieren" schreibt eine kompakte Zusammenfassung in die Zwischenablage, mit Fallback-Textfeld falls der Browser den Zugriff verweigert.</p>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.1</span><span class="tag tag-feat">Neu</span></div>
+      <h3>Verlauf/Zeitleiste — chronologisches Ereignis-Log</h3>
+      <p>Erster Punkt von der Ideenliste des Vorgängerprojekts umgesetzt: jeder Fang, Tod, jede Entwicklung, jeder Bosssieg und jedes Rivalenduell landet jetzt mit Zeitstempel im Verlauf, einsehbar über Einstellungen → Werkzeuge → „Verlauf öffnen" als chronologische Liste (neueste zuerst). Text wird beim Eintreten fertig formatiert gespeichert statt aus IDs rekonstruiert, damit der Log stabil bleibt, falls sich z.&nbsp;B. ein Spitzname später ändert.</p>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8</span><span class="tag tag-feat">Neu</span></div>
+      <h3>Schwarz2/Weiß2 — Generation 5 abgeschlossen</h3>
+      <p>Vierte Gen-5-Edition, diesmal als <strong>ein</strong> gemeinsamer Eintrag statt Versionspaar: Arenen, Rivale (Matisse), der gesamte Team-Plasma-Handlungsbogen (Achromas/Colress, Violaceus/Zinzolin, Rubius/Rood, Finstrio/Shadow Triad, Ghetsis' echter Kampf in der Riesengrotte), Top Vier und Champion sind laut Recherche zwischen beiden Versionen identisch. Anders als beim Vorgänger Schwarz/Weiß ist <strong>Iris hier in beiden Versionen schon Champion</strong>, Drayden deshalb in beiden Versionen Arenaleiter von Twindrake City statt versionsabhängig — der einzige echte Unterschied (Schwarze Stadt/Weißer Wald) ist ein reines Passanten-Feature ohne Bosse.</p>
+      <p>Bewusst weggelassen: Ns Postgame-Kampf im Schloss von N (Ass wäre wieder versionsabhängig Zekrom/Reshiram gewesen — hätte die einheitliche Edition ausgerechnet an einer Nebenstelle erneut aufgespalten) und der erzwungene Kyurem-Kampf in der Riesengrotte (keine verlässlichen Level-/Team-Daten in der Recherche). 18 neue Trainer-Sprites aus der B2W2-Ära statt der BW1-Sprites für wiederkehrende Gesichter wie Cheren oder Ghetsis, deren Auftritt sich optisch geändert hat.</p>
+      <div class="chips">
+        <span class="chip"><span class="dot" style="background:#4A7B96"></span>Schwarz2/Weiß2</span>
+      </div>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.7.3</span><span class="tag tag-fix">Fix</span></div>
+      <h3>Flaggen für alle Kacheln + korrigiertes Einklappen bei bosslastigen Blöcken</h3>
+      <p>Das „Als aktuellen Standort markieren"-Icon gab es bisher nur auf Standort-Karten. Boss- und Finale-Kacheln (sofern nicht besiegt) haben jetzt dasselbe Icon, damit sich auch ein Zwischenstand mitten in einer Bosskampf-Serie markieren lässt.</p>
+      <p>Das Einklappen abgeschlossener Standorte zählte bisher ausschließlich rohe Standort-Einträge (mindestens 3 in Folge nötig) und ignorierte den Status angehängter Bosskämpfe komplett. Ein Block mit vielen Bosskämpfen zwischen nur zwei Routen blieb dadurch dauerhaft ausgeklappt, egal wie viele Trainer schon besiegt waren. Umgekehrt konnte ein noch <em>nicht</em> besiegter Bosskampf versehentlich im eingeklappten Bereich verschwinden, wenn sein auslösender Standort selbst schon als gefangen galt. Beides behoben: ein Standort zählt fürs Einklappen erst als abgeschlossen, wenn auch alle angehängten Bosse erledigt sind, und die sichtbare Kontextgröße am Blockende sinkt bei kurzen Blöcken auf einen Standort.</p>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.7.2</span><span class="tag tag-feat">Neu</span></div>
+      <h3>Auswahl-Sheet beim Fangen, wenn das Team bereits voll ist</h3>
+      <p>Ein neuer Fang landete bei vollem Team bisher stillschweigend in der Box - das manuelle „Ins Team aufnehmen" mit Tausch-Auswahl gab es zwar schon, musste danach aber separat angestoßen werden. Jetzt erscheint direkt nach dem Speichern eines Fangs bei vollem Team ein Sheet mit der Wahl zwischen „Ins Team aufnehmen" (öffnet die bestehende Tausch-Auswahl, wer ersetzt wird) und „Auf die Bank" (bleibt wie bisher in der Box). Ist noch Platz im Team frei, ändert sich nichts am bisherigen Ablauf.</p>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.7.1</span><span class="tag tag-fix">Fix</span></div>
+      <h3>Schwarz/Weiß-Starterhinweis nannte den falschen Empfänger</h3>
+      <p>Die Starterkarte zeigte korrekt „Cheren erhält [Typvorteil]", aber beim übrigen Starter stand generisch „bleibt beim Professor" - der geht in Schwarz/Weiß tatsächlich an Bell, den zweiten Rivalen. Der Hinweistext ist bei allen anderen Editionen (nur ein Rivale) unverändert weiter korrekt.</p>
+      <div class="chips">
+        <span class="chip"><span class="dot" style="background:#5C4A8A"></span>Schwarz</span>
+        <span class="chip"><span class="dot" style="background:#4A90D6"></span>Weiß</span>
+      </div>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.7</span><span class="tag tag-feat">Neu</span></div>
+      <h3>Schwarz/Weiß (Gen 5) + Artendatenbank auf Gen 5 erweitert</h3>
+      <p>Erste komplett neue Region seit Kanto: Einall, mit Cheren und Bell als Doppel-Rivalen (Cheren bekommt den Konter-Typ, Bell den unterlegenen - fast spiegelverkehrt zum sonst üblichen Einzel-Rivalen-Muster), der Starter-abhängigen Dreierauswahl in der ersten Arena, dem kompletten Team-Plasma-Handlungsbogen um N und Ghetsis, sowie einem Cynthia-Cameo-Kampf im Postgame.</p>
+      <p>Vorher musste die Artendatenbank der App erst von Gen&nbsp;4 (Arceus, #493) auf Gen&nbsp;5 (Genesect, #649) erweitert werden - sonst hätte Fangen von Gen-5-Pokémon ohne Autovervollständigung und Mini-Icon funktioniert. 156 neue Arten samt Entwicklungsketten ergänzt, Sprites aus derselben Quelle wie die bestehenden 493 (pixelgenau abgeglichen).</p>
+      <p>Schwarz und Weiß bleiben wie Rubin/Saphir zwei getrennte Editionen statt eines Hell/Dunkel-Paars: die Arena von Twindrake City (Lysander/Schwarz vs. Lilia/Weiß) und Ns letztes Ass (Zekrom vs. Reshiram) sind echte unterschiedliche Charaktere. Korrektur gegenüber der naheliegenden Annahme: <strong>Iris ist im Original nicht Champion</strong> (nur Arenaleiterin in Weiß, wird erst in Schwarz2/Weiß2 befördert), und Ghetsis hat nur einen einzigen Kampf.</p>
+      <div class="chips">
+        <span class="chip"><span class="dot" style="background:#5C4A8A"></span>Schwarz</span>
+        <span class="chip"><span class="dot" style="background:#4A90D6"></span>Weiß</span>
+      </div>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.6.2</span><span class="tag tag-fix">Fix</span></div>
+      <h3>Falscher Arenaleiter-Name in Fuchsania City (Gen 1)</h3>
+      <p>Rot/Blau, Gelb und FeuerRot/BlattGrün zeigten dort zwar korrekt Kogas Sprite, aber den Namen „Janina" — aus den Gen-2-Daten kopiert, wo Janine Koga erst nach seiner Beförderung in die Top Vier ablöst. In Gen 1 ist es noch Koga selbst.</p>
+      <div class="chips">
+        <span class="chip"><span class="dot" style="background:#E0393C"></span>Rot/Blau</span>
+        <span class="chip"><span class="dot" style="background:#E3A712"></span>Gelb</span>
+        <span class="chip"><span class="dot" style="background:#5A9F35"></span>FeuerRot/BlattGrün</span>
+      </div>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.6.1</span><span class="tag tag-note">UI</span></div>
+      <h3>Generationen-Überschriften vereinfacht</h3>
+      <p>Die Editionswahl zeigte in jeder Gruppenüberschrift zusätzlich alle enthaltenen Editionen aus (z.&nbsp;B. „Generation 3 – Rubin / Saphir / Smaragd / Feuerrot / Blattgrün") — redundant, da direkt darunter als Auswahl aufgelistet. Jetzt schlicht „Generation 3".</p>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.6</span><span class="tag tag-feat">Neu</span></div>
+      <h3>Rubin/Saphir &amp; FeuerRot/BlattGrün (Gen 3)</h3>
+      <p>Rubin und Saphir bleiben bewusst zwei getrennte Editionen statt eines Hell/Dunkel-Paars wie Rot/Blau — ihre Bösewicht-Teams sind echte unterschiedliche Charaktere (Team Magma/Maxie vs. Team Aqua/Archie), keine reine Palettenänderung. Arenen, Rivale, Top Vier und Champion sind geteilte Basisdaten, nur die sechs Team-Magma-Kämpfe werden für Saphir komplett auf Team Aqua umgeschrieben.</p>
+      <p>Dabei eine Korrektur gegenüber der naheliegenden Annahme: im Original ist <strong>Troy Trumm (Steven Stone) der Champion</strong>, nicht Wallace — der ist dort nur Arenaleiter von Xeneroville und wird erst in Smaragd zum Champion befördert.</p>
+      <p>FeuerRot/BlattGrün ist wie Rot/Blau zusammengefasst (bestätigt identische Trainerdaten) und ergänzt die Sevii-Inseln als eigenen Postgame-Bereich: ein Rätselwächter-Kampf sowie ein Cameo-Auftritt von Athena &amp; Atlas — denselben Team-Rocket-Vorständen aus Gold/Silber/Kristall, hier Jahre später wiederverwendet.</p>
+      <div class="chips">
+        <span class="chip"><span class="dot" style="background:#B4193F"></span>Rubin</span>
+        <span class="chip"><span class="dot" style="background:#1856B8"></span>Saphir</span>
+        <span class="chip"><span class="dot" style="background:#5A9F35"></span>FeuerRot/BlattGrün</span>
+      </div>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.5.1</span><span class="tag tag-fix">Fix</span></div>
+      <h3>Generationen-Zuordnung korrigiert</h3>
+      <p>HeartGold/SoulSilver ist ein <strong>Gen-4-Remake</strong> von Gold/Silber, kein Gen-2-Original — gruppiert jetzt korrekt neben Diamant/Perl/Platin statt unter Gen 2. Außerdem wurde die zusammengefasste Gold/Silber/Kristall-Edition in zwei Editionen aufgeteilt (Gold/Silber als Paar, Kristall einzeln), passend zum Rot/Blau+Gelb-Muster: das zeitgleich erschienene Versionspaar zusammen, die später erschienene dritte Version separat.</p>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.5</span><span class="tag tag-feat">Neu</span></div>
+      <h3>Gold/Silber/Kristall (Original, Gen 2)</h3>
+      <p>Eigener Datensatz für die echten Game-Boy-Color-Originale statt der HG/SS-Remake-Zahlen — alle acht Johto-Arenen, Kanto-Postgame, Team-Rocket-Handlungsbogen, Top Vier und der Rot-Kampf am Silberberg, gegengeprüft gegen Original-Level. Bestätigt: Gold, Silber und Kristall haben identische Trainerdaten, deshalb ein gemeinsamer Datensatz für alle drei.</p>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.4.2</span><span class="tag tag-feat">Neu</span></div>
+      <h3>Gelbs Starter bearbeitbar (Randomizer)</h3>
+      <p>Stift-Symbol zum Überschreiben des fest vorgegebenen Pikachu-Starters ergänzt — für Randomizer-Runs, die eine andere Art vorgeben.</p>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.4.1</span><span class="tag tag-fix">Fix</span></div>
+      <h3>Gelbs Starter als eigene Karte statt Standort-Hinweis</h3>
+      <p>Pikachu bekommt eine eigene, vereinfachte Ein-Pokémon-Starterkarte statt nur im Hinweistext von Alabastia zu stehen — dadurch bleibt Alabastia unabhängig für einen normalen wilden Fang (Angeln) nutzbar, statt mit dem Starter zu kollidieren.</p>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.4</span><span class="tag tag-feat">Neu</span></div>
+      <h3>Gelbe Edition + Rot/Blau-Korrekturen</h3>
+      <p>Gelb mit fest vorgegebenem Pikachu-Starter (keine Dreier-Wahl), Doppelkämpfen gegen Jessie &amp; James und den abweichenden Arenaleiter-Leveln/-Teams gegenüber Rot/Blau.</p>
+      <p>Die Recherche dafür deckte zwei echte Lücken in der bereits veröffentlichten Rot/Blau-Edition auf: der optionale erste Rivalenkampf im Labor (Lv.&nbsp;5) und der Rivalen-Rückkampf auf Route&nbsp;22 nach Giovannis Arena (Lv.&nbsp;53) fehlten komplett — beide nachträglich ergänzt, dazu ein fehlender Evoli-Geschenk-Hinweis in Prismania City.</p>
+      <div class="chips">
+        <span class="chip"><span class="dot" style="background:#E3A712"></span>Gelb</span>
+        <span class="chip"><span class="dot" style="background:#E0393C"></span>Rot/Blau (Fix)</span>
+      </div>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.3</span><span class="tag tag-feat">Neu</span></div>
+      <h3>Rote/Blaue Edition (Gen 1)</h3>
+      <p>Erste eigenständige Gen-1-Edition: komplette Kanto-Routenliste, acht Arenaleiter, drei Giovanni-Begegnungen, fünf Rivalenkämpfe sowie Top Vier und Champion-Duell — Startpunkt der generationenweiten Erweiterung dieser Sitzung. Neue Sprites für Blau, Lorelei und Agathe.</p>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.2.1</span><span class="tag tag-fix">Fix</span></div>
+      <h3>Pokédex-Sprite-Links öffnen jetzt die installierte App</h3>
+      <p>Der Einstellungen-Button öffnete beim Antippen eines Sprites schon die installierte Pokédex-App, die Sprite-Verlinkungen selbst aber landeten im Browser — Ursache war eine abweichende Domain. Beide Links zeigen jetzt auf dieselbe Domain, damit das Betriebssystem sie konsistent der installierten App zuordnet.</p>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.2</span><span class="tag tag-feat">Neu</span></div>
+      <h3>Mehrfach-Speicherstände &amp; Team-/Box-Überarbeitung</h3>
+      <p>Größtes Einzelpaket vor der Editionen-Erweiterung, gebündelt für die erste echte Offline-App-Veröffentlichung:</p>
+      <ul>
+        <li><strong>Mehrfach-Speicherstände</strong> — Editionen und Runs überschreiben sich nicht mehr gegenseitig, jeder Run bekommt einen eigenen Slot.</li>
+        <li>Box-Tab: Such- und Sortierfunktion; Team-Tab: neue Levelcap-Infokarte als Hausregel-Hinweis.</li>
+        <li>Team-Tab neu gestaltet — größerer Sprite, Aktionen in ein Kontextmenü verschoben statt als Icon-Reihe.</li>
+        <li>Diverse Polish-Fixes: Dupes-Clause-Warnung deckt jetzt die ganze Entwicklungsfamilie ab, lange Spitznamen lassen Routenkarten nicht mehr uneinheitlich wachsen, größere Fang-Icons ohne Kartenwachstum.</li>
+        <li>Zwei Korrekturrunden für liegengebliebene englische Namen in deutschen Orts-/Item-Hinweisen.</li>
+        <li>Einstellungen aufgeräumt: Spielstände-Verwaltung vereinheitlicht, sanfte Ein-/Ausklapp-Animationen statt hartem Umschalten.</li>
+      </ul>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.1</span><span class="tag tag-feat">Neu</span></div>
+      <h3>Pokédex-Verlinkung, Standort-Markierung, Hell/Dunkel-Regel</h3>
+      <ul>
+        <li>Jedes gefangene Pokémon verlinkt jetzt direkt auf seinen Pokédex-Eintrag (DEXORA).</li>
+        <li>Aktueller Standort markierbar, Standort-Historie blockweise einklappbar, Starter wird automatisch als gefangen ins Team übernommen.</li>
+        <li>Grundsatzentscheidung für zusammengefasste Versionspaare festgelegt: Perl = Hell-Modus, Diamant = Dunkel-Modus (analog zu HG/SS) — als Checklisten-Regel für künftige Editionen dokumentiert, seither bei jedem weiteren Paar (Rot/Blau, Gold/Silber, Feuerrot/Blattgrün) wiederverwendet.</li>
+        <li>Fix: Theme-Override im Hell-Modus verlor gegen die Basisregel durch DOM-Reihenfolge; Fix: „Kein Fang"-Rückgängig-Button folgt jetzt demselben Icon-Stil wie alle anderen Aktions-Buttons.</li>
+      </ul>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.0</span><span class="tag tag-feat">Neu</span></div>
+      <h3>Zweite Edition, Ruhmeshalle, Sinnoh</h3>
+      <p>Erste versionierte Ausbaustufe nach dem Testumgebung-Prototyp — von der Ein-Editionen-App zum Mehr-Editionen-Tracker mit echtem Abschluss-Tracking:</p>
+      <ul>
+        <li>Editionswahl eingeführt, <strong>Smaragd (Hoenn)</strong> als zweite spielbare Edition ergänzt, echte GBA-Trainer-Sprites dafür besorgt.</li>
+        <li><strong>Ruhmeshalle</strong> komplett neu: finaler Rivalenkampf gegen den echten Duell-Partner (nicht den generischen Rivalen), Sieg-/Niederlage-Erfassung, eigene Niederlage-Animation, Konfetti-Regen bei Sieg, Team-Anzeige als festes Grid, Sieg/Niederlage-Bilanz in der Statistik.</li>
+        <li><strong>Sinnoh (Diamant/Perl/Platin)</strong> als dritte Edition ergänzt — über eine neue Versions-Trio-Fabrik, die seitdem jede zusammengefasste Editionsgruppe trägt. Diamant/Perl zu einer Edition zusammengeführt (wie HG/SS), Platin-Label vereinheitlicht, fehlende Story-Rivalenkämpfe ergänzt.</li>
+        <li>Starterwahl-Karte mit automatischer Rivalen-Zuweisung eingeführt.</li>
+        <li>Standort- und Fangmethoden-Hinweise für HG/SS, Smaragd und Sinnoh recherchiert und ergänzt; Zyrus' erster Kampfort korrigiert.</li>
+        <li>Code-Grundlage aufgeräumt: editionsdatengetriebenes Farbschema statt Hardcoding, Validierungsskript ins Repo aufgenommen (seither vor jeder Veröffentlichung genutzt).</li>
+        <li>Testumgebung-Badge entfernt, PWA-Meta-Tags ergänzt, fehlende PWA-Dateien (Manifest, Service Worker, Icons) für echte Offline-Installation nachgereicht.</li>
+      </ul>
+      <div class="chips">
+        <span class="chip"><span class="dot" style="background:#2E8B57"></span>Smaragd</span>
+        <span class="chip"><span class="dot" style="background:#C9628F"></span>Diamant/Perl</span>
+        <span class="chip"><span class="dot" style="background:#6B7280"></span>Platin</span>
+      </div>
+    </div>
+
+    <div class="entry baseline">
+      <div class="entry-head"><span class="ver">Testumgebung</span><span class="tag tag-note">Basis</span></div>
+      <h3>Ausgangspunkt: Nuzlocke-Tracker für HeartGold/SoulSilver</h3>
+      <p>Erster funktionsfähiger Prototyp — ein einzelner Editions-Tracker für HG/SS mit Routen, Team, Box und Friedhof, als permanenter Wiederherstellungspunkt gesichert, bevor die Editionswahl und alles Weitere daraus entstanden ist.</p>
+    </div>
+
+    <div class="fork-divider">
+      <h2>↴ Vorgängerprojekt (vor diesem Fork)</h2>
+      <p>Die „Testumgebung" oben ist derselbe eingefrorene Stand, mit dem das Vorgängerprojekt unten endet (dort als „Vorgänger v1.0" bezeichnet) — von dort aus wurde dieses Projekt abgezweigt und die Versionszählung bei 1.0 neu gestartet. Eigene Versionsnummern, daher zur Unterscheidung durchgehend mit „Vorgänger" markiert.</p>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">Vorgänger v1.0</span><span class="tag tag-feat">Neu</span></div>
+      <h3>Umbenennung zu „Nuzlocke", rotes Pokeball-Icon, Launch-Politur</h3>
+      <p>Die App hieß bis hierhin „Johto Nuzlocke Tracker" in Titel, Startbildschirm-Name und App-Info — jetzt überall schlicht „Nuzlocke". Das App-Icon nutzte versehentlich die Gold/Braun-Akzentfarbe der Oberfläche statt eines echten Pokeballs; komplett neu gezeichnet in vier Größen (normal + maskable), klassisch Rot/Weiß mit schwarzem Band.</p>
+      <ul>
+        <li>Team-Vorschauzeile im Header wird jetzt auch im Einstellungen-Tab ausgeblendet (bisher nur im Team-Tab).</li>
+        <li>Nach Fertigstellung als eingefrorene Referenzversion gesichert; Weiterentwicklung läuft seither in diesem abgezweigten Projekt weiter.</li>
+      </ul>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">Vorgänger v0.9</span><span class="tag tag-fix">Fix</span></div>
+      <h3>Layout-Nacharbeiten nach dem Feinschliff</h3>
+      <p>Vier kleinere, aber sichtbare Darstellungsfehler behoben, die erst beim genauen Testen auf einem echten Gerät auffielen:</p>
+      <ul>
+        <li>Sichtbare Scrollbar am rechten Rand entfernt (Inhalt, Sheets, Spezies-Suche) — Scrollen bleibt funktional, nur ohne Balken.</li>
+        <li>Aktions-Buttons in Box und Friedhof standen linksbündig unter dem Sprite und ließen den Rest der Kachel bis zum rechten Rand leer — jetzt rechtsbündig wie überall sonst.</li>
+        <li>Der grüne Sieg-Haken bei besiegten Bossen ragte bewusst über die Kartenecke hinaus und wurde dadurch von der klebenden Regionsüberschrift teilweise verdeckt, sobald so eine Karte direkt darunter stand — der Haken sitzt jetzt vollständig innerhalb der Karte.</li>
+        <li>Der Milchglas-Wisch-Effekt filterte versehentlich denselben Bereich, der auch die klebenden Überschriften enthält — behoben durch eine separate Schleier-Ebene, die nie den Inhalt selbst filtert.</li>
+      </ul>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">Vorgänger v0.8</span><span class="tag tag-feat">Neu</span></div>
+      <h3>Wisch-Navigation mit Live-Milchglaseffekt</h3>
+      <p>Zwischen den Tabs kann per Wischen nach links/rechts gewechselt werden, statt nur über die Tableiste. Der Weichzeichner-Übergang reagiert dabei live auf die Fingerbewegung: er setzt direkt beim ersten Millimeter Wisch-Distanz ein und verstärkt sich proportional, statt erst nach dem Loslassen auszulösen. Ein zu kurzer Wisch schnappt sanft zurück; reines vertikales Scrollen bleibt unberührt.</p>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">Vorgänger v0.7</span><span class="tag tag-feat">Neu</span></div>
+      <h3>Rivalenduelle — Koop-Modus für zwei Spieler</h3>
+      <p>Für Runs, die zwei Personen gegeneinander UND zusammen spielen: nach jedem Arenaleiter sowie nach den beiden Rivalenkämpfen ohne direkt folgende Arena erscheint eine Duell-Karte. Der Sieger erhält ein Pokémon der Gegenseite:</p>
+      <ul>
+        <li><strong>Eigener Sieg</strong> → Spezies-Auswahl wie beim Fangen, das Pokémon landet direkt in der Box.</li>
+        <li><strong>Niederlage</strong> → eines der eigenen Team-/Box-Pokémon wird als „abgegeben" markiert — verschwindet aus Team/Box, taucht im Friedhof in einer eigenen Sektion neben „Verstorben" auf.</li>
+      </ul>
+      <p>18 Duell-Punkte insgesamt, inklusive der beiden nicht direkt von einer Arena gefolgten Rivalenkämpfe (Dukatia-Passage, Siegesstraße) — letzterer damit automatisch das letzte Duell vor der Top Vier.</p>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">Vorgänger v0.6</span><span class="tag tag-fix">Fix</span></div>
+      <h3>Rivalen-Level durchgehend gegen die echten Spieldaten geprüft</h3>
+      <p>Eine Nutzerfrage („ist der Rivale in der Drachenhöhle wirklich stärker als auf der Siegesstraße danach?") deckte auf, dass die Drachenhöhle in HG/SS gar kein Rivalenkampf ist — dort begleitet er einen nur in einem Doppelkampf gegen Clair &amp; Lance. Die dort hinterlegten Lv.-50-Daten gehörten eigentlich zum echten sechsten Kampf im Mondberg (Kanto). Zusätzlich fiel ein komplett fehlender Kampf im Dukatia-Untergrund (Lv.&nbsp;34) auf sowie zwei falsche Level (Brandturm 20→22, Siegesstraße 42→40).</p>
+      <p>Damit verbunden: die zuvor ergänzten Team-Rocket-Storykämpfe waren an der falschen Stelle einsortiert — sie spielen laut Handlung erst nach dem siebten Orden (Norbert/Mahagonia), nicht schon bei Dukatia City.</p>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">Vorgänger v0.5</span><span class="tag tag-feat">Neu</span></div>
+      <h3>Team-Rocket-Storykämpfe</h3>
+      <p>Sechs neue Bosskämpfe für die bislang fehlenden Team-Rocket-Vorstände, recherchiert über Bulbapedia und PokéWiki samt deutscher Namen und Original-Sprites: Lance, Lambda und Athena beim Sturm auf den Rundfunkturm, Atlas exklusiv auf dem dortigen Beobachtungsdeck, sowie Lambda und Athena erneut im Team-Rocket-Versteck unter Mahagonia City.</p>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">Vorgänger v0.4</span><span class="tag tag-feat">Neu</span></div>
+      <h3>Silber/Gold-Metallic-Optik</h3>
+      <p>Das helle Farbschema orientiert sich an einem kühlen Stahl-Silber, das dunkle an einem warmen Gold — passend zu den Editionen, denen dieser Run seinen Namen verdankt. Neue Akzent-Token statt hartkodierter Gold-Werte, dazu ein zurückhaltender Metallic-Verlauf auf Hauptbutton, Rundknopf und Fortschrittsbalken.</p>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">Vorgänger v0.3</span><span class="tag tag-feat">Neu</span></div>
+      <h3>Einstellungen neu strukturiert</h3>
+      <ul>
+        <li>Statistik-Karte überarbeitet: Überlebensrate und Entwicklungszähler ergänzt, wenig hilfreiche „Team"-Angabe entfernt.</li>
+        <li>Export/Import/Reset, Theme-Wahl und Dupes-Clause-Warnung aus dem Kopfbereich in die Einstellungen verschoben.</li>
+        <li>Nickname-Pflicht als Option ergänzt, „Zuletzt exportiert"-Anzeige als Backup-Erinnerung, App-Info-Karte mit Versionsnummer.</li>
+      </ul>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">Vorgänger v0.2</span><span class="tag tag-feat">Neu</span></div>
+      <h3>Team-Redesign, Gen-3/4-Erweiterung, Pokédex-Link</h3>
+      <p>Der Team-Tab füllte bei vollem Team unten sichtbar nicht die ganze Fläche zwischen Header und Fußleiste — komplett neu gerastert. Größerer Sprung: die Artenliste deckte bis dahin nur Gen&nbsp;1–2 ab, obwohl HeartGold/SoulSilver Generation&nbsp;4 ist — über die PokéAPI auf alle 493 Arten inklusive vollständigem Entwicklungsbaum (230 Einträge) erweitert. Dazu ein Pokédex-Verweis in den Einstellungen.</p>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">Vorgänger v0.1</span><span class="tag tag-fix">Fix</span></div>
+      <h3>iOS-Layout, Sieg-Animation, erste Politur</h3>
+      <p>Header überlappte auf iPhones mit Uhrzeit/Akkustand, die Fußleiste „wanderte" beim Scrollen — behoben durch Umstellung von einer scrollenden Gesamtseite auf eine feste App-Hülle mit einem einzigen internen Scrollbereich. Die heruntergeladenen Bosstrainer-Sprites sind animierte PNGs, die der Browser nicht per CSS anhalten kann — gelöst, indem jedes Sprite einmalig per Canvas als statisches Bild eingefroren und beim Sieg ausgetauscht wird.</p>
+      <ul>
+        <li>Der Rivale ist per Spitzname umbenennbar; sein Originalname „Silvester" wird danach nicht mehr redundant mit angezeigt.</li>
+        <li>Das Ass-Pokémon der Bosstrainer wird nicht mehr angezeigt — bei einer randomisierten Nuzlocke stimmt es ohnehin nie mit dem Original überein.</li>
+      </ul>
+    </div>
+
+    <div class="entry baseline">
+      <div class="entry-head"><span class="ver">Vorgänger-Testumgebung</span><span class="tag tag-note">Basis</span></div>
+      <h3>Allererster Ausgangspunkt: Nuzlocke-Tracker für HeartGold/SoulSilver</h3>
+      <p>Erster funktionsfähiger Prototyp — Routen, Team, Box und Friedhof für einen Johto-Run, mit dem golden gefüllten Pokeball-Symbol als Team-Status. Als einzelne HTML-Datei gebaut und parallel als installierbare PWA mit Service Worker verpackt.</p>
+    </div>
+
+    <div class="fork-divider">
+      <h2>↴ Prototyp-Ursprung (vor dem Vorgängerprojekt)</h2>
+      <p>Noch eine Ebene tiefer: die „Vorgänger-Testumgebung" oben ist der eingefrorene Endstand dieses allerersten Bauprozesses, hier mit „Prototyp" markiert und in den ursprünglichen Bau-Etappen dokumentiert - der eigentliche Ausgangspunkt der gesamten App, bevor daraus das Vorgängerprojekt und schließlich dieses Projekt wurden.</p>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">Prototyp v0.1</span><span class="tag tag-feat">Prototyp</span></div>
+      <h3>Boss-Trainer-Tab mit prozentualer Level-Skalierung</h3>
+      <p>Neuer fünfter Tab „Bosse": alle acht Johto-Arenaleiter, alle acht Kanto-Arenaleiter (Rückkämpfe), die Top Vier samt Champ Siegfried sowie Giovanni und Rot als Extra-Bosse - jeweils mit dem echten HeartGold/SoulSilver-Trainersprite, Ass-Pokémon und dessen Original-Level, recherchiert statt geraten (inklusive Korrektur dreier falsch erinnerter deutscher Städtenamen: Orania, Prismania und Saffronia City).</p>
+      <p><code>+5%</code> / <code>-5%</code>-Buttons skalieren das Level als Hausregel-Anpassung des Levelcaps, mit Anzeige der aktuellen Erhöhung gegenüber dem Ursprungslevel in Prozent. Ergebnis wird immer aufgerundet, nie abgeschnitten - bei 13 Basis-Level und +10% also Lv.&nbsp;15 statt Lv.&nbsp;14.</p>
+      <p>Mit diesem Funktionsumfang wurde der bisher unversionierte Bauprozess erstmals als eigene Version markiert: <strong>v0.1 (Prototyp)</strong> - funktionsfähig, aber bewusst noch als früher Entwicklungsstand benannt.</p>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">Prototyp Etappe 4</span><span class="tag tag-feat">Neu</span></div>
+      <h3>Direkte Icon-Buttons &amp; Entwickeln-Funktion mit Animation</h3>
+      <p>„Ins Team aufnehmen", „Als gestorben markieren" und „Fang löschen" waren bis dahin nur über ein Bearbeiten-Sheet erreichbar - jetzt als eigene Icon-Buttons direkt neben Sprite und Name auf jeder Karte, kontextabhängig (Team voll → Button deaktiviert, bereits im Team → Stern gefüllt statt umrandet).</p>
+      <p>Neuer Entwickeln-Button: schlägt die recherchierte echte Entwicklung vor (inklusive aller Verzweigungen wie Evoli → fünf mögliche Entwicklungen, Tauschentwicklungen wie Onix → Stahlos, Traumsteine wie Gloom → Giflor/Blubella) und trägt sie mit einem Antippen ein, plus freies Textfeld für Randomizer-Abweichungen. Beim Bestätigen spielt eine kurze hellblaue Aufblitz-Animation am Sprite ab - Vorläufer der heutigen Entwickeln-Animation.</p>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">Prototyp Etappe 3</span><span class="tag tag-feat">Neu</span></div>
+      <h3>Original-Sprites für alle 251 Pokémon</h3>
+      <p>Die echten HeartGold/SoulSilver-Sprites für die komplette Johto/Kanto-Liste direkt in die Datei eingebettet (keine Internetverbindung zur Laufzeit nötig) - Ursprung der bis heute beibehaltenen eingebetteten-Sprites-Architektur. Live-Vorschau im Fangen-Formular, Anzeige in Routen-Liste, Team, Box und Friedhof; unbekannte Namen zeigen ein „?"-Platzhalter statt eines Fehlers.</p>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">Prototyp Etappe 2</span><span class="tag tag-note">Lokalisierung</span></div>
+      <h3>Deutsche Pokémon- und Ortsnamen</h3>
+      <p>Alle 251 Artennamen sowie sämtliche Johto- und Kanto-Ortsnamen von den ursprünglich verwendeten englischen Bezeichnungen auf die offiziellen deutschen Namen aus HeartGold/SoulSilver umgestellt. Die Eingabe bleibt frei tippbar - bei einem Randomizer kann an jedem Ort jede Art auftauchen, die deutsche Liste dient nur als Autovervollständigung.</p>
+    </div>
+
+    <div class="entry baseline">
+      <div class="entry-head"><span class="ver">Prototyp Etappe 1</span><span class="tag tag-note">Basis</span></div>
+      <h3>Allererster Ausgangspunkt: Routen-, Team-, Box- und Friedhof-Tracker</h3>
+      <p>Ursprüngliche Anfrage: ein touch-bedienbarer Tracker für eine gemeinsam mit einem Freund gespielte Randomizer-Nuzlocke (SoulSilver/HeartGold) - pro Route erfassen, welches Pokémon gefangen wurde oder ob der Fang misslang, das aktuelle Team pflegen (inklusive Box und Friedhof).</p>
+      <ul>
+        <li>Vorgegebene Routenliste für Johto und Kanto, plus freies Hinzufügen eigener Fundorte (Geschenke, statische Encounter).</li>
+        <li>Fang-Formular mit Spitzname, Team-Verwaltung auf sechs Plätze begrenzt, „Kein Fang"-Markierung, Friedhof für gestorbene Pokémon mit Korrekturmöglichkeit.</li>
+        <li>Reine Client-Lösung ohne Server: jedes Gerät speichert seinen eigenen Fortschritt lokal (<code>localStorage</code>), dazu JSON-Export/Import als Backup. Hell/Dunkel-Theme-Umschalter.</li>
+      </ul>
+    </div>
+
+  </div>
+
+  <div class="followups">
+    <h2>Offene Punkte, Ideen &amp; Optimierungen</h2>
+    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Plattformübergreifendes Speichersystem.</strong> Spielstände liegen bisher rein lokal (<code>localStorage</code>) im jeweiligen Browser/Gerät — der einzige Weg zwischen Geräten zu wechseln ist der manuelle JSON-Export/Import. Ein echter Sync (z.B. Konto-basiert oder über einen eigenen Cloud-Speicher) würde Spielstände automatisch zwischen Handy, Tablet und Desktop aktuell halten.</div>
+    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Achievement-System mit verliehenen Titeln.</strong> Für bestimmte Situationen/Meilensteine im Run Achievements freischalten, die einen Titel verleihen — z.&nbsp;B. „Legenden-Trainer" bei 3 Legendären gleichzeitig im Team, „Champ" nach Championsieg. Weitere Ideen für Auslöser/Titel noch offen.</div>
+    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Run-Rückblick ausbauen: erzählte Zusammenfassung + kleine Analyse.</strong> Statt nur Kennzahlen eine spannend geschriebene Zusammenfassung des Abenteuers anhand von Kennzahlen/Verlauf generieren, dazu kleine Analyse-Einsichten (z.&nbsp;B. „hauptsächlich Wasser-Pokémon im Team", auffällige Typverteilung, Fang-/Todesserien o.&nbsp;Ä.).</div>
+    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Zusammengefasste Encounter-Übersicht für ausgelassene Routen.</strong> Liste aller Standorte, an denen noch kein Fangversuch eingetragen wurde (übersprungene Routen), mit Sprung-Funktion zur jeweiligen Standort-Karte per Klick.</div>
+  </div>
+
+  <div class="followups">
+    <h2>Ideen aus dem Vorgängerprojekt (Ursprung &amp; Stand)</h2>
+    <div class="followup-item"><strong>Mehrere Runs/Speicherstände</strong> — mehrere benannte Runs parallel speichern und wechseln können. <em>→ umgesetzt in v1.2 (Mehrfach-Speichersystem).</em></div>
+    <div class="followup-item"><strong>Run-Rückblick/Abschluss-Karte</strong> — <em>→ umgesetzt in v1.8.2.</em></div>
+    <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1 (chronologisches Ereignis-Log).</em></div>
+    <div class="followup-item"><strong>Notizfeld pro Fundort</strong> — <em>→ umgesetzt in v1.8.5.</em></div>
+    <div class="followup-item"><strong>Kanto ein-/ausblenden</strong> — <em>→ umgesetzt in v1.8.4 (allgemein als Regionen ein-/ausblenden).</em></div>
+    <div class="followup-item"><strong>Abschluss-Feier</strong> — kleine Animation/Screen beim Besiegen des Champions als Schlusspunkt des Runs. <em>→ umgesetzt (Konfetti beim Rivalenduell seit v1.0, eigener Champion-Abschluss-Screen seit v1.8.3).</em></div>
+    <div class="followup-item"><strong>Leerer-Zustand-Illustration</strong> — <em>→ umgesetzt in v1.8.6.</em></div>
+    <div class="followup-item"><strong>Icon-Politur</strong> — <em>→ umgesetzt in v1.8.7.</em></div>
+  </div>
+
+  <div class="followups">
+    <h2>Ideen aus dem allerersten Prototyp (Ursprung &amp; Stand)</h2>
+    <div class="followup-item"><strong>Geräteübergreifender Sync</strong> — Fortschritt lag schon damals rein lokal im Browser. <em>→ bis heute nicht gelöst, siehe „Plattformübergreifendes Speichersystem" oben.</em></div>
+    <div class="followup-item"><strong>Rivalen- und Story-Kämpfe</strong> — der damalige Bosse-Tab deckte nur Arenen, Top Vier, Giovanni und Rot ab. <em>→ umgesetzt: jede Edition hat inzwischen die vollständigen Rivalenkämpfe zwischen den Arenen.</em></div>
+    <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
+  </div>
+
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.23.</footer>`;
+
+function openChangelogSheet(){
+  openSheet(`
+    <h3>Änderungsprotokoll</h3>
+    <div class="changelog-sheet">${CHANGELOG_HTML}</div>
+    <div class="sheet-footer">
+      <button class="btn btn-secondary btn-block" data-act="close-sheet">Schließen</button>
+    </div>
+  `);
+}
+
 function openEventLogSheet(){
   const entries = state.eventLog.slice().reverse();
   const rows = entries.map(ev=>{
@@ -3631,7 +4211,7 @@ function renderSettings(){
   <div class="card">
     <div class="loc-name">Änderungsprotokoll</div>
     <div class="loc-sub">Alle bisherigen App-Updates &amp; Fixes nachlesen</div>
-    <a class="btn btn-secondary btn-block" style="display:flex; align-items:center; justify-content:center; margin-top:12px; text-decoration:none;" href="https://claude.ai/code/artifact/6ee2fb0a-8e1f-4052-aab1-f197cb326aeb" target="_blank" rel="noopener noreferrer">Änderungsprotokoll öffnen</a>
+    <button class="btn btn-secondary btn-block" style="margin-top:12px;" data-act="open-changelog">Änderungsprotokoll öffnen</button>
   </div>`);
 
   html += settingsGroupHtml("app-info", "App-Info", `
@@ -4343,6 +4923,7 @@ document.addEventListener("click", e=>{
   }
   else if(act==="open-saves-sheet") openSavesSheet();
   else if(act==="open-event-log") openEventLogSheet();
+  else if(act==="open-changelog") openChangelogSheet();
   else if(act==="open-run-recap") openRunRecapSheet();
   else if(act==="copy-run-recap"){
     const text = runRecapText();
