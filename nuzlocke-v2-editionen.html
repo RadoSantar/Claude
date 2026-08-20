@@ -961,12 +961,13 @@ const SMARAGD_LOCATIONS = [
    ein Abgleich, da hier aus Platzgründen vereinfacht wurde. */
 const SMARAGD_BOSS_AFTER = {
   "Hoenn|Route 103": ["sm-rival1"],
-  "Hoenn|Metarost City": ["sm-rival-rustboro"],
-  "Hoenn|Blütenburgwald": ["sm-roxanne"],
-  "Hoenn|Route 106": ["sm-brawly"],
-  "Hoenn|Route 110": ["sm-rival2","sm-wattson","sm-wally1"],
+  "Hoenn|Metarost City": ["sm-rival-rustboro","sm-roxanne"],
+  "Hoenn|Faustauhaven": ["sm-brawly"],
+  "Hoenn|Route 110": ["sm-rival2","sm-wally1"],
+  "Hoenn|Malvenfroh City": ["sm-wattson"],
   "Hoenn|Feuerberg": ["sm-maxie1","sm-tabitha1"],
-  "Hoenn|Steilpass": ["sm-flannery","sm-norman"],
+  "Hoenn|Bad Lavastadt": ["sm-flannery"],
+  "Hoenn|Steilpass": ["sm-norman"],
   "Hoenn|Route 119": ["sm-shelly1","sm-rival3"],
   "Hoenn|Baumhausen City": ["sm-winona"],
   "Hoenn|Seegrasulb City": ["sm-rival4"],
@@ -1535,12 +1536,14 @@ const HOENN_RS_BOSSES = [
 
 const HOENN_RS_BOSS_AFTER = {
   "Hoenn|Route 103": ["rival1"],
-  "Hoenn|Blütenburgwald": ["roxanne"],
-  "Hoenn|Route 106": ["brawly"],
+  "Hoenn|Metarost City": ["roxanne"],
+  "Hoenn|Faustauhaven": ["brawly"],
   "Hoenn|Feuerberg": ["villain-admin1","villain-boss1"],
-  "Hoenn|Route 110": ["rival2","wattson","wally1"],
+  "Hoenn|Route 110": ["rival2","wally1"],
+  "Hoenn|Malvenfroh City": ["wattson"],
   "Hoenn|Route 119": ["villain-admin2","rival3"],
-  "Hoenn|Steilpass": ["flannery","norman"],
+  "Hoenn|Bad Lavastadt": ["flannery"],
+  "Hoenn|Steilpass": ["norman"],
   "Hoenn|Baumhausen City": ["winona"],
   "Hoenn|Seegrasulb City": ["rival4","villain-admin3"],
   "Hoenn|Route 128": ["wallace"],
@@ -1803,7 +1806,7 @@ function buildVersionGames(baseBosses, regions, bossAfter, versions, starters, g
     const remap = new Map(baseBosses.map((b,i)=>[b.id, bosses[i].id]));
     const remappedAfter = {};
     Object.entries(bossAfter).forEach(([loc, ids])=>{ remappedAfter[loc] = ids.map(id=>remap.get(id)); });
-    out[v.id] = { id:v.id, label:v.label, shortLabel:v.shortLabel, regions:v.regions||regions, bosses, bossAfter:remappedAfter, starters:v.starters||starters, theme:v.theme, generation:v.generation||generation };
+    out[v.id] = { id:v.id, label:v.label, shortLabel:v.shortLabel, regions:v.regions||regions, bosses, bossAfter:remappedAfter, starters:v.starters||starters, theme:v.theme, generation:v.generation||generation, releaseOrder:v.releaseOrder };
   });
   return out;
 }
@@ -1856,22 +1859,22 @@ const GAMES = {
      der Edition selbst), nicht 2 (Generation des Original-Spiels, das hier neu aufgelegt wird).
      Gruppierung in der Spielstände-Neuanlage folgt also der Release-Generation, nicht dem
      inhaltlichen Vorbild - analog künftig bei Feuerrot/Blattgrün (Gen3-Remake von Gen1). */
-  hgss: { id:"hgss", label:"HeartGold / SoulSilver", shortLabel:"HG/SS", regions:LOCATIONS_DEFAULT, bosses:BOSSES, bossAfter:BOSS_AFTER, starters:{ grass:"Endivie", fire:"Feurigel", water:"Karnimani" }, generation:4 },
-  smaragd: { id:"smaragd", label:"Smaragd", shortLabel:"Smaragd", regions:SMARAGD_LOCATIONS, bosses:SMARAGD_BOSSES, bossAfter:SMARAGD_BOSS_AFTER, starters:{ grass:"Geckarbor", fire:"Flemmli", water:"Hydropi" }, generation:3,
+  hgss: { id:"hgss", label:"HeartGold / SoulSilver", shortLabel:"HG/SS", regions:LOCATIONS_DEFAULT, bosses:BOSSES, bossAfter:BOSS_AFTER, starters:{ grass:"Endivie", fire:"Feurigel", water:"Karnimani" }, generation:4, releaseOrder:11 },
+  smaragd: { id:"smaragd", label:"Smaragd", shortLabel:"Smaragd", regions:SMARAGD_LOCATIONS, bosses:SMARAGD_BOSSES, bossAfter:SMARAGD_BOSS_AFTER, starters:{ grass:"Geckarbor", fire:"Flemmli", water:"Hydropi" }, generation:3, releaseOrder:8,
     theme:{ light:{ accent:"#2E8B57", accentSoft:"#DCF0E3", accentShine:"#EFFBF3", accentDeep:"#1F5E3B", glow:"46,139,87" },
             dark:{ accent:"#4FD182", accentSoft:"#173626", accentShine:"#8CF0B0", accentDeep:"#2E8B57", glow:"79,209,130" } } },
   /* Bei zusammengefassten Versionspaaren steht (analog zu HG/SS, wo der Akzent im Hell-Modus
      silbern und im Dunkel-Modus golden ist) je eine Version fürs Hell- und fürs Dunkel-Theme:
      Perl = hell (Rosé), Diamant = dunkel (Blau) - kein separater Umschalter, folgt einfach dem
      bestehenden Hell/Dunkel-Modus der App. */
-  "diamant-perl": { id:"diamant-perl", label:"Diamant / Perl", shortLabel:"Diamant/Perl", regions:SINNOH_LOCATIONS, bosses:SINNOH_BOSSES, bossAfter:SINNOH_BOSS_AFTER, starters:{ grass:"Chelast", fire:"Panflam", water:"Plinfa" }, generation:4,
+  "diamant-perl": { id:"diamant-perl", label:"Diamant / Perl", shortLabel:"Diamant/Perl", regions:SINNOH_LOCATIONS, bosses:SINNOH_BOSSES, bossAfter:SINNOH_BOSS_AFTER, starters:{ grass:"Chelast", fire:"Panflam", water:"Plinfa" }, generation:4, releaseOrder:9,
     theme:{ light:{ accent:"#C9628F", accentSoft:"#F7DCE8", accentShine:"#FCF0F5", accentDeep:"#96355F", glow:"201,98,143" },
             dark:{ accent:"#7FB0F0", accentSoft:"#1B2A3F", accentShine:"#A8CCFA", accentDeep:"#4A7FC9", glow:"127,176,240" } } },
   /* Rot und Blau unterscheiden sich spielerisch nicht (nur versionsexklusive Fangbare Arten,
      die diese App ohnehin nicht trackt) - deshalb wie Diamant/Perl EIN gemeinsamer Eintrag statt
      zweier separater Editionen. Rot = hell (rot), Blau = dunkel (blau) - eigene Farbidentität statt
      nur unterschiedlicher Helligkeit derselben Farbe, analog zum bestehenden Muster. */
-  "rot-blau": { id:"rot-blau", label:"Rote / Blaue Edition", shortLabel:"Rot/Blau", regions:KANTO_RB_LOCATIONS, bosses:KANTO_RB_BOSSES, bossAfter:KANTO_RB_BOSS_AFTER, starters:{ grass:"Bisasam", fire:"Glumanda", water:"Schiggy" }, generation:1,
+  "rot-blau": { id:"rot-blau", label:"Rote / Blaue Edition", shortLabel:"Rot/Blau", regions:KANTO_RB_LOCATIONS, bosses:KANTO_RB_BOSSES, bossAfter:KANTO_RB_BOSS_AFTER, starters:{ grass:"Bisasam", fire:"Glumanda", water:"Schiggy" }, generation:1, releaseOrder:1,
     theme:{ light:{ accent:"#E0393C", accentSoft:"#FBDEDE", accentShine:"#FDF2F2", accentDeep:"#A32621", glow:"224,57,60" },
             dark:{ accent:"#4E8FE0", accentSoft:"#17233A", accentShine:"#A9C8F5", accentDeep:"#2F5FAE", glow:"78,143,224" } } },
   /* starters:{fixed,rivalGets} statt {grass,fire,water}: Gelb hat keine Dreier-Starterwahl, Pikachu
@@ -1881,7 +1884,7 @@ const GAMES = {
      selbst weiterhin für einen unabhängigen wilden Fang (Angeln) nutzbar bleibt. Eigenständiges
      Gelb-Thema (nicht wie Rot/Blau als Hell/Dunkel-Paar zweier Versionen, da Gelb nur eine einzelne
      Version ist) - warmes Gelb/Gold in beiden Modi, je nur unterschiedlich hell. */
-  gelb: { id:"gelb", label:"Gelbe Edition", shortLabel:"Gelb", regions:KANTO_YELLOW_LOCATIONS, bosses:KANTO_YELLOW_BOSSES, bossAfter:KANTO_YELLOW_BOSS_AFTER, starters:{ fixed:"Pikachu", rivalGets:"Evoli" }, generation:1,
+  gelb: { id:"gelb", label:"Gelbe Edition", shortLabel:"Gelb", regions:KANTO_YELLOW_LOCATIONS, bosses:KANTO_YELLOW_BOSSES, bossAfter:KANTO_YELLOW_BOSS_AFTER, starters:{ fixed:"Pikachu", rivalGets:"Evoli" }, generation:1, releaseOrder:2,
     theme:{ light:{ accent:"#E3A712", accentSoft:"#FBF0D2", accentShine:"#FEFBF0", accentDeep:"#8F6A0A", glow:"227,167,18" },
             dark:{ accent:"#F5CB4C", accentSoft:"#2E2410", accentShine:"#FCE9A0", accentDeep:"#C99A1E", glow:"245,203,76" } } },
   /* Durchgängiges Muster für alle Generationen mit "Partner-Paar + dritte Solo-Edition": das
@@ -1891,22 +1894,22 @@ const GAMES = {
      laut Recherche zwar identische Teams/Level (ein Bulbapedia-Wikitext-Header für alle drei) - die
      Trennung hier ist also rein strukturell/nach Erscheinungsreihenfolge, nicht weil sich die Daten
      unterscheiden (beide Einträge nutzen deshalb bewusst denselben GSC_*-Datensatz). */
-  "gold-silber": { id:"gold-silber", label:"Gold / Silber", shortLabel:"Gold/Silber", regions:GSC_LOCATIONS, bosses:GSC_BOSSES, bossAfter:GSC_BOSS_AFTER, starters:{ grass:"Endivie", fire:"Feurigel", water:"Karnimani" }, generation:2,
+  "gold-silber": { id:"gold-silber", label:"Gold / Silber", shortLabel:"Gold/Silber", regions:GSC_LOCATIONS, bosses:GSC_BOSSES, bossAfter:GSC_BOSS_AFTER, starters:{ grass:"Endivie", fire:"Feurigel", water:"Karnimani" }, generation:2, releaseOrder:3,
     theme:{ light:{ accent:"#9BA4AE", accentSoft:"#E7EAED", accentShine:"#F5F6F8", accentDeep:"#5F6B76", glow:"155,164,174" },
             dark:{ accent:"#D9A536", accentSoft:"#2E2410", accentShine:"#F0D488", accentDeep:"#A67C1E", glow:"217,165,54" } } },
-  kristall: { id:"kristall", label:"Kristall-Edition", shortLabel:"Kristall", regions:GSC_LOCATIONS, bosses:GSC_BOSSES, bossAfter:GSC_BOSS_AFTER, starters:{ grass:"Endivie", fire:"Feurigel", water:"Karnimani" }, generation:2,
+  kristall: { id:"kristall", label:"Kristall-Edition", shortLabel:"Kristall", regions:GSC_LOCATIONS, bosses:GSC_BOSSES, bossAfter:GSC_BOSS_AFTER, starters:{ grass:"Endivie", fire:"Feurigel", water:"Karnimani" }, generation:2, releaseOrder:4,
     theme:{ light:{ accent:"#2FA6A0", accentSoft:"#D8F1EF", accentShine:"#F0FAF9", accentDeep:"#1E6E6A", glow:"47,166,160" },
             dark:{ accent:"#5FD6CE", accentSoft:"#123332", accentShine:"#A6EDE8", accentDeep:"#2FA6A0", glow:"95,214,206" } } },
   /* FeuerRot/BlattGrün sind laut Recherche für Arenen/Rivale/Top-Vier/Champion identisch (ein
      gemeinsamer Bulbapedia-Header) - wie Rot/Blau EIN gemeinsamer Eintrag. BlattGrün = hell (Laub-
      Grün, bewusst anders als Smaragds Meeresgrün), FeuerRot = dunkel (Feuer-Orange-Rot, bewusst
      anders als Rot/Blaus reineres Rot), analog zum Rot/Blau-Hell/Dunkel-Prinzip. */
-  "feuerrot-blattgruen": { id:"feuerrot-blattgruen", label:"FeuerRot / BlattGrün", shortLabel:"FeuerRot/BlattGrün", regions:KANTO_FRLG_LOCATIONS, bosses:KANTO_FRLG_BOSSES, bossAfter:KANTO_FRLG_BOSS_AFTER, starters:{ grass:"Bisasam", fire:"Glumanda", water:"Schiggy" }, generation:3,
+  "feuerrot-blattgruen": { id:"feuerrot-blattgruen", label:"FeuerRot / BlattGrün", shortLabel:"FeuerRot/BlattGrün", regions:KANTO_FRLG_LOCATIONS, bosses:KANTO_FRLG_BOSSES, bossAfter:KANTO_FRLG_BOSS_AFTER, starters:{ grass:"Bisasam", fire:"Glumanda", water:"Schiggy" }, generation:3, releaseOrder:7,
     theme:{ light:{ accent:"#5A9F35", accentSoft:"#E4F0D8", accentShine:"#F3F9EC", accentDeep:"#3D6B24", glow:"90,159,53" },
             dark:{ accent:"#E8622F", accentSoft:"#3A2013", accentShine:"#F5A67F", accentDeep:"#B8481E", glow:"232,98,47" } } }
 };
 Object.assign(GAMES, buildVersionGames(SINNOH_BOSSES, SINNOH_LOCATIONS, SINNOH_BOSS_AFTER, [
-  { id:"platin", label:"Platin", shortLabel:"Platin", bossOverrides:PLATIN_OVERRIDES, regions:PLATIN_LOCATIONS,
+  { id:"platin", label:"Platin", shortLabel:"Platin", bossOverrides:PLATIN_OVERRIDES, regions:PLATIN_LOCATIONS, releaseOrder:10,
     theme:{ light:{ accent:"#6B7280", accentSoft:"#E4E6EA", accentShine:"#F5F6F8", accentDeep:"#454B57", glow:"107,114,128" },
             dark:{ accent:"#A8ADB8", accentSoft:"#2A2D33", accentShine:"#D3D6DC", accentDeep:"#6B7280", glow:"168,173,184" } } }
 ], { grass:"Chelast", fire:"Panflam", water:"Plinfa" }, 4));
@@ -1915,10 +1918,10 @@ Object.assign(GAMES, buildVersionGames(SINNOH_BOSSES, SINNOH_LOCATIONS, SINNOH_B
    jede bekommt trotzdem nur EIN Farbthema (Hell/Dunkel = Helligkeitsstufen derselben Edelstein-
    Farbidentität, wie bei Platin/Gelb/Kristall), kein Versionspaar-Farbschema nötig. */
 Object.assign(GAMES, buildVersionGames(HOENN_RS_BOSSES, SMARAGD_LOCATIONS, HOENN_RS_BOSS_AFTER, [
-  { id:"rubin", label:"Rubin-Edition", shortLabel:"Rubin",
+  { id:"rubin", label:"Rubin-Edition", shortLabel:"Rubin", releaseOrder:5,
     theme:{ light:{ accent:"#B4193F", accentSoft:"#F7DCE3", accentShine:"#FCF0F3", accentDeep:"#7A0F2B", glow:"180,25,63" },
             dark:{ accent:"#E8547A", accentSoft:"#33131C", accentShine:"#F5A8BC", accentDeep:"#B4193F", glow:"232,84,122" } } },
-  { id:"saphir", label:"Saphir-Edition", shortLabel:"Saphir", bossOverrides:TEAM_AQUA_OVERRIDES,
+  { id:"saphir", label:"Saphir-Edition", shortLabel:"Saphir", bossOverrides:TEAM_AQUA_OVERRIDES, releaseOrder:6,
     theme:{ light:{ accent:"#1856B8", accentSoft:"#DCE6F7", accentShine:"#F0F5FC", accentDeep:"#0F3B80", glow:"24,86,184" },
             dark:{ accent:"#5B90E0", accentSoft:"#13233F", accentShine:"#A8C4F0", accentDeep:"#1856B8", glow:"91,144,224" } } }
 ], { grass:"Geckarbor", fire:"Flemmli", water:"Hydropi" }, 3));
@@ -1927,10 +1930,10 @@ Object.assign(GAMES, buildVersionGames(HOENN_RS_BOSSES, SMARAGD_LOCATIONS, HOENN
    Helligkeitsstufen derselben Farbidentität), passend zu den jeweiligen Versions-Legendären:
    Weiß = Eisblau (Reshiram), Schwarz = gedämpftes Violett (Zekrom). */
 Object.assign(GAMES, buildVersionGames(EINALL_BW_BOSSES, EINALL_BW_LOCATIONS, EINALL_BW_BOSS_AFTER, [
-  { id:"schwarz", label:"Schwarze Edition", shortLabel:"Schwarz",
+  { id:"schwarz", label:"Schwarze Edition", shortLabel:"Schwarz", releaseOrder:12,
     theme:{ light:{ accent:"#5C4A8A", accentSoft:"#E6E1F0", accentShine:"#F5F2FA", accentDeep:"#3D3060", glow:"92,74,138" },
             dark:{ accent:"#8B6FC4", accentSoft:"#221B33", accentShine:"#C9B8EA", accentDeep:"#5C4A8A", glow:"139,111,196" } } },
-  { id:"weiss", label:"Weiße Edition", shortLabel:"Weiß", bossOverrides:TEAM_WHITE_OVERRIDES,
+  { id:"weiss", label:"Weiße Edition", shortLabel:"Weiß", bossOverrides:TEAM_WHITE_OVERRIDES, releaseOrder:13,
     theme:{ light:{ accent:"#4A90D6", accentSoft:"#E4F0FA", accentShine:"#F5FAFF", accentDeep:"#2C5F8F", glow:"74,144,214" },
             dark:{ accent:"#7EB8EA", accentSoft:"#16283A", accentShine:"#BFE0FA", accentDeep:"#4A90D6", glow:"126,184,234" } } }
 ], { grass:"Serpifeu", fire:"Floink", water:"Ottaro" }, 5));
@@ -2052,7 +2055,7 @@ const EINALL_B2W2_BOSS_AFTER = {
 
 GAMES["schwarz2-weiss2"] = { id:"schwarz2-weiss2", label:"Schwarz 2 / Weiß 2", shortLabel:"Schwarz2/Weiß2",
   regions:EINALL_B2W2_LOCATIONS, bosses:EINALL_B2W2_BOSSES, bossAfter:EINALL_B2W2_BOSS_AFTER,
-  starters:{ grass:"Serpifeu", fire:"Floink", water:"Ottaro" }, generation:5,
+  starters:{ grass:"Serpifeu", fire:"Floink", water:"Ottaro" }, generation:5, releaseOrder:14,
   theme:{ light:{ accent:"#4A7B96", accentSoft:"#DCE8ED", accentShine:"#F1F7F9", accentDeep:"#305468", glow:"74,123,150" },
           dark:{ accent:"#6FD9E8", accentSoft:"#163338", accentShine:"#B8F0F5", accentDeep:"#3A9DAA", glow:"111,217,232" } } };
 
@@ -2274,7 +2277,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.8.11";
+const APP_VERSION = "1.8.12";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -3637,6 +3640,11 @@ function renderSettings(){
     <div class="loc-name">Verlauf</div>
     <div class="loc-sub">Chronologisches Log aller Fänge, Tode, Entwicklungen und Bosssiege (${state.eventLog.length} Einträge)</div>
     <button class="btn btn-secondary btn-block" style="margin-top:12px;" data-act="open-event-log">Verlauf öffnen</button>
+  </div>
+  <div class="card">
+    <div class="loc-name">Änderungsprotokoll</div>
+    <div class="loc-sub">Alle bisherigen App-Updates &amp; Fixes nachlesen</div>
+    <a class="btn btn-secondary btn-block" style="display:flex; align-items:center; justify-content:center; margin-top:12px; text-decoration:none;" href="https://claude.ai/code/artifact/6ee2fb0a-8e1f-4052-aab1-f197cb326aeb" target="_blank" rel="noopener noreferrer">Änderungsprotokoll öffnen</a>
   </div>`);
 
   html += settingsGroupHtml("app-info", "App-Info", `
@@ -4010,7 +4018,7 @@ function openNewSaveSheet(){
   });
   const groupsHtml = [...byGen.keys()].sort((a,b)=>a-b).map(gen=>{
     const label = GENERATION_LABELS[gen] || `Generation ${gen}`;
-    const opts = byGen.get(gen).map(g=>
+    const opts = byGen.get(gen).sort((a,b)=>(a.releaseOrder||0)-(b.releaseOrder||0)).map(g=>
       `<button class="sheet-option" data-act="create-save" data-id="${g.id}">${escapeHtml(g.label)}</button>`
     ).join("");
     return `<div class="sheet-group-header">${escapeHtml(label)}</div>${opts}`;
