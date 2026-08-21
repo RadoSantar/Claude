@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Nuzlocke">
@@ -2321,7 +2321,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.8.24";
+const APP_VERSION = "1.8.25";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -3576,6 +3576,14 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="log">
 
     <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.25</span><span class="tag tag-fix">Fix</span></div>
+      <h3>iOS-Viewport-Lücke: viewport-fit=cover entfernt (v1.8.24 reichte noch nicht)</h3>
+      <p>Nutzer-Feedback: die Lücke war auch nach v1.8.24 auf dem iPhone 17 Pro noch da. Vergleich mit einer anderen, dort einwandfrei skalierenden installierten Web-App des Nutzers zeigte den entscheidenden Unterschied: deren Seite nutzt gar kein <code>viewport-fit=cover</code> und dementsprechend auch kein einziges <code>env(safe-area-inset-*)</code> in ihrem CSS. Diese App hatte <code>viewport-fit=cover</code> gesetzt, um Inhalte bis an die Bildschirmkanten (unter Notch/Dynamic Island/Home-Indicator) zu zeichnen - genau der Modus, in dem Safaris dvh/vh-Berechnung nachweislich am unzuverlässigsten ist.</p>
+      <p><code>viewport-fit=cover</code> aus dem Viewport-Meta-Tag entfernt: Safari begrenzt den Viewport dadurch automatisch auf den sicheren Bereich, ganz ohne manuelle <code>safe-area-inset</code>-Berechnung nötig. Die bestehenden <code>env(safe-area-inset-*)</code>-Aufrufe in Kopf-/Fußleiste bleiben unschädlich im Code stehen (lösen ohne Cover-Modus einfach zu 0 auf), müssen aber nicht entfernt werden.</p>
+      <p>Wichtiger Hinweis: dieser Fix ließ sich in der Sandbox nicht gegen echtes Safari/iOS-Verhalten testen (Chromium bildet <code>viewport-fit</code>/<code>env(safe-area-inset-*)</code> nicht identisch nach) - Bestätigung auf echter Hardware steht noch aus.</p>
+    </div>
+
+    <div class="entry">
       <div class="entry-head"><span class="ver">v1.8.24</span><span class="tag tag-fix">Fix</span></div>
       <h3>iOS-Viewport-Lücke robuster gefixt (Safari-spezifisch, v1.8.20 reichte nicht)</h3>
       <p>Nutzer-Feedback: die in v1.8.20 gefixte Lücke zwischen Tab-Bar und Bildschirmrand trat auf einem iPhone 17 Pro weiterhin auf - sowohl im Browser als auch in der installierten App, und nur in Safari, nicht in Chrome (das auf iOS ebenfalls WebKit nutzt, aber ein anderes Browser-Chrome/eigene Viewport-Meldung hat). Das bestätigt: die Ursache liegt in Safaris eigenen, seit Jahren dokumentierten Ungenauigkeiten bei vh/dvh/visualViewport-Höhenberechnung - der JS-Messungs-Fix aus v1.8.20 (<code>window.visualViewport.height</code>) hing am Ende genau von der gleichen unzuverlässigen Quelle ab und konnte die Lücke deshalb nicht zuverlässig schließen.</p>
@@ -4094,7 +4102,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.24.</footer>`;
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.25.</footer>`;
 
 function openChangelogSheet(){
   openSheet(`
