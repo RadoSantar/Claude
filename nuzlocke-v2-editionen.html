@@ -220,6 +220,7 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 .card.st-given{ border-left-color:var(--accent); opacity:.85; }
 .card.st-nocatch{ border-left-color:var(--line); opacity:.7; padding-bottom:14px; }
 .card.st-nocatch .loc-sub{ margin-top:4px; }
+.card.st-nocatch.st-nocatch-done{ border-left-color:var(--good); }
 .card[data-current="true"]{ box-shadow:var(--shadow), inset 0 0 0 1.5px var(--accent); }
 
 .card-top{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
@@ -2323,7 +2324,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.8.26";
+const APP_VERSION = "1.8.27";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -2568,14 +2569,19 @@ function cardClass(loc){
   return "st-box";
 }
 
+/* Im Einzelspieler-Modus trägt state.hallOfFame.result zwar "win" (siehe snapshotSoloHallOfFame),
+   das ist aber kein Duell-Ergebnis gegen eine echte Person, sondern nur der Champion-Sieg als
+   Abschlussmarkierung für die Ruhmeshalle - fließt daher bewusst NICHT in die Duell-Bilanz ein. */
 function rivalDuelTally(){
   let wins = 0, losses = 0;
   Object.values(state.pvp).forEach(rec=>{
     if(rec.winner==="me") wins++;
     else if(rec.winner==="friend") losses++;
   });
-  if(state.hallOfFame.result==="win") wins++;
-  else if(state.hallOfFame.result==="loss") losses++;
+  if(!state.soloMode){
+    if(state.hallOfFame.result==="win") wins++;
+    else if(state.hallOfFame.result==="loss") losses++;
+  }
   return { wins, losses };
 }
 
@@ -2653,9 +2659,11 @@ function renderHeaderTeam(){
   row.innerHTML = html;
 }
 
-/* Standorte ohne Fangmöglichkeit gelten für die Fortschritts-/Einklapp-Logik als "erledigt",
-   auch wenn ihr status technisch nie aus "pending" rauskommt (es gibt dort ja nichts zu tun). */
-function isLocResolved(loc){ return loc.noCatch || loc.status!=="pending"; }
+/* Standorte ohne Fangmöglichkeit galten früher automatisch als "erledigt", sobald sie gerendert
+   wurden - dadurch klappten sie sofort ein, ohne dass man sie je gesehen/bestätigt hatte. Jetzt
+   braucht es dafür die explizite "Als erledigt markieren"-Aktion (loc.visited), genau wie ein
+   normaler Fang/Kein-Fang bei fangbaren Standorten. */
+function isLocResolved(loc){ return loc.noCatch ? !!loc.visited : loc.status!=="pending"; }
 
 function locationBlockHtml(loc, region, game, currentId){
   let html = routeCard(loc, loc.id===currentId);
@@ -2831,17 +2839,21 @@ function routeCard(loc, isCurrent){
   const noteBtn = iconBtn(hasNote?"tone-gold":"tone-neutral","open-location-note",loc.id,hasNote?ICON_NOTE_FILLED:ICON_NOTE,hasNote?"Notiz bearbeiten":"Notiz hinzufügen",false,true);
   const noteHtml = hasNote ? `<div class="loc-note">${escapeHtml(loc.customNote)}</div>` : "";
   if(loc.noCatch){
-    return `<div class="card st-nocatch" data-loc="${loc.id}"${currentAttr}>
+    const visited = !!loc.visited;
+    return `<div class="card st-nocatch${visited?" st-nocatch-done":""}" data-loc="${loc.id}"${currentAttr}>
       <div class="card-top">
         <div><div class="loc-name">${escapeHtml(loc.name)}</div></div>
         <div style="display:flex; align-items:center; gap:6px; flex:none;">
-          <span class="chip silver">Kein Wildfang</span>
+          <span class="chip ${visited?"gold":"silver"}">${visited?"Erledigt":"Kein Wildfang"}</span>
           ${noteBtn}
           ${flagBtn}
         </div>
       </div>
       <div class="loc-sub">${escapeHtml(loc.note || "Keine wilden Pokémon hier.")}</div>
       ${noteHtml}
+      <div class="card-actions" style="margin-top:10px;">
+        <button class="btn ${visited?"btn-secondary":"btn-primary"} btn-block" data-act="toggle-loc-visited" data-id="${loc.id}">${visited?"Erledigt zurücknehmen":"Als erledigt markieren"}</button>
+      </div>
     </div>`;
   }
   let body = "";
@@ -3551,7 +3563,40 @@ function hofGridHtml(items, isPlayerTeam){
   return html + "</div>";
 }
 
+/* Einzelspieler-Modus: statt eines manuell eingetragenen Duell-Ergebnisses löst hier direkt der
+   Champion-Sieg die Ruhmeshalle aus - automatischer Snapshot des aktuell lebenden Teams (gleicher
+   Zuschnitt wie beim finalen Rivalenduell: nur im Team, nicht tot/abgegeben). Wird beim erneuten
+   Besiegen des Champions (z.B. nach vorherigem "Sieg zurücknehmen") einfach überschrieben. */
+function snapshotSoloHallOfFame(){
+  const playerTeam = state.locations
+    .filter(l=>l.mon && l.mon.inTeam && !l.mon.dead && !l.mon.given)
+    .map(l=>({ species:l.mon.species, nickname:l.mon.nickname }));
+  state.hallOfFame = { rivalTeam:[], playerTeam, defeatedAt:Date.now(), result:"win" };
+}
+
+/* Im Einzelspieler-Modus gibt es kein Duell gegen eine echte Person, das die Ruhmeshalle auslösen
+   könnte - stattdessen zählt der Champion-Sieg selbst als krönender Abschluss des Runs (siehe
+   snapshotSoloHallOfFame, ausgelöst beim Besiegen von finalStoryBoss()). */
 function hallOfFameCardHtml(){
+  if(state.soloMode){
+    const champ = finalStoryBoss();
+    if(!champ || !isBossDefeated(champ.id)) return "";
+    const hof = state.hallOfFame;
+    const dateLabel = hof.defeatedAt ? new Date(hof.defeatedAt).toLocaleDateString("de-DE") : "";
+    return `<div class="card hall-of-fame-card">
+      <div class="card-top">
+        <div>
+          <div class="loc-name" style="margin-bottom:2px;">Ruhmeshalle</div>
+          <div class="loc-sub">${escapeHtml(champ.name || champ.cls)} besiegt${dateLabel?" am "+dateLabel:""} - krönender Abschluss des Runs</div>
+        </div>
+      </div>
+      <div class="loc-sub" style="margin:14px 0 6px; font-weight:700;">Dein Team</div>
+      ${hofGridHtml(hof.playerTeam||[], true)}
+      <div class="card-actions" style="margin-top:4px;">
+        <button class="btn btn-secondary btn-block" data-act="open-run-recap">Run-Rückblick ansehen</button>
+      </div>
+    </div>`;
+  }
   const boss = currentGame().bosses.find(b=>b.final);
   if(!boss || !isBossDefeated(boss.id)) return "";
   const hof = state.hallOfFame;
@@ -3589,21 +3634,29 @@ function runRecapStats(){
   return { caught, survivalRate, bossesDefeated, totalBosses, duelTally, won: hof.result!=="loss" };
 }
 
+function runRecapHeadline(){
+  if(state.soloMode){
+    const champ = finalStoryBoss();
+    return `${escapeHtml(champ?.name || champ?.cls || "Champion")} besiegt`;
+  }
+  return runRecapStats().won ? "Sieg im finalen Duell" : "Niederlage im finalen Duell";
+}
+
 function openRunRecapSheet(){
   const s = runRecapStats();
   const hof = state.hallOfFame;
   openSheet(`
     <h3>Run-Rückblick</h3>
-    <div class="loc-sub" style="margin-bottom:14px;">${escapeHtml(state.runTitle||"Nuzlocke")} · ${escapeHtml(currentGame().shortLabel)} · ${s.won?"Sieg":"Niederlage"} im finalen Duell</div>
-    <div class="loc-sub" style="margin-bottom:6px; font-weight:700;">Team im finalen Duell</div>
+    <div class="loc-sub" style="margin-bottom:14px;">${escapeHtml(state.runTitle||"Nuzlocke")} · ${escapeHtml(currentGame().shortLabel)} · ${runRecapHeadline()}</div>
+    <div class="loc-sub" style="margin-bottom:6px; font-weight:700;">${state.soloMode?"Team beim Champion-Sieg":"Team im finalen Duell"}</div>
     ${hofGridHtml(hof.playerTeam||[], true)}
     <div class="stat-grid" style="margin-top:2px;">
       ${statTileHtml("dot-good", "Überlebensrate", s.survivalRate===null?"–":s.survivalRate+"%")}
       ${statTileHtml("", "Gefangen", s.caught)}
       ${statTileHtml("dot-red", "Gestorben", deadCount())}
       ${statTileHtml("dot-gold", "Bosse besiegt", `${s.bossesDefeated}/${s.totalBosses}`)}
-      ${statTileHtml("dot-good", "Duelle gewonnen", s.duelTally.wins)}
-      ${statTileHtml("dot-red", "Duelle verloren", s.duelTally.losses)}
+      ${state.soloMode ? "" : statTileHtml("dot-good", "Duelle gewonnen", s.duelTally.wins)}
+      ${state.soloMode ? "" : statTileHtml("dot-red", "Duelle verloren", s.duelTally.losses)}
     </div>
     <div class="sheet-footer">
       <button class="btn btn-secondary btn-block" data-act="close-sheet">Schließen</button>
@@ -3616,18 +3669,19 @@ function runRecapText(){
   const s = runRecapStats();
   const hof = state.hallOfFame;
   const team = (hof.playerTeam||[]).map(m=>`- ${m.nickname ? `${m.nickname} (${m.species})` : m.species}`).join("\n") || "- (kein Team erfasst)";
-  return [
+  const lines = [
     `${state.runTitle||"Nuzlocke"} - ${currentGame().shortLabel}`,
-    `${s.won ? "Sieg" : "Niederlage"} im finalen Duell`,
+    runRecapHeadline(),
     "",
     "Team:",
     team,
     "",
     `Überlebensrate: ${s.survivalRate===null?"-":s.survivalRate+"%"}`,
     `Gefangen: ${s.caught}  ·  Gestorben: ${deadCount()}`,
-    `Bosse besiegt: ${s.bossesDefeated}/${s.totalBosses}`,
-    `Duelle: ${s.duelTally.wins} Siege, ${s.duelTally.losses} Niederlagen`
-  ].join("\n");
+    `Bosse besiegt: ${s.bossesDefeated}/${s.totalBosses}`
+  ];
+  if(!state.soloMode) lines.push(`Duelle: ${s.duelTally.wins} Siege, ${s.duelTally.losses} Niederlagen`);
+  return lines.join("\n");
 }
 
 function settingsGroupHtml(key, label, bodyHtml){
@@ -3666,6 +3720,13 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </div>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.27</span><span class="tag tag-feat">Feature</span></div>
+      <h3>Ruhmeshalle auch im Einzelspieler-Modus, Standorte ohne Fangmöglichkeit brauchen jetzt eine Bestätigung</h3>
+      <p><strong>Ruhmeshalle im Einzelspieler-Modus:</strong> In v1.8.26 entfiel die Ruhmeshalle im Solo-Modus komplett, da sie ursprünglich an das finale Duell gegen eine echte Duellpartnerin/einen echten Duellpartner geknüpft war. Jetzt gibt es sie auch dort - statt des Duells zählt der Sieg über den Champion der Region als krönender Abschluss des Runs. Beim Besiegen wird automatisch ein Snapshot des aktuellen Teams festgehalten (kein manueller Eintrag nötig, anders als beim Duell-Modus), Run-Rückblick funktioniert entsprechend mit angepasstem Wortlaut und ohne die nicht zutreffenden Duell-Statistiken.</p>
+      <p><strong>Standorte ohne Fangmöglichkeit klappen nicht mehr automatisch ein:</strong> Städte/Orte ohne wilde Pokémon (z.&nbsp;B. reine Durchgangsorte) galten bisher automatisch als "erledigt", sobald sie einmal gerendert wurden, und verschwanden dadurch sofort im eingeklappten Bereich, ohne dass man sie je bewusst abgehakt hatte. Jede solche Kachel hat jetzt einen "Als erledigt markieren"-Button, genau wie ein normaler Fang/Kein-Fang bei fangbaren Standorten - erst danach klappt sie ein. Hinweis: bei bereits laufenden Runs erscheinen dadurch alle bisher passierten Orte dieser Art einmalig wieder als offen, bis sie manuell nachträglich abgehakt werden.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.8.26</span><span class="tag tag-feat">Feature</span></div>
@@ -4181,6 +4242,9 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Achievement-System mit verliehenen Titeln.</strong> Für bestimmte Situationen/Meilensteine im Run Achievements freischalten, die einen Titel verleihen — z.&nbsp;B. „Legenden-Trainer" bei 3 Legendären gleichzeitig im Team, „Champ" nach Championsieg. Weitere Ideen für Auslöser/Titel noch offen.</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Run-Rückblick ausbauen: erzählte Zusammenfassung + kleine Analyse.</strong> Statt nur Kennzahlen eine spannend geschriebene Zusammenfassung des Abenteuers anhand von Kennzahlen/Verlauf generieren, dazu kleine Analyse-Einsichten (z.&nbsp;B. „hauptsächlich Wasser-Pokémon im Team", auffällige Typverteilung, Fang-/Todesserien o.&nbsp;Ä.).</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Zusammengefasste Encounter-Übersicht für ausgelassene Routen.</strong> Liste aller Standorte, an denen noch kein Fangversuch eingetragen wurde (übersprungene Routen), mit Sprung-Funktion zur jeweiligen Standort-Karte per Klick.</div>
+    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Game-Over-Bildschirm bei komplettem Team-Verlust.</strong> Sind alle Pokémon gestorben, soll ein Vollbild-Overlay ähnlich der Champion-Abschluss-Feier erscheinen — allerdings als Niederlage gerahmt statt als Sieg.</div>
+    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Abgegebene Pokémon aus der Überlebensrate herausrechnen.</strong> Aktuell zählen abgegebene Pokémon (z.&nbsp;B. bei einer verlorenen Rivalenduell-Niederlage) weiter zur Überlebensrate mit — dadurch kann die Rate auch dann nicht auf 0% fallen, wenn tatsächlich das komplette verbliebene Team gestorben ist. Abgegebene sollten aus der Berechnung ausgeschlossen werden.</div>
+    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Farbcodierte Überlebensrate.</strong> Die Statistik-Kachel „Überlebensrate" soll je nach Wert die Farbe wechseln: ab 50% Grün, 25–49% Gelb, 0–24% Rot.</div>
   </div>
 
   <div class="followups">
@@ -4202,7 +4266,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.26.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.27.</footer>
 
 </div>`;
 
@@ -4758,6 +4822,12 @@ document.addEventListener("click", e=>{
   if(act==="open-catch") openCatchSheet(id);
   else if(act==="mark-failed"){ findLoc(id).status="failed"; saveState(); render(); }
   else if(act==="reset-loc"){ findLoc(id).status="pending"; saveState(); render(); }
+  else if(act==="toggle-loc-visited"){
+    const loc = findLoc(id);
+    if(!loc) return;
+    loc.visited = !loc.visited;
+    saveState(); render();
+  }
   else if(act==="close-sheet") closeSheet();
   else if(act==="save-catch"){
     const species = document.getElementById("inSpecies").value.trim();
@@ -4861,14 +4931,17 @@ document.addEventListener("click", e=>{
     state.bossDefeated[id] = !wasDefeated;
     const boss = bossById(id);
     if(!wasDefeated && boss) logEvent("boss", `${boss.name || boss.cls} besiegt (${boss.place})`);
+    const finalBoss = finalStoryBoss();
+    const isChamp = finalBoss && boss && boss.id===finalBoss.id;
+    if(state.soloMode && isChamp){
+      if(!wasDefeated) snapshotSoloHallOfFame();
+      else state.hallOfFame = { rivalTeam:[], playerTeam:[], defeatedAt:null, result:null };
+    }
     saveState();
     if(!wasDefeated) lastDefeatedId = id;
     render();
     lastDefeatedId = null;
-    if(!wasDefeated && boss){
-      const finalBoss = finalStoryBoss();
-      if(finalBoss && boss.id===finalBoss.id) showChampionCelebration(boss);
-    }
+    if(!wasDefeated && isChamp) showChampionCelebration(boss);
   }
   else if(act==="open-boss-win") openBossResultSheet(id, "win");
   else if(act==="open-boss-loss") openBossResultSheet(id, "loss");
@@ -4893,14 +4966,14 @@ document.addEventListener("click", e=>{
       logEvent("bossLoss", `Niederlage gegen ${displayName} (${boss.place})`);
     }
     if(deadNames.length) logEvent("dead", `${deadNames.join(", ")} gestorben im Kampf gegen ${displayName}`);
+    const finalBoss = finalStoryBoss();
+    const isChamp = finalBoss && boss.id===finalBoss.id;
+    if(result==="win" && state.soloMode && isChamp) snapshotSoloHallOfFame();
     saveState();
     if(result==="win") lastDefeatedId = id;
     closeSheet(); render();
     lastDefeatedId = null;
-    if(result==="win"){
-      const finalBoss = finalStoryBoss();
-      if(finalBoss && boss.id===finalBoss.id) showChampionCelebration(boss);
-    }
+    if(result==="win" && isChamp) showChampionCelebration(boss);
   }
   else if(act==="close-champion-overlay"){ document.querySelector(".champion-overlay")?.remove(); }
   else if(act==="open-final-rival"){
