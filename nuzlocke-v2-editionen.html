@@ -2327,7 +2327,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.8.28";
+const APP_VERSION = "1.8.29";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -2590,7 +2590,7 @@ function rivalDuelTally(){
 
 /* Im Einzelspieler-Modus zählt "duel-final" (das finale Rivalenduell gegen die echte Duellpartnerin/
    den echten Duellpartner) nirgends mit - dafür gibt es niemanden, es wird auch nie als besiegt
-   markiert (siehe renderRoutes/locationBlockHtml). Ohne diesen Ausschluss könnte ein Solo-Run nie
+   markiert (siehe renderRoutes/locationTiles). Ohne diesen Ausschluss könnte ein Solo-Run nie
    100% erreichen und "Bosse besiegt" nie den vollen Nenner anzeigen. */
 function activeBosses(){
   return currentGame().bosses.filter(b=>!(b.final && state.soloMode));
@@ -2668,26 +2668,33 @@ function renderHeaderTeam(){
    normaler Fang/Kein-Fang bei fangbaren Standorten. */
 function isLocResolved(loc){ return loc.noCatch ? !!loc.visited : loc.status!=="pending"; }
 
-function locationBlockHtml(loc, region, game, currentId){
-  let html = routeCard(loc, loc.id===currentId);
+/* Baut die flache, individuelle Kachel-Liste eines Standorts: der Standort selbst plus jeder an
+   ihn angehängte Bosskampf als eigene Einheit (Boss+PvP-Karte zählen zusammen als eine Kachel, da
+   isBossSettled beide zusammen abbildet). Jede Einheit trägt ihren eigenen "resolved"-Status, damit
+   sie unabhängig von den anderen ein-/ausklappen kann (siehe renderRoutes) - ein an einem Standort
+   hängender, bereits abgeschlossener Bosskampf muss so nicht mehr warten, bis auch der Standort
+   selbst fangbar ist (z.B. weil dafür erst noch eine Angel fehlt), und umgekehrt. */
+function locationTiles(loc, region, game, currentId){
+  const tiles = [{ html: routeCard(loc, loc.id===currentId), resolved: isLocResolved(loc) }];
   const bossIds = game.bossAfter[region+"|"+loc.name];
   if(bossIds) bossIds.forEach(id=>{
     const boss=bossById(id); if(!boss) return;
     /* "duel-final" ist ausschließlich das Rivalenduell gegen die echte Duellpartnerin/den echten
        Duellpartner nach dem Champion - im Einzelspieler-Modus gibt es niemanden dafür, die Kachel
        entfällt komplett (siehe isBossSettled: dort wird sie transparent als "erledigt" behandelt,
-       damit sie den umgebenden Standort nicht dauerhaft am Einklappen hindert). */
-    if(boss.final){ if(!state.soloMode) html += finalRivalCardHtml(boss, boss.id===currentId); return; }
-    html += bossCardHtml(boss, boss.id===currentId);
-    if(boss.pvp && !state.soloMode) html += pvpCardHtml(boss);
+       damit sie die umgebenden Kacheln nicht dauerhaft am Einklappen hindert). */
+    if(boss.final){ if(!state.soloMode) tiles.push({ html: finalRivalCardHtml(boss, boss.id===currentId), resolved: isBossSettled(boss) }); return; }
+    let h = bossCardHtml(boss, boss.id===currentId);
+    if(boss.pvp && !state.soloMode) h += pvpCardHtml(boss);
+    tiles.push({ html: h, resolved: isBossSettled(boss) });
   });
-  return html;
+  return tiles;
 }
 
 function collapseToggleHtml(segKey, count, expanded, bodyHtml){
   const toggle = `<button class="collapse-toggle" data-act="toggle-region-collapse" data-region="${segKey}" data-count="${count}">
     <svg class="collapse-chevron${expanded?" open":""}" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
-    <span>${count} ${count===1?"abgeschlossener Standort":"abgeschlossene Standorte"} ${expanded?"ausblenden":"anzeigen"}</span>
+    <span>${count} ${count===1?"erledigte Kachel":"erledigte Kacheln"} ${expanded?"ausblenden":"anzeigen"}</span>
   </button>`;
   const body = `<div class="collapsible-body${expanded?" expanded":""}" data-collapse-body="${segKey}"${expanded?"":" inert"}><div class="collapsible-body-inner">${bodyHtml}</div></div>`;
   return toggle + body;
@@ -2698,8 +2705,8 @@ function collapseToggleHtml(segKey, count, expanded, bodyHtml){
    für Standorte ist: erst wenn Bosskampf (und ein angehängter PvP-Kampf) abgeschlossen sind, gilt die
    Markierung als "erledigt" und wird beim nächsten Fortschritt automatisch ersetzt. */
 function isBossSettled(boss){
-  /* Im Einzelspieler-Modus wird "duel-final" nie gerendert/besiegt (siehe locationBlockHtml) -
-     zählt hier trotzdem als transparent erledigt, damit der Standort davor trotzdem einklappen kann. */
+  /* Im Einzelspieler-Modus wird "duel-final" nie gerendert/besiegt (siehe locationTiles) -
+     zählt hier trotzdem als transparent erledigt, damit die Kachel davor trotzdem einklappen kann. */
   if(boss.final && state.soloMode) return true;
   if(!isBossDefeated(boss.id)) return false;
   if(boss.pvp && !state.soloMode && !state.pvp[pvpKey(boss.id)]) return false;
@@ -2711,15 +2718,6 @@ function isCurrentTargetResolved(id){
   const boss = bossById(id);
   if(boss) return isBossSettled(boss);
   return true;
-}
-/* Ein Standort gilt fürs Einklappen erst als abgeschlossen, wenn zusätzlich alle an ihn angehängten
-   Bosskämpfe (bossAfter) erledigt sind - sonst würde ein noch offener Bosskampf, der an einem
-   längst gefangenen Standort hängt, versehentlich im eingeklappten Bereich verschwinden. */
-function locationFullySettled(loc, region, game){
-  if(!isLocResolved(loc)) return false;
-  const bossIds = game.bossAfter[region+"|"+loc.name];
-  if(!bossIds) return true;
-  return bossIds.every(id=>{ const boss = bossById(id); return !boss || isBossSettled(boss); });
 }
 /* Flache Reihenfolge aller Kacheln (Standorte + angehängte Bosse, region- und listenweise in
    Anzeige-Reihenfolge, eigene Fundorte am Ende) - Grundlage fürs Weiterspringen der Flagge um
@@ -2789,14 +2787,12 @@ function updateJumpButtonVisibility(){
 }
 document.getElementById("content").addEventListener("scroll", ()=>requestAnimationFrame(updateJumpButtonVisibility), {passive:true});
 
-/* Einklappen läuft pro zusammenhängendem Block vollständig abgeschlossener Standorte (samt ihrer
-   angehängten Bosskämpfe, siehe locationFullySettled), nicht mehr pro Region als Ganzes: sonst würde
-   ein einzelner dauerhaft offener Standort (z.B. weil er erst später mit Surfen erreichbar ist) das
-   Einklappen aller danach folgenden, längst erledigten Standorte blockieren. Ein Standort klappt sofort
-   ein, sobald er (samt Bossen) abgeschlossen ist - keine "zuletzt erledigt bleibt noch sichtbar"-
-   Ausnahme mehr, da erledigte Kacheln laut Nutzer-Feedback nicht offen herumstehen sollen und bei
-   Bedarf jederzeit über den Ausklapp-Toggle wieder einsehbar sind. Offene Standorte unterbrechen einen
-   Block und bleiben immer sichtbar. */
+/* Einklappen läuft pro einzelner Kachel (Standort- oder Bosskarte), nicht mehr pro Standort samt
+   angehängter Bosse als gemeinsamem Block: ein Bosskampf, der bereits abgeschlossen ist, klappt so
+   auch dann ein, wenn der zugehörige Standort selbst noch nicht fangbar ist (z.B. weil dafür erst
+   noch eine Angel fehlt) - und umgekehrt. Konsekutive erledigte Kacheln werden zu einem gemeinsamen
+   Einklapp-Block zusammengefasst, eine einzelne noch offene Kachel unterbricht diesen Block, bleibt
+   selbst aber immer sichtbar. */
 function renderRoutes(){
   let html = "";
   const game = currentGame();
@@ -2809,19 +2805,22 @@ function renderRoutes(){
     html += `<div class="region-header">${escapeHtml(region)}</div>`;
     const regionKey = slug(region);
 
+    const tiles = [];
+    locs.forEach(loc=>{ tiles.push(...locationTiles(loc, region, game, currentId)); });
+
     let i = 0;
-    while(i<locs.length){
-      if(!locationFullySettled(locs[i], region, game)){
-        html += locationBlockHtml(locs[i], region, game, currentId);
+    while(i<tiles.length){
+      if(!tiles[i].resolved){
+        html += tiles[i].html;
         i++;
         continue;
       }
       let j = i;
-      while(j<locs.length && locationFullySettled(locs[j], region, game)) j++;
+      while(j<tiles.length && tiles[j].resolved) j++;
       const segKey = `${regionKey}-${i}`;
       const expanded = expandedRegions.has(segKey);
       let collapsedBody = "";
-      for(let k=i;k<j;k++) collapsedBody += locationBlockHtml(locs[k], region, game, currentId);
+      for(let k=i;k<j;k++) collapsedBody += tiles[k].html;
       html += collapseToggleHtml(segKey, j-i, expanded, collapsedBody);
       i = j;
     }
@@ -3725,6 +3724,13 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="log">
 
     <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.29</span><span class="tag tag-fix">Fix</span></div>
+      <h3>Einklappen läuft jetzt pro Kachel statt pro Standort-Block</h3>
+      <p>Ein an einem Standort hängender Bosskampf konnte bereits abgeschlossen sein, während der Standort selbst noch nicht fangbar war (z.&nbsp;B. weil dafür erst noch eine Angel fehlt) - trotzdem blieb bisher der komplette Block (Standort + Boss) offen stehen, weil beide zusammen als eine Einheit einklappten. Das erledigte Trainerduell verschwand dadurch nicht aus der Übersicht, obwohl es längst abgehakt war.</p>
+      <p>Jede Kachel (Standort-Karte, jede Boss-/PvP-Karte) klappt jetzt einzeln ein, sobald sie für sich erledigt ist - unabhängig davon, ob die Kachel direkt davor oder danach noch offen ist. Aufeinanderfolgende erledigte Kacheln werden weiterhin zu einem gemeinsamen Einklapp-Block zusammengefasst, eine einzelne offene Kachel unterbricht diesen Block, bleibt selbst aber immer sichtbar.</p>
+    </div>
+
+    <div class="entry">
       <div class="entry-head"><span class="ver">v1.8.28</span><span class="tag tag-feat">Feature</span></div>
       <h3>Frisch gefangene Pokémon treten automatisch dem Team bei</h3>
       <p>Bisher landete jeder Fang zunächst in der Box, auch wenn das Team noch nicht voll war - man musste jedes Pokémon manuell per "Ins Team aufnehmen" nachziehen. Jetzt tritt ein neu gefangenes Pokémon automatisch dem Team bei, solange darin noch Platz ist (unter sechs Mitgliedern), genau wie im echten Spiel. Ist das Team bereits voll, bleibt es wie gehabt bei der Abfrage "Ins Team aufnehmen (mit Ersatz) oder auf die Bank?" - daran ändert sich nichts.</p>
@@ -4289,7 +4295,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.28.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.29.</footer>
 
 </div>`;
 
