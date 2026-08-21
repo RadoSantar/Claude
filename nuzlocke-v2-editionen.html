@@ -692,6 +692,8 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 .sheet-option.accent{ background:var(--accent-soft); color:var(--accent); }
 .sheet-option.evolve-opt{ background:var(--evolve-soft); color:var(--evolve); }
 .sheet-option:disabled{ opacity:.4; }
+.death-check-row{ display:flex; align-items:center; gap:10px; cursor:pointer; }
+.death-check-row input[type="checkbox"]{ width:20px; height:20px; flex:none; accent-color:var(--red); }
 .sheet-footer{ display:flex; gap:10px; margin-top:6px; }
 .preset-row{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
 .preset-chip{
@@ -2321,7 +2323,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.8.25";
+const APP_VERSION = "1.8.26";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -2347,14 +2349,14 @@ function parseLocationEntry(region, entry){
   };
 }
 
-function freshState(editionId){
+function freshState(editionId, soloMode){
   const edition = GAMES[editionId] ? editionId : "hgss";
   const locations = [];
   GAMES[edition].regions.forEach(([region, names])=>{
     names.forEach(entry=>{ locations.push(parseLocationEntry(region, entry)); });
   });
   const gameStarters = GAMES[edition].starters || { grass:"", fire:"", water:"" };
-  return { edition, runTitle:"Nuzlocke", locations, bossBoosts:{}, bossDefeated:{}, rivalNickname:"", duelPartnerName:"", dupesWarning:true, lastExportAt:null, evolutionCount:0, nicknameRequired:false, pvp:{}, hallOfFame:{ rivalTeam:[], playerTeam:[], defeatedAt:null, result:null }, starterNames:{ ...gameStarters }, starterChoice:null, currentLocId:null, eventLog:[], hiddenRegions:[] };
+  return { edition, runTitle:"Nuzlocke", soloMode:!!soloMode, locations, bossBoosts:{}, bossDefeated:{}, rivalNickname:"", duelPartnerName:"", dupesWarning:true, lastExportAt:null, evolutionCount:0, nicknameRequired:false, pvp:{}, hallOfFame:{ rivalTeam:[], playerTeam:[], defeatedAt:null, result:null }, starterNames:{ ...gameStarters }, starterChoice:null, currentLocId:null, eventLog:[], hiddenRegions:[] };
 }
 
 /* Ergänzt neu hinzugekommene Standorte (z.B. nachträglich eingefügte Städte) in einen bereits
@@ -2377,6 +2379,7 @@ function syncLocations(parsed){
 }
 
 function normalizeState(parsed){
+  if(typeof parsed.soloMode !== "boolean") parsed.soloMode = false;
   if(!parsed.bossBoosts) parsed.bossBoosts = {};
   if(!parsed.bossDefeated) parsed.bossDefeated = {};
   if(typeof parsed.rivalNickname !== "string") parsed.rivalNickname = "";
@@ -2435,9 +2438,9 @@ function writeSave(id, saveData){
   persistSavesIndex(index);
 }
 
-function createSave(editionId){
+function createSave(editionId, soloMode){
   const id = newSaveId();
-  writeSave(id, freshState(editionId));
+  writeSave(id, freshState(editionId, soloMode));
   return id;
 }
 
@@ -2576,6 +2579,14 @@ function rivalDuelTally(){
   return { wins, losses };
 }
 
+/* Im Einzelspieler-Modus zählt "duel-final" (das finale Rivalenduell gegen die echte Duellpartnerin/
+   den echten Duellpartner) nirgends mit - dafür gibt es niemanden, es wird auch nie als besiegt
+   markiert (siehe renderRoutes/locationBlockHtml). Ohne diesen Ausschluss könnte ein Solo-Run nie
+   100% erreichen und "Bosse besiegt" nie den vollen Nenner anzeigen. */
+function activeBosses(){
+  return currentGame().bosses.filter(b=>!(b.final && state.soloMode));
+}
+
 /* Gesamtabschluss über alle fangbaren Standorte (noCatch-Orte ausgenommen, dort gibt es nie
    etwas zu tun) UND alle Bosse der aktuellen Edition - "duel-final" ist Teil dieser Boss-Liste,
    erreicht also erst 100%, wenn auch das finale Rivalenduell gegen den Duellpartner eingetragen
@@ -2583,7 +2594,7 @@ function rivalDuelTally(){
 function completionPercent(){
   const catchable = state.locations.filter(l=>!l.noCatch);
   const locsDone = catchable.filter(l=>l.status!=="pending").length;
-  const bosses = currentGame().bosses;
+  const bosses = activeBosses();
   const bossesDone = bosses.filter(b=>isBossDefeated(b.id)).length;
   const total = catchable.length + bosses.length;
   return total ? Math.round((locsDone+bossesDone)/total*100) : 0;
@@ -2600,17 +2611,18 @@ function statsCardHtml(){
   const pct = completionPercent();
   const caught = aliveCount()+deadCount();
   const survivalRate = caught>0 ? Math.round(aliveCount()/caught*100) : null;
-  const bossesDefeated = currentGame().bosses.filter(b=>isBossDefeated(b.id)).length;
+  const bosses = activeBosses();
+  const bossesDefeated = bosses.filter(b=>isBossDefeated(b.id)).length;
   const duelTally = rivalDuelTally();
   const tiles = [
     // Reihenfolge: positiv (grün) -> neutral (weiß) -> negativ (rot) -> Fortschritt (gold)
     statTileHtml("dot-good", "Überlebensrate", survivalRate===null?"–":survivalRate+"%"),
-    statTileHtml("dot-good", "Duelle gewonnen", duelTally.wins),
+    ...(state.soloMode ? [] : [statTileHtml("dot-good", "Duelle gewonnen", duelTally.wins)]),
     statTileHtml("", "Gefangen", caught),
     statTileHtml("", "Entwicklungen", state.evolutionCount||0),
     statTileHtml("dot-red", "Gestorben", deadCount()),
-    statTileHtml("dot-red", "Duelle verloren", duelTally.losses),
-    statTileHtml("dot-gold", "Bosse besiegt", `${bossesDefeated}/${currentGame().bosses.length}`),
+    ...(state.soloMode ? [] : [statTileHtml("dot-red", "Duelle verloren", duelTally.losses)]),
+    statTileHtml("dot-gold", "Bosse besiegt", `${bossesDefeated}/${bosses.length}`),
   ].join("");
   return `<div class="card">
     <div class="loc-name" style="margin-bottom:10px;">Statistik</div>
@@ -2650,8 +2662,13 @@ function locationBlockHtml(loc, region, game, currentId){
   const bossIds = game.bossAfter[region+"|"+loc.name];
   if(bossIds) bossIds.forEach(id=>{
     const boss=bossById(id); if(!boss) return;
-    if(boss.final){ html += finalRivalCardHtml(boss, boss.id===currentId); return; }
-    html += bossCardHtml(boss, boss.id===currentId); if(boss.pvp) html += pvpCardHtml(boss);
+    /* "duel-final" ist ausschließlich das Rivalenduell gegen die echte Duellpartnerin/den echten
+       Duellpartner nach dem Champion - im Einzelspieler-Modus gibt es niemanden dafür, die Kachel
+       entfällt komplett (siehe isBossSettled: dort wird sie transparent als "erledigt" behandelt,
+       damit sie den umgebenden Standort nicht dauerhaft am Einklappen hindert). */
+    if(boss.final){ if(!state.soloMode) html += finalRivalCardHtml(boss, boss.id===currentId); return; }
+    html += bossCardHtml(boss, boss.id===currentId);
+    if(boss.pvp && !state.soloMode) html += pvpCardHtml(boss);
   });
   return html;
 }
@@ -2670,8 +2687,11 @@ function collapseToggleHtml(segKey, count, expanded, bodyHtml){
    für Standorte ist: erst wenn Bosskampf (und ein angehängter PvP-Kampf) abgeschlossen sind, gilt die
    Markierung als "erledigt" und wird beim nächsten Fortschritt automatisch ersetzt. */
 function isBossSettled(boss){
+  /* Im Einzelspieler-Modus wird "duel-final" nie gerendert/besiegt (siehe locationBlockHtml) -
+     zählt hier trotzdem als transparent erledigt, damit der Standort davor trotzdem einklappen kann. */
+  if(boss.final && state.soloMode) return true;
   if(!isBossDefeated(boss.id)) return false;
-  if(boss.pvp && !state.pvp[pvpKey(boss.id)]) return false;
+  if(boss.pvp && !state.soloMode && !state.pvp[pvpKey(boss.id)]) return false;
   return true;
 }
 function isCurrentTargetResolved(id){
@@ -2690,14 +2710,48 @@ function locationFullySettled(loc, region, game){
   if(!bossIds) return true;
   return bossIds.every(id=>{ const boss = bossById(id); return !boss || isBossSettled(boss); });
 }
+/* Flache Reihenfolge aller Kacheln (Standorte + angehängte Bosse, region- und listenweise in
+   Anzeige-Reihenfolge, eigene Fundorte am Ende) - Grundlage fürs Weiterspringen der Flagge um
+   genau eine Kachel statt einer Suche "erster offener Standort" quer durch die ganze Liste. */
+function allTileIdsInOrder(){
+  const game = currentGame();
+  const ids = [];
+  game.regions.forEach(([region])=>{
+    state.locations.filter(l=>l.region===region).forEach(loc=>{
+      ids.push(loc.id);
+      const bossIds = game.bossAfter[region+"|"+loc.name];
+      if(bossIds) bossIds.forEach(bid=>{ if(bossById(bid)) ids.push(bid); });
+    });
+  });
+  state.locations.filter(l=>l.custom).forEach(loc=>ids.push(loc.id));
+  return ids;
+}
+/* Nächste noch offene Kachel nach id in dieser Reihenfolge. undefined = id kommt in der aktuellen
+   Kachel-Liste gar nicht (mehr) vor (z.B. gelöschter eigener Fundort) - Aufrufer soll dann auf den
+   generischen Fallback zurückfallen statt die Flagge fälschlich verschwinden zu lassen. null = id
+   gefunden, aber alles danach ist bereits erledigt. */
+function nextUnresolvedAfter(id){
+  const ids = allTileIdsInOrder();
+  const idx = ids.indexOf(id);
+  if(idx===-1) return undefined;
+  for(let i=idx+1;i<ids.length;i++){
+    if(!isCurrentTargetResolved(ids[i])) return ids[i];
+  }
+  return null;
+}
 /* Der Standort, zu dem der "Zum aktuellen Standort"-Button springt: die manuelle Markierung
    (state.currentLocId, per Flaggen-Icon auf jeder Kachel gesetzt - Standort, Boss oder Finale),
-   sofern vorhanden und noch nicht erledigt - sonst automatisch der erste noch offene Standort in
-   Regionen-Reihenfolge. Die manuelle Markierung ist nötig, weil mehrere Standorte gleichzeitig
-   offen bleiben können (z.B. ein Ort, der erst später mit einem HM/Item erreichbar ist) - "der
-   erste offene" ist dann nicht zwangsläufig der Standort, an dem der Spieler gerade tatsächlich ist. */
+   sofern vorhanden und noch nicht erledigt. Wird die markierte Kachel erledigt, springt die Flagge
+   zur nächsten noch offenen Kachel direkt danach (nicht zum ersten offenen Standort irgendwo in der
+   Liste - verzweigt die Story an anderer Stelle weiter, setzt man die Flagge dort selbst manuell neu).
+   Nur wenn noch nie geflaggt wurde (oder die Markierung auf eine inzwischen ungültige Kachel zeigt),
+   dient "erster offener Standort in Regionen-Reihenfolge" als Startpunkt. */
 function effectiveCurrentLocId(){
-  if(state.currentLocId && !isCurrentTargetResolved(state.currentLocId)) return state.currentLocId;
+  if(state.currentLocId){
+    if(!isCurrentTargetResolved(state.currentLocId)) return state.currentLocId;
+    const next = nextUnresolvedAfter(state.currentLocId);
+    if(next !== undefined) return next;
+  }
   const game = currentGame();
   for(const [region] of game.regions){
     const found = state.locations.find(l=>l.region===region && !isLocResolved(l));
@@ -3195,10 +3249,13 @@ function bossCardHtml(boss, isCurrent){
      oben rechts) kollidieren und eine erledigte Kachel lässt sich ohnehin nicht als "aktuell"
      halten (isCurrentTargetResolved räumt die Markierung sofort wieder ab). */
   const flagBtn = defeated ? "" : iconBtn(isCurrent?"tone-good":"tone-neutral","toggle-current-loc",boss.id,isCurrent?ICON_FLAG_FILLED:ICON_FLAG,isCurrent?"Nicht mehr aktueller Standort":"Als aktuellen Standort markieren",false,true);
-  const bottom = `<div class="boss-actions">
-        <button class="btn ${defeated?"btn-secondary":"btn-primary"} btn-block" data-act="toggle-boss-defeat" data-id="${boss.id}">
-          ${defeated ? "Sieg zurücknehmen" : "Als besiegt markieren"}
-        </button>
+  const bottom = defeated
+    ? `<div class="boss-actions">
+        <button class="btn btn-secondary btn-block" data-act="toggle-boss-defeat" data-id="${boss.id}">Sieg zurücknehmen</button>
+      </div>`
+    : `<div class="boss-actions">
+        <button class="btn btn-secondary btn-block" data-act="open-boss-loss" data-id="${boss.id}">Niederlage eintragen</button>
+        <button class="btn btn-primary btn-block" data-act="open-boss-win" data-id="${boss.id}">Als besiegt markieren</button>
       </div>`;
   const isRival = boss.group === "Rivale";
   const rivalNick = isRival ? (state.rivalNickname||"").trim() : "";
@@ -3225,6 +3282,40 @@ function bossCardHtml(boss, isCurrent){
     </div>
     ${bottom}
   </div>`;
+}
+
+/* Sieg/Niederlage gegen einen Story-Boss (nicht zu verwechseln mit dem PvP-Duell gegen die echte
+   Duellpartnerin/den echten Duellpartner, siehe pvpCardHtml) - bei beiden Ausgängen kann man
+   optional festhalten, welche Team-Pokémon dabei gestorben sind. Bei einer Niederlage sind
+   standardmäßig alle angehakt (in der Regel stirbt dabei das ganze Team), bei einem Sieg keins. */
+function teamAliveList(){
+  return state.locations.filter(l=>l.mon && l.mon.inTeam && !l.mon.dead);
+}
+function openBossResultSheet(bossId, result){
+  const boss = bossById(bossId);
+  if(!boss) return;
+  const isLoss = result==="loss";
+  const isRival = boss.group === "Rivale";
+  const rivalNick = isRival ? (state.rivalNickname||"").trim() : "";
+  const displayName = rivalNick || boss.name;
+  const team = teamAliveList();
+  const rows = team.map(loc=>{
+    const m = loc.mon;
+    return `<label class="sheet-option death-check-row">
+      <input type="checkbox" data-death-loc="${loc.id}" ${isLoss?"checked":""} />
+      ${spriteImgHtml(m.species, 40)}
+      <span>${escapeHtml(m.nickname || m.species)}</span>
+    </label>`;
+  }).join("") || `<div class="loc-sub">Kein Pokémon im Team.</div>`;
+  openSheet(`
+    <h3>${isLoss?"Niederlage":"Sieg"} gegen ${escapeHtml(displayName)}</h3>
+    <div class="loc-sub" style="margin-bottom:14px;">${isLoss ? "Welche Team-Pokémon sind dabei gestorben? In der Regel das ganze Team." : "Sind dabei Team-Pokémon gestorben? Optional."}</div>
+    ${rows}
+    <div class="sheet-footer" style="flex-direction:column; gap:10px;">
+      <button class="btn ${isLoss?"btn-secondary":"btn-primary"} btn-block" data-act="confirm-boss-result" data-id="${bossId}" data-result="${result}">${isLoss?"Niederlage eintragen":"Sieg eintragen"}</button>
+      <button class="btn btn-secondary btn-block" data-act="close-sheet">Abbrechen</button>
+    </div>
+  `);
 }
 
 function pvpKey(bossId){ return "pvp-"+bossId; }
@@ -3335,8 +3426,8 @@ function finalStoryBoss(){
 function showChampionCelebration(boss){
   document.querySelector(".champion-overlay")?.remove();
   spawnConfetti();
-  const bossesDefeated = currentGame().bosses.filter(b=>isBossDefeated(b.id)).length;
-  const totalBosses = currentGame().bosses.length;
+  const bossesDefeated = activeBosses().filter(b=>isBossDefeated(b.id)).length;
+  const totalBosses = activeBosses().length;
   const caught = aliveCount()+deadCount();
   const survivalRate = caught>0 ? Math.round(aliveCount()/caught*100) : null;
   const overlay = document.createElement("div");
@@ -3491,8 +3582,8 @@ function hallOfFameCardHtml(){
 function runRecapStats(){
   const caught = aliveCount()+deadCount();
   const survivalRate = caught>0 ? Math.round(aliveCount()/caught*100) : null;
-  const bossesDefeated = currentGame().bosses.filter(b=>isBossDefeated(b.id)).length;
-  const totalBosses = currentGame().bosses.length;
+  const bossesDefeated = activeBosses().filter(b=>isBossDefeated(b.id)).length;
+  const totalBosses = activeBosses().length;
   const duelTally = rivalDuelTally();
   const hof = state.hallOfFame;
   return { caught, survivalRate, bossesDefeated, totalBosses, duelTally, won: hof.result!=="loss" };
@@ -3561,6 +3652,7 @@ const EVENT_TYPE_META = {
   dead:   { tone:"tone-red",   icon:ICON_GRAVE },
   evolve: { tone:"tone-evolve",icon:ICON_EVOLVE },
   boss:   { tone:"tone-good",  icon:ICON_CHECK },
+  bossLoss:{ tone:"tone-red",  icon:ICON_GRAVE },
   pvp:    { tone:"tone-neutral",icon:ICON_POKEBALL },
   final:  { tone:"tone-gold",  icon:ICON_CHECK }
 };
@@ -3576,11 +3668,19 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="log">
 
     <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.26</span><span class="tag tag-feat">Feature</span></div>
+      <h3>Einzelspieler-Modus, Niederlage-Eintrag bei Bosskämpfen, präzisere Flaggen-Sprünge</h3>
+      <p><strong>Einzelspieler-Modus:</strong> Beim Anlegen eines neuen Spielstands lässt sich jetzt wählen, ob der Run mit einer echten Duellpartnerin/einem echten Duellpartner läuft (bisheriges Verhalten) oder allein. Im Solo-Modus entfallen die Rivalenduell-Karten nach jedem Boss ("Du hast gewonnen"/"Rivale hat gewonnen") sowie das finale Rivalenduell samt Ruhmeshalle komplett - Statistik und Gesamtabschluss rechnen entsprechend nur noch mit den echten Bosskämpfen. Die Wahl gilt fest für den jeweiligen Spielstand (wie die Edition) und lässt sich nicht nachträglich in den Einstellungen umschalten, damit Fortschritt/Statistik konsistent bleiben.</p>
+      <p><strong>Niederlage bei Bosskämpfen eintragen:</strong> Bisher ließ sich ein Bosskampf (auch Rivalenkämpfe) nur binär als "besiegt" markieren - eine Niederlage ging spurlos unter. Jede Boss-Kachel hat jetzt zusätzlich einen "Niederlage eintragen"-Button: trägt einen Eintrag im Verlauf ein, ohne den Boss als besiegt zu markieren (erneuter Versuch bleibt möglich). Sowohl beim Eintragen eines Siegs als auch einer Niederlage lässt sich optional festhalten, welche Team-Pokémon dabei gestorben sind (bei einer Niederlage sind alle lebenden Team-Mitglieder vorausgewählt, da meist das ganze Team stirbt; bei einem Sieg keins, da optional) - ausgewählte Pokémon wandern automatisch in den Friedhof, der Verlauf vermerkt die Namen.</p>
+      <p><strong>Flaggen-Sprung korrigiert:</strong> Wurde die aktuell geflaggte Kachel abgeschlossen, sprang die Flagge bisher zur ersten noch offenen Kachel irgendwo in der ganzen Liste - lag die Story an anderer Stelle weiter (z.&nbsp;B. weil man einen erst später erreichbaren Standort übersprungen hatte), sprang die Flagge dadurch fälschlich zurück statt weiter. Sie springt jetzt stattdessen zur nächsten noch offenen Kachel direkt danach in der Anzeige-Reihenfolge. Verzweigt die Story tatsächlich an anderer Stelle weiter, setzt man die Flagge dort weiterhin manuell selbst.</p>
+    </div>
+
+    <div class="entry">
       <div class="entry-head"><span class="ver">v1.8.25</span><span class="tag tag-fix">Fix</span></div>
       <h3>iOS-Viewport-Lücke: viewport-fit=cover entfernt (v1.8.24 reichte noch nicht)</h3>
       <p>Nutzer-Feedback: die Lücke war auch nach v1.8.24 auf dem iPhone 17 Pro noch da. Vergleich mit einer anderen, dort einwandfrei skalierenden installierten Web-App des Nutzers zeigte den entscheidenden Unterschied: deren Seite nutzt gar kein <code>viewport-fit=cover</code> und dementsprechend auch kein einziges <code>env(safe-area-inset-*)</code> in ihrem CSS. Diese App hatte <code>viewport-fit=cover</code> gesetzt, um Inhalte bis an die Bildschirmkanten (unter Notch/Dynamic Island/Home-Indicator) zu zeichnen - genau der Modus, in dem Safaris dvh/vh-Berechnung nachweislich am unzuverlässigsten ist.</p>
       <p><code>viewport-fit=cover</code> aus dem Viewport-Meta-Tag entfernt: Safari begrenzt den Viewport dadurch automatisch auf den sicheren Bereich, ganz ohne manuelle <code>safe-area-inset</code>-Berechnung nötig. Die bestehenden <code>env(safe-area-inset-*)</code>-Aufrufe in Kopf-/Fußleiste bleiben unschädlich im Code stehen (lösen ohne Cover-Modus einfach zu 0 auf), müssen aber nicht entfernt werden.</p>
-      <p>Wichtiger Hinweis: dieser Fix ließ sich in der Sandbox nicht gegen echtes Safari/iOS-Verhalten testen (Chromium bildet <code>viewport-fit</code>/<code>env(safe-area-inset-*)</code> nicht identisch nach) - Bestätigung auf echter Hardware steht noch aus.</p>
+      <p>Wichtiger Hinweis: dieser Fix ließ sich in der Sandbox nicht gegen echtes Safari/iOS-Verhalten testen (Chromium bildet <code>viewport-fit</code>/<code>env(safe-area-inset-*)</code> nicht identisch nach). Update: auf dem echten iPhone 17 Pro bestätigt - die Lücke ist weg.</p>
     </div>
 
     <div class="entry">
@@ -4102,7 +4202,9 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.25.</footer>`;
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.26.</footer>
+
+</div>`;
 
 function openChangelogSheet(){
   openSheet(`
@@ -4154,14 +4256,17 @@ function renderSettings(){
     <button class="btn btn-danger btn-block" data-act="reset-run">Aktuellen Spielstand zurücksetzen</button>
   </div>`);
 
-  html += settingsGroupHtml("duel-bosses", "Duell & Bosse", `
-  <div class="card">
+  html += settingsGroupHtml("duel-bosses", state.soloMode ? "Bosse" : "Duell & Bosse", `
+  ${state.soloMode ? `<div class="card">
+    <div class="loc-name">Einzelspieler-Modus</div>
+    <div class="loc-sub">Dieser Run läuft ohne Duellpartner:in - keine Rivalenduell-Karten nach Bossen, keine Ruhmeshalle. Gilt fest für diesen Spielstand, umschaltbar nur bei der Erstellung eines neuen Spielstands.</div>
+  </div>` : `<div class="card">
     <div class="loc-name">Duellpartner</div>
     <div class="loc-sub" style="margin-bottom:10px;">Name für die Rivalenduelle gegen deine:n echte:n Duellpartner:in (nicht die Spielfigur) – wird u. a. in der Ruhmeshalle verwendet.</div>
     <div class="field" style="margin-bottom:0;">
       <input id="duelPartnerInput" value="${escapeHtml(state.duelPartnerName||"")}" placeholder="z. B. Max" autocomplete="off" />
     </div>
-  </div>
+  </div>`}
   <div class="card boss-bulk">
     <div>
       <div class="loc-name">Alle Bosse</div>
@@ -4601,7 +4706,7 @@ function openNewSaveSheet(){
   const groupsHtml = [...byGen.keys()].sort((a,b)=>a-b).map(gen=>{
     const label = GENERATION_LABELS[gen] || `Generation ${gen}`;
     const opts = byGen.get(gen).sort((a,b)=>(a.releaseOrder||0)-(b.releaseOrder||0)).map(g=>
-      `<button class="sheet-option" data-act="create-save" data-id="${g.id}">${escapeHtml(g.label)}</button>`
+      `<button class="sheet-option" data-act="pick-new-save-edition" data-id="${g.id}">${escapeHtml(g.label)}</button>`
     ).join("");
     return `<div class="sheet-group-header">${escapeHtml(label)}</div>${opts}`;
   }).join("");
@@ -4611,6 +4716,23 @@ function openNewSaveSheet(){
     ${groupsHtml}
     <div class="sheet-footer">
       <button class="btn btn-secondary btn-block" data-act="open-saves-sheet">Zurück</button>
+    </div>
+  `);
+}
+
+/* Zweiter Schritt der Run-Erstellung: Solo/Duell-Modus ist bewusst nur hier (einmalig bei der
+   Erstellung) wählbar, nicht nachträglich in den Einstellungen umschaltbar - er bestimmt dauerhaft,
+   ob Rivalenkämpfe die Freund-Duell-Karte (VS-Sieg/Niederlage, Ruhmeshalle) mitbekommen. */
+function openNewSaveModeSheet(editionId){
+  const game = GAMES[editionId];
+  if(!game) return;
+  openSheet(`
+    <h3>${escapeHtml(game.label)}</h3>
+    <div class="loc-sub" style="margin-bottom:14px;">Spielst du diesen Run mit einer echten Duellpartnerin/einem echten Duellpartner (Rivalenduelle nach jedem Boss, Ruhmeshalle) oder allein?</div>
+    <button class="sheet-option" data-act="create-save" data-id="${editionId}" data-solo="false">Mit Duellpartner:in</button>
+    <button class="sheet-option" data-act="create-save" data-id="${editionId}" data-solo="true">Einzelspieler-Modus</button>
+    <div class="sheet-footer">
+      <button class="btn btn-secondary btn-block" data-act="open-new-save">Zurück</button>
     </div>
   `);
 }
@@ -4744,6 +4866,38 @@ document.addEventListener("click", e=>{
     render();
     lastDefeatedId = null;
     if(!wasDefeated && boss){
+      const finalBoss = finalStoryBoss();
+      if(finalBoss && boss.id===finalBoss.id) showChampionCelebration(boss);
+    }
+  }
+  else if(act==="open-boss-win") openBossResultSheet(id, "win");
+  else if(act==="open-boss-loss") openBossResultSheet(id, "loss");
+  else if(act==="confirm-boss-result"){
+    const boss = bossById(id);
+    if(!boss) return;
+    const result = t.dataset.result;
+    const isRival = boss.group === "Rivale";
+    const rivalNick = isRival ? (state.rivalNickname||"").trim() : "";
+    const displayName = rivalNick || boss.name;
+    const deadNames = [];
+    document.querySelectorAll("[data-death-loc]:checked").forEach(cb=>{
+      const loc = findLoc(cb.dataset.deathLoc);
+      if(!loc || !loc.mon || loc.mon.dead) return;
+      loc.mon.dead = true; loc.mon.inTeam = false;
+      deadNames.push(loc.mon.nickname || loc.mon.species);
+    });
+    if(result==="win"){
+      state.bossDefeated[id] = true;
+      logEvent("boss", `${displayName} besiegt (${boss.place})`);
+    } else {
+      logEvent("bossLoss", `Niederlage gegen ${displayName} (${boss.place})`);
+    }
+    if(deadNames.length) logEvent("dead", `${deadNames.join(", ")} gestorben im Kampf gegen ${displayName}`);
+    saveState();
+    if(result==="win") lastDefeatedId = id;
+    closeSheet(); render();
+    lastDefeatedId = null;
+    if(result==="win"){
       const finalBoss = finalStoryBoss();
       if(finalBoss && boss.id===finalBoss.id) showChampionCelebration(boss);
     }
@@ -4934,7 +5088,7 @@ document.addEventListener("click", e=>{
     openConfirmSheet("Spielstand zurücksetzen", "Wirklich den gesamten Fortschritt dieses Spielstands zurücksetzen? Er bleibt als Spielstand erhalten, startet aber wieder bei null. Das kann nicht rückgängig gemacht werden.", "Zurücksetzen", "confirm-reset-run");
   }
   else if(act==="confirm-reset-run"){
-    state = freshState(state.edition); saveState(); closeSheet(); render();
+    state = freshState(state.edition, state.soloMode); saveState(); closeSheet(); render();
   }
   else if(act==="open-saves-sheet") openSavesSheet();
   else if(act==="open-event-log") openEventLogSheet();
@@ -4961,8 +5115,9 @@ document.addEventListener("click", e=>{
     else failed();
   }
   else if(act==="open-new-save") openNewSaveSheet();
+  else if(act==="pick-new-save-edition") openNewSaveModeSheet(id);
   else if(act==="create-save"){
-    const newId = createSave(id);
+    const newId = createSave(id, t.dataset.solo==="true");
     switchToSave(newId);
     closeSheet(); render();
   }
