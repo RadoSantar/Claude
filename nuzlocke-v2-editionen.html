@@ -2252,13 +2252,16 @@ let boxSortMode = "default"; // "default" (Routen-Reihenfolge) | "name" | "caugh
 function performCatch(id, species, nick){
   const loc = findLoc(id);
   loc.status="caught";
-  loc.mon={ species, nickname:nick, inTeam:false, dead:false, caughtAt:Date.now() };
+  /* Wie im Original: ist im Team noch Platz, tritt ein frisch gefangenes Pokémon automatisch bei,
+     statt erst in der Box zu landen. */
+  const joinsTeam = teamCount()<6;
+  loc.mon={ species, nickname:nick, inTeam:joinsTeam, dead:false, caughtAt:Date.now() };
   logEvent("catch", `${nick ? `${nick} (${species})` : species} auf ${loc.name} gefangen`);
   saveState(); render();
   /* Team ist beim Fangen bereits voll - statt den Fang stillschweigend in der Box zu versenken,
      direkt fragen: ins Team (dann Ersatz wählen wie beim manuellen "Ins Team aufnehmen") oder
-     bewusst auf die Bank. Ist noch Platz frei, bleibt der Fang wie bisher einfach in der Box. */
-  if(teamCount()>=6) openCatchTeamFullSheet(id); else closeSheet();
+     bewusst auf die Bank. */
+  if(!joinsTeam) openCatchTeamFullSheet(id); else closeSheet();
 }
 
 function openCatchTeamFullSheet(locId){
@@ -2324,7 +2327,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.8.27";
+const APP_VERSION = "1.8.28";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -3722,6 +3725,12 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="log">
 
     <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.28</span><span class="tag tag-feat">Feature</span></div>
+      <h3>Frisch gefangene Pokémon treten automatisch dem Team bei</h3>
+      <p>Bisher landete jeder Fang zunächst in der Box, auch wenn das Team noch nicht voll war - man musste jedes Pokémon manuell per "Ins Team aufnehmen" nachziehen. Jetzt tritt ein neu gefangenes Pokémon automatisch dem Team bei, solange darin noch Platz ist (unter sechs Mitgliedern), genau wie im echten Spiel. Ist das Team bereits voll, bleibt es wie gehabt bei der Abfrage "Ins Team aufnehmen (mit Ersatz) oder auf die Bank?" - daran ändert sich nichts.</p>
+    </div>
+
+    <div class="entry">
       <div class="entry-head"><span class="ver">v1.8.27</span><span class="tag tag-feat">Feature</span></div>
       <h3>Ruhmeshalle auch im Einzelspieler-Modus, Standorte ohne Fangmöglichkeit brauchen jetzt eine Bestätigung</h3>
       <p><strong>Ruhmeshalle im Einzelspieler-Modus:</strong> In v1.8.26 entfiel die Ruhmeshalle im Solo-Modus komplett, da sie ursprünglich an das finale Duell gegen eine echte Duellpartnerin/einen echten Duellpartner geknüpft war. Jetzt gibt es sie auch dort - statt des Duells zählt der Sieg über den Champion der Region als krönender Abschluss des Runs. Beim Besiegen wird automatisch ein Snapshot des aktuellen Teams festgehalten (kein manueller Eintrag nötig, anders als beim Duell-Modus), Run-Rückblick funktioniert entsprechend mit angepasstem Wortlaut und ohne die nicht zutreffenden Duell-Statistiken.</p>
@@ -4246,7 +4255,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Abgegebene Pokémon aus der Überlebensrate herausrechnen.</strong> Aktuell zählen abgegebene Pokémon (z.&nbsp;B. bei einer verlorenen Rivalenduell-Niederlage) weiter zur Überlebensrate mit — dadurch kann die Rate auch dann nicht auf 0% fallen, wenn tatsächlich das komplette verbliebene Team gestorben ist. Abgegebene sollten aus der Berechnung ausgeschlossen werden.</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Farbcodierte Überlebensrate.</strong> Die Statistik-Kachel „Überlebensrate" soll je nach Wert die Farbe wechseln: ab 50% Grün, 25–49% Gelb, 0–24% Rot.</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Rivalen-Umbenennung auch in den Einstellungen.</strong> Der Ingame-Rivalenname lässt sich bisher nur per Klick auf den Namen selbst anpassen (bleibt so erhalten) — zusätzlich soll dafür unter „Duell &amp; Bosse" ein Eingabefeld analog zum Duellpartner-Namen stehen.</div>
-    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Gefangene Pokémon automatisch ins Team statt in die Box.</strong> Ist das Team noch nicht voll (unter sechs), soll ein neu gefangenes Pokémon automatisch dem Team beitreten statt in der Box zu landen — entspricht dem tatsächlichen Spielverhalten.</div>
+    <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Gefangene Pokémon automatisch ins Team statt in die Box.</strong> Ist das Team noch nicht voll (unter sechs), tritt ein neu gefangenes Pokémon automatisch dem Team bei statt in der Box zu landen — entspricht dem tatsächlichen Spielverhalten. <em>→ umgesetzt in v1.8.28.</em></div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Soul-Link-Modus.</strong> Für den Coop-Ursprung der App passend: Encounter zwischen beiden Spieler:innen 1:1 koppeln — stirbt das erste Pokémon von Partner A, muss Partner B seins an derselben Stelle ebenfalls aufgeben. Klassische Nuzlocke-Coop-Hausregel, aktuell nicht abgebildet.</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Regelwerk-Checkliste pro Run.</strong> Die üblichen Nuzlocke-Hausregeln (Set-Modus, Species Clause, kein Item im Kampf, Level-Cap je Boss, Dupes Clause gibt es schon) als an-/abwählbare Liste zu Beginn eines Runs, rein zur Dokumentation, welche Regeln galten.</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Notizfeld pro Boss statt nur pro Standort.</strong> Bei einem Randomizer ist das gegnerische Team jedes Mal anders — aktuell lässt sich nur der „Ace" nachschlagen. Ein Freitextfeld pro Boss fürs komplette gegnerische Team wäre für Strategie-Notizen hilfreich.</div>
@@ -4280,7 +4289,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.27.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.28.</footer>
 
 </div>`;
 
