@@ -637,16 +637,26 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
   transition:opacity .2s ease; display:flex; align-items:flex-end; justify-content:center;
 }
 .sheet-backdrop.active{ opacity:1; pointer-events:auto; }
+/* Der Ziehgriff lebt in einem eigenen, nicht scrollenden .sheet-handle-bar-Kopf statt als erstes
+   Kind im scrollenden Inhalt: sonst scrollt er bei langen Inhalten (Änderungsprotokoll, Verlauf)
+   aus dem sichtbaren Bereich, sobald man weiter unten ist - dann lässt sich das Sheet erst wieder
+   per Ziehgriff schließen, nachdem man zurück nach oben gescrollt hat. Mit eigenem Kopfbereich
+   bleibt der Griff unabhängig von der Scroll-Position des Inhalts jederzeit erreichbar. */
 .sheet{
   background:var(--surface); width:100%; max-width:640px; border-radius:20px 20px 0 0;
-  padding:10px 18px calc(20px + env(safe-area-inset-bottom)); transform:translateY(100%);
-  transition:transform .25s cubic-bezier(.32,.72,0,1); max-height:80vh; overflow-y:auto;
-  scrollbar-width:none; -ms-overflow-style:none;
+  padding:0; transform:translateY(100%);
+  transition:transform .25s cubic-bezier(.32,.72,0,1); max-height:80vh;
+  display:flex; flex-direction:column; overflow:hidden;
 }
-.sheet::-webkit-scrollbar{ display:none; }
 .sheet-backdrop.active .sheet{ transform:translateY(0); }
+.sheet-handle-bar{ flex:none; padding:10px 18px 0; }
 .sheet-handle{ width:36px; height:4px; background:var(--line); border-radius:999px; margin:6px auto 14px; position:relative; touch-action:none; }
 .sheet-handle::after{ content:""; position:absolute; inset:-18px -44px; }
+.sheet-body{
+  flex:1; overflow-y:auto; padding:0 18px calc(20px + env(safe-area-inset-bottom));
+  scrollbar-width:none; -ms-overflow-style:none;
+}
+.sheet-body::-webkit-scrollbar{ display:none; }
 .sheet h3{ font-size:1.05rem; margin-bottom:4px; }
 .sheet .loc-sub{ margin-bottom:14px; }
 .field{ margin-bottom:14px; }
@@ -2327,7 +2337,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.8.29";
+const APP_VERSION = "1.8.30";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -3724,6 +3734,13 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="log">
 
     <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.30</span><span class="tag tag-fix">Fix</span></div>
+      <h3>Sheets lassen sich jetzt immer per Ziehgriff schließen, egal wie weit gescrollt</h3>
+      <p>Der Ziehgriff zum Schließen eines Sheets (Änderungsprotokoll, Verlauf und alle anderen Dialoge) war bisher das erste Element im scrollenden Inhalt - bei langen Inhalten scrollte er dadurch aus dem Sichtbereich, sobald man weiter unten war. Um das Sheet dann per Wisch-Geste zu schließen, musste man erst wieder ganz nach oben scrollen.</p>
+      <p>Der Griff lebt jetzt in einem eigenen, nicht scrollenden Kopfbereich oberhalb des eigentlichen (jetzt separat scrollenden) Inhalts - bleibt dadurch unabhängig von der Scroll-Position immer sichtbar und greifbar.</p>
+    </div>
+
+    <div class="entry">
       <div class="entry-head"><span class="ver">v1.8.29</span><span class="tag tag-fix">Fix</span></div>
       <h3>Einklappen läuft jetzt pro Kachel statt pro Standort-Block</h3>
       <p>Ein an einem Standort hängender Bosskampf konnte bereits abgeschlossen sein, während der Standort selbst noch nicht fangbar war (z.&nbsp;B. weil dafür erst noch eine Angel fehlt) - trotzdem blieb bisher der komplette Block (Standort + Boss) offen stehen, weil beide zusammen als eine Einheit einklappten. Das erledigte Trainerduell verschwand dadurch nicht aus der Übersicht, obwohl es längst abgehakt war.</p>
@@ -4295,7 +4312,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.29.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.30.</footer>
 
 </div>`;
 
@@ -4474,7 +4491,10 @@ function render(){
 /* ---------- sheet ---------- */
 const sheetBackdrop = document.getElementById("sheetBackdrop");
 const sheetEl = document.getElementById("sheet");
-function openSheet(html){ sheetEl.innerHTML = `<div class="sheet-handle"></div>` + html; sheetBackdrop.classList.add("active"); }
+function openSheet(html){
+  sheetEl.innerHTML = `<div class="sheet-handle-bar"><div class="sheet-handle"></div></div><div class="sheet-body">${html}</div>`;
+  sheetBackdrop.classList.add("active");
+}
 function closeSheet(){ sheetBackdrop.classList.remove("active"); }
 sheetBackdrop.addEventListener("click", e=>{ if(e.target===sheetBackdrop) closeSheet(); });
 
