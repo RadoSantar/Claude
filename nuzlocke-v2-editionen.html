@@ -137,15 +137,17 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 .edition-badge:active{ transform:scale(.96); }
 .edition-badge .pokeball{ width:18px; height:18px; }
 .edition-badge .pokeball circle:first-child, .edition-badge .pokeball path{ stroke:var(--accent); }
-.brand-title-col{ flex:1; min-width:0; display:flex; flex-direction:column; }
+.brand-title-col{ flex:1; min-width:0; display:flex; align-items:center; gap:8px; }
 .title-input{
-  font-family:var(--font-display); font-size:1.28rem; font-weight:700;
-  background:transparent; border:none; outline:none; width:100%; color:var(--ink);
-  padding:2px 0;
+  font-family:var(--font-display); font-size:1.15rem; font-weight:700;
+  background:transparent; border:none; outline:none; color:var(--ink);
+  padding:2px 0; flex:1 1 auto; min-width:0;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
 }
 .active-title-badge{
-  display:none; font-size:.72rem; font-weight:700; color:var(--accent);
-  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  display:none; flex:none; font-size:.72rem; font-weight:700; color:var(--accent);
+  background:var(--accent-soft); border-radius:999px; padding:4px 10px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:45%;
 }
 .icon-btn{
   width:40px; height:40px; border-radius:50%; border:1px solid var(--line);
@@ -2446,7 +2448,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.8.35";
+const APP_VERSION = "1.8.36";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -3991,7 +3993,7 @@ function renderActiveTitleBadge(){
   const el = document.getElementById("activeTitleBadge");
   if(!el) return;
   const a = state.activeTitle ? ACHIEVEMENTS.find(x=>x.id===state.activeTitle) : null;
-  if(a && state.achievements[a.id]){ el.textContent = `★ ${a.title}`; el.style.display = "block"; }
+  if(a && state.achievements[a.id]){ el.textContent = `★ ${a.title}`; el.style.display = "inline-block"; }
   else { el.textContent = ""; el.style.display = "none"; }
 }
 const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einfachen Routen-/Team-Trackers für einen einzelnen Johto-Run über dessen zwei eingefrorene Zwischenstände (als Prototyp- und Vorgängerprojekt weiter unten dokumentiert) bis zum aktuellen Tracker mit <strong>14 Editionen über die vollständigen Generationen 1–5</strong> — jede mit eigens recherchierten Original-Leveln, Bossen und deutschen Namen statt wiederverwendeter Remake-Daten, dazu Mehrfach-Speicherstände, Ruhmeshalle, Box-Suche und Offline-Installation als PWA.</p>
@@ -4009,6 +4011,12 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.36</span><span class="tag tag-fix">Politur</span></div>
+      <h3>Aktiver Titel jetzt in derselben Zeile wie der Run-Titel</h3>
+      <p>Der Titel-Badge im Kopfbereich stand bisher in einer eigenen Zeile unter dem Run-Titel und wirkte dadurch unruhig. Steht jetzt als kompakte Pille direkt neben dem Run-Titel-Textfeld, das dafür etwas kleiner geworden ist und bei langen Titeln/Run-Titeln sauber mit "…" abschneidet statt umzubrechen oder den Bildschirmrand zu sprengen.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.8.35</span><span class="tag tag-feat">Feature</span></div>
@@ -4652,7 +4660,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.35.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.36.</footer>
 
 </div>`;
 
