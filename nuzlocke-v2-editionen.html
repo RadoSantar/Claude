@@ -2417,6 +2417,7 @@ let lastEvolvedId = null;
 let lastDefeatedId = null;
 let lastFinalRivalFlash = false;
 let pendingCatchData = null;
+let savesArchiveOpen = false; // ob der eingeklappte "Archiv"-Abschnitt im Spielstände-Sheet offen ist - bewusst nicht persistiert
 /* Für Erfolge, die wissen müssen, wie viele Teammitglieder in GENAU diesem einen Kampf gestorben
    sind (z.B. "Six Feet Under") - checkAchievements() selbst bekommt keine Kampf-Details übergeben,
    sondern liest nur den aktuellen state. Diese drei Variablen merken sich kurzzeitig das Ergebnis
@@ -2480,6 +2481,7 @@ const ICON_FLAG = '<svg viewBox="0 0 24 24"><path d="M6 21V4" stroke-linecap="ro
 const ICON_FLAG_FILLED = '<svg viewBox="0 0 24 24"><path d="M6 21V4" stroke-linecap="round"/><path d="M6 4h12l-3.5 4.5L18 13H6" fill="currentColor"/></svg>';
 const ICON_NOTE = '<svg viewBox="0 0 24 24"><path d="M6 3h9l5 5v12a1 1 0 01-1 1H6a1 1 0 01-1-1V4a1 1 0 011-1z"/><path d="M14.5 3v5.5H20"/><path d="M8 13h8M8 17h5"/></svg>';
 const ICON_DICE = '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8" cy="8" r="1.3" fill="currentColor" stroke="none"/><circle cx="16" cy="8" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="8" cy="16" r="1.3" fill="currentColor" stroke="none"/><circle cx="16" cy="16" r="1.3" fill="currentColor" stroke="none"/></svg>';
+const ICON_ARCHIVE = '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="4.5" rx="1.2"/><path d="M5 8.5V19a1 1 0 001 1h12a1 1 0 001-1V8.5"/><path d="M10 13h4"/></svg>';
 
 /* Zufalls-Spitznamen-Generator: bewusst spezies-unabhängige, generische Namen statt z.B. aus dem
    Typ oder der Art abgeleiteter Vorschläge - einfacher zu pflegen und passt trotzdem auf jedes
@@ -2521,7 +2523,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.8.41";
+const APP_VERSION = "1.8.42";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -2660,6 +2662,20 @@ function statsForSave(save){
     durationDays: firstTs ? Math.max(0, Math.floor((Date.now()-firstTs)/(1000*60*60*24))) : null
   };
 }
+/* Für's Archivieren: ein Run gilt als "abgeschlossen", sobald er ein Ergebnis hat - erfolgreich
+   (Champion/finales Duell gewonnen, hallOfFame.result==="win") oder gescheitert (kompletter
+   Team-Wipe, siehe checkGameOver(), oder ein verlorenes finales Duell ohne Wipe). Ein bereits
+   gefeierter Sieg zählt auch dann noch als "erfolgreich", wenn danach im Postgame doch noch alles
+   ausstirbt - das Ziel wurde ja schon erreicht, deshalb wird zuerst auf hallOfFame.result==="win"
+   geprüft. Laufende Runs ohne Ergebnis liefern null und lassen sich nicht archivieren. */
+function saveOutcome(save){
+  if(save.hallOfFame && save.hallOfFame.result==="win") return "win";
+  const alive = save.locations.filter(l=>l.mon && !l.mon.dead).length;
+  const dead = save.locations.filter(l=>l.mon && l.mon.dead).length;
+  if(alive+dead>0 && alive===0) return "loss";
+  if(save.hallOfFame && save.hallOfFame.result==="loss") return "loss";
+  return null;
+}
 function allSavesStats(){
   return loadSavesIndex().map(meta=>{
     const save = loadSaveState(meta.id);
@@ -2705,6 +2721,19 @@ function createSave(editionId, soloMode){
   const id = newSaveId();
   writeSave(id, freshState(editionId, soloMode));
   return id;
+}
+
+/* Archivieren ist rein organisatorisch (blendet den Run in der Hauptliste des Spielstände-Sheets
+   aus, siehe openSavesSheet) - der Spielstand bleibt vollständig nutzbar und wechselbar, nur eben
+   nicht mehr im Weg, wenn man zwischen laufenden Runs wählt. Das Flag lebt bewusst nur im Index
+   (nicht im vollen state), da writeSave() beim Speichern nur title/edition/updatedAt überschreibt
+   und alle anderen Index-Felder unangetastet lässt. */
+function setSaveArchived(id, archived){
+  const index = loadSavesIndex();
+  const entry = index.find(s=>s.id===id);
+  if(!entry) return;
+  entry.archived = archived;
+  persistSavesIndex(index);
 }
 
 function deleteSave(id){
@@ -4393,6 +4422,12 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="log">
 
     <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.42</span><span class="tag tag-feat">Feature</span></div>
+      <h3>Runs archivieren</h3>
+      <p><strong>Abgeschlossene Runs archivieren:</strong> im Spielstände-Sheet lässt sich jeder abgeschlossene Run - erfolgreich (Champion bzw. finales Duell gewonnen) oder gescheitert (kompletter Team-Wipe bzw. verlorenes finales Duell) - jetzt archivieren. Archivierte Runs verschwinden aus der Hauptliste und landen stattdessen in einem eigenen, eingeklappten „Archiv"-Abschnitt darunter, mit Erfolgs-/Niederlage-Kennzeichnung. Sie bleiben dabei voll nutzbar und lassen sich jederzeit wieder zurückholen oder ganz löschen - nur laufende Runs lassen sich nicht archivieren, das Angebot erscheint erst nach einem Ergebnis.</p>
+    </div>
+
+    <div class="entry">
       <div class="entry-head"><span class="ver">v1.8.41</span><span class="tag tag-feat">Feature</span></div>
       <h3>Erste-Schritte-Tour, Zufalls-Spitznamen, Bestenliste & mehr</h3>
       <p><strong>Erste-Schritte-Tour:</strong> beim allerersten Öffnen führt jetzt eine kurze, 5-teilige Tour durch die wichtigsten Bereiche (Fangen &amp; Bosse, Team &amp; Box, Erfolge &amp; Titel, Einstellungen). Überspringen jederzeit möglich, lässt sich unter „Werkzeuge" beliebig oft erneut starten.</p>
@@ -5096,7 +5131,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.41.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.42.</footer>
 
 </div>`;
 
@@ -5755,25 +5790,51 @@ function openAddLocationSheet(){
   setTimeout(()=>document.getElementById("inLocName").focus(), 50);
 }
 
+function outcomeBadgeHtml(outcome){
+  if(outcome==="win") return `<span class="chip good">Erfolgreich</span>`;
+  if(outcome==="loss") return `<span class="chip red">Gescheitert</span>`;
+  return "";
+}
+
+/* Spielstände-Sheet: laufende Runs oben, abgeschlossene archivierte Runs (erfolgreich ODER
+   gescheitert, siehe saveOutcome()) eingeklappt darunter - so bleibt die Hauptliste beim
+   Wechseln zwischen aktiven Runs übersichtlich, alte Runs gehen aber nicht verloren. Nur
+   abgeschlossene Runs lassen sich überhaupt archivieren (Button erscheint erst dann). */
 function openSavesSheet(){
-  const saves = loadSavesIndex().slice().sort((a,b)=>b.updatedAt-a.updatedAt);
-  const canDelete = saves.length > 1;
-  const rows = saves.map(s=>{
+  const all = loadSavesIndex().slice().sort((a,b)=>b.updatedAt-a.updatedAt);
+  const active = all.filter(s=>!s.archived);
+  const archived = all.filter(s=>s.archived);
+  const canDelete = all.length > 1;
+  const rowHtml = (s, isArchived)=>{
     const isActive = s.id===activeSaveId;
     const game = GAMES[s.edition];
+    const save = loadSaveState(s.id);
+    const outcome = save ? saveOutcome(save) : null;
+    const archiveBtn = !isArchived && outcome
+      ? iconBtn("tone-neutral","archive-save",s.id,ICON_ARCHIVE,"Run archivieren",false,true)
+      : isArchived
+        ? iconBtn("tone-neutral","unarchive-save",s.id,ICON_UNDO,"Aus dem Archiv zurückholen",false,true)
+        : "";
     return `<div class="save-row${isActive?" active":""}">
       <button class="save-row-main" data-act="switch-save" data-id="${s.id}">
-        <div class="save-row-title">${escapeHtml(s.title||"Nuzlocke")}${isActive?` <span class="chip accent">Aktiv</span>`:""}</div>
+        <div class="save-row-title">${escapeHtml(s.title||"Nuzlocke")}${isActive?` <span class="chip accent">Aktiv</span>`:""}${outcomeBadgeHtml(outcome)}</div>
         <div class="loc-sub">${escapeHtml(game?game.shortLabel:s.edition)} · ${formatRelativeTime(s.updatedAt)}</div>
       </button>
+      ${archiveBtn}
       ${canDelete ? iconBtn("tone-red","delete-save",s.id,ICON_TRASH,"Spielstand löschen",false,true) : ""}
     </div>`;
-  }).join("");
+  };
+  const rows = active.map(s=>rowHtml(s,false)).join("") || `<div class="loc-sub">Keine laufenden Spielstände.</div>`;
+  const archiveToggle = archived.length ? `<button class="region-header settings-group-header" data-act="toggle-saves-archive" style="margin-top:10px;">
+    <span>Archiv (${archived.length})</span>
+    <svg class="collapse-chevron${savesArchiveOpen?" open":""}" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
+  </button>${savesArchiveOpen ? archived.map(s=>rowHtml(s,true)).join("") : ""}` : "";
   openSheet(`
     <h3>Spielstände</h3>
     <div class="loc-sub" style="margin-bottom:14px;">Zwischen mehreren Runs wechseln, ohne dass Fortschritt verloren geht.</div>
     ${rows}
     <button class="btn btn-primary btn-block" style="margin-top:6px;" data-act="open-new-save">+ Neuer Spielstand</button>
+    ${archiveToggle}
   `);
 }
 
@@ -6285,6 +6346,9 @@ document.addEventListener("click", e=>{
     deleteSave(id);
     closeSheet(); render();
   }
+  else if(act==="archive-save"){ setSaveArchived(id, true); openSavesSheet(); }
+  else if(act==="unarchive-save"){ setSaveArchived(id, false); openSavesSheet(); }
+  else if(act==="toggle-saves-archive"){ savesArchiveOpen = !savesArchiveOpen; openSavesSheet(); }
   else if(act==="set-active-title"){
     state.activeTitle = id && state.achievements[id] ? id : null;
     saveState(); renderActiveTitleBadge(); render();
