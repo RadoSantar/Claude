@@ -391,6 +391,17 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 .event-text{ font-size:.86rem; font-weight:600; line-height:1.4; }
 .event-time{ font-size:.72rem; color:var(--ink-soft); margin-top:2px; }
 
+.leaderboard-list{ display:flex; flex-direction:column; gap:10px; }
+.leaderboard-row{ padding:12px; border-radius:14px; background:var(--surface-alt); }
+.leaderboard-row.active{ box-shadow:inset 0 0 0 1.5px var(--accent); }
+.leaderboard-title{ font-weight:700; font-size:.92rem; }
+.leaderboard-tag{ font-size:.68rem; font-weight:700; color:var(--accent); background:var(--accent-soft); border-radius:999px; padding:2px 8px; margin-left:4px; }
+.leaderboard-sub{ font-size:.76rem; color:var(--ink-soft); margin-top:2px; margin-bottom:10px; }
+.leaderboard-stats{ display:flex; gap:8px; }
+.leaderboard-stats > div{ flex:1; background:var(--surface); border-radius:10px; padding:8px 6px; text-align:center; }
+.leaderboard-stats span{ display:block; font-family:var(--font-mono); font-variant-numeric:tabular-nums; font-size:1rem; font-weight:800; color:var(--accent); }
+.leaderboard-stats label{ display:block; font-size:.64rem; color:var(--ink-soft); margin-top:2px; }
+
 /* Änderungsprotokoll-Sheet: Inhalt (CHANGELOG_HTML) stammt 1:1 aus dem separat veröffentlichten
    Changelog-Artifact, hier nur mit App-eigenen Design-Tokens statt dessen eigener Palette
    nachgestylt, damit es sich hell/dunkel wie der Rest der App verhält. */
@@ -659,6 +670,27 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 .game-over-stats > div{ flex:1; background:var(--surface-alt); border-radius:14px; padding:12px 8px; }
 .game-over-stats span{ display:block; font-family:var(--font-mono); font-variant-numeric:tabular-nums; font-size:1.15rem; font-weight:800; color:var(--red); }
 .game-over-stats label{ display:block; font-size:.68rem; color:var(--ink-soft); margin-top:3px; }
+
+.onboarding-overlay{
+  position:fixed; inset:0; z-index:75; display:flex; align-items:center; justify-content:center;
+  padding:24px; background:rgba(10,8,4,0.55); backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px);
+}
+.onboarding-card{
+  position:relative; background:var(--surface); border-radius:24px; padding:40px 26px 26px; max-width:360px; width:100%;
+  text-align:center; box-shadow:0 20px 60px rgba(0,0,0,0.4);
+}
+.onboarding-skip{
+  position:absolute; top:14px; right:14px; background:none; border:none; font-size:.78rem; font-weight:700;
+  color:var(--ink-soft); padding:6px 8px; cursor:pointer;
+}
+.onboarding-icon{ font-size:3rem; line-height:1; margin-bottom:10px; }
+.onboarding-card h2{ font-size:1.15rem; font-weight:800; margin:4px 0 10px; }
+.onboarding-text{ font-size:.9rem; color:var(--ink-soft); line-height:1.5; margin-bottom:18px; }
+.onboarding-dots{ display:flex; gap:6px; justify-content:center; margin-bottom:20px; }
+.onboarding-dot{ width:7px; height:7px; border-radius:50%; background:var(--line); }
+.onboarding-dot.active{ background:var(--accent); }
+.onboarding-actions{ display:flex; justify-content:space-between; align-items:center; gap:10px; }
+.onboarding-actions .btn{ flex:1; }
 
 .achievement-toast{
   position:fixed; top:calc(14px + env(safe-area-inset-top)); left:50%; transform:translateX(-50%);
@@ -2409,6 +2441,7 @@ function performCatch(id, species, nick){
   const joinsTeam = teamCount()<6;
   loc.mon={ species, nickname:nick, inTeam:joinsTeam, dead:false, caughtAt:Date.now() };
   logEvent("catch", `${nick ? `${nick} (${species})` : species} auf ${loc.name} gefangen`);
+  if(joinsTeam) logEvent("team", `${nick || species} kam ins Team`);
   vibrateFeedback(35);
   saveState(); render();
   /* Team ist beim Fangen bereits voll - statt den Fang stillschweigend in der Box zu versenken,
@@ -2446,6 +2479,13 @@ const ICON_EDIT = '<svg viewBox="0 0 24 24"><path d="M16.5 3.5a2.12 2.12 0 013 3
 const ICON_FLAG = '<svg viewBox="0 0 24 24"><path d="M6 21V4" stroke-linecap="round"/><path d="M6 4h12l-3.5 4.5L18 13H6"/></svg>';
 const ICON_FLAG_FILLED = '<svg viewBox="0 0 24 24"><path d="M6 21V4" stroke-linecap="round"/><path d="M6 4h12l-3.5 4.5L18 13H6" fill="currentColor"/></svg>';
 const ICON_NOTE = '<svg viewBox="0 0 24 24"><path d="M6 3h9l5 5v12a1 1 0 01-1 1H6a1 1 0 01-1-1V4a1 1 0 011-1z"/><path d="M14.5 3v5.5H20"/><path d="M8 13h8M8 17h5"/></svg>';
+const ICON_DICE = '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8" cy="8" r="1.3" fill="currentColor" stroke="none"/><circle cx="16" cy="8" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="8" cy="16" r="1.3" fill="currentColor" stroke="none"/><circle cx="16" cy="16" r="1.3" fill="currentColor" stroke="none"/></svg>';
+
+/* Zufalls-Spitznamen-Generator: bewusst spezies-unabhängige, generische Namen statt z.B. aus dem
+   Typ oder der Art abgeleiteter Vorschläge - einfacher zu pflegen und passt trotzdem auf jedes
+   Pokémon, ohne eine komplette Arten-Datenbank für Wortspiele zu brauchen. */
+const RANDOM_NICKNAMES = ["Keks","Socke","Blitzchen","Nudel","Krümel","Wuschel","Fussel","Mampf","Schnute","Pixel","Chaos","Turbo","Muffin","Bolzen","Schrott","Zwerg","Riese","Fluse","Molli","Pummel","Speedy","Pfeffer","Zimt","Waffel","Kessel","Klecks","Rakete","Plüsch","Senf","Popel","Krosse","Prinz","Prinzessin","Grumpy","Sunny","Wolke","Donner","Sturm","Perle","Kiesel","Schoko","Karamell","Pudding","Gummi","Flitzer","Brummer","Schnarch","Kuller","Wackel","Zappel"];
+function randomNickname(){ return RANDOM_NICKNAMES[Math.floor(Math.random()*RANDOM_NICKNAMES.length)]; }
 const ICON_NOTE_FILLED = '<svg viewBox="0 0 24 24"><path d="M6 3h9l5 5v12a1 1 0 01-1 1H6a1 1 0 01-1-1V4a1 1 0 011-1z" fill="currentColor"/><path d="M14.5 3v5.5H20" fill="var(--surface)"/><path d="M8 13h8M8 17h5" stroke="var(--surface)"/></svg>';
 const ICON_KEBAB = '<svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.7" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.7" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="1.7" fill="currentColor" stroke="none"/></svg>';
 const ICON_INFO = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6" stroke-linecap="round"/><circle cx="12" cy="7.5" r="1" fill="currentColor" stroke="none"/></svg>';
@@ -2481,7 +2521,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.8.40";
+const APP_VERSION = "1.8.41";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -2514,7 +2554,7 @@ function freshState(editionId, soloMode){
     names.forEach(entry=>{ locations.push(parseLocationEntry(region, entry)); });
   });
   const gameStarters = GAMES[edition].starters || { grass:"", fire:"", water:"" };
-  return { edition, runTitle:"Nuzlocke", soloMode:!!soloMode, locations, bossBoosts:{}, bossDefeated:{}, rivalNickname:"", duelPartnerName:"", dupesWarning:true, lastExportAt:null, evolutionCount:0, lossCount:0, nicknameRequired:false, pvp:{}, hallOfFame:{ rivalTeam:[], playerTeam:[], defeatedAt:null, result:null }, starterNames:{ ...gameStarters }, starterChoice:null, currentLocId:null, eventLog:[], hiddenRegions:[], achievements:{}, activeTitle:null, dupesIgnoredCount:0, bossLossIds:{}, cleanBossWins:{}, bossNotes:{}, randomizerSeed:"", vibrationEnabled:true, bossWinTeams:{} };
+  return { edition, runTitle:"Nuzlocke", soloMode:!!soloMode, locations, bossBoosts:{}, bossDefeated:{}, rivalNickname:"", duelPartnerName:"", dupesWarning:true, lastExportAt:null, evolutionCount:0, lossCount:0, nicknameRequired:false, pvp:{}, hallOfFame:{ rivalTeam:[], playerTeam:[], defeatedAt:null, result:null }, starterNames:{ ...gameStarters }, starterChoice:null, currentLocId:null, eventLog:[], hiddenRegions:[], achievements:{}, activeTitle:null, dupesIgnoredCount:0, bossLossIds:{}, cleanBossWins:{}, bossNotes:{}, randomizerSeed:"", vibrationEnabled:true, bossWinTeams:{}, hidePostgame:false };
 }
 
 /* Ergänzt neu hinzugekommene Standorte (z.B. nachträglich eingefügte Städte) in einen bereits
@@ -2565,6 +2605,7 @@ function normalizeState(parsed){
   if(typeof parsed.randomizerSeed !== "string") parsed.randomizerSeed = "";
   if(typeof parsed.vibrationEnabled !== "boolean") parsed.vibrationEnabled = true;
   if(!parsed.bossWinTeams) parsed.bossWinTeams = {};
+  if(typeof parsed.hidePostgame !== "boolean") parsed.hidePostgame = false;
   syncLocations(parsed);
   return parsed;
 }
@@ -2595,6 +2636,60 @@ function loadSaveState(id){
     if(raw) return normalizeState(JSON.parse(raw));
   }catch(e){}
   return null;
+}
+
+/* Bestenliste über alle Spielstände: bewusst EIGENE, parametrisierte Kennzahlen-Berechnung statt
+   Wiederverwendung von completionPercent()/survivalRate()/aliveCount() & co. - die lesen alle
+   implizit die globale `state`-Variable, ein Umschalten auf einen fremden Spielstand nur zum
+   Berechnen (und zurück) wäre unnötig riskant für den gerade aktiven Spielstand. */
+function statsForSave(save){
+  const game = GAMES[save.edition];
+  const bosses = game ? game.bosses.filter(b=>!(b.final && save.soloMode)) : [];
+  const bossesDone = bosses.filter(b=>!!save.bossDefeated[b.id]).length;
+  const catchable = save.locations.filter(l=>!l.noCatch);
+  const locsDone = catchable.filter(l=>l.status!=="pending").length;
+  const totalItems = catchable.length + bosses.length;
+  const completionPct = totalItems ? Math.round((locsDone+bossesDone)/totalItems*100) : 0;
+  const relevant = save.locations.filter(l=>l.mon && !l.mon.given);
+  const survival = relevant.length ? Math.round(relevant.filter(l=>!l.mon.dead).length/relevant.length*100) : null;
+  const firstTs = save.eventLog && save.eventLog.length ? save.eventLog[0].ts : null;
+  return {
+    title: save.runTitle || "Nuzlocke",
+    editionLabel: game ? game.shortLabel : save.edition,
+    completionPct, survival, bossesDone, bossesTotal: bosses.length,
+    durationDays: firstTs ? Math.max(0, Math.floor((Date.now()-firstTs)/(1000*60*60*24))) : null
+  };
+}
+function allSavesStats(){
+  return loadSavesIndex().map(meta=>{
+    const save = loadSaveState(meta.id);
+    if(!save) return null;
+    return { id: meta.id, isActive: meta.id===activeSaveId, ...statsForSave(save) };
+  }).filter(Boolean).sort((a,b)=> b.completionPct - a.completionPct);
+}
+function openLeaderboardSheet(){
+  const rows = allSavesStats();
+  const rowsHtml = rows.map(r=>`
+    <div class="leaderboard-row${r.isActive?" active":""}">
+      <div class="leaderboard-main">
+        <div class="leaderboard-title">${escapeHtml(r.title)}${r.isActive?' <span class="leaderboard-tag">aktuell</span>':""}</div>
+        <div class="leaderboard-sub">${escapeHtml(r.editionLabel)} · ${r.durationDays===null?"–":(r.durationDays<1?"<1 Tag":r.durationDays===1?"1 Tag":r.durationDays+" Tage")}</div>
+      </div>
+      <div class="leaderboard-stats">
+        <div><span>${r.completionPct}%</span><label>Abschluss</label></div>
+        <div><span>${r.survival===null?"–":r.survival+"%"}</span><label>Überlebt</label></div>
+        <div><span>${r.bossesDone}/${r.bossesTotal}</span><label>Bosse</label></div>
+      </div>
+    </div>
+  `).join("") || `<div class="loc-sub">Noch keine Spielstände vorhanden.</div>`;
+  openSheet(`
+    <h3>Bestenliste</h3>
+    <div class="loc-sub" style="margin-bottom:14px;">Alle Spielstände nach Gesamtabschluss sortiert.</div>
+    <div class="leaderboard-list">${rowsHtml}</div>
+    <div class="sheet-footer" style="margin-top:14px;">
+      <button class="btn btn-primary btn-block" data-act="close-sheet">Schließen</button>
+    </div>
+  `);
 }
 
 function writeSave(id, saveData){
@@ -2798,6 +2893,19 @@ function completionPercent(){
   return total ? Math.round((locsDone+bossesDone)/total*100) : 0;
 }
 
+/* Run-Dauer: grob aus dem Verlauf abgeleitet (erstes Ereignis bis jetzt bzw. bis zum übergebenen
+   Endzeitpunkt) statt einer eigenen "Run gestartet am"-Zeitstempel-Property - der Verlauf beginnt
+   ohnehin exakt beim ersten Fang/Ereignis, ein zusätzliches Feld wäre redundant. */
+function formatDuration(startTs, endTs){
+  if(!startTs) return "–";
+  const days = Math.max(0, Math.floor(((endTs||Date.now())-startTs)/(1000*60*60*24)));
+  if(days<1) return "<1 Tag";
+  return days===1 ? "1 Tag" : `${days} Tage`;
+}
+function runDurationLabel(){
+  return state.eventLog.length ? formatDuration(state.eventLog[0].ts, null) : "–";
+}
+
 function statTileHtml(tone, label, value){
   return `<div class="stat-tile ${tone||""}">
     <span class="stat-label">${escapeHtml(label)}</span>
@@ -2822,6 +2930,7 @@ function statsCardHtml(){
     statTileHtml("dot-red", "Kampfniederlagen", state.lossCount||0),
     ...(state.soloMode ? [] : [statTileHtml("dot-red", "Duelle verloren", duelTally.losses)]),
     statTileHtml("dot-gold", "Bosse besiegt", `${bossesDefeated}/${bosses.length}`),
+    statTileHtml("", "Run-Dauer", runDurationLabel()),
   ].join("");
   return `<div class="card">
     <div class="loc-name" style="margin-bottom:10px;">Statistik</div>
@@ -3006,7 +3115,7 @@ function renderRoutes(){
   const currentId = effectiveCurrentLocId();
   game.regions.forEach(([region])=>{
     if((state.hiddenRegions||[]).includes(region)) return;
-    const locs = state.locations.filter(l=>l.region===region);
+    const locs = state.locations.filter(l=>l.region===region && !(state.hidePostgame && /Postgame/.test(l.note||"")));
     if(!locs.length) return;
     html += `<div class="region-header">${escapeHtml(region)}</div>`;
     const regionKey = slug(region);
@@ -3729,6 +3838,49 @@ function showGameOverOverlay(){
   document.body.appendChild(overlay);
 }
 
+/* Kurze Erste-Schritte-Tour beim allerersten Öffnen der App (geräteweit per localStorage gemerkt,
+   NICHT im Spielstand - eine neue Runde soll die Tour nicht erneut auslösen). Lässt sich jederzeit
+   über "Werkzeuge" in den Einstellungen erneut starten (siehe act==="open-onboarding-tour"), dann
+   unabhängig vom gespeicherten "schon gesehen"-Status. */
+const ONBOARDING_STEPS = [
+  { icon:"👋", title:"Willkommen bei Nuzlocke", text:"Diese App begleitet dich durch deinen Nuzlocke-Run: Fänge, Bosskämpfe, Team und Fortschritt - alles an einem Ort, komplett offline nutzbar." },
+  { icon:"🎯", title:"Fangen & Bosse", text:"Im Routen-Tab trägst du pro Standort ein, ob du gefangen hast oder nicht, und hältst Bosskämpfe mit Sieg oder Niederlage fest. Level-Boosts für Randomizer lassen sich pro Boss oder für alle auf einmal anpassen." },
+  { icon:"🎒", title:"Team & Box", text:"Frisch gefangene Pokémon wandern automatisch ins Team, wenn dort noch Platz ist - sonst landen sie in der Box. Beides lässt sich jederzeit per Fingertipp tauschen." },
+  { icon:"🏆", title:"Erfolge & Titel", text:"Für besondere Momente im Run gibt es Erfolge freizuschalten, die dir auch einen Titel verleihen - wähl deinen Favoriten in den Einstellungen und zeig ihn im Kopfbereich." },
+  { icon:"⚙️", title:"Alles anpassbar", text:"In den Einstellungen findest du Mehrfach-Speicherstände, Hausregeln, Darstellung und mehr. Diese Tour lässt sich dort jederzeit unter „Werkzeuge“ erneut starten." }
+];
+let onboardingStep = 0;
+function openOnboardingTour(){
+  onboardingStep = 0;
+  renderOnboardingOverlay();
+}
+function renderOnboardingOverlay(){
+  document.querySelector(".onboarding-overlay")?.remove();
+  const step = ONBOARDING_STEPS[onboardingStep];
+  const isLast = onboardingStep === ONBOARDING_STEPS.length-1;
+  const dots = ONBOARDING_STEPS.map((_,i)=>`<span class="onboarding-dot${i===onboardingStep?" active":""}"></span>`).join("");
+  const overlay = document.createElement("div");
+  overlay.className = "onboarding-overlay";
+  overlay.innerHTML = `
+    <div class="onboarding-card">
+      <button class="onboarding-skip" data-act="onboarding-close">Überspringen</button>
+      <div class="onboarding-icon" aria-hidden="true">${step.icon}</div>
+      <h2>${escapeHtml(step.title)}</h2>
+      <div class="onboarding-text">${escapeHtml(step.text)}</div>
+      <div class="onboarding-dots">${dots}</div>
+      <div class="onboarding-actions">
+        ${onboardingStep>0 ? `<button class="btn btn-secondary" data-act="onboarding-prev">Zurück</button>` : `<span></span>`}
+        <button class="btn btn-primary" data-act="${isLast?"onboarding-close":"onboarding-next"}">${isLast?"Los geht's":"Weiter"}</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+}
+function closeOnboardingTour(){
+  document.querySelector(".onboarding-overlay")?.remove();
+  try{ localStorage.setItem("nuzlocke-onboarding-seen","1"); }catch(e){}
+}
+
 function duelPartnerName(){ return (state.duelPartnerName||"").trim(); }
 function duelPartnerLabel(){ return duelPartnerName() || "deinen Duellpartner"; }
 function duelPartnerTeamLabel(){ const n = duelPartnerName(); return n ? `${n}s Team` : "Das Team deines Duellpartners"; }
@@ -3922,7 +4074,8 @@ function runRecapStats(){
   const totalBosses = activeBosses().length;
   const duelTally = rivalDuelTally();
   const hof = state.hallOfFame;
-  return { caught, survivalRate: rate, bossesDefeated, totalBosses, duelTally, won: hof.result!=="loss" };
+  const duration = state.eventLog.length ? formatDuration(state.eventLog[0].ts, hof.defeatedAt) : "–";
+  return { caught, survivalRate: rate, bossesDefeated, totalBosses, duelTally, won: hof.result!=="loss", duration };
 }
 
 function runRecapHeadline(){
@@ -3947,6 +4100,7 @@ function openRunRecapSheet(){
       ${statTileHtml("dot-red", "Gestorben", deadCount())}
       ${statTileHtml("dot-red", "Kampfniederlagen", state.lossCount||0)}
       ${statTileHtml("dot-gold", "Bosse besiegt", `${s.bossesDefeated}/${s.totalBosses}`)}
+      ${statTileHtml("", "Run-Dauer", s.duration)}
       ${state.soloMode ? "" : statTileHtml("dot-good", "Duelle gewonnen", s.duelTally.wins)}
       ${state.soloMode ? "" : statTileHtml("dot-red", "Duelle verloren", s.duelTally.losses)}
     </div>
@@ -3971,7 +4125,8 @@ function runRecapText(){
     `Überlebensrate: ${s.survivalRate===null?"-":s.survivalRate+"%"}`,
     `Gefangen: ${s.caught}  ·  Gestorben: ${deadCount()}`,
     `Kampfniederlagen: ${state.lossCount||0}`,
-    `Bosse besiegt: ${s.bossesDefeated}/${s.totalBosses}`
+    `Bosse besiegt: ${s.bossesDefeated}/${s.totalBosses}`,
+    `Run-Dauer: ${s.duration}`
   ];
   if(!state.soloMode) lines.push(`Duelle: ${s.duelTally.wins} Siege, ${s.duelTally.losses} Niederlagen`);
   return lines.join("\n");
@@ -4002,7 +4157,8 @@ const EVENT_TYPE_META = {
   bossLoss:{ tone:"tone-red",  icon:ICON_GRAVE },
   pvp:    { tone:"tone-neutral",icon:ICON_POKEBALL },
   final:  { tone:"tone-gold",  icon:ICON_CHECK },
-  achievement: { tone:"tone-gold", icon:ICON_CHECK }
+  achievement: { tone:"tone-gold", icon:ICON_CHECK },
+  team:   { tone:"tone-gold",  icon:ICON_POKEBALL_FILLED }
 };
 
 /* Erfolge & Titel: jeder Eintrag schaltet sowohl einen Erfolg (sichtbar in den Einstellungen)
@@ -4235,6 +4391,18 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.41</span><span class="tag tag-feat">Feature</span></div>
+      <h3>Erste-Schritte-Tour, Zufalls-Spitznamen, Bestenliste & mehr</h3>
+      <p><strong>Erste-Schritte-Tour:</strong> beim allerersten Öffnen führt jetzt eine kurze, 5-teilige Tour durch die wichtigsten Bereiche (Fangen &amp; Bosse, Team &amp; Box, Erfolge &amp; Titel, Einstellungen). Überspringen jederzeit möglich, lässt sich unter „Werkzeuge" beliebig oft erneut starten.</p>
+      <p><strong>Zufalls-Spitznamen-Generator:</strong> ein Würfel-Icon neben dem Spitzname-Feld (beim Fangen und beim Umbenennen) schlägt einen zufälligen, spielart-unabhängigen Namen aus einer Liste von 50 vor.</p>
+      <p><strong>Postgame-Inhalte ausblenden:</strong> neuer Schalter unter „Regeln" blendet Standorte aus, deren Notiz als Postgame-Inhalt gekennzeichnet ist (z.&nbsp;B. Suicune/Mewtu/Arktos/Zapdos-Events) - rein visuell, ohne Einfluss auf die Statistik.</p>
+      <p><strong>Run-Dauer als Statistik:</strong> neue Kachel in der Statistik-Karte und im Run-Rückblick, grob aus dem Verlauf abgeleitet (erstes Ereignis bis jetzt bzw. bis zum Run-Abschluss).</p>
+      <p><strong>Bestenliste über alle Spielstände:</strong> neuer Button unter „Spielstände" zeigt alle Runs sortiert nach Gesamtabschluss, mit Überlebensrate, besiegten Bossen und Run-Dauer je Spielstand.</p>
+      <p><strong>Team-Rotation-Historie:</strong> neue, gefilterte Verlaufs-Ansicht unter „Werkzeuge" zeigt nur, wer wann ins Team kam oder es verlassen hat.</p>
+      <p><strong>Aufgeräumt:</strong> das Änderungsprotokoll lebt jetzt unter „App-Info" statt unter „Werkzeuge".</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.8.40</span><span class="tag tag-feat">Feature</span></div>
@@ -4899,6 +5067,14 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>„✓ abgeschlossen"-Badge im Regions-Header.</strong> Sobald eine ganze Region fertig ist, auf einen Blick sichtbar, ohne reinscrollen zu müssen.</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Längere Sheet-Labels kürzen.</strong> Z.&nbsp;B. „Kampf trotz Niederlage als abgeschlossen zählen" → kurzes Button-Label + erklärender Untertext, statt alles in den Button-Text zu packen.</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Fokus-Sichtbarkeit &amp; aria-labels bei Icon-Buttons nachschärfen.</strong> Für Tastatur-/Screenreader-Nutzung, aktuell vermutlich lückenhaft. → umgesetzt in v1.8.33</div>
+    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Run-Rückblick als Bild statt nur Text.</strong> Eine hübsche, teilbare Abschluss-Karte (Canvas/Screenshot-Stil) für Social Media statt nur der bestehenden Text-Kopie.</div>
+    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Web-Share-Sheet auf Mobile.</strong> Beim Kopieren des Run-Rückblicks direkt das native Teilen-Menü anbieten, statt nur Zwischenablage/Textfeld.</div>
+    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Kurzes Sound-Feedback als Pendant zum Vibrations-Feedback.</strong> Dezente Klänge bei Fang/Tod/Bosssieg, mit eigenem Lautstärke-/Ein-Aus-Schalter.</div>
+    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Allgemeines „Letzte Aktion rückgängig".</strong> Statt nur einzelner Undo-Buttons pro Aktionstyp (Entwicklung, Boss-Sieg, …) ein universeller Rückgängig-Mechanismus für die zuletzt ausgeführte Aktion.</div>
+    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Todesursache-Freitext direkt beim Markieren.</strong> Optionales kleines Feld („Wodurch gestorben?") direkt im „Als gestorben markieren"-Sheet, landet dann sichtbar im Friedhof.</div>
+    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Weltenbummler-Erfolg.</strong> Runs in mindestens 3 verschiedenen Generationen abgeschlossen (Cross-Save-Erfolg, bräuchte Zugriff auf alle Spielstände beim Prüfen).</div>
+    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Auferstanden-Erfolg.</strong> Nach einem Game-Over direkt einen neuen Run gestartet statt aufzugeben (Cross-Save-Erfolg).</div>
+    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Regenbogen-Team-Erfolg.</strong> 6 verschiedene Typen gleichzeitig im Team — bräuchte wie „The Collector" eine komplette Arten→Typ-Referenztabelle, größerer Aufwand.</div>
   </div>
 
   <div class="followups">
@@ -4920,7 +5096,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.40.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.41.</footer>
 
 </div>`;
 
@@ -4950,6 +5126,31 @@ function openEventLogSheet(){
     <h3>Verlauf</h3>
     <div class="loc-sub" style="margin-bottom:14px;">${entries.length ? `${entries.length} Ereignisse, neueste zuerst.` : ""}</div>
     ${rows || `<div class="loc-sub">Noch keine Ereignisse - fange dein erstes Pokémon oder besiege einen Boss.</div>`}
+    <div class="sheet-footer">
+      <button class="btn btn-secondary btn-block" data-act="close-sheet">Schließen</button>
+    </div>
+  `);
+}
+
+/* Team-Rotation-Historie: gefilterte Sicht auf denselben Verlauf statt einer eigenen Datenstruktur -
+   "team"-Ereignisse werden bei jedem Team-Ein-/Austritt geloggt (siehe add-to-team/remove-from-team/
+   do-team-swap/performCatch). */
+function openTeamHistorySheet(){
+  const entries = state.eventLog.filter(ev=>ev.type==="team").slice().reverse();
+  const rows = entries.map(ev=>{
+    const meta = EVENT_TYPE_META.team;
+    return `<div class="event-row">
+      <div class="event-icon ${meta.tone}">${meta.icon}</div>
+      <div>
+        <div class="event-text">${escapeHtml(ev.text)}</div>
+        <div class="event-time">${formatRelativeTime(ev.ts)}</div>
+      </div>
+    </div>`;
+  }).join("");
+  openSheet(`
+    <h3>Team-Rotation-Historie</h3>
+    <div class="loc-sub" style="margin-bottom:14px;">${entries.length ? `${entries.length} Team-Wechsel, neueste zuerst.` : ""}</div>
+    ${rows || `<div class="loc-sub">Noch keine Team-Wechsel - Pokémon, die neu ins Team kommen oder es verlassen, tauchen hier auf.</div>`}
     <div class="sheet-footer">
       <button class="btn btn-secondary btn-block" data-act="close-sheet">Schließen</button>
     </div>
@@ -4988,6 +5189,7 @@ function renderSettings(){
     <div class="loc-name">Mehrere Runs</div>
     <div class="loc-sub" style="margin-bottom:10px;">Zwischen Spielständen wechseln oder einen neuen anlegen, ohne den aktuellen zu verlieren. Zuletzt exportiert: ${formatRelativeTime(state.lastExportAt)}</div>
     <button class="btn btn-primary btn-block" style="margin-bottom:8px;" data-act="open-saves-sheet">Spielstände verwalten</button>
+    <button class="btn btn-secondary btn-block" style="margin-bottom:8px;" data-act="open-leaderboard">Bestenliste anzeigen</button>
     <button class="btn btn-secondary btn-block" style="margin-bottom:8px;" data-act="export-data">Fortschritt exportieren (JSON)</button>
     <button class="btn btn-secondary btn-block" style="margin-bottom:8px;" data-act="import-data">Fortschritt importieren</button>
     <button class="btn btn-danger btn-block" data-act="reset-run">Aktuellen Spielstand zurücksetzen</button>
@@ -5049,6 +5251,11 @@ function renderSettings(){
     </div>
     <div class="loc-sub">Erzwingt einen Spitznamen beim Fangen eines Pokémon</div>
     <button class="btn ${state.nicknameRequired?"btn-primary":"btn-secondary"} btn-block" style="margin-top:10px;" data-act="toggle-nickname-required">${state.nicknameRequired?"Aktiviert":"Deaktiviert"}</button>
+  </div>
+  <div class="card">
+    <div class="loc-name">Postgame-Inhalte ausblenden</div>
+    <div class="loc-sub">Blendet Standorte aus, die als reine Postgame-Inhalte markiert sind (z.&nbsp;B. Nachfolge-Events nach dem Hauptspiel) - rein visuell, wirkt sich nicht auf die Statistik aus.</div>
+    <button class="btn ${state.hidePostgame?"btn-primary":"btn-secondary"} btn-block" style="margin-top:10px;" data-act="toggle-hide-postgame">${state.hidePostgame?"Aktiviert":"Deaktiviert"}</button>
   </div>`);
 
   html += (()=>{
@@ -5134,15 +5341,25 @@ function renderSettings(){
     <button class="btn btn-secondary btn-block" style="margin-top:12px;" data-act="open-event-log">Verlauf öffnen</button>
   </div>
   <div class="card">
-    <div class="loc-name">Änderungsprotokoll</div>
-    <div class="loc-sub">Alle bisherigen App-Updates &amp; Fixes nachlesen</div>
-    <button class="btn btn-secondary btn-block" style="margin-top:12px;" data-act="open-changelog">Änderungsprotokoll öffnen</button>
+    <div class="loc-name">Team-Rotation-Historie</div>
+    <div class="loc-sub">Wer wann ins Team kam oder es verlassen hat</div>
+    <button class="btn btn-secondary btn-block" style="margin-top:12px;" data-act="open-team-history">Historie öffnen</button>
+  </div>
+  <div class="card">
+    <div class="loc-name">Erste-Schritte-Tour</div>
+    <div class="loc-sub">Kurze Einführung in die wichtigsten Funktionen erneut ansehen</div>
+    <button class="btn btn-secondary btn-block" style="margin-top:12px;" data-act="open-onboarding-tour">Tour erneut starten</button>
   </div>`);
 
   html += settingsGroupHtml("app-info", "App-Info", `
   <div class="card">
     <div class="loc-name">Nuzlocke</div>
     <div class="loc-sub">Version ${escapeHtml(APP_VERSION)}</div>
+  </div>
+  <div class="card">
+    <div class="loc-name">Änderungsprotokoll</div>
+    <div class="loc-sub">Alle bisherigen App-Updates &amp; Fixes nachlesen</div>
+    <button class="btn btn-secondary btn-block" style="margin-top:12px;" data-act="open-changelog">Änderungsprotokoll öffnen</button>
   </div>`);
 
   document.getElementById("content").innerHTML = html;
@@ -5266,7 +5483,10 @@ function openCatchSheet(locId){
       </div>
     </div>
     <div class="field" style="margin-top:14px;">
-      <label for="inNick">Spitzname${state.nicknameRequired?"":" (optional)"}</label>
+      <div style="display:flex; align-items:center; justify-content:space-between;">
+        <label for="inNick">Spitzname${state.nicknameRequired?"":" (optional)"}</label>
+        ${iconBtn("tone-neutral","random-nickname","inNick",ICON_DICE,"Zufälligen Spitznamen vorschlagen",false,true)}
+      </div>
       <input id="inNick" maxlength="30" placeholder="${state.nicknameRequired?"Pflicht":"optional"}" autocomplete="off" />
     </div>
     <div class="sheet-footer">
@@ -5302,7 +5522,10 @@ function renameSheet(locId){
       </div>
     </div>
     <div class="field">
-      <label for="editNick">Spitzname</label>
+      <div style="display:flex; align-items:center; justify-content:space-between;">
+        <label for="editNick">Spitzname</label>
+        ${iconBtn("tone-neutral","random-nickname","editNick",ICON_DICE,"Zufälligen Spitznamen vorschlagen",false,true)}
+      </div>
       <input id="editNick" value="${escapeHtml(m.nickname||"")}" maxlength="30" placeholder="optional" autocomplete="off" />
     </div>
     <div class="sheet-footer">
@@ -5665,7 +5888,10 @@ document.addEventListener("click", e=>{
   else if(act==="open-team-picker") openTeamPicker();
   else if(act==="add-to-team"){
     if(teamCount()>=6){ openTeamSwapSheet(id); return; }
-    findLoc(id).mon.inTeam=true; saveState(); closeSheet(); render();
+    const loc = findLoc(id);
+    loc.mon.inTeam=true;
+    logEvent("team", `${loc.mon.nickname || loc.mon.species} kam ins Team`);
+    saveState(); closeSheet(); render();
   }
   else if(act==="do-team-swap"){
     const newLoc = findLoc(id);
@@ -5673,9 +5899,15 @@ document.addEventListener("click", e=>{
     if(!newLoc || !swapLoc) return;
     swapLoc.mon.inTeam = false;
     newLoc.mon.inTeam = true;
+    logEvent("team", `${swapLoc.mon.nickname || swapLoc.mon.species} verließ das Team für ${newLoc.mon.nickname || newLoc.mon.species}`);
     saveState(); closeSheet(); render();
   }
-  else if(act==="remove-from-team"){ findLoc(id).mon.inTeam=false; saveState(); closeSheet(); render(); }
+  else if(act==="remove-from-team"){
+    const loc = findLoc(id);
+    loc.mon.inTeam=false;
+    logEvent("team", `${loc.mon.nickname || loc.mon.species} verließ das Team`);
+    saveState(); closeSheet(); render();
+  }
   else if(act==="mark-dead"){
     const loc = findLoc(id); const m = loc.mon;
     m.dead=true; m.inTeam=false;
@@ -5793,6 +6025,12 @@ document.addEventListener("click", e=>{
   else if(act==="open-boss-win-team") openBossWinTeamSheet(id);
   else if(act==="close-champion-overlay"){ document.querySelector(".champion-overlay")?.remove(); }
   else if(act==="close-game-over-overlay"){ document.querySelector(".game-over-overlay")?.remove(); }
+  else if(act==="open-onboarding-tour") openOnboardingTour();
+  else if(act==="open-team-history") openTeamHistorySheet();
+  else if(act==="open-leaderboard") openLeaderboardSheet();
+  else if(act==="onboarding-next"){ onboardingStep = Math.min(onboardingStep+1, ONBOARDING_STEPS.length-1); renderOnboardingOverlay(); }
+  else if(act==="onboarding-prev"){ onboardingStep = Math.max(onboardingStep-1, 0); renderOnboardingOverlay(); }
+  else if(act==="onboarding-close") closeOnboardingTour();
   else if(act==="open-final-rival"){
     openFinalRivalSheet(id);
   }
@@ -5829,6 +6067,10 @@ document.addEventListener("click", e=>{
   else if(act==="save-nick"){
     const v = document.getElementById("editNick").value.trim().slice(0,30);
     findLoc(id).mon.nickname = v; saveState(); closeSheet(); render();
+  }
+  else if(act==="random-nickname"){
+    const input = document.getElementById(id);
+    if(input){ input.value = randomNickname(); input.style.borderColor = ""; input.focus(); }
   }
   else if(act==="open-location-note") openLocationNoteSheet(id);
   else if(act==="save-location-note"){
@@ -5976,6 +6218,10 @@ document.addEventListener("click", e=>{
   }
   else if(act==="toggle-nickname-required"){
     state.nicknameRequired = !state.nicknameRequired;
+    saveState(); render();
+  }
+  else if(act==="toggle-hide-postgame"){
+    state.hidePostgame = !state.hidePostgame;
     saveState(); render();
   }
   else if(act==="toggle-vibration"){
@@ -6178,6 +6424,7 @@ document.addEventListener("touchstart", function(){}, {passive:true});
 render();
 triggerTabEnterAnim();
 checkAchievements();
+try{ if(!localStorage.getItem("nuzlocke-onboarding-seen")) openOnboardingTour(); }catch(e){}
 Object.keys(BOSS_SPRITES).forEach(key=>freezeSpriteSrc(key, BOSS_SPRITES[key]));
 </script>
 
