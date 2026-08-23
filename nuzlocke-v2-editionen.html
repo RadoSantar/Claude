@@ -137,10 +137,15 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 .edition-badge:active{ transform:scale(.96); }
 .edition-badge .pokeball{ width:18px; height:18px; }
 .edition-badge .pokeball circle:first-child, .edition-badge .pokeball path{ stroke:var(--accent); }
+.brand-title-col{ flex:1; min-width:0; display:flex; flex-direction:column; }
 .title-input{
   font-family:var(--font-display); font-size:1.28rem; font-weight:700;
   background:transparent; border:none; outline:none; width:100%; color:var(--ink);
   padding:2px 0;
+}
+.active-title-badge{
+  display:none; font-size:.72rem; font-weight:700; color:var(--accent);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
 .icon-btn{
   width:40px; height:40px; border-radius:50%; border:1px solid var(--line);
@@ -440,6 +445,20 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 .boss-bulk-actions{ display:flex; gap:8px; flex:none; }
 .boss-bulk-actions .btn{ min-height:40px; padding:9px 14px; font-family:var(--font-mono); }
 
+.title-picker{ display:flex; flex-wrap:wrap; gap:8px; }
+.title-pill{
+  padding:8px 14px; border-radius:999px; border:1.5px solid var(--line); background:var(--surface-alt);
+  font-size:.82rem; font-weight:700; color:var(--ink-soft);
+}
+.title-pill.active{ background:var(--accent-soft); color:var(--accent); border-color:var(--accent); }
+.achievements-list{ display:flex; flex-direction:column; gap:10px; margin-top:12px; }
+.achievement-row{ display:flex; gap:12px; align-items:flex-start; padding:10px; border-radius:14px; background:var(--surface-alt); }
+.achievement-row.locked{ opacity:.55; }
+.achievement-icon{ font-size:1.5rem; line-height:1; flex:none; width:30px; text-align:center; }
+.achievement-name{ font-weight:700; font-size:.92rem; }
+.achievement-desc{ font-size:.78rem; color:var(--ink-soft); margin-top:2px; }
+.achievement-title-tag{ font-size:.74rem; color:var(--accent); font-weight:700; margin-top:4px; }
+
 .boss-card{ position:relative; }
 .boss-card.boss-done{ border-left-color:var(--good); }
 .boss-card.boss-done .loc-name{ color:var(--good); }
@@ -583,6 +602,13 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
   .champion-trophy{ animation:championTrophyPop 700ms cubic-bezier(.34,1.56,.64,1) 150ms both; }
   .game-over-card{ animation:championCardIn 420ms cubic-bezier(.34,1.2,.32,1) both; }
   .game-over-icon{ animation:championTrophyPop 700ms cubic-bezier(.34,1.56,.64,1) 150ms both; }
+
+  @keyframes achievementToastIn{
+    0%{ transform:translateX(-50%) translateY(-16px) scale(.96); opacity:0; }
+    100%{ transform:translateX(-50%) translateY(0) scale(1); opacity:1; }
+  }
+  .achievement-toast{ animation:achievementToastIn 380ms cubic-bezier(.34,1.4,.4,1) both; }
+  .achievement-toast.out{ transition:opacity .22s ease, transform .22s ease; }
 }
 
 .champion-overlay{
@@ -618,6 +644,19 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 .game-over-stats > div{ flex:1; background:var(--surface-alt); border-radius:14px; padding:12px 8px; }
 .game-over-stats span{ display:block; font-family:var(--font-mono); font-variant-numeric:tabular-nums; font-size:1.15rem; font-weight:800; color:var(--red); }
 .game-over-stats label{ display:block; font-size:.68rem; color:var(--ink-soft); margin-top:3px; }
+
+.achievement-toast{
+  position:fixed; top:calc(14px + env(safe-area-inset-top)); left:50%; transform:translateX(-50%);
+  z-index:80; max-width:320px; width:calc(100% - 32px);
+  background:var(--surface); border-radius:18px; padding:14px 16px; display:flex; gap:12px; align-items:flex-start;
+  box-shadow:0 12px 32px rgba(0,0,0,.28), inset 0 0 0 1px rgba(var(--gold-glow),.4);
+  cursor:pointer;
+}
+.achievement-toast.out{ opacity:0; transform:translateX(-50%) translateY(-10px); }
+.achievement-toast-icon{ font-size:1.6rem; line-height:1; flex:none; }
+.achievement-toast-label{ font-size:.68rem; font-weight:800; text-transform:uppercase; letter-spacing:.04em; color:var(--gold); }
+.achievement-toast-name{ font-size:.98rem; font-weight:800; color:var(--ink); margin-top:1px; }
+.achievement-toast-sub{ font-size:.78rem; color:var(--ink-soft); margin-top:2px; }
 
 .fab{
   position:absolute; right:18px; bottom:calc(88px + env(safe-area-inset-bottom)); z-index:15;
@@ -805,7 +844,10 @@ datalist{}
           </svg>
           <span id="editionLabel"></span>
         </button>
-        <input id="runTitle" class="title-input" maxlength="40" value="Nuzlocke" />
+        <div class="brand-title-col">
+          <input id="runTitle" class="title-input" maxlength="40" value="Nuzlocke" />
+          <div class="active-title-badge" id="activeTitleBadge"></div>
+        </div>
       </div>
       <button class="icon-btn" id="themeBtn" title="Theme" aria-label="Hell-/Dunkelmodus umschalten">
         <svg id="themeIcon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>
@@ -2404,7 +2446,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.8.33";
+const APP_VERSION = "1.8.34";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -2437,7 +2479,7 @@ function freshState(editionId, soloMode){
     names.forEach(entry=>{ locations.push(parseLocationEntry(region, entry)); });
   });
   const gameStarters = GAMES[edition].starters || { grass:"", fire:"", water:"" };
-  return { edition, runTitle:"Nuzlocke", soloMode:!!soloMode, locations, bossBoosts:{}, bossDefeated:{}, rivalNickname:"", duelPartnerName:"", dupesWarning:true, lastExportAt:null, evolutionCount:0, lossCount:0, nicknameRequired:false, pvp:{}, hallOfFame:{ rivalTeam:[], playerTeam:[], defeatedAt:null, result:null }, starterNames:{ ...gameStarters }, starterChoice:null, currentLocId:null, eventLog:[], hiddenRegions:[] };
+  return { edition, runTitle:"Nuzlocke", soloMode:!!soloMode, locations, bossBoosts:{}, bossDefeated:{}, rivalNickname:"", duelPartnerName:"", dupesWarning:true, lastExportAt:null, evolutionCount:0, lossCount:0, nicknameRequired:false, pvp:{}, hallOfFame:{ rivalTeam:[], playerTeam:[], defeatedAt:null, result:null }, starterNames:{ ...gameStarters }, starterChoice:null, currentLocId:null, eventLog:[], hiddenRegions:[], achievements:{}, activeTitle:null, dupesIgnoredCount:0 };
 }
 
 /* Ergänzt neu hinzugekommene Standorte (z.B. nachträglich eingefügte Städte) in einen bereits
@@ -2479,6 +2521,9 @@ function normalizeState(parsed){
   if(typeof parsed.currentLocId === "undefined") parsed.currentLocId = null;
   if(!Array.isArray(parsed.eventLog)) parsed.eventLog = [];
   if(!Array.isArray(parsed.hiddenRegions)) parsed.hiddenRegions = [];
+  if(!parsed.achievements) parsed.achievements = {};
+  if(typeof parsed.activeTitle === "undefined") parsed.activeTitle = null;
+  if(typeof parsed.dupesIgnoredCount !== "number") parsed.dupesIgnoredCount = 0;
   syncLocations(parsed);
   return parsed;
 }
@@ -3843,8 +3888,105 @@ const EVENT_TYPE_META = {
   boss:   { tone:"tone-good",  icon:ICON_CHECK },
   bossLoss:{ tone:"tone-red",  icon:ICON_GRAVE },
   pvp:    { tone:"tone-neutral",icon:ICON_POKEBALL },
-  final:  { tone:"tone-gold",  icon:ICON_CHECK }
+  final:  { tone:"tone-gold",  icon:ICON_CHECK },
+  achievement: { tone:"tone-gold", icon:ICON_CHECK }
 };
+
+/* Erfolge & Titel: jeder Eintrag schaltet sowohl einen Erfolg (sichtbar in den Einstellungen)
+   als auch einen wählbaren Titel frei, der optional im Kopfbereich neben dem Run-Titel erscheint
+   (siehe renderActiveTitleBadge). check() liest bewusst direkt aus dem globalen state/den globalen
+   Helper-Funktionen statt Parametern zu übernehmen - gleiche Konvention wie teamCount()/aliveCount()
+   & co. championWon() prüft strikt auf einen echten Sieg (true), nicht auf eine per "Kampf trotz
+   Niederlage als abgeschlossen zählen" fortgeführte Niederlage (siehe bossDefeated-Werte). */
+function championWon(){
+  const fb = finalStoryBoss();
+  return !!fb && state.bossDefeated[fb.id] === true;
+}
+const ACHIEVEMENTS = [
+  { id:"teamplayer", name:"Volles Haus", title:"Teamplayer", icon:"🤝",
+    desc:"6 lebende Pokémon gleichzeitig im Team.",
+    check: ()=> teamCount() === 6 },
+  { id:"ironwill", name:"Eiserner Wille", title:"Unbezwungen", icon:"🛡️",
+    desc:"Champion besiegt, ohne im gesamten Run ein einziges Pokémon zu verlieren.",
+    check: ()=> championWon() && deadCount() === 0 },
+  { id:"flawless", name:"Ohne Kratzer", title:"Ass-Trainer", icon:"🏆",
+    desc:"Champion besiegt, ohne im gesamten Run eine einzige Niederlage einzutragen.",
+    check: ()=> championWon() && (state.lossCount||0) === 0 },
+  { id:"comeback", name:"Eisern durchgehalten", title:"Unaufhaltsam", icon:"🔥",
+    desc:"Mindestens einen Kampf trotz Niederlage fortgesetzt und den Run trotzdem bis zum Champion durchgezogen.",
+    check: ()=> championWon() && Object.values(state.bossDefeated).some(v=>v==="loss") },
+  { id:"solomaster", name:"Einsamer Wolf", title:"Einzelkämpfer", icon:"🎯",
+    desc:"Einen Einzelspieler-Modus-Run bis zum Champion abgeschlossen.",
+    check: ()=> state.soloMode && championWon() },
+  { id:"reaper", name:"Der Friedhof wächst", title:"Sensenmann", icon:"💀",
+    desc:"10 oder mehr Pokémon in einem Run verloren.",
+    check: ()=> deadCount() >= 10 },
+  { id:"namegiver", name:"Spitznamen-Fan", title:"Namensgeber", icon:"✏️",
+    desc:"Mindestens 10 gefangene Pokémon, alle mit eigenem Spitznamen.",
+    check: ()=>{
+      const caught = state.locations.filter(l=>l.mon);
+      return caught.length >= 10 && caught.every(l=>l.mon.nickname && l.mon.nickname.trim());
+    } },
+  { id:"chronicler", name:"Notizen-Chronist", title:"Chronist", icon:"📓",
+    desc:"10 oder mehr Standort-Notizen in einem Run geschrieben.",
+    check: ()=> state.locations.filter(l=>l.customNote && l.customNote.trim()).length >= 10 },
+  { id:"rulebreaker", name:"Regelbrecher", title:"Regelbrecher", icon:"😈",
+    desc:"Die Dupes-Clause-Warnung 5-mal ignoriert und trotzdem gefangen.",
+    check: ()=> (state.dupesIgnoredCount||0) >= 5 },
+  { id:"locallegend", name:"Local Legend", title:"Local Legend", icon:"⭐",
+    desc:"Champion besiegt, während wirklich jeder Bosstrainer individuell hochgestuft war.",
+    check: ()=> championWon() && activeBosses().length > 0 && activeBosses().every(b=>bossPercent(b.id) > 0) }
+];
+
+/* checkAchievements() läuft am Ende JEDES Klicks im globalen Dispatcher mit (siehe ganz unten) statt
+   nur an einzelnen Stellen - die check()-Funktionen sind reine, billige Zustandsabfragen (keine
+   Seiteneffekte), ein Aufruf zu viel ist also unbedenklich, verpasste Trigger-Stellen dagegen schon. */
+let pendingAchievementToasts = [];
+function checkAchievements(){
+  let changed = false;
+  ACHIEVEMENTS.forEach(a=>{
+    if(state.achievements[a.id]) return;
+    if(a.check()){
+      state.achievements[a.id] = Date.now();
+      logEvent("achievement", `Erfolg freigeschaltet: ${a.name} (Titel „${a.title}“)`);
+      pendingAchievementToasts.push(a);
+      changed = true;
+    }
+  });
+  if(changed){ saveState(); renderActiveTitleBadge(); showNextAchievementToast(); }
+}
+function showNextAchievementToast(){
+  if(document.querySelector(".achievement-toast")) return;
+  const next = pendingAchievementToasts.shift();
+  if(!next) return;
+  const toast = document.createElement("div");
+  toast.className = "achievement-toast";
+  toast.innerHTML = `
+    <div class="achievement-toast-icon">${next.icon}</div>
+    <div class="achievement-toast-body">
+      <div class="achievement-toast-label">Erfolg freigeschaltet</div>
+      <div class="achievement-toast-name">${escapeHtml(next.name)}</div>
+      <div class="achievement-toast-sub">Titel „${escapeHtml(next.title)}“ freigeschaltet</div>
+    </div>
+  `;
+  toast.addEventListener("click", ()=>dismissAchievementToast(toast));
+  document.body.appendChild(toast);
+  toast._timer = setTimeout(()=>dismissAchievementToast(toast), 3800);
+}
+function dismissAchievementToast(toast){
+  if(!toast || toast._dismissing) return;
+  toast._dismissing = true;
+  clearTimeout(toast._timer);
+  toast.classList.add("out");
+  setTimeout(()=>{ toast.remove(); showNextAchievementToast(); }, 260);
+}
+function renderActiveTitleBadge(){
+  const el = document.getElementById("activeTitleBadge");
+  if(!el) return;
+  const a = state.activeTitle ? ACHIEVEMENTS.find(x=>x.id===state.activeTitle) : null;
+  if(a && state.achievements[a.id]){ el.textContent = `★ ${a.title}`; el.style.display = "block"; }
+  else { el.textContent = ""; el.style.display = "none"; }
+}
 const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einfachen Routen-/Team-Trackers für einen einzelnen Johto-Run über dessen zwei eingefrorene Zwischenstände (als Prototyp- und Vorgängerprojekt weiter unten dokumentiert) bis zum aktuellen Tracker mit <strong>14 Editionen über die vollständigen Generationen 1–5</strong> — jede mit eigens recherchierten Original-Leveln, Bossen und deutschen Namen statt wiederverwendeter Remake-Daten, dazu Mehrfach-Speicherstände, Ruhmeshalle, Box-Suche und Offline-Installation als PWA.</p>
 
   <div class="stats">
@@ -3860,6 +4002,14 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.34</span><span class="tag tag-feat">Feature</span></div>
+      <h3>Achievement-System mit freischaltbaren Titeln</h3>
+      <p><strong>10 Erfolge als erste Runde:</strong> Volles Haus (6 lebende Team-Mitglieder gleichzeitig), Unbezwungen (Champion besiegt, nie ein Pokémon verloren), Ass-Trainer (Champion besiegt, nie eine Niederlage eingetragen), Unaufhaltsam (Kampf trotz Niederlage fortgesetzt und trotzdem bis zum Champion durchgezogen), Einzelkämpfer (Solo-Modus-Run bis zum Champion), Sensenmann (10+ verlorene Pokémon), Namensgeber (10+ Fänge, alle mit Spitzname), Chronist (10+ Standort-Notizen), Regelbrecher (Dupes-Warnung 5-mal ignoriert) und Local Legend (Champion besiegt, während wirklich jeder Bosstrainer individuell hochgestuft war). Jeder Erfolg schaltet zugleich einen gleichnamigen Titel frei.</p>
+      <p><strong>Titel wählen &amp; anzeigen:</strong> In den Einstellungen unter „Erfolge &amp; Titel" lässt sich aus allen freigeschalteten Titeln einer als aktiv auswählen - der erscheint danach als kleines Abzeichen im Kopfbereich direkt unter dem Run-Titel. Die komplette Erfolgsliste zeigt dort auch gesperrte Erfolge (mit Schloss-Symbol und Beschreibung, was zum Freischalten fehlt).</p>
+      <p><strong>Freischalt-Meldung:</strong> Beim Freischalten erscheint kurz eine Toast-Meldung oben im Bildschirm (Name, Icon, freigeschalteter Titel) - bei mehreren gleichzeitigen Freischaltungen (z.&nbsp;B. direkt beim Championsieg) nacheinander statt überlappend. Antippen blendet sie sofort aus, sonst verschwindet sie von selbst nach ein paar Sekunden.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.8.33</span><span class="tag tag-feat">Feature</span></div>
@@ -4423,7 +4573,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="followups" id="offene-punkte">
     <h2>Offene Punkte, Ideen &amp; Optimierungen</h2>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Plattformübergreifendes Speichersystem.</strong> Spielstände liegen bisher rein lokal (<code>localStorage</code>) im jeweiligen Browser/Gerät — der einzige Weg zwischen Geräten zu wechseln ist der manuelle JSON-Export/Import. Ein echter Sync (z.B. Konto-basiert oder über einen eigenen Cloud-Speicher) würde Spielstände automatisch zwischen Handy, Tablet und Desktop aktuell halten.</div>
-    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Achievement-System mit verliehenen Titeln.</strong> Für bestimmte Situationen/Meilensteine im Run Achievements freischalten, die einen Titel verleihen — z.&nbsp;B. „Legenden-Trainer" bei 3 Legendären gleichzeitig im Team, „Champ" nach Championsieg. Weitere Ideen für Auslöser/Titel noch offen.</div>
+    <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Achievement-System mit verliehenen Titeln.</strong> Für bestimmte Situationen/Meilensteine im Run Achievements freischalten, die einen Titel verleihen — z.&nbsp;B. „Legenden-Trainer" bei 3 Legendären gleichzeitig im Team, „Champ" nach Championsieg. Weitere Ideen für Auslöser/Titel noch offen. → umgesetzt in v1.8.34 mit 10 Erfolgen/Titeln als erste Runde (u.&nbsp;a. Teamvoll, Ironman, fehlerfreier Champion-Sieg, Solo-Modus, Dupes-Regelbruch) - weitere Erfolge (z.&nbsp;B. Legenden-Trainer, editionsübergreifende) können jederzeit ergänzt werden.</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Run-Rückblick ausbauen: erzählte Zusammenfassung + kleine Analyse.</strong> Statt nur Kennzahlen eine spannend geschriebene Zusammenfassung des Abenteuers anhand von Kennzahlen/Verlauf generieren, dazu kleine Analyse-Einsichten (z.&nbsp;B. „hauptsächlich Wasser-Pokémon im Team", auffällige Typverteilung, Fang-/Todesserien o.&nbsp;Ä.).</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Zusammengefasste Encounter-Übersicht für ausgelassene Routen.</strong> Liste aller Standorte, an denen noch kein Fangversuch eingetragen wurde (übersprungene Routen), mit Sprung-Funktion zur jeweiligen Standort-Karte per Klick.</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Game-Over-Bildschirm bei komplettem Team-Verlust.</strong> Sind alle Pokémon gestorben, soll ein Vollbild-Overlay ähnlich der Champion-Abschluss-Feier erscheinen — allerdings als Niederlage gerahmt statt als Sieg. → umgesetzt in v1.8.33</div>
@@ -4487,7 +4637,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.33.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.34.</footer>
 
 </div>`;
 
@@ -4604,6 +4754,35 @@ function renderSettings(){
     <button class="btn ${state.nicknameRequired?"btn-primary":"btn-secondary"} btn-block" style="margin-top:10px;" data-act="toggle-nickname-required">${state.nicknameRequired?"Aktiviert":"Deaktiviert"}</button>
   </div>`);
 
+  html += (()=>{
+    const unlocked = ACHIEVEMENTS.filter(a=>state.achievements[a.id]);
+    const titlePicker = `<div class="title-picker">
+      <button class="title-pill ${!state.activeTitle?"active":""}" data-act="set-active-title" data-id="">Kein Titel</button>
+      ${unlocked.map(a=>`<button class="title-pill ${state.activeTitle===a.id?"active":""}" data-act="set-active-title" data-id="${a.id}">${a.icon} ${escapeHtml(a.title)}</button>`).join("")}
+    </div>`;
+    const list = ACHIEVEMENTS.map(a=>{
+      const isUnlocked = !!state.achievements[a.id];
+      return `<div class="achievement-row ${isUnlocked?"unlocked":"locked"}">
+        <div class="achievement-icon">${isUnlocked?a.icon:"🔒"}</div>
+        <div>
+          <div class="achievement-name">${escapeHtml(a.name)}</div>
+          <div class="achievement-desc">${escapeHtml(a.desc)}</div>
+          ${isUnlocked?`<div class="achievement-title-tag">Titel: „${escapeHtml(a.title)}“</div>`:""}
+        </div>
+      </div>`;
+    }).join("");
+    return settingsGroupHtml("achievements", "Erfolge & Titel", `
+    <div class="card">
+      <div class="loc-name">Aktiver Titel</div>
+      <div class="loc-sub" style="margin-bottom:10px;">${unlocked.length?"Wird im Kopfbereich neben dem Run-Titel angezeigt.":"Noch kein Titel freigeschaltet - die Erfolge weiter unten zeigen, wie."}</div>
+      ${titlePicker}
+    </div>
+    <div class="card">
+      <div class="loc-name">Erfolge (${unlocked.length}/${ACHIEVEMENTS.length})</div>
+      <div class="achievements-list">${list}</div>
+    </div>`);
+  })();
+
   /* Nur anzeigen, wenn die Edition überhaupt mehr als eine Region hat (z.B. Johto+Kanto bei
      HGSS/GSC) - bei Editionen mit nur einer Region (Rot/Blau, Smaragd, ...) gäbe es nichts
      sinnvoll auszublenden. Ausblenden ist rein visuell (Liste ausdünnen) und wirkt sich nicht
@@ -4680,6 +4859,7 @@ function applyEdition(){
 function render(){
   applyEdition();
   renderHeaderTeam();
+  renderActiveTitleBadge();
   document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active", t.dataset.tab===activeTab));
   if(activeTab==="routes") renderRoutes();
   else if(activeTab==="team") renderTeam();
@@ -5132,7 +5312,11 @@ document.addEventListener("click", e=>{
     performCatch(id, species, nick);
   }
   else if(act==="confirm-save-catch-dupe"){
-    if(pendingCatchData){ performCatch(pendingCatchData.id, pendingCatchData.species, pendingCatchData.nick); pendingCatchData=null; }
+    if(pendingCatchData){
+      state.dupesIgnoredCount = (state.dupesIgnoredCount||0) + 1;
+      performCatch(pendingCatchData.id, pendingCatchData.species, pendingCatchData.nick);
+      pendingCatchData=null;
+    }
   }
   else if(act==="open-rename") renameSheet(id);
   else if(act==="open-evolve") openEvolveSheet(id);
@@ -5491,6 +5675,11 @@ document.addEventListener("click", e=>{
     deleteSave(id);
     closeSheet(); render();
   }
+  else if(act==="set-active-title"){
+    state.activeTitle = id && state.achievements[id] ? id : null;
+    saveState(); renderActiveTitleBadge(); render();
+  }
+  checkAchievements();
 });
 
 document.querySelectorAll(".tab").forEach(tab=>{
@@ -5617,6 +5806,7 @@ document.addEventListener("touchstart", function(){}, {passive:true});
 
 render();
 triggerTabEnterAnim();
+checkAchievements();
 Object.keys(BOSS_SPRITES).forEach(key=>freezeSpriteSrc(key, BOSS_SPRITES[key]));
 </script>
 
