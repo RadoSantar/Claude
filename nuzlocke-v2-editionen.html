@@ -186,6 +186,35 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 @media (prefers-reduced-motion: reduce){
   .swipe-veil{ transition:none; }
 }
+
+/* Gestaffelte Eintritts-Animation beim Tab-Wechsel (siehe render()/tab-enter-Klasse) - deckt neben
+   den direkten Kindern von #content (Routen/Friedhof/Einstellungen) auch die bekannten inneren
+   Listen-Wrapper von Team (.team-grid) und Box (#boxResults) ab, deren Karten sonst nicht einzeln
+   erfasst würden. Nur die ersten ~12 Kacheln bekommen einen eigenen Delay-Schritt - der Rest folgt
+   ohne zusätzliche Verzögerung, damit lange Listen nicht spürbar langsamer erscheinen. */
+@keyframes tileEnter{ from{ opacity:0; transform:translateY(8px); } to{ opacity:1; transform:translateY(0); } }
+#content.tab-enter > *,
+#content.tab-enter > .team-grid > *,
+#content.tab-enter > #boxResults > *{
+  animation: tileEnter .28s ease both;
+}
+#content.tab-enter > :nth-child(1),  #content.tab-enter > .team-grid > :nth-child(1),  #content.tab-enter > #boxResults > :nth-child(1) { animation-delay: 0ms; }
+#content.tab-enter > :nth-child(2),  #content.tab-enter > .team-grid > :nth-child(2),  #content.tab-enter > #boxResults > :nth-child(2) { animation-delay: 30ms; }
+#content.tab-enter > :nth-child(3),  #content.tab-enter > .team-grid > :nth-child(3),  #content.tab-enter > #boxResults > :nth-child(3) { animation-delay: 60ms; }
+#content.tab-enter > :nth-child(4),  #content.tab-enter > .team-grid > :nth-child(4),  #content.tab-enter > #boxResults > :nth-child(4) { animation-delay: 90ms; }
+#content.tab-enter > :nth-child(5),  #content.tab-enter > .team-grid > :nth-child(5),  #content.tab-enter > #boxResults > :nth-child(5) { animation-delay: 120ms; }
+#content.tab-enter > :nth-child(6),  #content.tab-enter > .team-grid > :nth-child(6),  #content.tab-enter > #boxResults > :nth-child(6) { animation-delay: 150ms; }
+#content.tab-enter > :nth-child(7),  #content.tab-enter > #boxResults > :nth-child(7) { animation-delay: 180ms; }
+#content.tab-enter > :nth-child(8),  #content.tab-enter > #boxResults > :nth-child(8) { animation-delay: 210ms; }
+#content.tab-enter > :nth-child(9),  #content.tab-enter > #boxResults > :nth-child(9) { animation-delay: 240ms; }
+#content.tab-enter > :nth-child(10), #content.tab-enter > #boxResults > :nth-child(10) { animation-delay: 270ms; }
+#content.tab-enter > :nth-child(11), #content.tab-enter > #boxResults > :nth-child(11) { animation-delay: 300ms; }
+#content.tab-enter > :nth-child(12), #content.tab-enter > #boxResults > :nth-child(12) { animation-delay: 330ms; }
+@media (prefers-reduced-motion: reduce){
+  #content.tab-enter > *,
+  #content.tab-enter > .team-grid > *,
+  #content.tab-enter > #boxResults > *{ animation:none; }
+}
 .region-header{
   position:sticky; top:0; z-index:10; background:var(--bg);
   font-family:var(--font-display); font-size:.72rem; font-weight:700; letter-spacing:.08em;
@@ -193,8 +222,9 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 }
 .settings-group-header{
   display:flex; align-items:center; justify-content:space-between; width:100%;
-  border:none; background:none;
+  border:none; background:none; transition:transform .15s ease, opacity .15s ease;
 }
+.settings-group-header:active{ opacity:.7; transform:scale(.99); }
 .settings-group-header .collapse-chevron{ flex:none; stroke:var(--ink-soft); }
 /* Wiederverwendete Auf-/Zuklapp-Animation für alles Einklappbare (Einstellungs-Gruppen, erledigte
    Standort-Blöcke im Routen-Tab, ...): Inhalt bleibt immer im DOM, grid-template-rows animiert
@@ -380,6 +410,8 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 .changelog-sheet .followup-item:last-child{ margin-bottom:0; }
 .changelog-sheet .followup-item strong{ color:var(--ink); }
 .changelog-sheet footer{ margin-top:32px; padding-top:14px; border-top:1px solid var(--line); font-size:.72rem; color:var(--ink-soft); }
+.changelog-sheet .jump-ideas-btn{ display:inline-flex; align-items:center; gap:7px; font-size:.82rem; font-weight:700; color:var(--accent); text-decoration:none; background:var(--accent-soft); border:1px solid transparent; padding:9px 16px; border-radius:999px; margin:0 0 24px; cursor:pointer; }
+.changelog-sheet .jump-ideas-btn svg{ width:14px; height:14px; stroke:currentColor; stroke-width:2.4; fill:none; flex:none; }
 
 .boss-sprite{ image-rendering:pixelated; background:var(--surface-alt); border-radius:10px; padding:2px; flex:none; }
 .boss-level-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:12px; padding-top:12px; border-top:1px solid var(--line); }
@@ -585,8 +617,9 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 .collapse-toggle{
   display:flex; align-items:center; gap:8px; width:100%; border:none; background:none;
   color:var(--ink-soft); font-size:.82rem; font-weight:700; padding:10px 2px; text-align:left;
+  transition:transform .15s ease, opacity .15s ease;
 }
-.collapse-toggle:active{ opacity:.7; }
+.collapse-toggle:active{ opacity:.7; transform:scale(.98); }
 .collapse-chevron{ width:16px; height:16px; stroke:var(--ink-soft); fill:none; stroke-width:2.2; flex:none; transition:transform .2s ease; }
 .collapse-chevron.open{ transform:rotate(90deg); }
 
@@ -698,7 +731,9 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 .sheet-option{
   width:100%; text-align:left; background:var(--surface-alt); border:none; border-radius:12px;
   padding:14px 16px; font-size:.92rem; font-weight:600; margin-bottom:8px; min-height:48px;
+  transition:transform .15s ease;
 }
+.sheet-option:active{ transform:scale(.98); }
 .sheet-group-header{
   font-family:var(--font-display); font-size:.72rem; font-weight:700; letter-spacing:.08em;
   text-transform:uppercase; color:var(--ink-soft); padding:14px 2px 8px;
@@ -2342,7 +2377,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.8.31";
+const APP_VERSION = "1.8.32";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -3239,6 +3274,12 @@ function emptyState(title, sub){
 }
 
 const frozenSpriteCache = {};
+/* Alle Boss-Sprites aller Editionen werden beim Start einmalig "eingefroren" (nicht nur die der
+   aktuell aktiven) - jedes einzelne löste bisher sofort sein eigenes render() aus, macht bei über
+   100 Sprites also über 100 volle Neu-Renderings des aktuellen Tabs direkt hintereinander, was den
+   Haupt-Thread beim Start spürbar blockieren kann. Ein gemeinsamer Debounce sammelt alle onload-
+   Ereignisse und löst stattdessen nur ein einziges render() aus, sobald kurz Ruhe ist. */
+let freezeRenderDebounce = null;
 function freezeSpriteSrc(spriteKey, src){
   if(frozenSpriteCache[spriteKey] || !src) return;
   const img = new Image();
@@ -3249,7 +3290,8 @@ function freezeSpriteSrc(spriteKey, src){
       canvas.height = img.naturalHeight || img.height;
       canvas.getContext("2d").drawImage(img, 0, 0);
       frozenSpriteCache[spriteKey] = canvas.toDataURL("image/png");
-      render();
+      clearTimeout(freezeRenderDebounce);
+      freezeRenderDebounce = setTimeout(render, 80);
     }catch(e){}
   };
   img.src = src;
@@ -3752,7 +3794,21 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="stat"><div class="n">Gen 1–5</div><div class="l">Vollständig</div></div>
   </div>
 
+  <a class="jump-ideas-btn" href="#offene-punkte" onclick="document.getElementById('offene-punkte').scrollIntoView({behavior:'smooth', block:'start'}); return false;">
+    <svg viewBox="0 0 24 24"><path d="M12 4v16M6 14l6 6 6-6"/></svg>
+    Zu den offenen Punkten &amp; Ideen
+  </a>
+
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.32</span><span class="tag tag-feat">Politur</span></div>
+      <h3>Press-Feedback auf mehr Elementen, gestaffelte Kachel-Animation, schnellerer Start</h3>
+      <p><strong>Press-Feedback (Scale-Down) beim Antippen:</strong> gab es auf Buttons/Icon-Buttons technisch schon, funktionierte auf iOS Safari aber unzuverlässig, da der Browser <code>:active</code>-Zustände nur berechnet, wenn irgendwo ein <code>touchstart</code>-Listener registriert ist - ein leerer, passiver Listener aufs gesamte Dokument behebt das global. Zusätzlich neu auf <code>.sheet-option</code> (Menü-Einträge in Sheets) und den Einstellungs-Gruppen-Headern, die bisher komplett ohne Feedback waren.</p>
+      <p><strong>Gestaffelte Eintritts-Animation:</strong> Kacheln fliegen beim Wechsel auf einen Tab jetzt nacheinander leicht von unten ein (Routen, Team, Box, Friedhof, Einstellungen), statt alle auf einmal zu erscheinen - respektiert <code>prefers-reduced-motion</code>. Löst NICHT bei jeder Aktion innerhalb desselben Tabs erneut aus (z.&nbsp;B. nach einem Fang), nur beim tatsächlichen Tab-Wechsel.</p>
+      <p><strong>Startleistung verbessert:</strong> beim Bau der Animation fiel auf, dass das einmalige "Einfrieren" aller Boss-Sprites beim Start (über 100, aus allen Editionen) bisher pro Sprite ein eigenes volles Neu-Rendering des aktuellen Tabs auslöste - in Summe konnte das den Start spürbar verzögern. Ein gemeinsamer Debounce sammelt das jetzt zu einem einzigen Rendering.</p>
+      <p><strong>Änderungsprotokoll:</strong> neuer Button "Zu den offenen Punkten &amp; Ideen" direkt unter der Kopfzeile springt per Klick zum Ideen-Backlog weiter unten, ohne manuell scrollen zu müssen.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.8.31</span><span class="tag tag-feat">Feature</span></div>
@@ -4296,7 +4352,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
 
   </div>
 
-  <div class="followups">
+  <div class="followups" id="offene-punkte">
     <h2>Offene Punkte, Ideen &amp; Optimierungen</h2>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Plattformübergreifendes Speichersystem.</strong> Spielstände liegen bisher rein lokal (<code>localStorage</code>) im jeweiligen Browser/Gerät — der einzige Weg zwischen Geräten zu wechseln ist der manuelle JSON-Export/Import. Ein echter Sync (z.B. Konto-basiert oder über einen eigenen Cloud-Speicher) würde Spielstände automatisch zwischen Handy, Tablet und Desktop aktuell halten.</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Achievement-System mit verliehenen Titeln.</strong> Für bestimmte Situationen/Meilensteine im Run Achievements freischalten, die einen Titel verleihen — z.&nbsp;B. „Legenden-Trainer" bei 3 Legendären gleichzeitig im Team, „Champ" nach Championsieg. Weitere Ideen für Auslöser/Titel noch offen.</div>
@@ -4335,6 +4391,13 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Eingabefeld statt nur +5%/-5% beim Boss-Level-Boost.</strong> Für größere Sprünge auf einmal, ohne oft hintereinander tippen zu müssen.</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Proaktiver Hinweis „Region jetzt ausblenden?"</strong> Sobald eine Region komplett abgeschlossen ist, aktiv anbieten, sie über die bestehende Regionen-ausblenden-Funktion aus der Übersicht zu nehmen.</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Statusleisten-Farbe an die aktuelle Edition anpassen.</strong> <code>theme-color</code> passend zum Editions-Farbschema setzen, für ein noch nativeres Look&amp;Feel beim Wechseln.</div>
+    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Sanftes Fade-in beim Laden von Sprites.</strong> Statt hartem Pop-in ein kurzes Einblenden, sobald ein Sprite-Bild bereitsteht.</div>
+    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>„Fast geschafft"-Hervorhebung.</strong> Die letzten 2–3 offenen Kacheln kurz vor 100% Gesamtabschluss optisch hervorheben — kleiner Motivations-Kick.</div>
+    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Editions-Akzentfarbe auch auf Tab-Leiste/FAB.</strong> Aktuell nur auf Karten-Rändern sichtbar — jede Edition würde sich dadurch stärker „eigen" anfühlen.</div>
+    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Konfetti-Farben an die Editionspalette koppeln.</strong> Statt fixer Standardfarben.</div>
+    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>„✓ abgeschlossen"-Badge im Regions-Header.</strong> Sobald eine ganze Region fertig ist, auf einen Blick sichtbar, ohne reinscrollen zu müssen.</div>
+    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Längere Sheet-Labels kürzen.</strong> Z.&nbsp;B. „Kampf trotz Niederlage als abgeschlossen zählen" → kurzes Button-Label + erklärender Untertext, statt alles in den Button-Text zu packen.</div>
+    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Fokus-Sichtbarkeit &amp; aria-labels bei Icon-Buttons nachschärfen.</strong> Für Tastatur-/Screenreader-Nutzung, aktuell vermutlich lückenhaft.</div>
   </div>
 
   <div class="followups">
@@ -4356,7 +4419,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.31.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.32.</footer>
 
 </div>`;
 
@@ -4531,6 +4594,30 @@ function render(){
   document.getElementById("fabAdd").style.display = activeTab==="routes" ? "flex" : "none";
   fitNames();
 }
+
+/* Gestaffelte Eintritts-Animation der Kacheln (siehe CSS #content.tab-enter) - bewusst NICHT als
+   Vergleich "hat sich activeTab seit dem letzten render() geändert" in render() selbst gelöst: kurz
+   nach dem Start feuern etliche zusätzliche render()-Aufrufe aus freezeSpriteSrc()s img.onload
+   (jedes Boss-Sprite wird einmal nachträglich "eingefroren"), die denselben Tab erneut rendern und
+   die Klasse dadurch schon nach Millisekunden wieder entfernt hätten, bevor die Animation sichtbar
+   werden konnte. Stattdessen wird das Hinzufügen nur an den echten Tab-Wechsel-Stellen ausgelöst.
+   Das Entfernen hängt am tatsächlichen animationend-Event (mit kurzem Debounce, da mehrere Kacheln
+   zeitversetzt enden) statt an einem festen Timeout - ein Timeout könnte bei Haupt-Thread-Last kurz
+   nach dem Start (s.o., viele render()-Aufrufe direkt hintereinander) deutlich zu spät feuern. Ein
+   Fallback-Timeout räumt zusätzlich auf, falls nie ein animationend kommt (z.B. leerer Zustand ohne
+   Kacheln oder prefers-reduced-motion, wo die Animation komplett deaktiviert ist). */
+let tabEnterCleanupTimer = null;
+function triggerTabEnterAnim(){
+  const el = document.getElementById("content");
+  el.classList.add("tab-enter");
+  clearTimeout(tabEnterCleanupTimer);
+  tabEnterCleanupTimer = setTimeout(()=>el.classList.remove("tab-enter"), 1200);
+}
+document.getElementById("content").addEventListener("animationend", e=>{
+  if(e.animationName !== "tileEnter") return;
+  clearTimeout(tabEnterCleanupTimer);
+  tabEnterCleanupTimer = setTimeout(()=>document.getElementById("content").classList.remove("tab-enter"), 60);
+});
 
 /* ---------- sheet ---------- */
 const sheetBackdrop = document.getElementById("sheetBackdrop");
@@ -5307,7 +5394,7 @@ document.addEventListener("click", e=>{
 });
 
 document.querySelectorAll(".tab").forEach(tab=>{
-  tab.addEventListener("click", ()=>{ activeTab = tab.dataset.tab; render(); });
+  tab.addEventListener("click", ()=>{ activeTab = tab.dataset.tab; render(); triggerTabEnterAnim(); });
 });
 document.getElementById("fabAdd").addEventListener("click", openAddLocationSheet);
 
@@ -5374,9 +5461,9 @@ document.getElementById("fabAdd").addEventListener("click", openAddLocationSheet
     const idx = TAB_ORDER.indexOf(activeTab);
     const commit = Math.abs(curDx) >= COMMIT_DISTANCE && (Date.now() - startTime) < 900;
     if(commit && curDx < 0 && idx < TAB_ORDER.length - 1){
-      activeTab = TAB_ORDER[idx+1]; render(); veilEl.offsetHeight; clearSwipeVisual();
+      activeTab = TAB_ORDER[idx+1]; render(); triggerTabEnterAnim(); veilEl.offsetHeight; clearSwipeVisual();
     } else if(commit && curDx > 0 && idx > 0){
-      activeTab = TAB_ORDER[idx-1]; render(); veilEl.offsetHeight; clearSwipeVisual();
+      activeTab = TAB_ORDER[idx-1]; render(); triggerTabEnterAnim(); veilEl.offsetHeight; clearSwipeVisual();
     } else {
       clearSwipeVisual();
     }
@@ -5423,7 +5510,13 @@ document.getElementById("themeBtn").addEventListener("click", ()=>{
 });
 applyTheme();
 
+/* iOS Safari berechnet :active-Zustände (Press-Feedback per CSS) nur, wenn irgendwo auf der Seite
+   ein touchstart-Listener hängt - sonst bleibt z.B. der Scale-Down-Effekt auf Buttons dort komplett
+   aus. Ein leerer, passiver Listener auf dem gesamten Dokument reicht, um das global zu aktivieren. */
+document.addEventListener("touchstart", function(){}, {passive:true});
+
 render();
+triggerTabEnterAnim();
 Object.keys(BOSS_SPRITES).forEach(key=>freezeSpriteSrc(key, BOSS_SPRITES[key]));
 </script>
 
