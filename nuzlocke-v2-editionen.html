@@ -2446,7 +2446,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.8.34";
+const APP_VERSION = "1.8.35";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -2479,7 +2479,7 @@ function freshState(editionId, soloMode){
     names.forEach(entry=>{ locations.push(parseLocationEntry(region, entry)); });
   });
   const gameStarters = GAMES[edition].starters || { grass:"", fire:"", water:"" };
-  return { edition, runTitle:"Nuzlocke", soloMode:!!soloMode, locations, bossBoosts:{}, bossDefeated:{}, rivalNickname:"", duelPartnerName:"", dupesWarning:true, lastExportAt:null, evolutionCount:0, lossCount:0, nicknameRequired:false, pvp:{}, hallOfFame:{ rivalTeam:[], playerTeam:[], defeatedAt:null, result:null }, starterNames:{ ...gameStarters }, starterChoice:null, currentLocId:null, eventLog:[], hiddenRegions:[], achievements:{}, activeTitle:null, dupesIgnoredCount:0 };
+  return { edition, runTitle:"Nuzlocke", soloMode:!!soloMode, locations, bossBoosts:{}, bossDefeated:{}, rivalNickname:"", duelPartnerName:"", dupesWarning:true, lastExportAt:null, evolutionCount:0, lossCount:0, nicknameRequired:false, pvp:{}, hallOfFame:{ rivalTeam:[], playerTeam:[], defeatedAt:null, result:null }, starterNames:{ ...gameStarters }, starterChoice:null, currentLocId:null, eventLog:[], hiddenRegions:[], achievements:{}, activeTitle:null, dupesIgnoredCount:0, bossLossIds:{} };
 }
 
 /* Ergänzt neu hinzugekommene Standorte (z.B. nachträglich eingefügte Städte) in einen bereits
@@ -2524,6 +2524,7 @@ function normalizeState(parsed){
   if(!parsed.achievements) parsed.achievements = {};
   if(typeof parsed.activeTitle === "undefined") parsed.activeTitle = null;
   if(typeof parsed.dupesIgnoredCount !== "number") parsed.dupesIgnoredCount = 0;
+  if(!parsed.bossLossIds) parsed.bossLossIds = {};
   syncLocations(parsed);
   return parsed;
 }
@@ -3935,7 +3936,13 @@ const ACHIEVEMENTS = [
     check: ()=> (state.dupesIgnoredCount||0) >= 5 },
   { id:"locallegend", name:"Local Legend", title:"Local Legend", icon:"⭐",
     desc:"Champion besiegt, während wirklich jeder Bosstrainer individuell hochgestuft war.",
-    check: ()=> championWon() && activeBosses().length > 0 && activeBosses().every(b=>bossPercent(b.id) > 0) }
+    check: ()=> championWon() && activeBosses().length > 0 && activeBosses().every(b=>bossPercent(b.id) > 0) },
+  { id:"gottamissemall", name:"Gotta Miss 'Em All", title:"Der Ungenaue", icon:"🙈",
+    desc:"Mehr als 5 Fangversuche in einem Run als „Kein Fang“ markiert.",
+    check: ()=> state.locations.filter(l=>l.status==="failed").length > 5 },
+  { id:"phoenix", name:"Phönix aus der Asche", title:"Phönix", icon:"🐦‍🔥",
+    desc:"Nach einer Niederlage denselben Bosstrainer erneut herausgefordert - und diesmal gewonnen.",
+    check: ()=> Object.keys(state.bossLossIds||{}).some(bid=>state.bossDefeated[bid]===true) }
 ];
 
 /* checkAchievements() läuft am Ende JEDES Klicks im globalen Dispatcher mit (siehe ganz unten) statt
@@ -4002,6 +4009,14 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.35</span><span class="tag tag-feat">Feature</span></div>
+      <h3>Zwei weitere Erfolge: Gotta Miss 'Em All &amp; Phönix aus der Asche</h3>
+      <p><strong>Gotta Miss 'Em All (Titel „Der Ungenaue"):</strong> Schaltet frei, sobald in einem Run mehr als 5 Fangversuche als „Kein Fang" markiert wurden - das ironische Gegenstück zu „Gotta catch 'em all".</p>
+      <p><strong>Phönix aus der Asche (Titel „Phönix"):</strong> Schaltet frei, sobald ein Bosstrainer nach einer verlorenen Runde erneut herausgefordert und diesmal besiegt wurde - unabhängig davon, wie viele Versuche dazwischen lagen.</p>
+      <p>Erfolge insgesamt jetzt 12 statt 10, siehe „Erfolge &amp; Titel" in den Einstellungen.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.8.34</span><span class="tag tag-feat">Feature</span></div>
@@ -4637,7 +4652,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.34.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.35.</footer>
 
 </div>`;
 
@@ -5425,6 +5440,7 @@ document.addEventListener("click", e=>{
       logEvent("boss", `${displayName} besiegt (${boss.place})`);
     } else {
       state.lossCount = (state.lossCount||0) + 1;
+      state.bossLossIds[id] = true;
       logEvent("bossLoss", `Niederlage gegen ${displayName} (${boss.place})`);
       /* Manche Story-Kämpfe gehen auch bei einer Niederlage weiter (siehe openBossResultSheet) -
          "loss" statt true, damit die Kachel als abgeschlossen einklappt und in "Bosse besiegt"
