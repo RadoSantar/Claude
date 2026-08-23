@@ -1,4 +1,4 @@
-const CACHE_NAME = "nuzlocke-tracker-v1.8.32";
+const CACHE_NAME = "nuzlocke-tracker-v1.8.33";
 const ASSETS = [
   "./",
   "./index.html",

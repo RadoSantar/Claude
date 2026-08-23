@@ -102,6 +102,12 @@
 /* Edition-Farbschema: wird zur Laufzeit aus GAMES[...].theme generiert, siehe
    injectEditionThemeCSS() im JS-Teil weiter unten - hier keine Regeln mehr von Hand pflegen. */
 *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+/* Sichtbarer Fokusring für Tastatur-/Switch-Control-Navigation - bisher gab es außer bei Text-
+   Eingabefeldern keinerlei Fokus-Kennzeichnung. :focus-visible statt :focus, damit der Ring nur bei
+   echter Tastaturnavigation erscheint, nicht bei jedem Maus-/Touch-Tap. */
+a:focus-visible, button:focus-visible, input:focus-visible, [tabindex]:focus-visible{
+  outline:2px solid var(--accent); outline-offset:2px; border-radius:4px;
+}
 html,body{margin:0; padding:0; height:100%; overflow:hidden;}
 body{
   background:var(--bg); color:var(--ink); font-family:var(--font-body);
@@ -575,6 +581,8 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
   }
   .champion-card{ animation:championCardIn 420ms cubic-bezier(.34,1.2,.32,1) both; }
   .champion-trophy{ animation:championTrophyPop 700ms cubic-bezier(.34,1.56,.64,1) 150ms both; }
+  .game-over-card{ animation:championCardIn 420ms cubic-bezier(.34,1.2,.32,1) both; }
+  .game-over-icon{ animation:championTrophyPop 700ms cubic-bezier(.34,1.56,.64,1) 150ms both; }
 }
 
 .champion-overlay{
@@ -592,6 +600,24 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 .champion-stats > div{ flex:1; background:var(--surface-alt); border-radius:14px; padding:12px 8px; }
 .champion-stats span{ display:block; font-family:var(--font-mono); font-variant-numeric:tabular-nums; font-size:1.15rem; font-weight:800; color:var(--gold); }
 .champion-stats label{ display:block; font-size:.68rem; color:var(--ink-soft); margin-top:3px; }
+
+/* Spiegelt .champion-overlay/-card 1:1, aber als Niederlage gerahmt (rot statt gold, kein Konfetti) -
+   für den kompletten Team-Wipe (alle jemals gefangenen Pokémon tot), siehe checkGameOver(). */
+.game-over-overlay{
+  position:fixed; inset:0; z-index:70; display:flex; align-items:center; justify-content:center;
+  padding:24px; background:rgba(10,8,4,0.55); backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px);
+}
+.game-over-card{
+  background:var(--surface); border-radius:24px; padding:32px 26px 26px; max-width:360px; width:100%;
+  text-align:center; box-shadow:0 20px 60px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(var(--red-glow),.3);
+}
+.game-over-icon{ font-size:3.2rem; line-height:1; margin-bottom:6px; }
+.game-over-card h2{ font-size:1.3rem; font-weight:800; margin:4px 0 4px; color:var(--red); }
+.game-over-sub{ font-size:.88rem; color:var(--ink-soft); margin-bottom:20px; }
+.game-over-stats{ display:flex; gap:10px; margin-bottom:22px; }
+.game-over-stats > div{ flex:1; background:var(--surface-alt); border-radius:14px; padding:12px 8px; }
+.game-over-stats span{ display:block; font-family:var(--font-mono); font-variant-numeric:tabular-nums; font-size:1.15rem; font-weight:800; color:var(--red); }
+.game-over-stats label{ display:block; font-size:.68rem; color:var(--ink-soft); margin-top:3px; }
 
 .fab{
   position:absolute; right:18px; bottom:calc(88px + env(safe-area-inset-bottom)); z-index:15;
@@ -781,7 +807,7 @@ datalist{}
         </button>
         <input id="runTitle" class="title-input" maxlength="40" value="Nuzlocke" />
       </div>
-      <button class="icon-btn" id="themeBtn" title="Theme">
+      <button class="icon-btn" id="themeBtn" title="Theme" aria-label="Hell-/Dunkelmodus umschalten">
         <svg id="themeIcon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>
       </button>
     </div>
@@ -793,7 +819,7 @@ datalist{}
     <div class="swipe-veil" id="swipeVeil"></div>
   </div>
 
-  <button class="fab" id="fabAdd" title="Standort hinzufügen">+</button>
+  <button class="fab" id="fabAdd" title="Standort hinzufügen" aria-label="Standort hinzufügen">+</button>
   <button class="jump-fab" id="jumpFab" data-act="jump-to-current-loc" title="Zum aktuellen Standort">
     <svg viewBox="0 0 24 24"><path d="M12 4v14M6 12l6 6 6-6"/></svg>
     <span>Aktueller Standort</span>
@@ -2345,6 +2371,7 @@ const ICON_FLAG_FILLED = '<svg viewBox="0 0 24 24"><path d="M6 21V4" stroke-line
 const ICON_NOTE = '<svg viewBox="0 0 24 24"><path d="M6 3h9l5 5v12a1 1 0 01-1 1H6a1 1 0 01-1-1V4a1 1 0 011-1z"/><path d="M14.5 3v5.5H20"/><path d="M8 13h8M8 17h5"/></svg>';
 const ICON_NOTE_FILLED = '<svg viewBox="0 0 24 24"><path d="M6 3h9l5 5v12a1 1 0 01-1 1H6a1 1 0 01-1-1V4a1 1 0 011-1z" fill="currentColor"/><path d="M14.5 3v5.5H20" fill="var(--surface)"/><path d="M8 13h8M8 17h5" stroke="var(--surface)"/></svg>';
 const ICON_KEBAB = '<svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.7" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.7" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="1.7" fill="currentColor" stroke="none"/></svg>';
+const ICON_INFO = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6" stroke-linecap="round"/><circle cx="12" cy="7.5" r="1" fill="currentColor" stroke="none"/></svg>';
 
 function iconBtn(tone, act, id, iconSvg, label, disabled, small){
   const cls = "icon-act " + tone + (small?" small":"");
@@ -2377,7 +2404,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.8.32";
+const APP_VERSION = "1.8.33";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -3533,6 +3560,39 @@ function showChampionCelebration(boss){
   document.body.appendChild(overlay);
 }
 
+/* Kompletter Team-Wipe: nicht nur die sechs aktiven Team-Plätze, sondern wirklich ALLE jemals in
+   diesem Run gefangenen Pokémon (Team + Box) sind tot - erst dann steckt man tatsächlich fest, ein
+   Team-Wipe mit noch überlebenden Box-Pokémon wäre kein echtes Game Over. Wird nach jeder Aktion
+   geprüft, die ein Pokémon sterben lassen kann (mark-dead, Niederlage mit Todesopfern). */
+function checkGameOver(){
+  const caught = aliveCount() + deadCount();
+  if(caught > 0 && aliveCount() === 0) showGameOverOverlay();
+}
+
+/* Spiegelt showChampionCelebration() als Niederlage statt Sieg - kein Konfetti, rot statt gold. */
+function showGameOverOverlay(){
+  document.querySelector(".game-over-overlay")?.remove();
+  const bossesDefeated = activeBosses().filter(b=>isBossDefeated(b.id)).length;
+  const totalBosses = activeBosses().length;
+  const caught = aliveCount()+deadCount();
+  const overlay = document.createElement("div");
+  overlay.className = "game-over-overlay";
+  overlay.dataset.act = "close-game-over-overlay";
+  overlay.innerHTML = `
+    <div class="game-over-card">
+      <div class="game-over-icon" aria-hidden="true">💀</div>
+      <h2>Team ausgelöscht</h2>
+      <div class="game-over-sub">Alle gefangenen Pokémon sind gestorben · ${escapeHtml(currentGame().shortLabel)}</div>
+      <div class="game-over-stats">
+        <div><span>${caught}</span><label>Gefangen</label></div>
+        <div><span>${bossesDefeated}/${totalBosses}</span><label>Bosse besiegt</label></div>
+      </div>
+      <button class="btn btn-danger btn-block" data-act="close-game-over-overlay">Weiter</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+}
+
 function duelPartnerName(){ return (state.duelPartnerName||"").trim(); }
 function duelPartnerLabel(){ return duelPartnerName() || "deinen Duellpartner"; }
 function duelPartnerTeamLabel(){ const n = duelPartnerName(); return n ? `${n}s Team` : "Das Team deines Duellpartners"; }
@@ -3800,6 +3860,14 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.33</span><span class="tag tag-feat">Feature</span></div>
+      <h3>Game-Over-Bildschirm, Hilfe-Icons bei Einstellungen, Fokus-/Screenreader-Politur</h3>
+      <p><strong>Game-Over-Bildschirm bei komplettem Team-Verlust:</strong> Sind alle jemals gefangenen Pokémon dieses Runs tot - egal ob im Team oder in der Box - erscheint jetzt ein Vollbild-Overlay im Stil der Champion-Abschluss-Feier, nur als Niederlage gerahmt (rot statt gold, Totenkopf statt Pokal, keine Konfetti) mit kurzer Zusammenfassung (Gefangen, Bosse besiegt). Löst sowohl beim manuellen "Als gestorben markieren" als auch bei einer Bosskampf-Niederlage mit Todesopfern aus.</p>
+      <p><strong>Kontextuelle Hilfe-Icons bei Einstellungen:</strong> Ein kleines "?"-Icon neben "Alle Bosse" (Level-Boost), "Dupes-Clause-Warnung" und "Nickname-Pflicht" öffnet eine kurze Erklärung, was die jeweilige Option konkret bewirkt.</p>
+      <p><strong>Fokus-Sichtbarkeit &amp; aria-labels nachgeschärft:</strong> Bislang zeigten nur Text-Eingabefelder überhaupt einen Fokus-Rahmen bei Tastatur-Navigation - jetzt bekommen Links, Buttons, Eingabefelder und alle Icon-Buttons einen sichtbaren Fokus-Rahmen (nur bei Tastaturfokus, nicht bei Maus-Klick). Zusätzlich fehlende aria-labels ergänzt (Theme-Umschalter, "Standort hinzufügen"-Button), damit Screenreader auch bei reinen Icon-Buttons eine sinnvolle Beschreibung vorlesen.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.8.32</span><span class="tag tag-feat">Politur</span></div>
@@ -4358,7 +4426,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Achievement-System mit verliehenen Titeln.</strong> Für bestimmte Situationen/Meilensteine im Run Achievements freischalten, die einen Titel verleihen — z.&nbsp;B. „Legenden-Trainer" bei 3 Legendären gleichzeitig im Team, „Champ" nach Championsieg. Weitere Ideen für Auslöser/Titel noch offen.</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Run-Rückblick ausbauen: erzählte Zusammenfassung + kleine Analyse.</strong> Statt nur Kennzahlen eine spannend geschriebene Zusammenfassung des Abenteuers anhand von Kennzahlen/Verlauf generieren, dazu kleine Analyse-Einsichten (z.&nbsp;B. „hauptsächlich Wasser-Pokémon im Team", auffällige Typverteilung, Fang-/Todesserien o.&nbsp;Ä.).</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Zusammengefasste Encounter-Übersicht für ausgelassene Routen.</strong> Liste aller Standorte, an denen noch kein Fangversuch eingetragen wurde (übersprungene Routen), mit Sprung-Funktion zur jeweiligen Standort-Karte per Klick.</div>
-    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Game-Over-Bildschirm bei komplettem Team-Verlust.</strong> Sind alle Pokémon gestorben, soll ein Vollbild-Overlay ähnlich der Champion-Abschluss-Feier erscheinen — allerdings als Niederlage gerahmt statt als Sieg.</div>
+    <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Game-Over-Bildschirm bei komplettem Team-Verlust.</strong> Sind alle Pokémon gestorben, soll ein Vollbild-Overlay ähnlich der Champion-Abschluss-Feier erscheinen — allerdings als Niederlage gerahmt statt als Sieg. → umgesetzt in v1.8.33</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Abgegebene Pokémon aus der Überlebensrate herausrechnen.</strong> Aktuell zählen abgegebene Pokémon (z.&nbsp;B. bei einer verlorenen Rivalenduell-Niederlage) weiter zur Überlebensrate mit — dadurch kann die Rate auch dann nicht auf 0% fallen, wenn tatsächlich das komplette verbliebene Team gestorben ist. Abgegebene sollten aus der Berechnung ausgeschlossen werden.</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Farbcodierte Überlebensrate.</strong> Die Statistik-Kachel „Überlebensrate" soll je nach Wert die Farbe wechseln: ab 50% Grün, 25–49% Gelb, 0–24% Rot.</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Rivalen-Umbenennung auch in den Einstellungen.</strong> Der Ingame-Rivalenname lässt sich bisher nur per Klick auf den Namen selbst anpassen (bleibt so erhalten) — zusätzlich soll dafür unter „Duell &amp; Bosse" ein Eingabefeld analog zum Duellpartner-Namen stehen.</div>
@@ -4380,7 +4448,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Spitzname inline auf der Team-Kachel bearbeitbar.</strong> Statt über den Umweg Kontextmenü → Umbenennen-Sheet direkt auf der Kachel editierbar — spart einen Schritt bei einer der häufigsten Aktionen.</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Badge-Zähler auf den Tabs.</strong> Z.&nbsp;B. „Team 4/6" oder eine kleine Zahl auf „Friedhof", damit der Status auf einen Blick sichtbar ist, ohne erst reinzutippen.</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Meilenstein-Feedback bei 25/50/75/100% Gesamtfortschritt.</strong> Kleiner Konfetti-Moment/Toast, ähnlich der Champion-Feier, aber für Zwischenetappen.</div>
-    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Kontextuelle Hilfe-Icons bei Einstellungen.</strong> Ein kleines „?" bei weniger selbsterklärenden Optionen (Dupes-Clause, Nickname-Pflicht, Einzelspieler-Modus), das kurz erklärt, was sie konkret bewirken.</div>
+    <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Kontextuelle Hilfe-Icons bei Einstellungen.</strong> Ein kleines „?" bei weniger selbsterklärenden Optionen (Dupes-Clause, Nickname-Pflicht, Einzelspieler-Modus), das kurz erklärt, was sie konkret bewirken. → umgesetzt in v1.8.33 (Level-Boost, Dupes-Clause, Nickname-Pflicht; Einzelspieler-Modus-Erklärung steht noch offen)</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Kurze Erste-Schritte-Tour beim allerersten Öffnen.</strong> Die App hat mittlerweile einige nicht ganz offensichtliche Mechaniken (Flaggen-Icon, Einklapp-Logik, Box-Suche, Swipe zwischen Tabs), die neue Nutzer:innen sonst nur durch Zufall entdecken.</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Kurzes Vibrations-Feedback bei Fang/Tod/Bosssieg.</strong> Auf unterstützten Geräten, mit Ein/Aus-Schalter in den Einstellungen.</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Status nie nur über Farbe codieren.</strong> Gerade bei der geplanten farbcodierten Überlebensrate zusätzlich ein Symbol/Text verwenden, damit es auch für farbenblinde Nutzer:innen eindeutig bleibt.</div>
@@ -4397,7 +4465,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Konfetti-Farben an die Editionspalette koppeln.</strong> Statt fixer Standardfarben.</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>„✓ abgeschlossen"-Badge im Regions-Header.</strong> Sobald eine ganze Region fertig ist, auf einen Blick sichtbar, ohne reinscrollen zu müssen.</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Längere Sheet-Labels kürzen.</strong> Z.&nbsp;B. „Kampf trotz Niederlage als abgeschlossen zählen" → kurzes Button-Label + erklärender Untertext, statt alles in den Button-Text zu packen.</div>
-    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Fokus-Sichtbarkeit &amp; aria-labels bei Icon-Buttons nachschärfen.</strong> Für Tastatur-/Screenreader-Nutzung, aktuell vermutlich lückenhaft.</div>
+    <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Fokus-Sichtbarkeit &amp; aria-labels bei Icon-Buttons nachschärfen.</strong> Für Tastatur-/Screenreader-Nutzung, aktuell vermutlich lückenhaft. → umgesetzt in v1.8.33</div>
   </div>
 
   <div class="followups">
@@ -4419,7 +4487,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.32.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.33.</footer>
 
 </div>`;
 
@@ -4455,6 +4523,25 @@ function openEventLogSheet(){
   `);
 }
 
+/* Kurze Erklärtexte für Einstellungen, deren Wirkung über den einzeiligen Untertitel hinausgeht -
+   öffnet ein simples Info-Sheet statt die Einstellungsliste dauerhaft mit Fließtext vollzustopfen. */
+const SETTINGS_HELP = {
+  bossboost: { title:"Level-Boost für Bosstrainer", text:"Erhöht die angezeigten Level aller Bosstrainer gemeinsam um den gewählten Prozentsatz - z. B. wird aus einem Basis-Level 50 bei +5% ein angezeigtes Level 53 (aufgerundet). Rein informativ für den Schwierigkeitsgrad eures Randomizers, ändert nichts an echten Spieldaten - lässt sich pro Boss auch einzeln anpassen." },
+  dupes: { title:"Dupes-Clause-Warnung", text:"Klassische Nuzlocke-Hausregel: pro Entwicklungsreihe darf meist nur ein Pokémon gefangen werden. Ist die Warnung aktiv, meldet sich die App beim Fangen, wenn die Art (oder eine verwandte Entwicklungsstufe) schon im Team, in der Box oder im Friedhof vorhanden ist - der Fang bleibt trotzdem möglich, es ist nur ein Hinweis, keine Sperre." },
+  nickname: { title:"Nickname-Pflicht", text:"Erzwingt beim Fangen einen Spitznamen, bevor sich der Fang speichern lässt - hilfreich, wenn ihr euch als Hausregel vorgenommen habt, jedem Pokémon einen eigenen Namen zu geben." }
+};
+function openSettingsHelpSheet(key){
+  const info = SETTINGS_HELP[key];
+  if(!info) return;
+  openSheet(`
+    <h3>${escapeHtml(info.title)}</h3>
+    <div class="loc-sub" style="margin-bottom:0;">${escapeHtml(info.text)}</div>
+    <div class="sheet-footer" style="margin-top:18px;">
+      <button class="btn btn-primary btn-block" data-act="close-sheet">Verstanden</button>
+    </div>
+  `);
+}
+
 function renderSettings(){
   const percents = currentGame().bosses.map(b=>bossPercent(b.id));
   const min = Math.min(...percents), max = Math.max(...percents);
@@ -4486,7 +4573,10 @@ function renderSettings(){
   </div>`}
   <div class="card boss-bulk">
     <div>
-      <div class="loc-name">Alle Bosse</div>
+      <div class="card-top">
+        <div class="loc-name">Alle Bosse</div>
+        ${iconBtn("tone-neutral","open-setting-help","bossboost",ICON_INFO,"Erklärung anzeigen",false,true)}
+      </div>
       <div class="loc-sub">Level-Boost für alle Bosstrainer gleichzeitig anpassen</div>
       <span class="boss-percent-pill ${max>0?'active':''}" style="margin-top:8px;">Aktuell ${percentLabel}</span>
     </div>
@@ -4498,12 +4588,18 @@ function renderSettings(){
 
   html += settingsGroupHtml("rules", "Regeln", `
   <div class="card">
-    <div class="loc-name">Dupes-Clause-Warnung</div>
+    <div class="card-top">
+      <div class="loc-name">Dupes-Clause-Warnung</div>
+      ${iconBtn("tone-neutral","open-setting-help","dupes",ICON_INFO,"Erklärung anzeigen",false,true)}
+    </div>
     <div class="loc-sub">Warnt beim Fangen, wenn die Spezies schon existiert (Team/Box/Friedhof)</div>
     <button class="btn ${state.dupesWarning?"btn-primary":"btn-secondary"} btn-block" style="margin-top:10px;" data-act="toggle-dupes-warning">${state.dupesWarning?"Aktiviert":"Deaktiviert"}</button>
   </div>
   <div class="card">
-    <div class="loc-name">Nickname-Pflicht</div>
+    <div class="card-top">
+      <div class="loc-name">Nickname-Pflicht</div>
+      ${iconBtn("tone-neutral","open-setting-help","nickname",ICON_INFO,"Erklärung anzeigen",false,true)}
+    </div>
     <div class="loc-sub">Erzwingt einen Spitznamen beim Fangen eines Pokémon</div>
     <button class="btn ${state.nicknameRequired?"btn-primary":"btn-secondary"} btn-block" style="margin-top:10px;" data-act="toggle-nickname-required">${state.nicknameRequired?"Aktiviert":"Deaktiviert"}</button>
   </div>`);
@@ -5063,6 +5159,7 @@ document.addEventListener("click", e=>{
     m.dead=true; m.inTeam=false;
     logEvent("dead", `${m.nickname || m.species} ist gestorben (${loc.name})`);
     saveState(); closeSheet(); render();
+    checkGameOver();
   }
   else if(act==="revive"){ findLoc(id).mon.dead=false; saveState(); closeSheet(); render(); }
   else if(act==="pvp-win") openPvpWinSheet(id);
@@ -5159,8 +5256,10 @@ document.addEventListener("click", e=>{
     closeSheet(); render();
     lastDefeatedId = null;
     if(result==="win" && isChamp) showChampionCelebration(boss);
+    if(deadNames.length) checkGameOver();
   }
   else if(act==="close-champion-overlay"){ document.querySelector(".champion-overlay")?.remove(); }
+  else if(act==="close-game-over-overlay"){ document.querySelector(".game-over-overlay")?.remove(); }
   else if(act==="open-final-rival"){
     openFinalRivalSheet(id);
   }
@@ -5351,6 +5450,7 @@ document.addEventListener("click", e=>{
   else if(act==="open-saves-sheet") openSavesSheet();
   else if(act==="open-event-log") openEventLogSheet();
   else if(act==="open-changelog") openChangelogSheet();
+  else if(act==="open-setting-help") openSettingsHelpSheet(id);
   else if(act==="open-run-recap") openRunRecapSheet();
   else if(act==="copy-run-recap"){
     const text = runRecapText();
