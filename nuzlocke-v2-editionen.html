@@ -166,6 +166,7 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 .stat-tile .stat-value{ font-family:var(--font-mono); font-variant-numeric:tabular-nums; font-size:1.2rem; font-weight:700; color:var(--ink); }
 .stat-tile.dot-good .stat-value{ color:var(--good); }
 .stat-tile.dot-red .stat-value{ color:var(--red); }
+.stat-tile.dot-warn .stat-value{ color:var(--warn); }
 .stat-tile.dot-gold .stat-value{ color:var(--accent); }
 .progress-label-row{
   display:flex; align-items:baseline; justify-content:space-between; margin-top:14px;
@@ -176,6 +177,16 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
   margin-top:6px; height:6px; border-radius:999px; background:var(--surface-alt); overflow:hidden;
 }
 .progress-fill{ height:100%; background:linear-gradient(155deg, var(--accent-shine), var(--accent) 55%, var(--accent-deep)); border-radius:999px; transition:width .3s ease; }
+.mini-progress-sticky{
+  position:sticky; top:0; z-index:15; background:var(--bg); pointer-events:none;
+  margin:0 -16px 12px; padding:10px 16px 8px; border-bottom:1px solid var(--line);
+}
+.mini-progress-row{
+  display:flex; align-items:baseline; justify-content:space-between; margin-bottom:6px;
+  font-size:.74rem; font-weight:700; color:var(--ink-soft);
+}
+.mini-progress-row .progress-pct{ font-size:.86rem; }
+.mini-progress-sticky .progress-track{ margin-top:0; }
 .header-team-row{ display:flex; gap:6px; margin-top:12px; }
 .header-team-slot{
   flex:1; aspect-ratio:1; max-width:44px; border-radius:10px; background:var(--surface-alt);
@@ -330,6 +341,8 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
   flex:none; image-rendering:pixelated; image-rendering:-moz-crisp-edges; image-rendering:crisp-edges;
   background:var(--surface-alt); border-radius:10px; padding:2px;
 }
+.sprite-fade{ opacity:0; transition:opacity .25s ease; }
+.sprite-fade.loaded{ opacity:1; }
 .mon-sprite-placeholder{
   flex:none; background:var(--surface-alt); border-radius:10px; display:flex; align-items:center; justify-content:center;
   color:var(--ink-soft); font-weight:700; font-size:.85rem;
@@ -2313,12 +2326,20 @@ function monLinkHtml(cls, species, inner){
   if(href) return `<a class="${cls}" href="${href}" target="_blank" rel="noopener" title="Pokédex-Eintrag öffnen">${inner}</a>`;
   return `<div class="${cls}">${inner}</div>`;
 }
+/* Sanftes Fade-in statt hartem Pop-in, aber NUR beim allerersten Rendern eines bestimmten
+   Sprites in dieser Sitzung - ein Set merkt sich bereits gesehene src-Werte. Ohne diesen Cache
+   würde jedes erneute render() (z.B. nach jedem Fang/jeder Aktion im Team-Tab) dieselben, längst
+   sichtbaren Sprites erneut kurz ausblenden und wieder einblenden lassen, was mehr flackert als
+   der ursprüngliche harte Pop-in. */
+const loadedSpriteSrcs = new Set();
+function markSpriteLoaded(src){ loadedSpriteSrcs.add(src); }
 function spriteImgHtml(speciesName, size, flash){
   size = size || 64;
   const src = spriteFor(speciesName);
-  const cls = flash ? "mon-sprite evolve-flash" : "mon-sprite";
-  if(src) return `<img class="${cls}" src="${src}" width="${size}" height="${size}" alt="" />`;
-  return `<div class="mon-sprite-placeholder" style="width:${size}px;height:${size}px;">?</div>`;
+  if(!src) return `<div class="mon-sprite-placeholder" style="width:${size}px;height:${size}px;">?</div>`;
+  const baseCls = flash ? "mon-sprite evolve-flash" : "mon-sprite";
+  if(loadedSpriteSrcs.has(src)) return `<img class="${baseCls}" src="${src}" width="${size}" height="${size}" alt="" />`;
+  return `<img class="${baseCls} sprite-fade" src="${src}" width="${size}" height="${size}" alt="" onload="this.classList.add('loaded'); markSpriteLoaded(this.src)" onerror="this.classList.add('loaded')" />`;
 }
 
 function speciesMatches(query){
@@ -2388,6 +2409,7 @@ function performCatch(id, species, nick){
   const joinsTeam = teamCount()<6;
   loc.mon={ species, nickname:nick, inTeam:joinsTeam, dead:false, caughtAt:Date.now() };
   logEvent("catch", `${nick ? `${nick} (${species})` : species} auf ${loc.name} gefangen`);
+  vibrateFeedback(35);
   saveState(); render();
   /* Team ist beim Fangen bereits voll - statt den Fang stillschweigend in der Box zu versenken,
      direkt fragen: ins Team (dann Ersatz wählen wie beim manuellen "Ins Team aufnehmen") oder
@@ -2459,7 +2481,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.8.39";
+const APP_VERSION = "1.8.40";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -2492,7 +2514,7 @@ function freshState(editionId, soloMode){
     names.forEach(entry=>{ locations.push(parseLocationEntry(region, entry)); });
   });
   const gameStarters = GAMES[edition].starters || { grass:"", fire:"", water:"" };
-  return { edition, runTitle:"Nuzlocke", soloMode:!!soloMode, locations, bossBoosts:{}, bossDefeated:{}, rivalNickname:"", duelPartnerName:"", dupesWarning:true, lastExportAt:null, evolutionCount:0, lossCount:0, nicknameRequired:false, pvp:{}, hallOfFame:{ rivalTeam:[], playerTeam:[], defeatedAt:null, result:null }, starterNames:{ ...gameStarters }, starterChoice:null, currentLocId:null, eventLog:[], hiddenRegions:[], achievements:{}, activeTitle:null, dupesIgnoredCount:0, bossLossIds:{}, cleanBossWins:{} };
+  return { edition, runTitle:"Nuzlocke", soloMode:!!soloMode, locations, bossBoosts:{}, bossDefeated:{}, rivalNickname:"", duelPartnerName:"", dupesWarning:true, lastExportAt:null, evolutionCount:0, lossCount:0, nicknameRequired:false, pvp:{}, hallOfFame:{ rivalTeam:[], playerTeam:[], defeatedAt:null, result:null }, starterNames:{ ...gameStarters }, starterChoice:null, currentLocId:null, eventLog:[], hiddenRegions:[], achievements:{}, activeTitle:null, dupesIgnoredCount:0, bossLossIds:{}, cleanBossWins:{}, bossNotes:{}, randomizerSeed:"", vibrationEnabled:true, bossWinTeams:{} };
 }
 
 /* Ergänzt neu hinzugekommene Standorte (z.B. nachträglich eingefügte Städte) in einen bereits
@@ -2539,6 +2561,10 @@ function normalizeState(parsed){
   if(typeof parsed.dupesIgnoredCount !== "number") parsed.dupesIgnoredCount = 0;
   if(!parsed.bossLossIds) parsed.bossLossIds = {};
   if(!parsed.cleanBossWins) parsed.cleanBossWins = {};
+  if(!parsed.bossNotes) parsed.bossNotes = {};
+  if(typeof parsed.randomizerSeed !== "string") parsed.randomizerSeed = "";
+  if(typeof parsed.vibrationEnabled !== "boolean") parsed.vibrationEnabled = true;
+  if(!parsed.bossWinTeams) parsed.bossWinTeams = {};
   syncLocations(parsed);
   return parsed;
 }
@@ -2683,9 +2709,34 @@ function logEvent(type, text){
   if(state.eventLog.length > 400) state.eventLog.splice(0, state.eventLog.length - 400);
 }
 
+/* Kurzes haptisches Feedback bei Fang/Tod/Bosssieg - navigator.vibrate() existiert nicht auf allen
+   Geräten/Browsern (u.a. iOS Safari komplett ohne Unterstützung), daher immer defensiv prüfen statt
+   vorauszusetzen. Pro Ereignis ein eigenes, kurzes Muster statt eines einzigen generischen Zuckens,
+   damit sich Fang/Tod/Sieg auch ohne Hinsehen unterscheiden lassen. */
+function vibrateFeedback(pattern){
+  if(state.vibrationEnabled===false) return;
+  if(navigator.vibrate) navigator.vibrate(pattern);
+}
+
 function teamCount(){ return state.locations.filter(l=>l.mon && l.mon.inTeam && !l.mon.dead).length; }
 function aliveCount(){ return state.locations.filter(l=>l.mon && !l.mon.dead).length; }
 function deadCount(){ return state.locations.filter(l=>l.mon && l.mon.dead).length; }
+
+/* Abgegebene Pokémon (an den Duellpartner nach einer verlorenen Ruhmeshalle-Niederlage, siehe
+   act==="give-to-friend") zählen bewusst NICHT in die Überlebensrate hinein - weder als "überlebt"
+   noch als "gestorben", sie haben den Run einfach verlassen. Ohne diesen Ausschluss konnte die Rate
+   nie auf 0% fallen, selbst wenn das komplette verbliebene Team gestorben war, weil abgegebene
+   Pokémon (nicht tot, aber auch nicht mehr im Besitz) weiter als "lebend" mitgezählt wurden. */
+function survivalRate(){
+  const relevant = state.locations.filter(l=>l.mon && !l.mon.given);
+  if(!relevant.length) return null;
+  return Math.round(relevant.filter(l=>!l.mon.dead).length / relevant.length * 100);
+}
+function survivalRateTone(rate){
+  if(rate===null || rate>=50) return "dot-good";
+  if(rate>=25) return "dot-warn";
+  return "dot-red";
+}
 function resolvedCount(){ return state.locations.filter(l=>l.status!=="pending").length; }
 
 /* ---------- rendering ---------- */
@@ -2757,13 +2808,13 @@ function statTileHtml(tone, label, value){
 function statsCardHtml(){
   const pct = completionPercent();
   const caught = aliveCount()+deadCount();
-  const survivalRate = caught>0 ? Math.round(aliveCount()/caught*100) : null;
+  const survival = survivalRate();
   const bosses = activeBosses();
   const bossesDefeated = bosses.filter(b=>isBossDefeated(b.id)).length;
   const duelTally = rivalDuelTally();
   const tiles = [
     // Reihenfolge: positiv (grün) -> neutral (weiß) -> negativ (rot) -> Fortschritt (gold)
-    statTileHtml("dot-good", "Überlebensrate", survivalRate===null?"–":survivalRate+"%"),
+    statTileHtml(survivalRateTone(survival), "Überlebensrate", survival===null?"–":survival+"%"),
     ...(state.soloMode ? [] : [statTileHtml("dot-good", "Duelle gewonnen", duelTally.wins)]),
     statTileHtml("", "Gefangen", caught),
     statTileHtml("", "Entwicklungen", state.evolutionCount||0),
@@ -2926,6 +2977,17 @@ function updateJumpButtonVisibility(){
 }
 document.getElementById("content").addEventListener("scroll", ()=>requestAnimationFrame(updateJumpButtonVisibility), {passive:true});
 
+/* Beim (erneuten) Öffnen des Routen-Tabs direkt zur aktuellen Kachel springen, statt den
+   "Zum aktuellen Standort"-Button jedes Mal manuell antippen zu müssen - siehe scrollToCurrentLocation()
+   im Tab-Klick-Handler weiter unten. Bewusst kein "smooth" (Sprung statt Animation), da das bei
+   jedem einzelnen Tab-Wechsel sonst unruhig wirken würde. */
+function scrollToCurrentLocation(){
+  const targetId = effectiveCurrentLocId();
+  if(!targetId) return;
+  const el = document.querySelector(`[data-loc="${targetId}"], [data-boss="${targetId}"]`);
+  if(el) el.scrollIntoView({ block:"center" });
+}
+
 /* Einklappen läuft pro einzelner Kachel (Standort- oder Bosskarte), nicht mehr pro Standort samt
    angehängter Bosse als gemeinsamem Block: ein Bosskampf, der bereits abgeschlossen ist, klappt so
    auch dann ein, wenn der zugehörige Standort selbst noch nicht fangbar ist (z.B. weil dafür erst
@@ -2935,6 +2997,11 @@ document.getElementById("content").addEventListener("scroll", ()=>requestAnimati
 function renderRoutes(){
   let html = "";
   const game = currentGame();
+  const pct = completionPercent();
+  html += `<div class="mini-progress-sticky">
+    <div class="mini-progress-row"><span>Gesamtabschluss</span><span class="progress-pct">${pct}%</span></div>
+    <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+  </div>`;
   html += starterCardHtml();
   const currentId = effectiveCurrentLocId();
   game.regions.forEach(([region])=>{
@@ -3413,8 +3480,13 @@ function bossCardHtml(boss, isCurrent){
      oben rechts) kollidieren und eine erledigte Kachel lässt sich ohnehin nicht als "aktuell"
      halten (isCurrentTargetResolved räumt die Markierung sofort wieder ab). */
   const flagBtn = defeated ? "" : iconBtn(isCurrent?"tone-good":"tone-neutral","toggle-current-loc",boss.id,isCurrent?ICON_FLAG_FILLED:ICON_FLAG,isCurrent?"Nicht mehr aktueller Standort":"Als aktuellen Standort markieren",false,true);
+  const hasBossNote = !!((state.bossNotes||{})[boss.id]||"").trim();
+  const noteBtn = iconBtn(hasBossNote?"tone-gold":"tone-neutral","open-boss-note",boss.id,hasBossNote?ICON_NOTE_FILLED:ICON_NOTE,hasBossNote?"Notiz bearbeiten":"Notiz hinzufügen",false,true);
+  const bossNoteHtml = hasBossNote ? `<div class="loc-note">${escapeHtml(state.bossNotes[boss.id])}</div>` : "";
+  const hasWinTeam = !!((state.bossWinTeams||{})[boss.id]||[]).length;
   const bottom = defeated
     ? `<div class="boss-actions">
+        ${hasWinTeam ? `<button class="btn btn-secondary btn-block" data-act="open-boss-win-team" data-id="${boss.id}">Team anzeigen</button>` : ""}
         <button class="btn btn-secondary btn-block" data-act="toggle-boss-defeat" data-id="${boss.id}">${settledAsLoss?"Abschluss zurücknehmen":"Sieg zurücknehmen"}</button>
       </div>`
     : `<div class="boss-actions">
@@ -3435,7 +3507,7 @@ function bossCardHtml(boss, isCurrent){
           <div class="loc-sub">${escapeHtml(boss.cls)} · ${escapeHtml(boss.place)}</div>
         </div>
       </div>
-      ${flagBtn}
+      <div style="display:flex; gap:4px; flex:none;">${noteBtn}${flagBtn}</div>
     </div>
     <div class="boss-level-row">
       <div class="boss-level-main">
@@ -3444,6 +3516,7 @@ function bossCardHtml(boss, isCurrent){
       </div>
       <div class="boss-ace"><span>Basis Lv. ${boss.baseLevel}</span></div>
     </div>
+    ${bossNoteHtml}
     ${bottom}
   </div>`;
 }
@@ -3548,7 +3621,11 @@ function pvpCardHtml(boss){
 }
 
 /* ---------- Ruhmeshalle: finales Rivalenduell gegen den Duellpartner (nicht die Spielfigur!) nach dem Champion ---------- */
-const CONFETTI_COLORS = ["var(--gold)","var(--evolve)","var(--good)","var(--accent)","var(--red)"];
+/* Rein aus editionsspezifischen Farbtoken zusammengesetzt (--accent/--gold & Varianten sind pro
+   Edition per :root[data-edition="..."] überschrieben, siehe CSS oben) - vorher waren 3 der 5 Töne
+   feste, editionsunabhängige Signalfarben (--evolve/--good/--red), das Konfetti wirkte dadurch nur
+   teilweise an die jeweilige Editionspalette gekoppelt. */
+const CONFETTI_COLORS = ["var(--accent)","var(--accent-shine)","var(--accent-deep)","var(--gold)","var(--gold-soft)"];
 function spawnConfetti(){
   if(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   const layer = document.createElement("div");
@@ -3600,8 +3677,7 @@ function showChampionCelebration(boss){
   spawnConfetti();
   const bossesDefeated = activeBosses().filter(b=>isBossDefeated(b.id)).length;
   const totalBosses = activeBosses().length;
-  const caught = aliveCount()+deadCount();
-  const survivalRate = caught>0 ? Math.round(aliveCount()/caught*100) : null;
+  const survival = survivalRate();
   const overlay = document.createElement("div");
   overlay.className = "champion-overlay";
   overlay.dataset.act = "close-champion-overlay";
@@ -3611,7 +3687,7 @@ function showChampionCelebration(boss){
       <h2>Champion besiegt!</h2>
       <div class="champion-sub">${escapeHtml(boss.name || boss.cls)} · ${escapeHtml(currentGame().shortLabel)}</div>
       <div class="champion-stats">
-        <div><span>${survivalRate===null?"–":survivalRate+"%"}</span><label>Überlebensrate</label></div>
+        <div><span>${survival===null?"–":survival+"%"}</span><label>Überlebensrate</label></div>
         <div><span>${bossesDefeated}/${totalBosses}</span><label>Bosse besiegt</label></div>
       </div>
       <button class="btn btn-primary btn-block" data-act="close-champion-overlay">Weiter</button>
@@ -3760,6 +3836,28 @@ function hofGridHtml(items, isPlayerTeam){
    Champion-Sieg die Ruhmeshalle aus - automatischer Snapshot des aktuell lebenden Teams (gleicher
    Zuschnitt wie beim finalen Rivalenduell: nur im Team, nicht tot/abgegeben). Wird beim erneuten
    Besiegen des Champions (z.B. nach vorherigem "Sieg zurücknehmen") einfach überschrieben. */
+/* Team-Snapshot pro Bosssieg (unabhängig von Ruhmeshalle/Duell) - hält fest, mit welchem Team ein
+   bestimmter Bosskampf gewonnen wurde, damit sich das im Nachhinein nachschlagen lässt (siehe
+   openBossWinTeamSheet). Wird bei jedem neuen Sieg gegen denselben Boss überschrieben. */
+function snapshotBossWinTeam(bossId){
+  state.bossWinTeams[bossId] = state.locations
+    .filter(l=>l.mon && l.mon.inTeam && !l.mon.dead && !l.mon.given)
+    .map(l=>({ species:l.mon.species, nickname:l.mon.nickname }));
+}
+function openBossWinTeamSheet(bossId){
+  const boss = bossById(bossId);
+  if(!boss) return;
+  const team = (state.bossWinTeams||{})[bossId] || [];
+  openSheet(`
+    <h3>Team beim Sieg</h3>
+    <div class="loc-sub" style="margin-bottom:14px;">${escapeHtml(boss.name || boss.cls)} · ${escapeHtml(boss.place)}</div>
+    ${hofGridHtml(team, true)}
+    <div class="sheet-footer" style="margin-top:14px;">
+      <button class="btn btn-primary btn-block" data-act="close-sheet">Schließen</button>
+    </div>
+  `);
+}
+
 function snapshotSoloHallOfFame(){
   const playerTeam = state.locations
     .filter(l=>l.mon && l.mon.inTeam && !l.mon.dead && !l.mon.given)
@@ -3819,12 +3917,12 @@ function hallOfFameCardHtml(){
    sich danach noch ändern kann - der Rückblick soll den Stand am Run-Ende festhalten. */
 function runRecapStats(){
   const caught = aliveCount()+deadCount();
-  const survivalRate = caught>0 ? Math.round(aliveCount()/caught*100) : null;
+  const rate = survivalRate();
   const bossesDefeated = activeBosses().filter(b=>isBossDefeated(b.id)).length;
   const totalBosses = activeBosses().length;
   const duelTally = rivalDuelTally();
   const hof = state.hallOfFame;
-  return { caught, survivalRate, bossesDefeated, totalBosses, duelTally, won: hof.result!=="loss" };
+  return { caught, survivalRate: rate, bossesDefeated, totalBosses, duelTally, won: hof.result!=="loss" };
 }
 
 function runRecapHeadline(){
@@ -3844,7 +3942,7 @@ function openRunRecapSheet(){
     <div class="loc-sub" style="margin-bottom:6px; font-weight:700;">${state.soloMode?"Team beim Champion-Sieg":"Team im finalen Duell"}</div>
     ${hofGridHtml(hof.playerTeam||[], true)}
     <div class="stat-grid" style="margin-top:2px;">
-      ${statTileHtml("dot-good", "Überlebensrate", s.survivalRate===null?"–":s.survivalRate+"%")}
+      ${statTileHtml(survivalRateTone(s.survivalRate), "Überlebensrate", s.survivalRate===null?"–":s.survivalRate+"%")}
       ${statTileHtml("", "Gefangen", s.caught)}
       ${statTileHtml("dot-red", "Gestorben", deadCount())}
       ${statTileHtml("dot-red", "Kampfniederlagen", state.lossCount||0)}
@@ -4137,6 +4235,20 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.40</span><span class="tag tag-feat">Feature</span></div>
+      <h3>10 Backlog-Punkte umgesetzt, plus: Team beim Bosssieg im Nachhinein einsehbar</h3>
+      <p><strong>Überlebensrate korrigiert &amp; farbcodiert:</strong> Abgegebene Pokémon (nach einer verlorenen Rivalenduell-Niederlage) zählten bisher fälschlich weiter als "überlebt" mit - dadurch konnte die Rate nie auf 0% fallen, selbst wenn das komplette verbliebene Team gestorben war. Jetzt aus der Berechnung ausgeschlossen. Die Statistik-Kachel wechselt außerdem die Farbe je nach Wert: ab 50% Grün, 25–49% Gelb, darunter Rot.</p>
+      <p><strong>Rivalen-Umbenennung auch in den Einstellungen:</strong> zusätzlich zum Antippen des Namens direkt auf der Kampf-Kachel jetzt auch ein Eingabefeld unter „Duell &amp; Bosse", analog zum Duellpartner-Namen.</p>
+      <p><strong>Notizfeld pro Boss:</strong> bei einem Randomizer ist das gegnerische Team jedes Mal anders - jeder Bosskampf hat jetzt ein eigenes Freitextfeld fürs tatsächliche Team/Strategie-Notizen, unabhängig von der Standort-Notiz.</p>
+      <p><strong>Randomizer-Seed-Feld:</strong> neues Freitextfeld unter „Spielstände" für Seed/Einstellungen des verwendeten Randomizers.</p>
+      <p><strong>Vibrations-Feedback:</strong> kurzes haptisches Feedback bei Fang, Tod und Bosssieg auf unterstützten Geräten, mit Ein/Aus-Schalter unter „Darstellung" (standardmäßig aktiviert).</p>
+      <p><strong>Automatisches Scrollen &amp; sticky Fortschrittsleiste:</strong> der Routen-Tab springt beim Öffnen jetzt direkt zur aktuellen Kachel, ohne dass der „Zum aktuellen Standort"-Button nötig ist. Zusätzlich zeigt eine dünne, oben fixierte Mini-Fortschrittsleiste den Gesamtabschluss durchgehend an, nicht nur in der Statistik-Karte der Einstellungen.</p>
+      <p><strong>Sanftes Sprite-Fade-in:</strong> Pokémon-Sprites blenden beim ersten Erscheinen jetzt kurz ein statt hart aufzupoppen - merkt sich pro Sprite, ob es in dieser Sitzung schon einmal geladen wurde, damit häufige Neu-Renderings (z.&nbsp;B. im Team-Tab) nicht ständig erneut aufblitzen.</p>
+      <p><strong>Konfetti an die Editionspalette gekoppelt:</strong> alle fünf Konfetti-Farben stammen jetzt aus den editionsspezifischen Akzent-/Gold-Farbtönen statt teilweise aus festen, editionsunabhängigen Signalfarben.</p>
+      <p><strong>Neu, nicht auf der Ideenliste:</strong> jeder Bosssieg merkt sich jetzt das damalige Team - ein neuer Button „Team anzeigen" auf besiegten Bosskarten zeigt im Nachhinein, mit welchem Team ein bestimmter Kampf gewonnen wurde.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.8.39</span><span class="tag tag-feat">Feature</span></div>
@@ -4748,16 +4860,16 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Run-Rückblick ausbauen: erzählte Zusammenfassung + kleine Analyse.</strong> Statt nur Kennzahlen eine spannend geschriebene Zusammenfassung des Abenteuers anhand von Kennzahlen/Verlauf generieren, dazu kleine Analyse-Einsichten (z.&nbsp;B. „hauptsächlich Wasser-Pokémon im Team", auffällige Typverteilung, Fang-/Todesserien o.&nbsp;Ä.).</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Zusammengefasste Encounter-Übersicht für ausgelassene Routen.</strong> Liste aller Standorte, an denen noch kein Fangversuch eingetragen wurde (übersprungene Routen), mit Sprung-Funktion zur jeweiligen Standort-Karte per Klick.</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Game-Over-Bildschirm bei komplettem Team-Verlust.</strong> Sind alle Pokémon gestorben, soll ein Vollbild-Overlay ähnlich der Champion-Abschluss-Feier erscheinen — allerdings als Niederlage gerahmt statt als Sieg. → umgesetzt in v1.8.33</div>
-    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Abgegebene Pokémon aus der Überlebensrate herausrechnen.</strong> Aktuell zählen abgegebene Pokémon (z.&nbsp;B. bei einer verlorenen Rivalenduell-Niederlage) weiter zur Überlebensrate mit — dadurch kann die Rate auch dann nicht auf 0% fallen, wenn tatsächlich das komplette verbliebene Team gestorben ist. Abgegebene sollten aus der Berechnung ausgeschlossen werden.</div>
-    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Farbcodierte Überlebensrate.</strong> Die Statistik-Kachel „Überlebensrate" soll je nach Wert die Farbe wechseln: ab 50% Grün, 25–49% Gelb, 0–24% Rot.</div>
-    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Rivalen-Umbenennung auch in den Einstellungen.</strong> Der Ingame-Rivalenname lässt sich bisher nur per Klick auf den Namen selbst anpassen (bleibt so erhalten) — zusätzlich soll dafür unter „Duell &amp; Bosse" ein Eingabefeld analog zum Duellpartner-Namen stehen.</div>
+    <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Abgegebene Pokémon aus der Überlebensrate herausrechnen.</strong> Aktuell zählen abgegebene Pokémon (z.&nbsp;B. bei einer verlorenen Rivalenduell-Niederlage) weiter zur Überlebensrate mit — dadurch kann die Rate auch dann nicht auf 0% fallen, wenn tatsächlich das komplette verbliebene Team gestorben ist. Abgegebene sollten aus der Berechnung ausgeschlossen werden. → umgesetzt in v1.8.40</div>
+    <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Farbcodierte Überlebensrate.</strong> Die Statistik-Kachel „Überlebensrate" soll je nach Wert die Farbe wechseln: ab 50% Grün, 25–49% Gelb, 0–24% Rot. → umgesetzt in v1.8.40</div>
+    <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Rivalen-Umbenennung auch in den Einstellungen.</strong> Der Ingame-Rivalenname lässt sich bisher nur per Klick auf den Namen selbst anpassen (bleibt so erhalten) — zusätzlich soll dafür unter „Duell &amp; Bosse" ein Eingabefeld analog zum Duellpartner-Namen stehen. → umgesetzt in v1.8.40</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Gefangene Pokémon automatisch ins Team statt in die Box.</strong> Ist das Team noch nicht voll (unter sechs), tritt ein neu gefangenes Pokémon automatisch dem Team bei statt in der Box zu landen — entspricht dem tatsächlichen Spielverhalten. <em>→ umgesetzt in v1.8.28.</em></div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Soul-Link-Modus.</strong> Für den Coop-Ursprung der App passend: Encounter zwischen beiden Spieler:innen 1:1 koppeln — stirbt das erste Pokémon von Partner A, muss Partner B seins an derselben Stelle ebenfalls aufgeben. Klassische Nuzlocke-Coop-Hausregel, aktuell nicht abgebildet.</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Regelwerk-Checkliste pro Run.</strong> Die üblichen Nuzlocke-Hausregeln (Set-Modus, Species Clause, kein Item im Kampf, Level-Cap je Boss, Dupes Clause gibt es schon) als an-/abwählbare Liste zu Beginn eines Runs, rein zur Dokumentation, welche Regeln galten.</div>
-    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Notizfeld pro Boss statt nur pro Standort.</strong> Bei einem Randomizer ist das gegnerische Team jedes Mal anders — aktuell lässt sich nur der „Ace" nachschlagen. Ein Freitextfeld pro Boss fürs komplette gegnerische Team wäre für Strategie-Notizen hilfreich.</div>
+    <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Notizfeld pro Boss statt nur pro Standort.</strong> Bei einem Randomizer ist das gegnerische Team jedes Mal anders — aktuell lässt sich nur der „Ace" nachschlagen. Ein Freitextfeld pro Boss fürs komplette gegnerische Team wäre für Strategie-Notizen hilfreich. → umgesetzt in v1.8.40</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Zufalls-Spitznamen-Generator.</strong> Ein Würfel-Button im Fang-Formular, der einen witzigen Spitznamen vorschlägt.</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Team als teilbare Bild-Karte exportieren.</strong> Das aktuelle Team als hübsche Bild-Kachel generieren (ähnlich dem Run-Rückblick-Text, aber visuell) — für Social-Media/Chat-Sharing.</div>
-    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Randomizer-Seed-Feld.</strong> Ein Metadaten-Feld pro Run für den verwendeten Randomizer-Seed/die Einstellungen, damit sich die Konfiguration später nachvollziehen lässt.</div>
+    <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Randomizer-Seed-Feld.</strong> Ein Metadaten-Feld pro Run für den verwendeten Randomizer-Seed/die Einstellungen, damit sich die Konfiguration später nachvollziehen lässt. → umgesetzt in v1.8.40</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Typabdeckungs-Analyse fürs Team.</strong> Welche Typen deckt das Team offensiv/defensiv ab, wo sind Lücken — visualisiert als kleine Übersicht. Kippt etwas Richtung Strategie-Tool statt reinem Tracker, daher nur bei explizitem Wunsch umsetzen.</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>PWA-Schnellzugriffe.</strong> Über das Home-Bildschirm-Icon direkt Schnellaktionen anbieten (z.&nbsp;B. „Fangen", „Team") via <code>shortcuts</code> im Manifest, ohne die App erst öffnen und navigieren zu müssen.</div>
     <div class="followup-item"><span class="tag tag-fix" style="margin-right:8px;">Verworfen</span><strong>Levelkurve als Mini-Diagramm.</strong> Kleine Sparkline in der Statistik, die den Levelverlauf des Teams über den Run hinweg zeigt. <em>→ verworfen: die App trackt aktuell keine Level der Team-Pokémon (nur den Boss-Level-Boost in %), es gäbe also keine Datengrundlage dafür.</em></div>
@@ -4771,19 +4883,19 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Meilenstein-Feedback bei 25/50/75/100% Gesamtfortschritt.</strong> Kleiner Konfetti-Moment/Toast, ähnlich der Champion-Feier, aber für Zwischenetappen.</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Kontextuelle Hilfe-Icons bei Einstellungen.</strong> Ein kleines „?" bei weniger selbsterklärenden Optionen (Dupes-Clause, Nickname-Pflicht, Einzelspieler-Modus), das kurz erklärt, was sie konkret bewirken. → umgesetzt in v1.8.33 (Level-Boost, Dupes-Clause, Nickname-Pflicht; Einzelspieler-Modus-Erklärung steht noch offen)</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Kurze Erste-Schritte-Tour beim allerersten Öffnen.</strong> Die App hat mittlerweile einige nicht ganz offensichtliche Mechaniken (Flaggen-Icon, Einklapp-Logik, Box-Suche, Swipe zwischen Tabs), die neue Nutzer:innen sonst nur durch Zufall entdecken.</div>
-    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Kurzes Vibrations-Feedback bei Fang/Tod/Bosssieg.</strong> Auf unterstützten Geräten, mit Ein/Aus-Schalter in den Einstellungen.</div>
+    <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Kurzes Vibrations-Feedback bei Fang/Tod/Bosssieg.</strong> Auf unterstützten Geräten, mit Ein/Aus-Schalter in den Einstellungen. → umgesetzt in v1.8.40</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Status nie nur über Farbe codieren.</strong> Gerade bei der geplanten farbcodierten Überlebensrate zusätzlich ein Symbol/Text verwenden, damit es auch für farbenblinde Nutzer:innen eindeutig bleibt.</div>
-    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Automatisches Scrollen zur aktuellen Kachel beim Öffnen des Routen-Tabs.</strong> Statt jedes Mal manuell den „Zum aktuellen Standort"-Button antippen zu müssen.</div>
+    <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Automatisches Scrollen zur aktuellen Kachel beim Öffnen des Routen-Tabs.</strong> Statt jedes Mal manuell den „Zum aktuellen Standort"-Button antippen zu müssen. → umgesetzt in v1.8.40</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Rückgängig-Toast statt Kontextmenü-Umweg für schnelle Korrekturen.</strong> Z.&nbsp;B. nach versehentlichem „Kein Fang" ein kurzer Hinweis mit direktem „Rückgängig"-Button, statt erst über das Karten-Icon zurücksetzen zu müssen.</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Lang-Drücken-Bestätigung für „Sieg zurücknehmen".</strong> Schutz vor versehentlichem Antippen, das sonst stillschweigend Fortschritt zurücknimmt.</div>
-    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Sticky Mini-Fortschrittsleiste im Routen-Tab.</strong> Der Gesamtfortschritt immer sichtbar oben, nicht nur in der Statistik-Karte der Einstellungen.</div>
+    <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Sticky Mini-Fortschrittsleiste im Routen-Tab.</strong> Der Gesamtfortschritt immer sichtbar oben, nicht nur in der Statistik-Karte der Einstellungen. → umgesetzt in v1.8.40</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Eingabefeld statt nur +5%/-5% beim Boss-Level-Boost.</strong> Für größere Sprünge auf einmal, ohne oft hintereinander tippen zu müssen.</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Proaktiver Hinweis „Region jetzt ausblenden?"</strong> Sobald eine Region komplett abgeschlossen ist, aktiv anbieten, sie über die bestehende Regionen-ausblenden-Funktion aus der Übersicht zu nehmen.</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Statusleisten-Farbe an die aktuelle Edition anpassen.</strong> <code>theme-color</code> passend zum Editions-Farbschema setzen, für ein noch nativeres Look&amp;Feel beim Wechseln.</div>
-    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Sanftes Fade-in beim Laden von Sprites.</strong> Statt hartem Pop-in ein kurzes Einblenden, sobald ein Sprite-Bild bereitsteht.</div>
+    <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Sanftes Fade-in beim Laden von Sprites.</strong> Statt hartem Pop-in ein kurzes Einblenden, sobald ein Sprite-Bild bereitsteht. → umgesetzt in v1.8.40</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>„Fast geschafft"-Hervorhebung.</strong> Die letzten 2–3 offenen Kacheln kurz vor 100% Gesamtabschluss optisch hervorheben — kleiner Motivations-Kick.</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Editions-Akzentfarbe auch auf Tab-Leiste/FAB.</strong> Aktuell nur auf Karten-Rändern sichtbar — jede Edition würde sich dadurch stärker „eigen" anfühlen.</div>
-    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Konfetti-Farben an die Editionspalette koppeln.</strong> Statt fixer Standardfarben.</div>
+    <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Konfetti-Farben an die Editionspalette koppeln.</strong> Statt fixer Standardfarben. → umgesetzt in v1.8.40</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>„✓ abgeschlossen"-Badge im Regions-Header.</strong> Sobald eine ganze Region fertig ist, auf einen Blick sichtbar, ohne reinscrollen zu müssen.</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Längere Sheet-Labels kürzen.</strong> Z.&nbsp;B. „Kampf trotz Niederlage als abgeschlossen zählen" → kurzes Button-Label + erklärender Untertext, statt alles in den Button-Text zu packen.</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Fokus-Sichtbarkeit &amp; aria-labels bei Icon-Buttons nachschärfen.</strong> Für Tastatur-/Screenreader-Nutzung, aktuell vermutlich lückenhaft. → umgesetzt in v1.8.33</div>
@@ -4808,7 +4920,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.39.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.40.</footer>
 
 </div>`;
 
@@ -4879,6 +4991,13 @@ function renderSettings(){
     <button class="btn btn-secondary btn-block" style="margin-bottom:8px;" data-act="export-data">Fortschritt exportieren (JSON)</button>
     <button class="btn btn-secondary btn-block" style="margin-bottom:8px;" data-act="import-data">Fortschritt importieren</button>
     <button class="btn btn-danger btn-block" data-act="reset-run">Aktuellen Spielstand zurücksetzen</button>
+  </div>
+  <div class="card">
+    <div class="loc-name">Randomizer-Seed</div>
+    <div class="loc-sub" style="margin-bottom:10px;">Freitext für Seed/Einstellungen des verwendeten Randomizers, damit sich die Konfiguration später nachvollziehen lässt.</div>
+    <div class="field" style="margin-bottom:0;">
+      <input id="randomizerSeedInput" value="${escapeHtml(state.randomizerSeed||"")}" placeholder="z. B. Seed-Code oder Link zu den Einstellungen" autocomplete="off" />
+    </div>
   </div>`);
 
   html += settingsGroupHtml("duel-bosses", state.soloMode ? "Bosse" : "Duell & Bosse", `
@@ -4892,6 +5011,13 @@ function renderSettings(){
       <input id="duelPartnerInput" value="${escapeHtml(state.duelPartnerName||"")}" placeholder="z. B. Max" autocomplete="off" />
     </div>
   </div>`}
+  <div class="card">
+    <div class="loc-name">Rivale (Spielfigur)</div>
+    <div class="loc-sub" style="margin-bottom:10px;">Spitzname für den Rivalen der Spielfigur im Run - lässt sich alternativ auch direkt über dessen Namen in der Kartenliste anpassen.</div>
+    <div class="field" style="margin-bottom:0;">
+      <input id="rivalNicknameInput" value="${escapeHtml(state.rivalNickname||"")}" placeholder="${escapeHtml((currentGame().bosses.find(b=>b.group==="Rivale")||{}).name||"Rivale")}" autocomplete="off" />
+    </div>
+  </div>
   <div class="card boss-bulk">
     <div>
       <div class="card-top">
@@ -4989,6 +5115,11 @@ function renderSettings(){
       <button class="btn ${eff==="light"?"btn-primary":"btn-secondary"}" data-act="set-theme" data-id="light">Hell</button>
       <button class="btn ${eff==="dark"?"btn-primary":"btn-secondary"}" data-act="set-theme" data-id="dark">Dunkel</button>
     </div>
+  </div>
+  <div class="card">
+    <div class="loc-name">Vibrations-Feedback</div>
+    <div class="loc-sub">Kurzes haptisches Feedback bei Fang, Tod und Bosssieg (nur auf unterstützten Geräten spürbar).</div>
+    <button class="btn ${state.vibrationEnabled?"btn-primary":"btn-secondary"} btn-block" style="margin-top:10px;" data-act="toggle-vibration">${state.vibrationEnabled?"Aktiviert":"Deaktiviert"}</button>
   </div>`);
 
   html += settingsGroupHtml("tools", "Werkzeuge", `
@@ -5200,6 +5331,31 @@ function openLocationNoteSheet(locId){
     </div>
   `);
   setTimeout(()=>document.getElementById("editLocNote").focus(), 50);
+}
+
+/* Notiz pro Bosstrainer statt pro Standort - bei einem Randomizer ist das gegnerische Team jedes
+   Mal anders und lässt sich nicht aus den Editionsdaten ablesen (die zeigen nur den fest hinterlegten
+   "Ace"), ein Freitextfeld pro Boss hält das tatsächliche Team/Strategie-Notizen fest. Technisch
+   parallel zu openLocationNoteSheet, aber in state.bossNotes (Boss-ID -> Text) statt am Standort. */
+function openBossNoteSheet(bossId){
+  const boss = bossById(bossId);
+  if(!boss) return;
+  const note = (state.bossNotes||{})[bossId] || "";
+  openSheet(`
+    <h3>Notiz</h3>
+    <div class="loc-sub" style="margin-bottom:14px;">${escapeHtml(boss.name)} - Freitext z.&nbsp;B. für das tatsächliche Randomizer-Team oder Strategie-Notizen.</div>
+    <div class="field">
+      <textarea id="editBossNote" maxlength="300" placeholder="Notiz eintragen..." style="width:100%; min-height:110px; border:1.5px solid var(--line); background:var(--bg); border-radius:12px; padding:12px 14px; font-size:1rem; font-family:inherit; resize:vertical;">${escapeHtml(note)}</textarea>
+    </div>
+    <div class="sheet-footer" style="flex-direction:column; gap:10px;">
+      ${note ? `<button class="btn btn-danger btn-block" data-act="delete-boss-note" data-id="${bossId}">Notiz löschen</button>` : ""}
+      <div style="display:flex; gap:10px;">
+        <button class="btn btn-secondary btn-block" data-act="close-sheet">Abbrechen</button>
+        <button class="btn btn-primary btn-block" data-act="save-boss-note" data-id="${bossId}">Speichern</button>
+      </div>
+    </div>
+  `);
+  setTimeout(()=>document.getElementById("editBossNote").focus(), 50);
 }
 
 /* Team-Kachel zeigt bewusst keine Aktions-Icons mehr, damit das Sprite groß/zentral bleibt (Name
@@ -5524,6 +5680,7 @@ document.addEventListener("click", e=>{
     const loc = findLoc(id); const m = loc.mon;
     m.dead=true; m.inTeam=false;
     logEvent("dead", `${m.nickname || m.species} ist gestorben (${loc.name})`);
+    vibrateFeedback([25,40,25]);
     saveState(); closeSheet(); render();
     checkGameOver();
   }
@@ -5573,7 +5730,7 @@ document.addEventListener("click", e=>{
     const wasDefeated = isBossDefeated(id);
     state.bossDefeated[id] = !wasDefeated;
     const boss = bossById(id);
-    if(!wasDefeated && boss) logEvent("boss", `${boss.name || boss.cls} besiegt (${boss.place})`);
+    if(!wasDefeated && boss){ logEvent("boss", `${boss.name || boss.cls} besiegt (${boss.place})`); vibrateFeedback([40,30,80]); snapshotBossWinTeam(id); }
     const finalBoss = finalStoryBoss();
     const isChamp = finalBoss && boss && boss.id===finalBoss.id;
     if(state.soloMode && isChamp){
@@ -5607,6 +5764,7 @@ document.addEventListener("click", e=>{
       logEvent("boss", `${displayName} besiegt (${boss.place})`);
       if(deadNames.length===0) state.cleanBossWins[id] = true;
       else delete state.cleanBossWins[id];
+      snapshotBossWinTeam(id);
     } else {
       state.lossCount = (state.lossCount||0) + 1;
       state.bossLossIds[id] = (state.bossLossIds[id]||0) + 1;
@@ -5617,6 +5775,8 @@ document.addEventListener("click", e=>{
       if(document.getElementById("bossContinueAnyway")?.checked) state.bossDefeated[id] = "loss";
     }
     if(deadNames.length) logEvent("dead", `${deadNames.join(", ")} gestorben im Kampf gegen ${displayName}`);
+    if(result==="win") vibrateFeedback([40,30,80]);
+    else if(deadNames.length) vibrateFeedback([25,40,25]);
     lastFightDeaths = deadNames.length;
     lastFightWasWin = (result === "win");
     lastFightBossId = id;
@@ -5630,6 +5790,7 @@ document.addEventListener("click", e=>{
     if(result==="win" && isChamp) showChampionCelebration(boss);
     if(deadNames.length) checkGameOver();
   }
+  else if(act==="open-boss-win-team") openBossWinTeamSheet(id);
   else if(act==="close-champion-overlay"){ document.querySelector(".champion-overlay")?.remove(); }
   else if(act==="close-game-over-overlay"){ document.querySelector(".game-over-overlay")?.remove(); }
   else if(act==="open-final-rival"){
@@ -5677,6 +5838,16 @@ document.addEventListener("click", e=>{
   }
   else if(act==="delete-location-note"){
     findLoc(id).customNote = "";
+    saveState(); closeSheet(); render();
+  }
+  else if(act==="open-boss-note") openBossNoteSheet(id);
+  else if(act==="save-boss-note"){
+    const v = document.getElementById("editBossNote").value.trim().slice(0,300);
+    if(v) state.bossNotes[id] = v; else delete state.bossNotes[id];
+    saveState(); closeSheet(); render();
+  }
+  else if(act==="delete-boss-note"){
+    delete state.bossNotes[id];
     saveState(); closeSheet(); render();
   }
   else if(act==="open-rival-rename") openRivalRenameSheet();
@@ -5807,6 +5978,11 @@ document.addEventListener("click", e=>{
     state.nicknameRequired = !state.nicknameRequired;
     saveState(); render();
   }
+  else if(act==="toggle-vibration"){
+    state.vibrationEnabled = !state.vibrationEnabled;
+    saveState(); render();
+    if(state.vibrationEnabled) vibrateFeedback(35);
+  }
   else if(act==="toggle-region-visibility"){
     if(!Array.isArray(state.hiddenRegions)) state.hiddenRegions = [];
     const idx = state.hiddenRegions.indexOf(id);
@@ -5871,7 +6047,12 @@ document.addEventListener("click", e=>{
 });
 
 document.querySelectorAll(".tab").forEach(tab=>{
-  tab.addEventListener("click", ()=>{ activeTab = tab.dataset.tab; render(); triggerTabEnterAnim(); });
+  tab.addEventListener("click", ()=>{
+    activeTab = tab.dataset.tab;
+    render();
+    triggerTabEnterAnim();
+    if(activeTab==="routes") scrollToCurrentLocation();
+  });
 });
 document.getElementById("fabAdd").addEventListener("click", openAddLocationSheet);
 
@@ -5955,6 +6136,8 @@ applyEdition();
 /* Duellpartner-Namensfeld lebt in renderSettings() und wird bei jedem render() neu erzeugt -> delegiert */
 document.addEventListener("input", e=>{
   if(e.target && e.target.id==="duelPartnerInput"){ state.duelPartnerName = e.target.value; saveState(); }
+  if(e.target && e.target.id==="rivalNicknameInput"){ state.rivalNickname = e.target.value; saveState(); }
+  if(e.target && e.target.id==="randomizerSeedInput"){ state.randomizerSeed = e.target.value; saveState(); }
   if(e.target && e.target.id==="boxSearchInput"){
     boxSearchQuery = e.target.value;
     const boxLocs = state.locations.filter(l=>l.mon && !l.mon.inTeam && !l.mon.dead && !l.mon.given);
