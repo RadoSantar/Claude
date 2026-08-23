@@ -2459,7 +2459,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.8.38";
+const APP_VERSION = "1.8.39";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -3933,7 +3933,7 @@ const ACHIEVEMENTS = [
   { id:"solomaster", name:"Einsamer Wolf", title:"Einzelkämpfer", icon:"🎯",
     desc:"Einen Einzelspieler-Modus-Run bis zum Champion abgeschlossen.",
     check: ()=> state.soloMode && championWon() },
-  { id:"reaper", name:"Der Friedhof wächst", title:"Sensenmann", icon:"💀",
+  { id:"reaper", name:"Der Friedhof wächst", title:"Sensenmann", icon:"💀", hidden:true,
     desc:"10 oder mehr Pokémon in einem Run verloren.",
     check: ()=> deadCount() >= 10 },
   { id:"namegiver", name:"Spitznamen-Fan", title:"Namensgeber", icon:"✏️",
@@ -3945,16 +3945,16 @@ const ACHIEVEMENTS = [
   { id:"chronicler", name:"Notizen-Chronist", title:"Chronist", icon:"📓",
     desc:"10 oder mehr Standort-Notizen in einem Run geschrieben.",
     check: ()=> state.locations.filter(l=>l.customNote && l.customNote.trim()).length >= 10 },
-  { id:"rulebreaker", name:"Regelbrecher", title:"Regelbrecher", icon:"😈",
+  { id:"rulebreaker", name:"Regelbrecher", title:"Regelbrecher", icon:"😈", hidden:true,
     desc:"Die Dupes-Clause-Warnung 5-mal ignoriert und trotzdem gefangen.",
     check: ()=> (state.dupesIgnoredCount||0) >= 5 },
   { id:"locallegend", name:"Local Legend", title:"Local Legend", icon:"⭐",
     desc:"Champion besiegt, während wirklich jeder Bosstrainer individuell hochgestuft war.",
     check: ()=> championWon() && activeBosses().length > 0 && activeBosses().every(b=>bossPercent(b.id) > 0) },
-  { id:"gottamissemall", name:"Gotta Miss 'Em All", title:"Der Ungenaue", icon:"🙈",
+  { id:"gottamissemall", name:"Gotta Miss 'Em All", title:"Der Ungenaue", icon:"🙈", hidden:true,
     desc:"Mehr als 5 Fangversuche in einem Run als „Kein Fang“ markiert.",
     check: ()=> state.locations.filter(l=>l.status==="failed").length > 5 },
-  { id:"phoenix", name:"Phönix aus der Asche", title:"Phönix", icon:"🐦‍🔥",
+  { id:"phoenix", name:"Phönix aus der Asche", title:"Phönix", icon:"🐦‍🔥", hidden:true,
     desc:"Nach einer Niederlage denselben Bosstrainer erneut herausgefordert - und diesmal gewonnen.",
     check: ()=> Object.keys(state.bossLossIds||{}).some(bid=>state.bossDefeated[bid]===true) },
   /* Ab hier bewusst früh im Run erreichbare Meilenstein-/Einstiegs-Erfolge (Pendants zu den obigen
@@ -3991,7 +3991,7 @@ const ACHIEVEMENTS = [
       const s = state.locations.find(l=>l.id==="starter-mon");
       return championWon() && !!s && !!s.mon && !s.mon.dead;
     } },
-  { id:"royalty", name:"Nuzlocke Royalty", title:"Königlich", icon:"👑",
+  { id:"royalty", name:"Nuzlocke Royalty", title:"Königlich", icon:"👑", hidden:true,
     desc:"Champion besiegt und mindestens 25 verschiedene Erfolge insgesamt freigeschaltet.",
     check: ()=> championWon() && Object.keys(state.achievements).length >= 25 },
   { id:"catchstreak", name:"Gotta Catch... Some of Them", title:"Fließband", icon:"🧲",
@@ -4035,6 +4035,39 @@ const ACHIEVEMENTS = [
   { id:"pyrrhicvictory", name:"Pyrrhic Victory", title:"Pyrrhussieger", icon:"⚔️", hidden:true,
     desc:"Den Champion besiegt mit nur noch einem einzigen überlebenden Teammitglied.",
     check: ()=> championWon() && teamCount()===1 },
+  /* Witzige Erfolge, siehe Ideen-Runde nach v1.8.38. */
+  { id:"nonicknames", name:"Alle heißen Bello", title:"Kreativlos", icon:"🏷️",
+    desc:"5 oder mehr gefangene Pokémon ohne eigenen Spitznamen.",
+    check: ()=> state.locations.filter(l=>l.mon && (!l.mon.nickname || !l.mon.nickname.trim())).length >= 5 },
+  { id:"repeatloser", name:"Wiederholungstäter", title:"Wiederholungstäter", icon:"🔁", hidden:true,
+    desc:"Denselben Bosstrainer 3-mal oder öfter verloren, bevor du ihn irgendwann doch besiegt hast.",
+    check: ()=> Object.entries(state.bossLossIds||{}).some(([bid,c])=>c>=3 && state.bossDefeated[bid]===true) },
+  { id:"panicstreak", name:"Massenpanik", title:"Chaot", icon:"😱", hidden:true,
+    desc:"3 Fangversuche direkt hintereinander als „Kein Fang“ markiert.",
+    check: ()=>{
+      let streak=0, best=0;
+      state.locations.forEach(l=>{
+        if(l.noCatch || l.custom || l.starter) return;
+        if(l.status==="failed"){ streak++; if(streak>best) best=streak; }
+        else if(l.status==="caught"){ streak=0; }
+      });
+      return best>=3;
+    } },
+  { id:"sadnote", name:"Trauerkloß", title:"Berufspessimist", icon:"😢", hidden:true,
+    desc:"Eine Standort-Notiz geschrieben - und genau dieses Pokémon ist später gestorben.",
+    check: ()=> state.locations.some(l=>l.customNote && l.customNote.trim() && l.mon && l.mon.dead) },
+  { id:"boxhoarder", name:"Boxenschläfer", title:"Boxenschläfer", icon:"📦",
+    desc:"15 oder mehr Pokémon in der Box, die noch nie im Team waren.",
+    check: ()=> state.locations.filter(l=>l.mon && !l.mon.dead && !l.mon.inTeam && !l.mon.given).length >= 15 },
+  { id:"longnote", name:"Der Philosoph", title:"Vielschreiber", icon:"📜",
+    desc:"Eine Standort-Notiz bis fast an die 300-Zeichen-Grenze vollgeschrieben.",
+    check: ()=> state.locations.some(l=>l.customNote && l.customNote.length >= 280) },
+  { id:"silentrun", name:"Schweigsam", title:"Schweigsam", icon:"🤐",
+    desc:"Champion besiegt, mindestens 20 Fänge im Run - aber keine einzige Standort-Notiz geschrieben.",
+    check: ()=> championWon() && (aliveCount()+deadCount())>=20 && !state.locations.some(l=>l.customNote && l.customNote.trim()) },
+  { id:"minimalist", name:"Minimalist", title:"Minimalist", icon:"🎒",
+    desc:"Champion besiegt mit insgesamt höchstens 2 gefangenen Pokémon im gesamten Run.",
+    check: ()=> championWon() && (aliveCount()+deadCount())<=2 },
   { id:"pokemonmeister", name:"Pokémon Meister", title:"Pokémon-Meister", icon:"💎", hidden:true,
     desc:"Alle anderen Erfolge freigeschaltet.",
     check: ()=> ACHIEVEMENTS.filter(a=>a.id!=="pokemonmeister").every(a=>!!state.achievements[a.id]) }
@@ -4104,6 +4137,13 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.39</span><span class="tag tag-feat">Feature</span></div>
+      <h3>8 witzige Erfolge, deutlich mehr versteckte Erfolge</h3>
+      <p><strong>8 neue, witzige Erfolge:</strong> Alle heißen Bello (Titel „Kreativlos" - 5+ Fänge ohne Spitzname), Wiederholungstäter (denselben Boss 3× verloren, bevor er doch fällt), Massenpanik (Titel „Chaot" - 3 „Kein Fang" direkt hintereinander), Trauerkloß (Titel „Berufspessimist" - eine Notiz geschrieben, und genau dieses Pokémon stirbt später), Boxenschläfer (15+ Box-Pokémon, die nie im Team waren), Der Philosoph (Titel „Vielschreiber" - eine Notiz bis fast an die 300-Zeichen-Grenze), Schweigsam (Champion besiegt, 20+ Fänge, aber keine einzige Notiz) und Minimalist (Champion besiegt mit höchstens 2 Fängen im ganzen Run).</p>
+      <p><strong>Mehr versteckte Erfolge:</strong> zusätzlich zu 3 der neuen (Wiederholungstäter, Massenpanik, Trauerkloß) wurden 5 bestehende Erfolge nachträglich versteckt - Phönix aus der Asche, Gotta Miss 'Em All, Regelbrecher, Der Friedhof wächst und Nuzlocke Royalty. Insgesamt jetzt 13 von 38 Erfolgen versteckt, der Rest bleibt wie gehabt offen einsehbar.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.8.38</span><span class="tag tag-feat">Feature</span></div>
@@ -4768,7 +4808,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.38.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.39.</footer>
 
 </div>`;
 
@@ -5569,7 +5609,7 @@ document.addEventListener("click", e=>{
       else delete state.cleanBossWins[id];
     } else {
       state.lossCount = (state.lossCount||0) + 1;
-      state.bossLossIds[id] = true;
+      state.bossLossIds[id] = (state.bossLossIds[id]||0) + 1;
       logEvent("bossLoss", `Niederlage gegen ${displayName} (${boss.place})`);
       /* Manche Story-Kämpfe gehen auch bei einer Niederlage weiter (siehe openBossResultSheet) -
          "loss" statt true, damit die Kachel als abgeschlossen einklappt und in "Bosse besiegt"
