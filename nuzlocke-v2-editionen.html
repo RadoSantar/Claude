@@ -2448,7 +2448,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.8.36";
+const APP_VERSION = "1.8.37";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -3944,7 +3944,31 @@ const ACHIEVEMENTS = [
     check: ()=> state.locations.filter(l=>l.status==="failed").length > 5 },
   { id:"phoenix", name:"Phönix aus der Asche", title:"Phönix", icon:"🐦‍🔥",
     desc:"Nach einer Niederlage denselben Bosstrainer erneut herausgefordert - und diesmal gewonnen.",
-    check: ()=> Object.keys(state.bossLossIds||{}).some(bid=>state.bossDefeated[bid]===true) }
+    check: ()=> Object.keys(state.bossLossIds||{}).some(bid=>state.bossDefeated[bid]===true) },
+  /* Ab hier bewusst früh im Run erreichbare Meilenstein-/Einstiegs-Erfolge (Pendants zu den obigen
+     "10er"-/Champion-Erfolgen, aber schon beim ersten Mal ausgelöst statt erst nach vielen
+     Wiederholungen oder dem Run-Abschluss) - siehe Ideen-Runde nach v1.8.36. */
+  { id:"firstcatch", name:"Frischling", title:"Frischling", icon:"🐾",
+    desc:"Dein allererster Fang in diesem Run.",
+    check: ()=> (aliveCount()+deadCount()) >= 1 },
+  { id:"firstboss", name:"Herausforderer", title:"Herausforderer", icon:"🥊",
+    desc:"Deinen ersten Bosstrainer bezwungen - egal welchen.",
+    check: ()=> Object.values(state.bossDefeated).some(v=>v) },
+  { id:"firstevolve", name:"Züchter", title:"Züchter", icon:"🌱",
+    desc:"Dein erstes Pokémon entwickelt.",
+    check: ()=> (state.evolutionCount||0) >= 1 },
+  { id:"firstdeath", name:"Narbe", title:"Narbe", icon:"💔",
+    desc:"Dein erstes Pokémon in diesem Run verloren.",
+    check: ()=> deadCount() >= 1 },
+  { id:"firstnote", name:"Erste Zeilen", title:"Schreiberling", icon:"✒️",
+    desc:"Deine erste Standort-Notiz geschrieben.",
+    check: ()=> state.locations.some(l=>l.customNote && l.customNote.trim()) },
+  { id:"soloembark", name:"Auf eigene Faust", title:"Einzelgänger", icon:"🐺",
+    desc:"Einen Einzelspieler-Modus-Run begonnen - unabhängig vom Ausgang.",
+    check: ()=> state.soloMode === true },
+  { id:"firstmiss", name:"Erster Fehlschuss", title:"Wackelhand", icon:"🎣",
+    desc:"Deinen ersten Fangversuch als „Kein Fang“ markiert.",
+    check: ()=> state.locations.some(l=>l.status==="failed") }
 ];
 
 /* checkAchievements() läuft am Ende JEDES Klicks im globalen Dispatcher mit (siehe ganz unten) statt
@@ -4011,6 +4035,13 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.37</span><span class="tag tag-feat">Feature</span></div>
+      <h3>7 weitere Erfolge - schon früh im Run erreichbar</h3>
+      <p>Die bisherigen Erfolge setzten meist einen abgeschlossenen Run oder viele Wiederholungen voraus (10 Tode, 5 ignorierte Dupes-Warnungen, der Championsieg). Jetzt gibt es dazu passende Einstiegs-Erfolge, die schon in der ersten Spielstunde erreichbar sind: <strong>Frischling</strong> (erster Fang), <strong>Herausforderer</strong> (erster Bosssieg), <strong>Züchter</strong> (erste Entwicklung), <strong>Narbe</strong> (erstes verlorenes Pokémon), <strong>Schreiberling</strong> (erste Standort-Notiz), <strong>Einzelgänger</strong> (Einzelspieler-Modus-Run begonnen - unabhängig vom Ausgang) und <strong>Wackelhand</strong> (erster Fangversuch als „Kein Fang" markiert).</p>
+      <p>Erfolge insgesamt jetzt 19 statt 12, siehe „Erfolge &amp; Titel" in den Einstellungen.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.8.36</span><span class="tag tag-fix">Politur</span></div>
@@ -4660,7 +4691,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.36.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.37.</footer>
 
 </div>`;
 
