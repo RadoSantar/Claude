@@ -2444,6 +2444,28 @@ const TYPE_COLORS = {
   Unlicht:"#705848", Stahl:"#B8B8D0"
 };
 
+function hexToRgba(hex, alpha){
+  const h = hex.replace("#","");
+  const r = parseInt(h.substring(0,2),16), g = parseInt(h.substring(2,4),16), b = parseInt(h.substring(4,6),16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+/* EXPERIMENTELL: Team-Kachel je nach Typ(en) einfärben (z.B. Pikachu gelb-elektrisch, Glurak
+   Feuer/Flug-Verlauf) - probeweise, ob das eher cool oder überladen wirkt. Bewusst nur ein
+   dezenter Verlauf im Hintergrund + eingefärbter Rand, damit Sprite/Text weiter lesbar bleiben. */
+function typeGradientStyle(types){
+  if(!types || !types.length) return "";
+  const colors = types.map(t=>TYPE_COLORS[t]).filter(Boolean);
+  if(!colors.length) return "";
+  if(colors.length===1){
+    return `background:linear-gradient(160deg, ${hexToRgba(colors[0],0.38)}, ${hexToRgba(colors[0],0.08)} 65%, var(--surface) 100%); border-color:${colors[0]};`;
+  }
+  /* Klare zwei Zonen statt eines durchgehenden Verlaufs, der bei Dual-Typen sonst zu einem
+     matschigen Mischton in der Mitte verläuft - so bleibt jeder Typ als eigener Farbblock
+     erkennbar, nur ein schmaler Übergang dazwischen. */
+  return `background:linear-gradient(135deg, ${hexToRgba(colors[0],0.5)} 0%, ${hexToRgba(colors[0],0.5)} 42%, ${hexToRgba(colors[1],0.5)} 58%, ${hexToRgba(colors[1],0.5)} 100%); border-color:${colors[0]};`;
+}
+
 function typeMultiplier(attackType, defendTypes){
   let mult = 1;
   defendTypes.forEach(dt=>{
@@ -2713,7 +2735,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.8.54";
+const APP_VERSION = "1.8.55";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -3645,7 +3667,8 @@ function teamSlotHtml(loc, flash){
   const nameHtml = isEditingNick
     ? `<input class="mon-name-input" id="teamNickInline" data-id="${loc.id}" value="${escapeHtml(loc.mon.nickname||"")}" placeholder="${escapeHtml(loc.mon.species)}" maxlength="30" autocomplete="off" />`
     : `<div class="mon-name" data-act="edit-team-nick" data-id="${loc.id}">${escapeHtml(loc.mon.nickname||loc.mon.species)}</div>`;
-  return `<div class="slot filled" data-loc-id="${loc.id}">
+  const typeStyle = typeGradientStyle(typesFor(loc.mon.species));
+  return `<div class="slot filled" data-loc-id="${loc.id}" style="${typeStyle}">
     <button class="slot-drag-handle" data-drag-id="${loc.id}" aria-label="Ziehen zum Umsortieren" title="Ziehen zum Umsortieren">${ICON_DRAG}</button>
     <button class="slot-menu-btn" data-act="open-team-actions" data-id="${loc.id}" aria-label="Aktionen">${ICON_KEBAB}</button>
     ${monLinkHtml("slot-sprite-wrap", loc.mon.species, spriteImgHtml(loc.mon.species, 120, flash))}
@@ -5078,6 +5101,12 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="log">
 
     <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.55</span><span class="tag tag-feat">Feature</span></div>
+      <h3>Team-Kacheln in Typfarben</h3>
+      <p>Die Team-Kacheln färben sich jetzt dezent in den Typfarben des jeweiligen Pokémon ein - Pikachu wirkt gelb-elektrisch, Glurak zeigt einen Verlauf von Feuer-Orange zu Flug-Lila. Bei Dual-Typen bewusst zwei klar getrennte Farbzonen statt eines durchgehenden Verlaufs, der sonst in der Mitte zu einem matschigen Mischton verwaschen würde. Rand und Hintergrund nutzen dieselbe Typ-Farbtabelle wie die Typabdeckungs-Analyse (v1.8.54).</p>
+    </div>
+
+    <div class="entry">
       <div class="entry-head"><span class="ver">v1.8.54</span><span class="tag tag-feat">Feature</span></div>
       <h3>Typabdeckungs-Analyse fürs Team</h3>
       <p>Neuer Button „Typabdeckung anzeigen" im Team-Tab: zeigt, welche der 17 Typen (Generationen 1–5, noch ohne Fee) das Team offensiv über die eigenen Typen als Nahrung für Sofortangriffe abdeckt und wo Lücken bleiben, dazu geteilte defensive Schwächen (Typen, gegen die mehrere Team-Mitglieder gleichzeitig anfällig sind). Dafür jetzt eine vollständige Typ-Tabelle aller 649 Arten hinterlegt (Quelle: PokéAPI, über <code>past_types</code> auf den Stand bis Generation 5 zurückkorrigiert - u.&nbsp;a. Fluffeluff/Pixi/Marill/Togepi/Ralts-Reihe waren damals noch ohne den erst in Generation 6 eingeführten Fee-Typ, Stahl resistierte damals noch gegen Geist &amp; Unlicht). Die Offensiv-Seite ist bewusst eine Näherung über die Art-Typen selbst (STAB), da die App keine echten Attacken pro Pokémon erfasst.</p>
@@ -5872,7 +5901,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.54.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.55.</footer>
 
 </div>`;
 
