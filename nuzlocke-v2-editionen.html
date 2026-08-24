@@ -2538,7 +2538,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.8.49";
+const APP_VERSION = "1.8.50";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -2829,6 +2829,9 @@ function findDuplicateSpecies(species, excludeLocId){
   return state.locations.find(l=>l.id!==excludeLocId && l.mon && evolutionFamilyRoot(l.mon.species)===targetRoot) || null;
 }
 
+/* Unter 24 Stunden relativ ("vor X Min./Std.", wie gehabt) - darüber statt "gestern"/"vor X
+   Tagen" das genaue Datum + Uhrzeit, da eine reine Tagesangabe ab dann schnell ungenau wird
+   (z.B. "vor 1 Tag" könnte je nach Tageszeit zwischen 24 und 48 Stunden zurückliegen). */
 function formatRelativeTime(ts){
   if(!ts) return "nie";
   const diffMs = Date.now() - ts;
@@ -2837,9 +2840,8 @@ function formatRelativeTime(ts){
   if(diffMin < 60) return `vor ${diffMin} Min.`;
   const diffH = Math.floor(diffMin/60);
   if(diffH < 24) return `vor ${diffH} Std.`;
-  const diffD = Math.floor(diffH/24);
-  if(diffD === 1) return "gestern";
-  return `vor ${diffD} Tagen`;
+  const d = new Date(ts);
+  return `${d.toLocaleDateString("de-DE")} ${d.toLocaleTimeString("de-DE", { hour:"2-digit", minute:"2-digit" })}`;
 }
 
 /* Verlauf: chronologisches Log wichtiger Ereignisse (gefangen, gestorben, entwickelt, Boss
@@ -4564,6 +4566,12 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="log">
 
     <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.50</span><span class="tag tag-fix">Änderung</span></div>
+      <h3>Zeitangaben ab 24 Stunden als Datum + Uhrzeit</h3>
+      <p>Relative Zeitangaben ("vor 2 Std.", Verlauf/Spielstände/Export-Zeitpunkt) blieben bisher auch nach Tagen relativ ("gestern", "vor 5 Tagen") - das wird mit der Zeit ungenau. Unter 24 Stunden bleibt es wie gewohnt relativ, darüber zeigt die App jetzt das genaue Datum mit Uhrzeit.</p>
+    </div>
+
+    <div class="entry">
       <div class="entry-head"><span class="ver">v1.8.49</span><span class="tag tag-feat">Feature</span></div>
       <h3>4 kleine Backlog-Punkte umgesetzt</h3>
       <p><strong>Enter sendet das Fang-Formular ab:</strong> Enter im Spezies- oder Spitzname-Feld speichert den Fang direkt, statt immer den Button antippen zu müssen - bestehende Validierung (Pflicht-Spitzname, leere Spezies) greift dabei unverändert.</p>
@@ -5319,7 +5327,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.49.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.50.</footer>
 
 </div>`;
 
