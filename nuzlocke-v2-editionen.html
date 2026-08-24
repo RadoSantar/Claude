@@ -2523,7 +2523,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.8.43";
+const APP_VERSION = "1.8.44";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -3405,12 +3405,12 @@ function openStarterSetupSheet(){
 /* Levelcap-Regel (verbreitete Nuzlocke-Hausregel: Team darf das Level des nächsten Bosses nicht
    überschreiten) - reine Info-Anzeige, keine Markierung einzelner Team-Mitglieder, da die App das
    Level der eigenen Pokémon nirgends erfasst (nur Fangort/Status/Team-Zugehörigkeit). Bewusst nur
-   an Arenaleitern ausgerichtet statt an jedem einzelnen Bosskampf (Rivale, Team-Bosse, Top Vier,
-   Champion, finales Duell) - das deckt sich mit der gängigen Auslegung der Hausregel und bleibt
-   dadurch als Kachel übersichtlicher, statt bei jedem beliebigen Kampf zu springen. Verschwindet
-   entsprechend nach dem letzten Arenaleiter wieder, auch wenn danach noch Bosskämpfe folgen. */
+   an den Kämpfen ausgerichtet, die üblicherweise als Levelcap zählen - Arenaleiter, Top Vier und
+   Champion - statt an jedem einzelnen Bosskampf (Rivale, Team-Bosse, optionale Nebenkämpfe wie
+   Wally/Cynthia-Cameo, finales Duell). Verschwindet entsprechend nach dem Champion-Sieg wieder,
+   auch wenn danach noch ein finales Duell folgt. */
 function nextLevelCapBoss(){
-  return currentGame().bosses.find(b=>!isBossDefeated(b.id) && typeof b.baseLevel==="number" && /^Arenaleiter/.test(b.cls)) || null;
+  return currentGame().bosses.find(b=>!isBossDefeated(b.id) && typeof b.baseLevel==="number" && (/^Arenaleiter/.test(b.cls) || b.cls==="Top Vier" || b.cls==="Champ")) || null;
 }
 function levelCapCardHtml(){
   const boss = nextLevelCapBoss();
@@ -4424,6 +4424,12 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="log">
 
     <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.44</span><span class="tag tag-fix">Korrektur</span></div>
+      <h3>Levelcap: Top Vier &amp; Champion zählen mit</h3>
+      <p>Kurze Korrektur zu v1.8.43: die Levelcap-Karte sollte natürlich nicht nur bei den Arenaleitern stehen bleiben, sondern auch die Top Vier und den Champion mitzählen - alles Kämpfe, die zur gängigen Levelcap-Hausregel gehören. Jetzt zeigt die Karte nach dem letzten Arenaleiter automatisch das nächste Top-Vier-Mitglied an, danach den Champion, und verschwindet erst nach dessen Sieg.</p>
+    </div>
+
+    <div class="entry">
       <div class="entry-head"><span class="ver">v1.8.43</span><span class="tag tag-fix">Änderung</span></div>
       <h3>Levelcap vereinfacht</h3>
       <p>Die Levelcap-Infokarte im Team-Tab richtete sich bisher nach dem jeweils nächsten unbesiegten Bosskampf überhaupt - Rivale, Team-Bosse, Top Vier, Champion und finales Duell inklusive. Das sprang bei jedem beliebigen Kampf und wich von der gängigen Auslegung der Hausregel ab. Jetzt zählt nur noch der nächste unbesiegte Arenaleiter - übersichtlicher, und die Karte verschwindet entsprechend nach dem letzten Arenaleiter, auch wenn danach noch weitere Bosskämpfe folgen.</p>
@@ -5139,7 +5145,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.43.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.44.</footer>
 
 </div>`;
 
