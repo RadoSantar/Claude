@@ -1939,9 +1939,14 @@ const EINALL_BW_BOSSES = [
   { id:"bianca1", sprite:"Bianca", name:"Bell", cls:"Rivale", place:"Avenitia", ace:null, baseLevel:5, group:"Rivale" },
   { id:"n1", sprite:"N", name:"N", cls:"Team Plasma", place:"Gavina", ace:"Felilou", baseLevel:7, group:"Team Plasma" },
   { id:"bianca2", sprite:"Bianca", name:"Bell", cls:"Rivale", place:"Route 2", ace:null, baseLevel:7, group:"Rivale" },
-  { id:"striaton-cilan", sprite:"Cilan", name:"Benny", cls:"Arenaleiter", place:"Orion City (nur bei Starter Ottaro)", ace:"Vegimak", baseLevel:14, group:"Einall-Arenen", pvp:true },
-  { id:"striaton-chili", sprite:"Chili", name:"Maik", cls:"Arenaleiter", place:"Orion City (nur bei Starter Serpifeu)", ace:"Grillmak", baseLevel:14, group:"Einall-Arenen", pvp:true },
-  { id:"striaton-cress", sprite:"Cress", name:"Colin", cls:"Arenaleiter", place:"Orion City (nur bei Starter Floink)", ace:"Sodamak", baseLevel:14, group:"Einall-Arenen", pvp:true },
+  /* Orion City ist eine Besonderheit: die Arena wird von drei Geschwistern gemeinsam geführt, aber
+     nur eines von ihnen tritt tatsächlich an - abhängig vom gewählten Starter (jeweils der Typ, der
+     gegen den eigenen Starter im Vorteil ist). requiresStarter filtert die anderen beiden komplett
+     aus Kacheln/Statistik/Levelcap heraus (siehe bossRequiresOtherStarter), statt fälschlich alle
+     drei als aktive Bosse zu behandeln. */
+  { id:"striaton-cilan", sprite:"Cilan", name:"Benny", cls:"Arenaleiter", place:"Orion City", ace:"Vegimak", baseLevel:14, group:"Einall-Arenen", pvp:true, requiresStarter:"water" },
+  { id:"striaton-chili", sprite:"Chili", name:"Maik", cls:"Arenaleiter", place:"Orion City", ace:"Grillmak", baseLevel:14, group:"Einall-Arenen", pvp:true, requiresStarter:"grass" },
+  { id:"striaton-cress", sprite:"Cress", name:"Colin", cls:"Arenaleiter", place:"Orion City", ace:"Sodamak", baseLevel:14, group:"Einall-Arenen", pvp:true, requiresStarter:"fire" },
   { id:"cheren2", sprite:"Cheren", name:"Cheren", cls:"Rivale", place:"Orion City", ace:null, baseLevel:8, group:"Rivale" },
   { id:"n2", sprite:"N", name:"N", cls:"Team Plasma", place:"Septerna City", ace:"Schallquap", baseLevel:13, group:"Team Plasma" },
   { id:"lenora", sprite:"Lenora", name:"Aloe", cls:"Arenaleiterin", place:"Septerna City", ace:"Kukmarda", baseLevel:20, group:"Einall-Arenen", pvp:true },
@@ -2322,6 +2327,15 @@ injectEditionThemeCSS();
 function currentGame(){ return GAMES[state.edition] || GAMES.hgss; }
 function bossById(id){ return currentGame().bosses.find(b=>b.id===id); }
 
+/* Manche Bosse (aktuell nur das Orion-City-Geschwister-Trio in Schwarz/Weiß) gibt es nur EINEN von
+   mehreren möglichen - welcher tatsächlich antritt, hängt vom gewählten Starter ab (siehe
+   requiresStarter bei EINALL_BW_BOSSES). Ist der Starter noch nicht gewählt (starterChoice ist
+   null), wird bewusst NICHT gefiltert - lieber vorübergehend alle Möglichkeiten zeigen, als
+   fälschlich den einzig relevanten Bosskampf zu verstecken. */
+function bossRequiresOtherStarter(boss, starterChoice){
+  return !!(boss.requiresStarter && starterChoice && boss.requiresStarter !== starterChoice);
+}
+
 const SPECIES_LOOKUP = new Map(SPECIES.map((s,i)=>[s.toLowerCase(), i+1]));
 function spriteFor(speciesName){
   if(!speciesName) return null;
@@ -2523,7 +2537,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.8.45";
+const APP_VERSION = "1.8.46";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -2646,7 +2660,7 @@ function loadSaveState(id){
    Berechnen (und zurück) wäre unnötig riskant für den gerade aktiven Spielstand. */
 function statsForSave(save){
   const game = GAMES[save.edition];
-  const bosses = game ? game.bosses.filter(b=>!(b.final && save.soloMode)) : [];
+  const bosses = game ? game.bosses.filter(b=>!(b.final && save.soloMode) && !bossRequiresOtherStarter(b, save.starterChoice)) : [];
   const bossesDone = bosses.filter(b=>!!save.bossDefeated[b.id]).length;
   const catchable = save.locations.filter(l=>!l.noCatch);
   const locsDone = catchable.filter(l=>l.status!=="pending").length;
@@ -2906,7 +2920,7 @@ function rivalDuelTally(){
    markiert (siehe renderRoutes/locationTiles). Ohne diesen Ausschluss könnte ein Solo-Run nie
    100% erreichen und "Bosse besiegt" nie den vollen Nenner anzeigen. */
 function activeBosses(){
-  return currentGame().bosses.filter(b=>!(b.final && state.soloMode));
+  return currentGame().bosses.filter(b=>!(b.final && state.soloMode) && !bossRequiresOtherStarter(b, state.starterChoice));
 }
 
 /* Gesamtabschluss über alle fangbaren Standorte (noCatch-Orte ausgenommen, dort gibt es nie
@@ -3007,6 +3021,7 @@ function locationTiles(loc, region, game, currentId){
   const bossIds = game.bossAfter[region+"|"+loc.name];
   if(bossIds) bossIds.forEach(id=>{
     const boss=bossById(id); if(!boss) return;
+    if(bossRequiresOtherStarter(boss, state.starterChoice)) return;
     /* "duel-final" ist ausschließlich das Rivalenduell gegen die echte Duellpartnerin/den echten
        Duellpartner nach dem Champion - im Einzelspieler-Modus gibt es niemanden dafür, die Kachel
        entfällt komplett (siehe isBossSettled: dort wird sie transparent als "erledigt" behandelt,
@@ -3057,7 +3072,10 @@ function allTileIdsInOrder(){
     state.locations.filter(l=>l.region===region).forEach(loc=>{
       ids.push(loc.id);
       const bossIds = game.bossAfter[region+"|"+loc.name];
-      if(bossIds) bossIds.forEach(bid=>{ if(bossById(bid)) ids.push(bid); });
+      if(bossIds) bossIds.forEach(bid=>{
+        const boss = bossById(bid);
+        if(boss && !bossRequiresOtherStarter(boss, state.starterChoice)) ids.push(bid);
+      });
     });
   });
   state.locations.filter(l=>l.custom).forEach(loc=>ids.push(loc.id));
@@ -3410,7 +3428,7 @@ function openStarterSetupSheet(){
    Wally/Cynthia-Cameo, finales Duell). Verschwindet entsprechend nach dem Champion-Sieg wieder,
    auch wenn danach noch ein finales Duell folgt. */
 function nextLevelCapBoss(){
-  return currentGame().bosses.find(b=>!isBossDefeated(b.id) && typeof b.baseLevel==="number" && (/^Arenaleiter/.test(b.cls) || b.cls==="Top Vier" || b.cls==="Champ")) || null;
+  return currentGame().bosses.find(b=>!isBossDefeated(b.id) && typeof b.baseLevel==="number" && (/^Arenaleiter/.test(b.cls) || b.cls==="Top Vier" || b.cls==="Champ") && !bossRequiresOtherStarter(b, state.starterChoice)) || null;
 }
 function levelCapCardHtml(){
   const boss = nextLevelCapBoss();
@@ -4422,6 +4440,12 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="log">
 
     <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.46</span><span class="tag tag-fix">Korrektur</span></div>
+      <h3>Schwarz/Weiß: Orion-City-Arena starterabhängig</h3>
+      <p>Besonderheit der ersten Arena in Schwarz/Weiß: sie wird von drei Geschwistern geführt, aber nur eines von ihnen tritt tatsächlich an - abhängig vom gewählten Starter (jeweils der Typ, der gegen den eigenen Starter im Vorteil ist). Bisher zeigte die App fälschlich alle drei gleichzeitig als aktive Bosskämpfe. Jetzt blendet die App die beiden nicht zutreffenden Geschwister komplett aus - aus der Kachelliste, der Fortschritts-/Levelcap-Berechnung und der Statistik - sobald der Starter gewählt ist. Vor der Starterwahl bleiben vorsorglich alle drei sichtbar, damit nichts fälschlich verschwindet.</p>
+    </div>
+
+    <div class="entry">
       <div class="entry-head"><span class="ver">v1.8.45</span><span class="tag tag-fix">Aufgeräumt</span></div>
       <h3>Randomizer-Levelboost auf Konsistenz geprüft</h3>
       <p>Der Level-Boost für Bosstrainer wurde gegen die neue, engere Levelcap-Definition (v1.8.43/v1.8.44) geprüft: die Levelcap-Kachel zeigte den geboosteten Level schon korrekt an, hier war nichts kaputt. Dabei aber eine ältere, unabhängige Ungenauigkeit gefunden und korrigiert - der Hilfetext zum Level-Boost behauptete seit der Einführung des Features, er ließe sich „pro Boss auch einzeln anpassen". Diese Einzelanpassung gab es nie, nur den Sammel-Button für alle Bosse gleichzeitig - der irreführende Satz ist jetzt aus Hilfetext und Erste-Schritte-Tour entfernt.</p>
@@ -5149,7 +5173,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.45.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.46.</footer>
 
 </div>`;
 
