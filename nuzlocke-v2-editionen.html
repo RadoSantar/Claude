@@ -2523,7 +2523,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.8.44";
+const APP_VERSION = "1.8.45";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -3415,13 +3415,11 @@ function nextLevelCapBoss(){
 function levelCapCardHtml(){
   const boss = nextLevelCapBoss();
   if(!boss) return "";
-  const isRival = boss.group==="Rivale";
-  const displayName = (isRival && (state.rivalNickname||"").trim()) || boss.name;
   return `<div class="card">
     <div class="card-top">
       <div>
         <div class="loc-name">Levelcap</div>
-        <div class="loc-sub">${escapeHtml(displayName)} · ${escapeHtml(boss.place)}</div>
+        <div class="loc-sub">${escapeHtml(boss.name)} · ${escapeHtml(boss.place)}</div>
       </div>
       <span class="chip accent">Lv. ${bossLevel(boss)}</span>
     </div>
@@ -3875,7 +3873,7 @@ function showGameOverOverlay(){
    unabhängig vom gespeicherten "schon gesehen"-Status. */
 const ONBOARDING_STEPS = [
   { icon:"👋", title:"Willkommen bei Nuzlocke", text:"Diese App begleitet dich durch deinen Nuzlocke-Run: Fänge, Bosskämpfe, Team und Fortschritt - alles an einem Ort, komplett offline nutzbar." },
-  { icon:"🎯", title:"Fangen & Bosse", text:"Im Routen-Tab trägst du pro Standort ein, ob du gefangen hast oder nicht, und hältst Bosskämpfe mit Sieg oder Niederlage fest. Level-Boosts für Randomizer lassen sich pro Boss oder für alle auf einmal anpassen." },
+  { icon:"🎯", title:"Fangen & Bosse", text:"Im Routen-Tab trägst du pro Standort ein, ob du gefangen hast oder nicht, und hältst Bosskämpfe mit Sieg oder Niederlage fest. Ein Level-Boost für alle Bosstrainer gleichzeitig lässt sich als Randomizer-Hausregel anpassen." },
   { icon:"🎒", title:"Team & Box", text:"Frisch gefangene Pokémon wandern automatisch ins Team, wenn dort noch Platz ist - sonst landen sie in der Box. Beides lässt sich jederzeit per Fingertipp tauschen." },
   { icon:"🏆", title:"Erfolge & Titel", text:"Für besondere Momente im Run gibt es Erfolge freizuschalten, die dir auch einen Titel verleihen - wähl deinen Favoriten in den Einstellungen und zeig ihn im Kopfbereich." },
   { icon:"⚙️", title:"Alles anpassbar", text:"In den Einstellungen findest du Mehrfach-Speicherstände, Hausregeln, Darstellung und mehr. Diese Tour lässt sich dort jederzeit unter „Werkzeuge“ erneut starten." }
@@ -4422,6 +4420,12 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.45</span><span class="tag tag-fix">Aufgeräumt</span></div>
+      <h3>Randomizer-Levelboost auf Konsistenz geprüft</h3>
+      <p>Der Level-Boost für Bosstrainer wurde gegen die neue, engere Levelcap-Definition (v1.8.43/v1.8.44) geprüft: die Levelcap-Kachel zeigte den geboosteten Level schon korrekt an, hier war nichts kaputt. Dabei aber eine ältere, unabhängige Ungenauigkeit gefunden und korrigiert - der Hilfetext zum Level-Boost behauptete seit der Einführung des Features, er ließe sich „pro Boss auch einzeln anpassen". Diese Einzelanpassung gab es nie, nur den Sammel-Button für alle Bosse gleichzeitig - der irreführende Satz ist jetzt aus Hilfetext und Erste-Schritte-Tour entfernt.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.8.44</span><span class="tag tag-fix">Korrektur</span></div>
@@ -5145,7 +5149,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.44.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.45.</footer>
 
 </div>`;
 
@@ -5209,7 +5213,7 @@ function openTeamHistorySheet(){
 /* Kurze Erklärtexte für Einstellungen, deren Wirkung über den einzeiligen Untertitel hinausgeht -
    öffnet ein simples Info-Sheet statt die Einstellungsliste dauerhaft mit Fließtext vollzustopfen. */
 const SETTINGS_HELP = {
-  bossboost: { title:"Level-Boost für Bosstrainer", text:"Erhöht die angezeigten Level aller Bosstrainer gemeinsam um den gewählten Prozentsatz - z. B. wird aus einem Basis-Level 50 bei +5% ein angezeigtes Level 53 (aufgerundet). Rein informativ für den Schwierigkeitsgrad eures Randomizers, ändert nichts an echten Spieldaten - lässt sich pro Boss auch einzeln anpassen." },
+  bossboost: { title:"Level-Boost für Bosstrainer", text:"Erhöht die angezeigten Level aller Bosstrainer gemeinsam um den gewählten Prozentsatz - z. B. wird aus einem Basis-Level 50 bei +5% ein angezeigtes Level 53 (aufgerundet). Rein informativ für den Schwierigkeitsgrad eures Randomizers, ändert nichts an echten Spieldaten." },
   dupes: { title:"Dupes-Clause-Warnung", text:"Klassische Nuzlocke-Hausregel: pro Entwicklungsreihe darf meist nur ein Pokémon gefangen werden. Ist die Warnung aktiv, meldet sich die App beim Fangen, wenn die Art (oder eine verwandte Entwicklungsstufe) schon im Team, in der Box oder im Friedhof vorhanden ist - der Fang bleibt trotzdem möglich, es ist nur ein Hinweis, keine Sperre." },
   nickname: { title:"Nickname-Pflicht", text:"Erzwingt beim Fangen einen Spitznamen, bevor sich der Fang speichern lässt - hilfreich, wenn ihr euch als Hausregel vorgenommen habt, jedem Pokémon einen eigenen Namen zu geben." }
 };
