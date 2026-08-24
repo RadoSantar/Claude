@@ -2523,7 +2523,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.8.42";
+const APP_VERSION = "1.8.43";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -3404,11 +3404,13 @@ function openStarterSetupSheet(){
 
 /* Levelcap-Regel (verbreitete Nuzlocke-Hausregel: Team darf das Level des nächsten Bosses nicht
    überschreiten) - reine Info-Anzeige, keine Markierung einzelner Team-Mitglieder, da die App das
-   Level der eigenen Pokémon nirgends erfasst (nur Fangort/Status/Team-Zugehörigkeit). "duel-final"
-   hat bewusst kein baseLevel (manuell eingetragenes Ergebnis statt Level-Tracking) und wird hier
-   deshalb übersprungen. */
+   Level der eigenen Pokémon nirgends erfasst (nur Fangort/Status/Team-Zugehörigkeit). Bewusst nur
+   an Arenaleitern ausgerichtet statt an jedem einzelnen Bosskampf (Rivale, Team-Bosse, Top Vier,
+   Champion, finales Duell) - das deckt sich mit der gängigen Auslegung der Hausregel und bleibt
+   dadurch als Kachel übersichtlicher, statt bei jedem beliebigen Kampf zu springen. Verschwindet
+   entsprechend nach dem letzten Arenaleiter wieder, auch wenn danach noch Bosskämpfe folgen. */
 function nextLevelCapBoss(){
-  return currentGame().bosses.find(b=>!isBossDefeated(b.id) && typeof b.baseLevel==="number") || null;
+  return currentGame().bosses.find(b=>!isBossDefeated(b.id) && typeof b.baseLevel==="number" && /^Arenaleiter/.test(b.cls)) || null;
 }
 function levelCapCardHtml(){
   const boss = nextLevelCapBoss();
@@ -4422,6 +4424,12 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="log">
 
     <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.43</span><span class="tag tag-fix">Änderung</span></div>
+      <h3>Levelcap vereinfacht</h3>
+      <p>Die Levelcap-Infokarte im Team-Tab richtete sich bisher nach dem jeweils nächsten unbesiegten Bosskampf überhaupt - Rivale, Team-Bosse, Top Vier, Champion und finales Duell inklusive. Das sprang bei jedem beliebigen Kampf und wich von der gängigen Auslegung der Hausregel ab. Jetzt zählt nur noch der nächste unbesiegte Arenaleiter - übersichtlicher, und die Karte verschwindet entsprechend nach dem letzten Arenaleiter, auch wenn danach noch weitere Bosskämpfe folgen.</p>
+    </div>
+
+    <div class="entry">
       <div class="entry-head"><span class="ver">v1.8.42</span><span class="tag tag-feat">Feature</span></div>
       <h3>Runs archivieren</h3>
       <p><strong>Abgeschlossene Runs archivieren:</strong> im Spielstände-Sheet lässt sich jeder abgeschlossene Run - erfolgreich (Champion bzw. finales Duell gewonnen) oder gescheitert (kompletter Team-Wipe bzw. verlorenes finales Duell) - jetzt archivieren. Archivierte Runs verschwinden aus der Hauptliste und landen stattdessen in einem eigenen, eingeklappten „Archiv"-Abschnitt darunter, mit Erfolgs-/Niederlage-Kennzeichnung. Sie bleiben dabei voll nutzbar und lassen sich jederzeit wieder zurückholen oder ganz löschen - nur laufende Runs lassen sich nicht archivieren, das Angebot erscheint erst nach einem Ergebnis.</p>
@@ -5131,7 +5139,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.42.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.43.</footer>
 
 </div>`;
 
