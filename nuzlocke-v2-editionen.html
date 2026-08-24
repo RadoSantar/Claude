@@ -167,6 +167,8 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 .stat-tile.dot-red .stat-value{ color:var(--red); }
 .stat-tile.dot-warn .stat-value{ color:var(--warn); }
 .stat-tile.dot-gold .stat-value{ color:var(--accent); }
+.recap-insights{ margin:0 0 4px; padding-left:20px; }
+.recap-insights li{ font-size:.85rem; color:var(--ink-soft); line-height:1.5; margin-bottom:4px; }
 .progress-label-row{
   display:flex; align-items:baseline; justify-content:space-between; margin-top:14px;
   font-size:.78rem; font-weight:700; color:var(--ink-soft);
@@ -2506,6 +2508,7 @@ function randomNickname(){ return RANDOM_NICKNAMES[Math.floor(Math.random()*RAND
 const ICON_NOTE_FILLED = '<svg viewBox="0 0 24 24"><path d="M6 3h9l5 5v12a1 1 0 01-1 1H6a1 1 0 01-1-1V4a1 1 0 011-1z" fill="currentColor"/><path d="M14.5 3v5.5H20" fill="var(--surface)"/><path d="M8 13h8M8 17h5" stroke="var(--surface)"/></svg>';
 const ICON_KEBAB = '<svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.7" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.7" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="1.7" fill="currentColor" stroke="none"/></svg>';
 const ICON_INFO = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6" stroke-linecap="round"/><circle cx="12" cy="7.5" r="1" fill="currentColor" stroke="none"/></svg>';
+const ICON_X = '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 
 function iconBtn(tone, act, id, iconSvg, label, disabled, small){
   const cls = "icon-act " + tone + (small?" small":"");
@@ -2538,7 +2541,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.8.50";
+const APP_VERSION = "1.8.51";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -2571,7 +2574,7 @@ function freshState(editionId, soloMode){
     names.forEach(entry=>{ locations.push(parseLocationEntry(region, entry)); });
   });
   const gameStarters = GAMES[edition].starters || { grass:"", fire:"", water:"" };
-  return { edition, runTitle:"Nuzlocke", soloMode:!!soloMode, locations, bossBoosts:{}, bossDefeated:{}, rivalNickname:"", duelPartnerName:"", dupesWarning:true, lastExportAt:null, evolutionCount:0, lossCount:0, nicknameRequired:false, pvp:{}, hallOfFame:{ rivalTeam:[], playerTeam:[], defeatedAt:null, result:null }, starterNames:{ ...gameStarters }, starterChoice:null, currentLocId:null, eventLog:[], hiddenRegions:[], achievements:{}, activeTitle:null, dupesIgnoredCount:0, bossLossIds:{}, cleanBossWins:{}, bossNotes:{}, randomizerSeed:"", vibrationEnabled:true, bossWinTeams:{}, hidePostgame:false, trackBossTeams:false, bossOpponentTeams:{}, trackDeathCause:false };
+  return { edition, runTitle:"Nuzlocke", soloMode:!!soloMode, locations, bossBoosts:{}, bossDefeated:{}, rivalNickname:"", duelPartnerName:"", dupesWarning:true, lastExportAt:null, evolutionCount:0, lossCount:0, nicknameRequired:false, pvp:{}, hallOfFame:{ rivalTeam:[], playerTeam:[], defeatedAt:null, result:null }, starterNames:{ ...gameStarters }, starterChoice:null, currentLocId:null, eventLog:[], hiddenRegions:[], achievements:{}, activeTitle:null, dupesIgnoredCount:0, bossLossIds:{}, cleanBossWins:{}, bossNotes:{}, randomizerSeed:"", vibrationEnabled:true, bossWinTeams:{}, hidePostgame:false, trackBossTeams:false, bossOpponentTeams:{}, trackDeathCause:false, colorBlindSafeMode:false };
 }
 
 /* Ergänzt neu hinzugekommene Standorte (z.B. nachträglich eingefügte Städte) in einen bereits
@@ -2626,6 +2629,7 @@ function normalizeState(parsed){
   if(typeof parsed.trackBossTeams !== "boolean") parsed.trackBossTeams = false;
   if(!parsed.bossOpponentTeams) parsed.bossOpponentTeams = {};
   if(typeof parsed.trackDeathCause !== "boolean") parsed.trackDeathCause = false;
+  if(typeof parsed.colorBlindSafeMode !== "boolean") parsed.colorBlindSafeMode = false;
   syncLocations(parsed);
   return parsed;
 }
@@ -3453,6 +3457,11 @@ function levelCapCardHtml(){
 function renderTeam(){
   const teamLocs = state.locations.filter(l=>l.mon && l.mon.inTeam && !l.mon.dead && !l.mon.given);
   let html = levelCapCardHtml();
+  if(teamLocs.length){
+    html += `<div class="card-actions" style="margin-bottom:14px;">
+      <button class="btn btn-secondary btn-block" data-act="share-team-image">Team als Bild teilen</button>
+    </div>`;
+  }
   html += `<div class="team-grid">`;
   for(let i=0;i<6;i++){
     const loc = teamLocs[i];
@@ -3614,6 +3623,243 @@ function freezeSpriteSrc(spriteKey, src){
   img.src = src;
 }
 
+/* ---------- Teilbare Bild-Karten (Team & Run-Rückblick) ----------
+   Liest Farben bewusst per getComputedStyle aus den CSS-Variablen aus (gleiches Muster wie
+   updateThemeColorMeta) statt aus GAMES[edition].theme direkt - so funktioniert es unverändert
+   für alle Editionen inkl. HGSS, das kein eigenes .theme-Objekt hat, und folgt automatisch
+   hell/dunkel + der aktuellen Editions-Akzentfarbe. */
+function themeColor(varName, fallback){
+  const v = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+  return v || fallback;
+}
+
+function loadImageAsync(src){
+  return new Promise(resolve=>{
+    if(!src){ resolve(null); return; }
+    const img = new Image();
+    img.onload = ()=>resolve(img);
+    img.onerror = ()=>resolve(null);
+    img.src = src;
+  });
+}
+
+function canvasRoundRect(ctx, x, y, w, h, r){
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.arcTo(x+w, y, x+w, y+h, r);
+  ctx.arcTo(x+w, y+h, x, y+h, r);
+  ctx.arcTo(x, y+h, x, y, r);
+  ctx.arcTo(x, y, x+w, y, r);
+  ctx.closePath();
+}
+
+function wrapTextLines(ctx, text, maxWidth){
+  const words = String(text).split(/\s+/);
+  const lines = [];
+  let line = "";
+  words.forEach(word=>{
+    const test = line ? `${line} ${word}` : word;
+    if(ctx.measureText(test).width > maxWidth && line){ lines.push(line); line = word; }
+    else line = test;
+  });
+  if(line) lines.push(line);
+  return lines;
+}
+
+function truncateLabel(s, n){
+  s = String(s||"");
+  return s.length > n ? s.slice(0, n-1)+"…" : s;
+}
+
+/* Teilen bevorzugt über das native Web-Share-Sheet inkl. Bild-Datei (Mobile) - sonst zeigt eine
+   Sheet das Bild als <img> mit "Antippen und halten"-Hinweis PLUS einen Download-Link. Der reine
+   <img>-Weg ist bewusst der verlässliche Fallback: ein per Skript ausgelöster <a download>-Klick
+   funktioniert nicht in jeder Umgebung zuverlässig (z.B. sandboxed Vorschau-Frames), ein sichtbares
+   Bild zum Antippen/Speichern dagegen schon. */
+async function shareOrShowCanvas(canvas, filename, shareTitle, shareText){
+  const dataUrl = canvas.toDataURL("image/png");
+  const blob = await new Promise(resolve=>canvas.toBlob(resolve, "image/png"));
+  if(blob && typeof File!=="undefined" && navigator.share && navigator.canShare){
+    const file = new File([blob], filename, { type:"image/png" });
+    if(navigator.canShare({ files:[file] })){
+      try{ await navigator.share({ title:shareTitle, text:shareText, files:[file] }); return; }
+      catch(err){ if(err && err.name==="AbortError") return; }
+    }
+  }
+  openSheet(`
+    <h3>${escapeHtml(shareTitle)}</h3>
+    <div class="loc-sub" style="margin-bottom:12px;">Bild antippen und halten (oder rechtsklicken), um es zu speichern.</div>
+    <img src="${dataUrl}" alt="" style="width:100%; border-radius:14px; display:block; box-shadow:var(--shadow);" />
+    <div class="sheet-footer" style="margin-top:14px;">
+      <button class="btn btn-secondary btn-block" data-act="close-sheet">Schließen</button>
+      <a class="btn btn-primary btn-block" style="display:flex; align-items:center; justify-content:center; text-decoration:none;" href="${dataUrl}" download="${filename}">Herunterladen</a>
+    </div>
+  `);
+}
+
+async function buildTeamShareImage(){
+  const teamLocs = state.locations.filter(l=>l.mon && l.mon.inTeam && !l.mon.dead && !l.mon.given);
+  const W = 1000, PAD = 56;
+  const rows = Math.ceil(Math.max(teamLocs.length,1)/2);
+  const H = 220 + (teamLocs.length ? rows*160+20 : 70) + PAD;
+
+  const accent = themeColor("--accent", "#4f7cff");
+  const bg = themeColor("--bg", "#f4f5f8");
+  const surface = themeColor("--surface", "#ffffff");
+  const ink = themeColor("--ink", "#1a1a1f");
+  const inkSoft = themeColor("--ink-soft", "#6b6f7a");
+
+  const canvas = document.createElement("canvas");
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext("2d");
+
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = accent; ctx.globalAlpha = .12; ctx.fillRect(0, 0, W, 190); ctx.globalAlpha = 1;
+
+  ctx.fillStyle = ink;
+  ctx.font = "700 40px system-ui, sans-serif";
+  ctx.fillText(state.runTitle||"Nuzlocke", PAD, 90);
+  ctx.fillStyle = inkSoft;
+  ctx.font = "500 24px system-ui, sans-serif";
+  ctx.fillText(currentGame().shortLabel, PAD, 128);
+  ctx.fillStyle = accent;
+  ctx.font = "700 22px system-ui, sans-serif";
+  ctx.fillText(`Team · ${teamLocs.length}/6`, PAD, 172);
+
+  const tileW = (W - PAD*2 - 24)/2, tileH = 140;
+  const y0 = 210;
+  for(let i=0;i<teamLocs.length;i++){
+    const col = i%2, row = Math.floor(i/2);
+    const x = PAD + col*(tileW+24);
+    const ty = y0 + row*(tileH+20);
+    ctx.fillStyle = surface;
+    canvasRoundRect(ctx, x, ty, tileW, tileH, 18);
+    ctx.fill();
+    const loc = teamLocs[i];
+    const img = await loadImageAsync(spriteFor(loc.mon.species));
+    if(img) ctx.drawImage(img, x+16, ty+(tileH-108)/2, 108, 108);
+    ctx.fillStyle = ink;
+    ctx.font = "700 25px system-ui, sans-serif";
+    ctx.fillText(truncateLabel(loc.mon.nickname||loc.mon.species, 15), x+144, ty+58);
+    ctx.fillStyle = inkSoft;
+    ctx.font = "500 18px system-ui, sans-serif";
+    if(loc.mon.nickname) ctx.fillText(truncateLabel(loc.mon.species, 20), x+144, ty+86);
+    ctx.fillText(truncateLabel(loc.name, 22), x+144, ty+(loc.mon.nickname?110:86));
+  }
+  if(!teamLocs.length){
+    ctx.fillStyle = inkSoft;
+    ctx.font = "500 22px system-ui, sans-serif";
+    ctx.fillText("Noch kein Team zusammengestellt.", PAD, y0+40);
+  }
+
+  ctx.fillStyle = inkSoft;
+  ctx.font = "500 17px system-ui, sans-serif";
+  ctx.fillText("Nuzlocke Tracker", PAD, H-24);
+  return canvas;
+}
+
+async function buildRunRecapShareImage(){
+  const s = runRecapStats();
+  const hof = state.hallOfFame;
+  const team = hof.playerTeam || [];
+  const narrative = runRecapNarrative();
+  const insights = runRecapInsights();
+  const W = 1000, PAD = 56;
+  const contentW = W - PAD*2;
+
+  const accent = themeColor("--accent", "#4f7cff");
+  const bg = themeColor("--bg", "#f4f5f8");
+  const surface = themeColor("--surface", "#ffffff");
+  const ink = themeColor("--ink", "#1a1a1f");
+  const inkSoft = themeColor("--ink-soft", "#6b6f7a");
+  const good = themeColor("--good", "#2e9e57");
+  const red = themeColor("--red", "#d9484f");
+
+  const measure = document.createElement("canvas").getContext("2d");
+  measure.font = "400 22px system-ui, sans-serif";
+  const narrativeLines = wrapTextLines(measure, narrative, contentW);
+  measure.font = "400 20px system-ui, sans-serif";
+  const insightLines = insights.flatMap(i=>wrapTextLines(measure, "• "+i, contentW-8));
+
+  const statLines = [
+    `Überlebensrate: ${s.survivalRate===null?"–":s.survivalRate+"%"}`,
+    `Gefangen: ${s.caught}   Gestorben: ${deadCount()}`,
+    `Kampfniederlagen: ${state.lossCount||0}`,
+    `Bosse besiegt: ${s.bossesDefeated}/${s.totalBosses}`,
+    `Run-Dauer: ${s.duration}`
+  ];
+  if(!state.soloMode) statLines.push(`Duelle: ${s.duelTally.wins} Siege, ${s.duelTally.losses} Niederlagen`);
+
+  const teamRows = Math.ceil(Math.max(team.length,1)/3);
+  const teamBlockH = team.length ? teamRows*150+20 : 60;
+  const H = 190 + teamBlockH + 50 + narrativeLines.length*30 + 44 + insightLines.length*28 + 40 + statLines.length*32 + PAD;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext("2d");
+
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = accent; ctx.globalAlpha = .12; ctx.fillRect(0, 0, W, 170); ctx.globalAlpha = 1;
+
+  ctx.fillStyle = ink;
+  ctx.font = "700 38px system-ui, sans-serif";
+  ctx.fillText(state.runTitle||"Nuzlocke", PAD, 76);
+  ctx.fillStyle = inkSoft;
+  ctx.font = "500 22px system-ui, sans-serif";
+  ctx.fillText(currentGame().shortLabel, PAD, 108);
+  ctx.fillStyle = s.won ? good : red;
+  ctx.font = "700 24px system-ui, sans-serif";
+  ctx.fillText(runRecapHeadline(), PAD, 148);
+
+  let y = 190;
+  const tileSize = 130, gap = 20;
+  for(let i=0;i<team.length;i++){
+    const col = i%3, row = Math.floor(i/3);
+    const x = PAD + col*(tileSize+gap);
+    const ty = y + row*150;
+    ctx.fillStyle = surface;
+    canvasRoundRect(ctx, x, ty, tileSize, tileSize, 16);
+    ctx.fill();
+    const img = await loadImageAsync(spriteFor(team[i].species));
+    if(img) ctx.drawImage(img, x+15, ty+15, tileSize-30, tileSize-30);
+    ctx.fillStyle = ink;
+    ctx.font = "600 16px system-ui, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(truncateLabel(team[i].nickname||team[i].species, 14), x+tileSize/2, ty+tileSize+20);
+    ctx.textAlign = "left";
+  }
+  if(!team.length){
+    ctx.fillStyle = inkSoft;
+    ctx.font = "500 20px system-ui, sans-serif";
+    ctx.fillText("(kein Team erfasst)", PAD, y+30);
+  }
+  y += teamBlockH;
+
+  ctx.fillStyle = accent;
+  ctx.font = "700 20px system-ui, sans-serif";
+  ctx.fillText("Zusammenfassung", PAD, y);
+  y += 30;
+  ctx.fillStyle = ink;
+  ctx.font = "400 22px system-ui, sans-serif";
+  narrativeLines.forEach(line=>{ ctx.fillText(line, PAD, y); y += 30; });
+
+  y += 14;
+  ctx.fillStyle = accent;
+  ctx.font = "700 20px system-ui, sans-serif";
+  ctx.fillText("Kleine Analyse", PAD, y);
+  y += 28;
+  ctx.fillStyle = inkSoft;
+  ctx.font = "400 20px system-ui, sans-serif";
+  insightLines.forEach(line=>{ ctx.fillText(line, PAD, y); y += 28; });
+
+  y += 14;
+  ctx.fillStyle = ink;
+  ctx.font = "600 20px system-ui, sans-serif";
+  statLines.forEach(line=>{ ctx.fillText(line, PAD, y); y += 32; });
+
+  return canvas;
+}
+
 function bossSpriteHtml(boss, size, frozen){
   size = size || 70;
   const src = BOSS_SPRITES[boss.sprite];
@@ -3638,7 +3884,7 @@ function bossCardHtml(boss, isCurrent){
   const flash = boss.id === lastDefeatedId;
   const cls = "card boss-card" + (defeated?(settledAsLoss?" boss-done-loss":" boss-done"):"") + (flash?" boss-defeat-flash":"");
   const currentAttr = isCurrent ? ` data-current="true"` : "";
-  const badge = defeated ? `<div class="boss-defeat-badge${settledAsLoss?" badge-loss":""}" aria-hidden="true">${ICON_CHECK}</div>` : "";
+  const badge = defeated ? `<div class="boss-defeat-badge${settledAsLoss?" badge-loss":""}" aria-hidden="true">${(settledAsLoss && state.colorBlindSafeMode) ? ICON_X : ICON_CHECK}</div>` : "";
   /* Kein Flaggen-Icon für bereits besiegte Bosse: würde optisch mit dem Sieg-Badge (ebenfalls
      oben rechts) kollidieren und eine erledigte Kachel lässt sich ohnehin nicht als "aktuell"
      halten (isCurrentTargetResolved räumt die Markierung sofort wieder ab). */
@@ -4235,9 +4481,53 @@ function runRecapHeadline(){
   return runRecapStats().won ? "Sieg im finalen Duell" : "Niederlage im finalen Duell";
 }
 
+/* Erzählte Zusammenfassung aus bereits vorhandenen Stats/Zählern - bewusst OHNE
+   Typverteilungs-Analyse ("hauptsächlich Wasser-Team"), da das eine komplette
+   Arten→Typ-Referenztabelle bräuchte, die es in der App aktuell nicht gibt. */
+function runRecapNarrative(){
+  const s = runRecapStats();
+  const sentences = [];
+  sentences.push(`${state.runTitle||"Der Run"} auf ${currentGame().shortLabel} endete ${s.won?"mit einem Sieg":"mit einer Niederlage"}${state.soloMode?"":" im finalen Rivalenduell"}${s.duration!=="–"?` nach ${s.duration}`:""}.`);
+  sentences.push(`Insgesamt wurden ${s.caught} Pokémon gefangen, ${deadCount()} davon sind unterwegs gestorben${s.survivalRate!==null?` – das entspricht ${s.survivalRate}% Überlebensrate`:""}.`);
+  sentences.push(`${s.bossesDefeated} von ${s.totalBosses} Bosskämpfen wurden gemeistert${state.lossCount?`, bei insgesamt ${state.lossCount} Kampfniederlagen unterwegs`:", ganz ohne eine einzige Kampfniederlage"}.`);
+  if(!state.soloMode && (s.duelTally.wins+s.duelTally.losses)>0){
+    sentences.push(`Im direkten Duell standen sich ${s.duelTally.wins} Siege und ${s.duelTally.losses} Niederlagen gegenüber.`);
+  }
+  return sentences.join(" ");
+}
+
+/* Kleine Analyse aus vorhandenen Zählern statt neuer Datenstrukturen: längste Fangserie ohne
+   Todesfall aus dem Verlauf, härtester Gegner aus bossLossIds, Erfolge, ignorierte Dupes-Warnungen. */
+function runRecapInsights(){
+  const insights = [];
+  let streak = 0, maxStreak = 0;
+  state.eventLog.forEach(e=>{
+    if(e.type==="catch"){ streak++; maxStreak = Math.max(maxStreak, streak); }
+    else if(e.type==="dead") streak = 0;
+  });
+  if(maxStreak>=3) insights.push(`Längste Fangserie ohne Todesfall: ${maxStreak} Pokémon.`);
+
+  const lossEntries = Object.entries(state.bossLossIds||{}).filter(([,c])=>c>0);
+  if(lossEntries.length){
+    lossEntries.sort((a,b)=>b[1]-a[1]);
+    const [hardestId, count] = lossEntries[0];
+    const boss = bossById(hardestId);
+    if(boss) insights.push(`Härtester Gegner: ${boss.name||boss.cls} (${count}× verloren${state.bossDefeated[hardestId]?", bevor der Sieg gelang":""}).`);
+  }
+
+  const unlockedCount = ACHIEVEMENTS.filter(a=>state.achievements[a.id]).length;
+  if(unlockedCount) insights.push(`${unlockedCount} von ${ACHIEVEMENTS.length} Erfolgen freigeschaltet.`);
+
+  if(state.dupesIgnoredCount) insights.push(`${state.dupesIgnoredCount}× wurde die Dupes-Clause-Warnung ignoriert.`);
+
+  if(!insights.length) insights.push("Noch nicht genug Daten für eine Analyse gesammelt.");
+  return insights;
+}
+
 function openRunRecapSheet(){
   const s = runRecapStats();
   const hof = state.hallOfFame;
+  const insights = runRecapInsights();
   openSheet(`
     <h3>Run-Rückblick</h3>
     <div class="loc-sub" style="margin-bottom:14px;">${escapeHtml(state.runTitle||"Nuzlocke")} · ${escapeHtml(currentGame().shortLabel)} · ${runRecapHeadline()}</div>
@@ -4253,8 +4543,13 @@ function openRunRecapSheet(){
       ${state.soloMode ? "" : statTileHtml("dot-good", "Duelle gewonnen", s.duelTally.wins)}
       ${state.soloMode ? "" : statTileHtml("dot-red", "Duelle verloren", s.duelTally.losses)}
     </div>
+    <div class="loc-sub" style="margin:14px 0 6px; font-weight:700;">Zusammenfassung</div>
+    <p class="loc-sub" style="margin:0 0 4px; line-height:1.5;">${escapeHtml(runRecapNarrative())}</p>
+    <div class="loc-sub" style="margin:14px 0 6px; font-weight:700;">Kleine Analyse</div>
+    <ul class="recap-insights">${insights.map(i=>`<li>${escapeHtml(i)}</li>`).join("")}</ul>
     <div class="sheet-footer">
       <button class="btn btn-secondary btn-block" data-act="close-sheet">Schließen</button>
+      <button class="btn btn-secondary btn-block" data-act="share-run-recap-image">Als Bild</button>
       ${typeof navigator!=="undefined" && navigator.share ? `<button class="btn btn-primary btn-block" data-act="share-run-recap">Teilen</button>` : `<button class="btn btn-primary btn-block" data-act="copy-run-recap">Als Text kopieren</button>`}
     </div>
   `);
@@ -4278,6 +4573,12 @@ function runRecapText(){
     `Run-Dauer: ${s.duration}`
   ];
   if(!state.soloMode) lines.push(`Duelle: ${s.duelTally.wins} Siege, ${s.duelTally.losses} Niederlagen`);
+  lines.push("", runRecapNarrative());
+  const insights = runRecapInsights();
+  if(insights.length){
+    lines.push("", "Analyse:");
+    insights.forEach(i=>lines.push(`- ${i}`));
+  }
   return lines.join("\n");
 }
 
@@ -4564,6 +4865,15 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.51</span><span class="tag tag-feat">Feature</span></div>
+      <h3>Team &amp; Run-Rückblick als teilbares Bild, erzählte Zusammenfassung, farbenblindsicherer Status</h3>
+      <p><strong>Team als Bild teilen:</strong> im Team-Tab lässt sich das aktuelle Team jetzt als hübsche Bild-Karte (Sprites, Spitznamen, Fundorte) exportieren - über das native Teilen-Menü (Mobile) oder als Bild zum Antippen-und-Halten/Herunterladen.</p>
+      <p><strong>Run-Rückblick als Bild:</strong> derselbe Bild-Export jetzt auch für den Run-Rückblick, zusätzlich zur bestehenden Text-Kopie/dem Web-Share.</p>
+      <p><strong>Run-Rückblick ausgebaut:</strong> eine erzählte Zusammenfassung (Sieg/Niederlage, Fänge, Überlebensrate, Bosse, Dauer, Duell-Bilanz als Fließtext) und eine kleine Analyse (längste Fangserie ohne Todesfall, härtester Gegner, freigeschaltete Erfolge, ignorierte Dupes-Warnungen) ergänzen die bestehenden Kennzahlen - in der Sheet-Ansicht, im Text-Export und jetzt auch im Bild.</p>
+      <p><strong>Status nie nur über Farbe:</strong> neuer Schalter unter „Darstellung" (standardmäßig aus). Aktiviert, bekommt eine als Niederlage abgeschlossene Bosskarte zusätzlich zur roten Farbe ein eigenes Kreuz-Symbol statt desselben Häkchens wie ein Sieg - hilfreich bei Rot-Grün-Sehschwäche.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.8.50</span><span class="tag tag-fix">Änderung</span></div>
@@ -5256,7 +5566,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <h2>Offene Punkte, Ideen &amp; Optimierungen</h2>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Plattformübergreifendes Speichersystem.</strong> Spielstände liegen bisher rein lokal (<code>localStorage</code>) im jeweiligen Browser/Gerät — der einzige Weg zwischen Geräten zu wechseln ist der manuelle JSON-Export/Import. Ein echter Sync (z.B. Konto-basiert oder über einen eigenen Cloud-Speicher) würde Spielstände automatisch zwischen Handy, Tablet und Desktop aktuell halten.</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Achievement-System mit verliehenen Titeln.</strong> Für bestimmte Situationen/Meilensteine im Run Achievements freischalten, die einen Titel verleihen — z.&nbsp;B. „Legenden-Trainer" bei 3 Legendären gleichzeitig im Team, „Champ" nach Championsieg. Weitere Ideen für Auslöser/Titel noch offen. → umgesetzt in v1.8.34 mit 10 Erfolgen/Titeln als erste Runde (u.&nbsp;a. Teamvoll, Ironman, fehlerfreier Champion-Sieg, Solo-Modus, Dupes-Regelbruch) - weitere Erfolge (z.&nbsp;B. Legenden-Trainer, editionsübergreifende) können jederzeit ergänzt werden.</div>
-    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Run-Rückblick ausbauen: erzählte Zusammenfassung + kleine Analyse.</strong> Statt nur Kennzahlen eine spannend geschriebene Zusammenfassung des Abenteuers anhand von Kennzahlen/Verlauf generieren, dazu kleine Analyse-Einsichten (z.&nbsp;B. „hauptsächlich Wasser-Pokémon im Team", auffällige Typverteilung, Fang-/Todesserien o.&nbsp;Ä.).</div>
+    <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Run-Rückblick ausbauen: erzählte Zusammenfassung + kleine Analyse.</strong> Statt nur Kennzahlen eine spannend geschriebene Zusammenfassung des Abenteuers anhand von Kennzahlen/Verlauf generieren, dazu kleine Analyse-Einsichten (z.&nbsp;B. „hauptsächlich Wasser-Pokémon im Team", auffällige Typverteilung, Fang-/Todesserien o.&nbsp;Ä.). → umgesetzt in v1.8.51 (Fließtext-Zusammenfassung + Analyse-Punkte zu Fangserie, härtestem Gegner, Erfolgen und ignorierten Dupes-Warnungen; Typverteilung bewusst ausgelassen, da dafür eine komplette Arten→Typ-Referenztabelle fehlt - siehe „Typabdeckungs-Analyse fürs Team" weiter unten)</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Zusammengefasste Encounter-Übersicht für ausgelassene Routen.</strong> Liste aller Standorte, an denen noch kein Fangversuch eingetragen wurde (übersprungene Routen), mit Sprung-Funktion zur jeweiligen Standort-Karte per Klick.</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Game-Over-Bildschirm bei komplettem Team-Verlust.</strong> Sind alle Pokémon gestorben, soll ein Vollbild-Overlay ähnlich der Champion-Abschluss-Feier erscheinen — allerdings als Niederlage gerahmt statt als Sieg. → umgesetzt in v1.8.33</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Abgegebene Pokémon aus der Überlebensrate herausrechnen.</strong> Aktuell zählen abgegebene Pokémon (z.&nbsp;B. bei einer verlorenen Rivalenduell-Niederlage) weiter zur Überlebensrate mit — dadurch kann die Rate auch dann nicht auf 0% fallen, wenn tatsächlich das komplette verbliebene Team gestorben ist. Abgegebene sollten aus der Berechnung ausgeschlossen werden. → umgesetzt in v1.8.40</div>
@@ -5267,7 +5577,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Regelwerk-Checkliste pro Run.</strong> Die üblichen Nuzlocke-Hausregeln (Set-Modus, Species Clause, kein Item im Kampf, Level-Cap je Boss, Dupes Clause gibt es schon) als an-/abwählbare Liste zu Beginn eines Runs, rein zur Dokumentation, welche Regeln galten.</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Notizfeld pro Boss statt nur pro Standort.</strong> Bei einem Randomizer ist das gegnerische Team jedes Mal anders — aktuell lässt sich nur der „Ace" nachschlagen. Ein Freitextfeld pro Boss fürs komplette gegnerische Team wäre für Strategie-Notizen hilfreich. → umgesetzt in v1.8.40</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Zufalls-Spitznamen-Generator.</strong> Ein Würfel-Button im Fang-Formular, der einen witzigen Spitznamen vorschlägt. → umgesetzt in v1.8.41 (Tag hier versehentlich nicht mit-aktualisiert worden)</div>
-    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Team als teilbare Bild-Karte exportieren.</strong> Das aktuelle Team als hübsche Bild-Kachel generieren (ähnlich dem Run-Rückblick-Text, aber visuell) — für Social-Media/Chat-Sharing.</div>
+    <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Team als teilbare Bild-Karte exportieren.</strong> Das aktuelle Team als hübsche Bild-Kachel generieren (ähnlich dem Run-Rückblick-Text, aber visuell) — für Social-Media/Chat-Sharing. → umgesetzt in v1.8.51</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Randomizer-Seed-Feld.</strong> Ein Metadaten-Feld pro Run für den verwendeten Randomizer-Seed/die Einstellungen, damit sich die Konfiguration später nachvollziehen lässt. → umgesetzt in v1.8.40</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Typabdeckungs-Analyse fürs Team.</strong> Welche Typen deckt das Team offensiv/defensiv ab, wo sind Lücken — visualisiert als kleine Übersicht. Kippt etwas Richtung Strategie-Tool statt reinem Tracker, daher nur bei explizitem Wunsch umsetzen.</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>PWA-Schnellzugriffe.</strong> Über das Home-Bildschirm-Icon direkt Schnellaktionen anbieten (z.&nbsp;B. „Fangen", „Team") via <code>shortcuts</code> im Manifest, ohne die App erst öffnen und navigieren zu müssen.</div>
@@ -5283,7 +5593,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Kontextuelle Hilfe-Icons bei Einstellungen.</strong> Ein kleines „?" bei weniger selbsterklärenden Optionen (Dupes-Clause, Nickname-Pflicht, Einzelspieler-Modus), das kurz erklärt, was sie konkret bewirken. → umgesetzt in v1.8.33 (Level-Boost, Dupes-Clause, Nickname-Pflicht; Einzelspieler-Modus-Erklärung steht noch offen)</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Kurze Erste-Schritte-Tour beim allerersten Öffnen.</strong> Die App hat mittlerweile einige nicht ganz offensichtliche Mechaniken (Flaggen-Icon, Einklapp-Logik, Box-Suche, Swipe zwischen Tabs), die neue Nutzer:innen sonst nur durch Zufall entdecken.</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Kurzes Vibrations-Feedback bei Fang/Tod/Bosssieg.</strong> Auf unterstützten Geräten, mit Ein/Aus-Schalter in den Einstellungen. → umgesetzt in v1.8.40</div>
-    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Status nie nur über Farbe codieren.</strong> Gerade bei der geplanten farbcodierten Überlebensrate zusätzlich ein Symbol/Text verwenden, damit es auch für farbenblinde Nutzer:innen eindeutig bleibt.</div>
+    <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Status nie nur über Farbe codieren.</strong> Gerade bei der geplanten farbcodierten Überlebensrate zusätzlich ein Symbol/Text verwenden, damit es auch für farbenblinde Nutzer:innen eindeutig bleibt. → umgesetzt in v1.8.51 als Schalter unter „Darstellung": aktiviert bekommt eine verlorene, aber abgeschlossene Bosskarte ein Kreuz-Symbol statt desselben Häkchens wie ein Sieg (die farbcodierte Überlebensrate selbst trägt zusätzlich immer schon Zahl/Label, nicht nur Farbe)</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Automatisches Scrollen zur aktuellen Kachel beim Öffnen des Routen-Tabs.</strong> Statt jedes Mal manuell den „Zum aktuellen Standort"-Button antippen zu müssen. → umgesetzt in v1.8.40</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Rückgängig-Toast statt Kontextmenü-Umweg für schnelle Korrekturen.</strong> Z.&nbsp;B. nach versehentlichem „Kein Fang" ein kurzer Hinweis mit direktem „Rückgängig"-Button, statt erst über das Karten-Icon zurücksetzen zu müssen.</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Lang-Drücken-Bestätigung für „Sieg zurücknehmen".</strong> Schutz vor versehentlichem Antippen, das sonst stillschweigend Fortschritt zurücknimmt.</div>
@@ -5298,7 +5608,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>„✓ abgeschlossen"-Badge im Regions-Header.</strong> Sobald eine ganze Region fertig ist, auf einen Blick sichtbar, ohne reinscrollen zu müssen.</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Längere Sheet-Labels kürzen.</strong> Z.&nbsp;B. „Kampf trotz Niederlage als abgeschlossen zählen" → kurzes Button-Label + erklärender Untertext, statt alles in den Button-Text zu packen.</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Fokus-Sichtbarkeit &amp; aria-labels bei Icon-Buttons nachschärfen.</strong> Für Tastatur-/Screenreader-Nutzung, aktuell vermutlich lückenhaft. → umgesetzt in v1.8.33</div>
-    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Run-Rückblick als Bild statt nur Text.</strong> Eine hübsche, teilbare Abschluss-Karte (Canvas/Screenshot-Stil) für Social Media statt nur der bestehenden Text-Kopie.</div>
+    <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Run-Rückblick als Bild statt nur Text.</strong> Eine hübsche, teilbare Abschluss-Karte (Canvas/Screenshot-Stil) für Social Media statt nur der bestehenden Text-Kopie. → umgesetzt in v1.8.51</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Web-Share-Sheet auf Mobile.</strong> Beim Kopieren des Run-Rückblicks direkt das native Teilen-Menü anbieten, statt nur Zwischenablage/Textfeld. → umgesetzt in v1.8.49</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Kurzes Sound-Feedback als Pendant zum Vibrations-Feedback.</strong> Dezente Klänge bei Fang/Tod/Bosssieg, mit eigenem Lautstärke-/Ein-Aus-Schalter.</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Allgemeines „Letzte Aktion rückgängig".</strong> Statt nur einzelner Undo-Buttons pro Aktionstyp (Entwicklung, Boss-Sieg, …) ein universeller Rückgängig-Mechanismus für die zuletzt ausgeführte Aktion.</div>
@@ -5327,7 +5637,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.50.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.51.</footer>
 
 </div>`;
 
@@ -5568,6 +5878,11 @@ function renderSettings(){
     <div class="loc-name">Vibrations-Feedback</div>
     <div class="loc-sub">Kurzes haptisches Feedback bei Fang, Tod und Bosssieg (nur auf unterstützten Geräten spürbar).</div>
     <button class="btn ${state.vibrationEnabled?"btn-primary":"btn-secondary"} btn-block" style="margin-top:10px;" data-act="toggle-vibration">${state.vibrationEnabled?"Aktiviert":"Deaktiviert"}</button>
+  </div>
+  <div class="card">
+    <div class="loc-name">Status nie nur über Farbe</div>
+    <div class="loc-sub">Zeigt bei besiegten Bosskämpfen zusätzlich zur Farbe ein eigenes Symbol für Sieg (Häkchen) bzw. Niederlage (Kreuz) - hilfreich bei Rot-Grün-Sehschwäche.</div>
+    <button class="btn ${state.colorBlindSafeMode?"btn-primary":"btn-secondary"} btn-block" style="margin-top:10px;" data-act="toggle-colorblind-safe">${state.colorBlindSafeMode?"Aktiviert":"Deaktiviert"}</button>
   </div>`);
 
   html += settingsGroupHtml("tools", "Werkzeuge", `
@@ -6538,6 +6853,10 @@ document.addEventListener("click", e=>{
     state.trackDeathCause = !state.trackDeathCause;
     saveState(); render();
   }
+  else if(act==="toggle-colorblind-safe"){
+    state.colorBlindSafeMode = !state.colorBlindSafeMode;
+    saveState(); render();
+  }
   else if(act==="toggle-vibration"){
     state.vibrationEnabled = !state.vibrationEnabled;
     saveState(); render();
@@ -6570,6 +6889,12 @@ document.addEventListener("click", e=>{
     });
   }
   else if(act==="copy-run-recap") copyRunRecapToClipboard();
+  else if(act==="share-run-recap-image"){
+    buildRunRecapShareImage().then(canvas=>shareOrShowCanvas(canvas, "run-rueckblick.png", "Run-Rückblick", runRecapHeadline()));
+  }
+  else if(act==="share-team-image"){
+    buildTeamShareImage().then(canvas=>shareOrShowCanvas(canvas, "team.png", "Mein Team", `${state.runTitle||"Nuzlocke"} · ${currentGame().shortLabel}`));
+  }
   else if(act==="open-new-save") openNewSaveSheet();
   else if(act==="pick-new-save-edition") openNewSaveModeSheet(id);
   else if(act==="create-save"){
