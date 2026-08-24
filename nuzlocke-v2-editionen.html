@@ -296,6 +296,9 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 .chip.gold{ background:var(--gold-soft); color:var(--gold); }
 .chip.red{ background:var(--red-soft); color:var(--red); }
 .chip.accent{ background:var(--accent-soft); color:var(--accent); }
+.type-chip-grid{ display:flex; flex-wrap:wrap; gap:6px; }
+.type-chip{ font-size:.72rem; padding:5px 10px; }
+.type-weak-row{ display:flex; align-items:center; gap:8px; margin-bottom:8px; flex-wrap:wrap; }
 
 .pvp-card{ border-left-color:var(--accent); }
 .pvp-card.pvp-resolved{ opacity:.9; }
@@ -2387,10 +2390,130 @@ function bossRequiresOtherStarter(boss, starterChoice){
 }
 
 const SPECIES_LOOKUP = new Map(SPECIES.map((s,i)=>[s.toLowerCase(), i+1]));
+
+/* Typen pro Art (National-Dex-Reihenfolge, deckungsgleich mit SPECIES) - Quelle: PokeAPI, dabei
+   bewusst über past_types auf den Stand "bis Generation 5" zurückkorrigiert (kein Fee-Typ, der
+   erst in Generation 6 eingeführt wurde und rückwirkend u.a. Fluffeluff, Pixi, Voltilamm, Marill,
+   Togepi und Ralts/Kirlia/Guardevoir neu zugeteilt bekam - in den hier abgedeckten Editionen
+   waren diese noch Normal/Wasser/Psycho etc., siehe generation-v in past_types). Stahl behält
+   dafür seine damalige Resistenz gegen Geist/Unlicht (siehe TYPE_DEFENSE), die erst mit Fee in
+   Generation 6 entfernt wurde. */
+const SPECIES_TYPES = ["Pflanze/Gift","Pflanze/Gift","Pflanze/Gift","Feuer","Feuer","Feuer/Flug","Wasser","Wasser","Wasser","Käfer","Käfer","Käfer/Flug","Käfer/Gift","Käfer/Gift","Käfer/Gift","Normal/Flug","Normal/Flug","Normal/Flug","Normal","Normal","Normal/Flug","Normal/Flug","Gift","Gift","Elektro","Elektro","Boden","Boden","Gift","Gift","Gift/Boden","Gift","Gift","Gift/Boden","Normal","Normal","Feuer","Feuer","Normal","Normal","Gift/Flug","Gift/Flug","Pflanze/Gift","Pflanze/Gift","Pflanze/Gift","Käfer/Pflanze","Käfer/Pflanze","Käfer/Gift","Käfer/Gift","Boden","Boden","Normal","Normal","Wasser","Wasser","Kampf","Kampf","Feuer","Feuer","Wasser","Wasser","Wasser/Kampf","Psycho","Psycho","Psycho","Kampf","Kampf","Kampf","Pflanze/Gift","Pflanze/Gift","Pflanze/Gift","Wasser/Gift","Wasser/Gift","Gestein/Boden","Gestein/Boden","Gestein/Boden","Feuer","Feuer","Wasser/Psycho","Wasser/Psycho","Elektro","Elektro","Normal/Flug","Normal/Flug","Normal/Flug","Wasser","Wasser/Eis","Gift","Gift","Wasser","Wasser/Eis","Geist/Gift","Geist/Gift","Geist/Gift","Gestein/Boden","Psycho","Psycho","Wasser","Wasser","Elektro","Elektro","Pflanze/Psycho","Pflanze/Psycho","Boden","Boden","Kampf","Kampf","Normal","Gift","Gift","Boden/Gestein","Boden/Gestein","Normal","Pflanze","Normal","Wasser","Wasser","Wasser","Wasser","Wasser","Wasser/Psycho","Psycho","Käfer/Flug","Eis/Psycho","Elektro","Feuer","Käfer","Normal","Wasser","Wasser/Flug","Wasser/Eis","Normal","Normal","Wasser","Elektro","Feuer","Normal","Gestein/Wasser","Gestein/Wasser","Gestein/Wasser","Gestein/Wasser","Gestein/Flug","Normal","Eis/Flug","Elektro/Flug","Feuer/Flug","Drache","Drache","Drache/Flug","Psycho","Psycho","Pflanze","Pflanze","Pflanze","Feuer","Feuer","Feuer","Wasser","Wasser","Wasser","Normal","Normal","Normal/Flug","Normal/Flug","Käfer/Flug","Käfer/Flug","Käfer/Gift","Käfer/Gift","Gift/Flug","Wasser/Elektro","Wasser/Elektro","Elektro","Normal","Normal","Normal","Normal/Flug","Psycho/Flug","Psycho/Flug","Elektro","Elektro","Elektro","Pflanze","Wasser","Wasser","Gestein","Wasser","Pflanze/Flug","Pflanze/Flug","Pflanze/Flug","Normal","Pflanze","Pflanze","Käfer/Flug","Wasser/Boden","Wasser/Boden","Psycho","Unlicht","Unlicht/Flug","Wasser/Psycho","Geist","Psycho","Psycho","Normal/Psycho","Käfer","Käfer/Stahl","Normal","Boden/Flug","Stahl/Boden","Normal","Normal","Wasser/Gift","Käfer/Stahl","Käfer/Gestein","Käfer/Kampf","Unlicht/Eis","Normal","Normal","Feuer","Feuer/Gestein","Eis/Boden","Eis/Boden","Wasser/Gestein","Wasser","Wasser","Eis/Flug","Wasser/Flug","Stahl/Flug","Unlicht/Feuer","Unlicht/Feuer","Wasser/Drache","Boden","Boden","Normal","Normal","Normal","Kampf","Kampf","Eis/Psycho","Elektro","Feuer","Normal","Normal","Elektro","Feuer","Wasser","Gestein/Boden","Gestein/Boden","Gestein/Unlicht","Psycho/Flug","Feuer/Flug","Psycho/Pflanze","Pflanze","Pflanze","Pflanze","Feuer","Feuer/Kampf","Feuer/Kampf","Wasser","Wasser/Boden","Wasser/Boden","Unlicht","Unlicht","Normal","Normal","Käfer","Käfer","Käfer/Flug","Käfer","Käfer/Gift","Wasser/Pflanze","Wasser/Pflanze","Wasser/Pflanze","Pflanze","Pflanze/Unlicht","Pflanze/Unlicht","Normal/Flug","Normal/Flug","Wasser/Flug","Wasser/Flug","Psycho","Psycho","Psycho","Käfer/Wasser","Käfer/Flug","Pflanze","Pflanze/Kampf","Normal","Normal","Normal","Käfer/Boden","Käfer/Flug","Käfer/Geist","Normal","Normal","Normal","Kampf","Kampf","Normal","Gestein","Normal","Normal","Unlicht/Geist","Stahl","Stahl/Gestein","Stahl/Gestein","Stahl/Gestein","Kampf/Psycho","Kampf/Psycho","Elektro","Elektro","Elektro","Elektro","Käfer","Käfer","Pflanze/Gift","Gift","Gift","Wasser/Unlicht","Wasser/Unlicht","Wasser","Wasser","Feuer/Boden","Feuer/Boden","Feuer","Psycho","Psycho","Normal","Boden","Boden/Drache","Boden/Drache","Pflanze","Pflanze/Unlicht","Normal/Flug","Drache/Flug","Normal","Gift","Gestein/Psycho","Gestein/Psycho","Wasser/Boden","Wasser/Boden","Wasser","Wasser/Unlicht","Boden/Psycho","Boden/Psycho","Gestein/Pflanze","Gestein/Pflanze","Gestein/Käfer","Gestein/Käfer","Wasser","Wasser","Normal","Normal","Geist","Geist","Geist","Geist","Pflanze/Flug","Psycho","Unlicht","Psycho","Eis","Eis","Eis/Wasser","Eis/Wasser","Eis/Wasser","Wasser","Wasser","Wasser","Wasser/Gestein","Wasser","Drache","Drache","Drache/Flug","Stahl/Psycho","Stahl/Psycho","Stahl/Psycho","Gestein","Eis","Stahl","Drache/Psycho","Drache/Psycho","Wasser","Boden","Drache/Flug","Stahl/Psycho","Psycho","Pflanze","Pflanze","Pflanze/Boden","Feuer","Feuer/Kampf","Feuer/Kampf","Wasser","Wasser","Wasser/Stahl","Normal/Flug","Normal/Flug","Normal/Flug","Normal","Normal/Wasser","Käfer","Käfer","Elektro","Elektro","Elektro","Pflanze/Gift","Pflanze/Gift","Gestein","Gestein","Gestein/Stahl","Gestein/Stahl","Käfer","Käfer/Pflanze","Käfer/Flug","Käfer/Flug","Käfer/Flug","Elektro","Wasser","Wasser","Pflanze","Pflanze","Wasser","Wasser/Boden","Normal","Geist/Flug","Geist/Flug","Normal","Normal","Geist","Unlicht/Flug","Normal","Normal","Psycho","Gift/Unlicht","Gift/Unlicht","Stahl/Psycho","Stahl/Psycho","Gestein","Psycho","Normal","Normal/Flug","Geist/Unlicht","Drache/Boden","Drache/Boden","Drache/Boden","Normal","Kampf","Kampf/Stahl","Boden","Boden","Gift/Käfer","Gift/Unlicht","Gift/Kampf","Gift/Kampf","Pflanze","Wasser","Wasser","Wasser/Flug","Pflanze/Eis","Pflanze/Eis","Unlicht/Eis","Elektro/Stahl","Normal","Boden/Gestein","Pflanze","Elektro","Feuer","Normal/Flug","Käfer/Flug","Pflanze","Eis","Boden/Flug","Eis/Boden","Normal","Psycho/Kampf","Gestein/Stahl","Geist","Eis/Geist","Elektro/Geist","Psycho","Psycho","Psycho","Stahl/Drache","Wasser/Drache","Feuer/Stahl","Normal","Geist/Drache","Psycho","Wasser","Wasser","Unlicht","Pflanze","Normal","Psycho/Feuer","Pflanze","Pflanze","Pflanze","Feuer","Feuer/Kampf","Feuer/Kampf","Wasser","Wasser","Wasser","Normal","Normal","Normal","Normal","Normal","Unlicht","Unlicht","Pflanze","Pflanze","Feuer","Feuer","Wasser","Wasser","Psycho","Psycho","Normal/Flug","Normal/Flug","Normal/Flug","Elektro","Elektro","Gestein","Gestein","Gestein","Psycho/Flug","Psycho/Flug","Boden","Boden/Stahl","Normal","Kampf","Kampf","Kampf","Wasser","Wasser/Boden","Wasser/Boden","Kampf","Kampf","Käfer/Pflanze","Käfer/Pflanze","Käfer/Pflanze","Käfer/Gift","Käfer/Gift","Käfer/Gift","Pflanze","Pflanze","Pflanze","Pflanze","Wasser","Boden/Unlicht","Boden/Unlicht","Boden/Unlicht","Feuer","Feuer","Pflanze","Käfer/Gestein","Käfer/Gestein","Unlicht/Kampf","Unlicht/Kampf","Psycho/Flug","Geist","Geist","Wasser/Gestein","Wasser/Gestein","Gestein/Flug","Gestein/Flug","Gift","Gift","Unlicht","Unlicht","Normal","Normal","Psycho","Psycho","Psycho","Psycho","Psycho","Psycho","Wasser/Flug","Wasser/Flug","Eis","Eis","Eis","Normal/Pflanze","Normal/Pflanze","Elektro/Flug","Käfer","Käfer/Stahl","Pflanze/Gift","Pflanze/Gift","Wasser/Geist","Wasser/Geist","Wasser","Käfer/Elektro","Käfer/Elektro","Pflanze/Stahl","Pflanze/Stahl","Stahl","Stahl","Stahl","Elektro","Elektro","Elektro","Psycho","Psycho","Geist/Feuer","Geist/Feuer","Geist/Feuer","Drache","Drache","Drache","Eis","Eis","Eis","Käfer","Käfer","Boden/Elektro","Kampf","Kampf","Drache","Boden/Geist","Boden/Geist","Unlicht/Stahl","Unlicht/Stahl","Normal","Normal/Flug","Normal/Flug","Unlicht/Flug","Unlicht/Flug","Feuer","Käfer/Stahl","Unlicht/Drache","Unlicht/Drache","Unlicht/Drache","Käfer/Feuer","Käfer/Feuer","Stahl/Kampf","Gestein/Kampf","Pflanze/Kampf","Flug","Elektro/Flug","Drache/Feuer","Drache/Elektro","Boden/Flug","Drache/Eis","Wasser/Kampf","Normal/Psycho","Käfer/Stahl"];
+
 function spriteFor(speciesName){
   if(!speciesName) return null;
   const dex = SPECIES_LOOKUP.get(String(speciesName).trim().toLowerCase());
   return dex ? SPRITES[dex] : null;
+}
+
+function typesFor(speciesName){
+  if(!speciesName) return [];
+  const dex = SPECIES_LOOKUP.get(String(speciesName).trim().toLowerCase());
+  if(!dex || !SPECIES_TYPES[dex-1]) return [];
+  return SPECIES_TYPES[dex-1].split("/");
+}
+
+/* Typ-Effektivität für die Generationen 1-5 (17 Typen, kein Fee) - je Verteidiger-Typ, welche
+   Angriffstypen 2x/0,5x/0x treffen. Stahl behält hier bewusst seine damalige Resistenz gegen
+   Geist UND Unlicht (siehe SPECIES_TYPES-Kommentar), die erst mit Einführung von Fee in
+   Generation 6 entfernt wurde - für die hier abgedeckten Editionen ist das der korrekte Stand. */
+const TYPE_DEFENSE = {
+  Normal:   { weak:["Kampf"], resist:[], immune:["Geist"] },
+  Feuer:    { weak:["Wasser","Boden","Gestein"], resist:["Feuer","Pflanze","Eis","Käfer","Stahl"], immune:[] },
+  Wasser:   { weak:["Elektro","Pflanze"], resist:["Feuer","Wasser","Eis","Stahl"], immune:[] },
+  Elektro:  { weak:["Boden"], resist:["Elektro","Flug","Stahl"], immune:[] },
+  Pflanze:  { weak:["Feuer","Eis","Gift","Flug","Käfer"], resist:["Wasser","Elektro","Pflanze","Boden"], immune:[] },
+  Eis:      { weak:["Feuer","Kampf","Gestein","Stahl"], resist:["Eis"], immune:[] },
+  Kampf:    { weak:["Flug","Psycho"], resist:["Käfer","Gestein","Unlicht"], immune:[] },
+  Gift:     { weak:["Boden","Psycho"], resist:["Pflanze","Kampf","Gift","Käfer"], immune:[] },
+  Boden:    { weak:["Wasser","Pflanze","Eis"], resist:["Gift","Gestein"], immune:["Elektro"] },
+  Flug:     { weak:["Elektro","Eis","Gestein"], resist:["Pflanze","Kampf","Käfer"], immune:["Boden"] },
+  Psycho:   { weak:["Käfer","Geist","Unlicht"], resist:["Kampf","Psycho"], immune:[] },
+  Käfer:    { weak:["Feuer","Flug","Gestein"], resist:["Pflanze","Kampf","Boden"], immune:[] },
+  Gestein:  { weak:["Wasser","Pflanze","Kampf","Boden","Stahl"], resist:["Normal","Feuer","Gift","Flug"], immune:[] },
+  Geist:    { weak:["Geist","Unlicht"], resist:["Gift","Käfer"], immune:["Normal","Kampf"] },
+  Drache:   { weak:["Eis","Drache"], resist:["Feuer","Wasser","Elektro","Pflanze"], immune:[] },
+  Unlicht:  { weak:["Kampf","Käfer"], resist:["Geist","Unlicht"], immune:["Psycho"] },
+  Stahl:    { weak:["Feuer","Kampf","Boden"], resist:["Normal","Pflanze","Eis","Flug","Psycho","Käfer","Gestein","Drache","Stahl","Geist","Unlicht"], immune:["Gift"] }
+};
+const ALL_TYPES = Object.keys(TYPE_DEFENSE);
+const TYPE_COLORS = {
+  Normal:"#A8A878", Feuer:"#F08030", Wasser:"#6890F0", Elektro:"#F8D030", Pflanze:"#78C850",
+  Eis:"#98D8D8", Kampf:"#C03028", Gift:"#A040A0", Boden:"#E0C068", Flug:"#A890F0",
+  Psycho:"#F85888", Käfer:"#A8B820", Gestein:"#B8A038", Geist:"#705898", Drache:"#7038F8",
+  Unlicht:"#705848", Stahl:"#B8B8D0"
+};
+
+function typeMultiplier(attackType, defendTypes){
+  let mult = 1;
+  defendTypes.forEach(dt=>{
+    const info = TYPE_DEFENSE[dt];
+    if(!info) return;
+    if(info.immune.includes(attackType)) mult *= 0;
+    else if(info.weak.includes(attackType)) mult *= 2;
+    else if(info.resist.includes(attackType)) mult *= 0.5;
+  });
+  return mult;
+}
+
+function typeChipHtml(type, muted){
+  const color = TYPE_COLORS[type] || "#999";
+  const style = muted
+    ? `background:var(--surface-alt); color:var(--ink-soft);`
+    : `background:${color}; color:#fff;`;
+  return `<span class="chip type-chip" style="${style}">${escapeHtml(type)}</span>`;
+}
+
+/* Typabdeckungs-Analyse: offensiv wird die eigene Art als STAB-Näherung verwendet, da die App
+   keine echten Attacken pro Pokémon erfasst (nur Fangort/Status/Team) - eine bewusste, im
+   Backlog so vermerkte Vereinfachung statt eines vollen Moveset-Trackers. Defensiv ist die
+   Berechnung exakt (Dual-Typ-Multiplikation über TYPE_DEFENSE). */
+function teamTypeAnalysis(){
+  const members = orderedTeamLocs().map(l=>({ label: l.mon.nickname||l.mon.species, species: l.mon.species, types: typesFor(l.mon.species) }));
+  const known = members.filter(m=>m.types.length);
+  const covered = new Set();
+  known.forEach(m=>{
+    m.types.forEach(attackType=>{
+      ALL_TYPES.forEach(defendType=>{
+        if(TYPE_DEFENSE[defendType].weak.includes(attackType)) covered.add(defendType);
+      });
+    });
+  });
+  const gaps = ALL_TYPES.filter(t=>!covered.has(t));
+  const weaknesses = ALL_TYPES.map(attackType=>{
+    const weakMembers = known.filter(m=>typeMultiplier(attackType, m.types) >= 2);
+    return { type: attackType, count: weakMembers.length, names: weakMembers.map(m=>m.label) };
+  }).filter(w=>w.count>=2).sort((a,b)=>b.count-a.count);
+  return { members, known, covered, gaps, weaknesses };
+}
+
+function openTypeCoverageSheet(){
+  const a = teamTypeAnalysis();
+  if(!a.members.length){
+    openSheet(`
+      <h3>Typabdeckung</h3>
+      <div class="loc-sub" style="margin-bottom:14px;">Noch kein Team zusammengestellt.</div>
+      <div class="sheet-footer"><button class="btn btn-primary btn-block" data-act="close-sheet">Schließen</button></div>
+    `);
+    return;
+  }
+  const unknownCount = a.members.length - a.known.length;
+  const coverageGrid = ALL_TYPES.map(t=>typeChipHtml(t, !a.covered.has(t))).join(" ");
+  const weaknessRows = a.weaknesses.length
+    ? a.weaknesses.map(w=>`<div class="type-weak-row">${typeChipHtml(w.type, false)} <span class="loc-sub">${w.count} schwach - ${escapeHtml(w.names.join(", "))}</span></div>`).join("")
+    : `<div class="loc-sub">Keine geteilten Schwächen im Team.</div>`;
+  openSheet(`
+    <h3>Typabdeckung</h3>
+    <div class="loc-sub" style="margin-bottom:14px;">Näherung über die eigenen Typen der Team-Pokémon (kein Moveset-Tracking) - Team: ${escapeHtml(a.members.map(m=>m.label).join(", "))}.${unknownCount ? ` ${unknownCount} Art${unknownCount===1?"":"en"} ohne bekannte Typdaten wurde${unknownCount===1?"":"n"} ausgelassen.` : ""}</div>
+    <div class="loc-sub" style="font-weight:700; margin-bottom:8px;">Offensive Abdeckung</div>
+    <div class="type-chip-grid">${coverageGrid}</div>
+    <div class="loc-sub" style="margin-top:10px;">${a.gaps.length ? `Keine Abdeckung gegen: ${escapeHtml(a.gaps.join(", "))}.` : "Alle Typen offensiv abgedeckt."}</div>
+    <div class="loc-sub" style="font-weight:700; margin:16px 0 8px;">Gemeinsame Schwächen</div>
+    ${weaknessRows}
+    <div class="sheet-footer" style="margin-top:16px;">
+      <button class="btn btn-primary btn-block" data-act="close-sheet">Schließen</button>
+    </div>
+  `);
 }
 
 /* Externer Pokédex (DEXORA): die Nummer im Query-Parameter ?pokemon= entspricht der regulären
@@ -2590,7 +2713,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.8.53";
+const APP_VERSION = "1.8.54";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -3537,6 +3660,11 @@ function teamSlotHtml(loc, flash){
 function renderTeam(){
   const teamLocs = orderedTeamLocs();
   let html = levelCapCardHtml();
+  if(teamLocs.length){
+    html += `<div class="card-actions" style="margin-bottom:14px;">
+      <button class="btn btn-secondary btn-block" data-act="open-type-coverage">Typabdeckung anzeigen</button>
+    </div>`;
+  }
   html += `<div class="team-grid" id="teamGrid">`;
   for(let i=0;i<6;i++){
     const loc = teamLocs[i];
@@ -4950,6 +5078,12 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="log">
 
     <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.54</span><span class="tag tag-feat">Feature</span></div>
+      <h3>Typabdeckungs-Analyse fürs Team</h3>
+      <p>Neuer Button „Typabdeckung anzeigen" im Team-Tab: zeigt, welche der 17 Typen (Generationen 1–5, noch ohne Fee) das Team offensiv über die eigenen Typen als Nahrung für Sofortangriffe abdeckt und wo Lücken bleiben, dazu geteilte defensive Schwächen (Typen, gegen die mehrere Team-Mitglieder gleichzeitig anfällig sind). Dafür jetzt eine vollständige Typ-Tabelle aller 649 Arten hinterlegt (Quelle: PokéAPI, über <code>past_types</code> auf den Stand bis Generation 5 zurückkorrigiert - u.&nbsp;a. Fluffeluff/Pixi/Marill/Togepi/Ralts-Reihe waren damals noch ohne den erst in Generation 6 eingeführten Fee-Typ, Stahl resistierte damals noch gegen Geist &amp; Unlicht). Die Offensiv-Seite ist bewusst eine Näherung über die Art-Typen selbst (STAB), da die App keine echten Attacken pro Pokémon erfasst.</p>
+    </div>
+
+    <div class="entry">
       <div class="entry-head"><span class="ver">v1.8.53</span><span class="tag tag-feat">Feature</span></div>
       <h3>7 Komfort/UX-Punkte aus dem Backlog umgesetzt</h3>
       <p><strong>Ausgelassene Routen:</strong> neue Übersicht unter „Werkzeuge" listet alle Standorte ohne bisherigen Fangversuch, gruppiert nach Region, mit Sprung zur jeweiligen Karte per Tap.</p>
@@ -5680,7 +5814,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Zufalls-Spitznamen-Generator.</strong> Ein Würfel-Button im Fang-Formular, der einen witzigen Spitznamen vorschlägt. → umgesetzt in v1.8.41 (Tag hier versehentlich nicht mit-aktualisiert worden)</div>
     <div class="followup-item"><span class="tag tag-fix" style="margin-right:8px;">Verworfen</span><strong>Team als teilbare Bild-Karte exportieren.</strong> Das aktuelle Team als hübsche Bild-Kachel generieren (ähnlich dem Run-Rückblick-Text, aber visuell) — für Social-Media/Chat-Sharing. <em>→ in v1.8.51 umgesetzt, in v1.8.52 auf Wunsch wieder entfernt: Button/Idee hat sich in der Praxis nicht bewährt.</em></div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Randomizer-Seed-Feld.</strong> Ein Metadaten-Feld pro Run für den verwendeten Randomizer-Seed/die Einstellungen, damit sich die Konfiguration später nachvollziehen lässt. → umgesetzt in v1.8.40</div>
-    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Typabdeckungs-Analyse fürs Team.</strong> Welche Typen deckt das Team offensiv/defensiv ab, wo sind Lücken — visualisiert als kleine Übersicht. Kippt etwas Richtung Strategie-Tool statt reinem Tracker, daher nur bei explizitem Wunsch umsetzen.</div>
+    <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Typabdeckungs-Analyse fürs Team.</strong> Welche Typen deckt das Team offensiv/defensiv ab, wo sind Lücken — visualisiert als kleine Übersicht. Kippt etwas Richtung Strategie-Tool statt reinem Tracker, daher nur bei explizitem Wunsch umsetzen. → umgesetzt in v1.8.54 auf expliziten Wunsch, inklusive vollständiger Typ-Tabelle für alle 649 Arten</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>PWA-Schnellzugriffe.</strong> Über das Home-Bildschirm-Icon direkt Schnellaktionen anbieten (z.&nbsp;B. „Fangen", „Team") via <code>shortcuts</code> im Manifest, ohne die App erst öffnen und navigieren zu müssen.</div>
     <div class="followup-item"><span class="tag tag-fix" style="margin-right:8px;">Verworfen</span><strong>Levelkurve als Mini-Diagramm.</strong> Kleine Sparkline in der Statistik, die den Levelverlauf des Teams über den Run hinweg zeigt. <em>→ verworfen: die App trackt aktuell keine Level der Team-Pokémon (nur den Boss-Level-Boost in %), es gäbe also keine Datengrundlage dafür.</em></div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Fangmethode als strukturiertes Feld mit Icon.</strong> Statt nur als Freitext-Notiz (z.&nbsp;B. „Angeln", „Surfen", „Gras") die Fangmethode als eigenes Feld mit passendem Icon auf der Standort-Kachel abbilden.</div>
@@ -5716,7 +5850,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Todesursache-Freitext direkt beim Markieren.</strong> Optionales kleines Feld („Wodurch gestorben?") direkt im „Als gestorben markieren"-Sheet, landet dann sichtbar im Friedhof. → umgesetzt in v1.8.48 (per Hausregel-Schalter, standardmäßig aus)</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Weltenbummler-Erfolg.</strong> Runs in mindestens 3 verschiedenen Generationen abgeschlossen (Cross-Save-Erfolg, bräuchte Zugriff auf alle Spielstände beim Prüfen).</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Auferstanden-Erfolg.</strong> Nach einem Game-Over direkt einen neuen Run gestartet statt aufzugeben (Cross-Save-Erfolg).</div>
-    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Regenbogen-Team-Erfolg.</strong> 6 verschiedene Typen gleichzeitig im Team — bräuchte wie „The Collector" eine komplette Arten→Typ-Referenztabelle, größerer Aufwand.</div>
+    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Regenbogen-Team-Erfolg.</strong> 6 verschiedene Typen gleichzeitig im Team. <em>Update: die Arten→Typ-Referenztabelle existiert seit v1.8.54 (Typabdeckungs-Analyse) bereits, der Erfolg selbst ist noch nicht umgesetzt.</em></div>
   </div>
 
   <div class="followups">
@@ -5738,7 +5872,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.53.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.54.</footer>
 
 </div>`;
 
@@ -6901,6 +7035,7 @@ document.addEventListener("click", e=>{
   else if(act==="edit-team-nick"){ editingTeamNickId = id; render(); }
   else if(act==="open-team-history") openTeamHistorySheet();
   else if(act==="open-pending-locations") openPendingLocationsSheet();
+  else if(act==="open-type-coverage") openTypeCoverageSheet();
   else if(act==="jump-to-pending-loc"){
     closeSheet();
     activeTab = "routes";
