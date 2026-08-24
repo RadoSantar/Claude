@@ -6,8 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Nuzlocke">
-<meta name="theme-color" content="#F5EFDD" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#11151D" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" id="metaThemeColor" content="#F5EFDD">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -766,7 +765,7 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 
 /* Tab bar */
 .tabbar{
-  flex:none; background:var(--surface); border-top:1px solid var(--line); display:flex;
+  flex:none; background:var(--surface); border-top:2px solid var(--accent); display:flex;
   padding:6px 6px calc(6px + env(safe-area-inset-bottom)); z-index:20;
   box-shadow:var(--shadow-up); position:relative;
 }
@@ -2539,7 +2538,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.8.48";
+const APP_VERSION = "1.8.49";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -4254,7 +4253,7 @@ function openRunRecapSheet(){
     </div>
     <div class="sheet-footer">
       <button class="btn btn-secondary btn-block" data-act="close-sheet">Schließen</button>
-      <button class="btn btn-primary btn-block" data-act="copy-run-recap">Als Text kopieren</button>
+      ${typeof navigator!=="undefined" && navigator.share ? `<button class="btn btn-primary btn-block" data-act="share-run-recap">Teilen</button>` : `<button class="btn btn-primary btn-block" data-act="copy-run-recap">Als Text kopieren</button>`}
     </div>
   `);
 }
@@ -4278,6 +4277,30 @@ function runRecapText(){
   ];
   if(!state.soloMode) lines.push(`Duelle: ${s.duelTally.wins} Siege, ${s.duelTally.losses} Niederlagen`);
   return lines.join("\n");
+}
+
+/* Eigene Funktion statt nur inline im Klick-Handler, da sie zweifach gebraucht wird: direkt über
+   "Als Text kopieren" (Browser ohne Web-Share-Unterstützung) und als Fallback, falls das native
+   Teilen-Menü (navigator.share) fehlschlägt oder gar nicht erst verfügbar ist. */
+function copyRunRecapToClipboard(){
+  const text = runRecapText();
+  const done = ()=>{
+    openSheet(`
+      <h3>Kopiert</h3>
+      <div class="loc-sub" style="margin-bottom:14px;">Der Run-Rückblick liegt als Text in der Zwischenablage.</div>
+      <div class="sheet-footer"><button class="btn btn-primary btn-block" data-act="close-sheet">OK</button></div>
+    `);
+  };
+  const failed = ()=>{
+    openSheet(`
+      <h3>Kopieren nicht möglich</h3>
+      <div class="loc-sub" style="margin-bottom:14px;">Der Browser hat den Zugriff auf die Zwischenablage verweigert. Text zum manuellen Kopieren:</div>
+      <textarea readonly style="width:100%; min-height:140px; border:1.5px solid var(--line); border-radius:12px; padding:12px; font-size:.85rem; background:var(--bg); color:var(--ink);">${escapeHtml(text)}</textarea>
+      <div class="sheet-footer" style="margin-top:14px;"><button class="btn btn-primary btn-block" data-act="close-sheet">Schließen</button></div>
+    `);
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, failed);
+  else failed();
 }
 
 function settingsGroupHtml(key, label, bodyHtml){
@@ -4539,6 +4562,15 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.49</span><span class="tag tag-feat">Feature</span></div>
+      <h3>4 kleine Backlog-Punkte umgesetzt</h3>
+      <p><strong>Enter sendet das Fang-Formular ab:</strong> Enter im Spezies- oder Spitzname-Feld speichert den Fang direkt, statt immer den Button antippen zu müssen - bestehende Validierung (Pflicht-Spitzname, leere Spezies) greift dabei unverändert.</p>
+      <p><strong>Statusleisten-Farbe folgt der Edition:</strong> die native Statusleiste/Adressleisten-Farbe (<code>theme-color</code>) übernimmt jetzt die Akzentfarbe der aktuellen Edition, statt fest auf einem neutralen Ton zu stehen - reagiert auch auf den manuellen Hell/Dunkel-Umschalter.</p>
+      <p><strong>Editions-Akzentfarbe auf der Tab-Leiste:</strong> der schwebende „+"-Button nutzte die Akzentfarbe schon, die Tab-Leiste bekommt jetzt zusätzlich einen farbigen oberen Rand - jede Edition fühlt sich dadurch beim Wechseln stärker „eigen" an.</p>
+      <p><strong>Web-Share-Sheet auf Mobile:</strong> der Run-Rückblick bietet auf Geräten mit nativer Teilen-Funktion jetzt direkt das System-Teilen-Menü an, statt nur Zwischenablage/Textfeld - fällt automatisch zurück, wenn das Teilen-Menü fehlt oder abgebrochen wird.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.8.48</span><span class="tag tag-feat">Feature</span></div>
@@ -5226,7 +5258,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Soul-Link-Modus.</strong> Für den Coop-Ursprung der App passend: Encounter zwischen beiden Spieler:innen 1:1 koppeln — stirbt das erste Pokémon von Partner A, muss Partner B seins an derselben Stelle ebenfalls aufgeben. Klassische Nuzlocke-Coop-Hausregel, aktuell nicht abgebildet.</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Regelwerk-Checkliste pro Run.</strong> Die üblichen Nuzlocke-Hausregeln (Set-Modus, Species Clause, kein Item im Kampf, Level-Cap je Boss, Dupes Clause gibt es schon) als an-/abwählbare Liste zu Beginn eines Runs, rein zur Dokumentation, welche Regeln galten.</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Notizfeld pro Boss statt nur pro Standort.</strong> Bei einem Randomizer ist das gegnerische Team jedes Mal anders — aktuell lässt sich nur der „Ace" nachschlagen. Ein Freitextfeld pro Boss fürs komplette gegnerische Team wäre für Strategie-Notizen hilfreich. → umgesetzt in v1.8.40</div>
-    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Zufalls-Spitznamen-Generator.</strong> Ein Würfel-Button im Fang-Formular, der einen witzigen Spitznamen vorschlägt.</div>
+    <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Zufalls-Spitznamen-Generator.</strong> Ein Würfel-Button im Fang-Formular, der einen witzigen Spitznamen vorschlägt. → umgesetzt in v1.8.41 (Tag hier versehentlich nicht mit-aktualisiert worden)</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Team als teilbare Bild-Karte exportieren.</strong> Das aktuelle Team als hübsche Bild-Kachel generieren (ähnlich dem Run-Rückblick-Text, aber visuell) — für Social-Media/Chat-Sharing.</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Randomizer-Seed-Feld.</strong> Ein Metadaten-Feld pro Run für den verwendeten Randomizer-Seed/die Einstellungen, damit sich die Konfiguration später nachvollziehen lässt. → umgesetzt in v1.8.40</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Typabdeckungs-Analyse fürs Team.</strong> Welche Typen deckt das Team offensiv/defensiv ab, wo sind Lücken — visualisiert als kleine Übersicht. Kippt etwas Richtung Strategie-Tool statt reinem Tracker, daher nur bei explizitem Wunsch umsetzen.</div>
@@ -5235,10 +5267,10 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Fangmethode als strukturiertes Feld mit Icon.</strong> Statt nur als Freitext-Notiz (z.&nbsp;B. „Angeln", „Surfen", „Gras") die Fangmethode als eigenes Feld mit passendem Icon auf der Standort-Kachel abbilden.</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Fortschrittscheckliste für Schlüsselitems/VMs.</strong> Übersicht, welche VMs/Schlüsselitems (Surfer, Zerschneider usw.) schon eingesammelt wurden — hilfreich, um zu sehen, welche Standorte bereits erreichbar sind.</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Duo-Vergleichsansicht.</strong> Sobald es ein plattformübergreifendes Speichersystem gibt (siehe oben): beide Spielstände eines Duell-Runs nebeneinander vergleichen (Fortschritt, Überlebensrate, Bosse).</div>
-    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Enter-Taste sendet das Fang-Formular ab.</strong> Tastatur-Komfort: im Spitzname-Feld Enter drücken, statt immer den Button antippen zu müssen.</div>
+    <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Enter-Taste sendet das Fang-Formular ab.</strong> Tastatur-Komfort: im Spitzname-Feld Enter drücken, statt immer den Button antippen zu müssen. → umgesetzt in v1.8.49</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Team-Reihenfolge per Drag &amp; Drop sortierbar.</strong> Im Original lässt sich die Team-Reihenfolge ändern — hier bisher fix nach Fangreihenfolge.</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Spitzname inline auf der Team-Kachel bearbeitbar.</strong> Statt über den Umweg Kontextmenü → Umbenennen-Sheet direkt auf der Kachel editierbar — spart einen Schritt bei einer der häufigsten Aktionen.</div>
-    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Badge-Zähler auf den Tabs.</strong> Z.&nbsp;B. „Team 4/6" oder eine kleine Zahl auf „Friedhof", damit der Status auf einen Blick sichtbar ist, ohne erst reinzutippen.</div>
+    <div class="followup-item"><span class="tag tag-fix" style="margin-right:8px;">Verworfen</span><strong>Badge-Zähler auf den Tabs.</strong> Z.&nbsp;B. „Team 4/6" oder eine kleine Zahl auf „Friedhof", damit der Status auf einen Blick sichtbar ist, ohne erst reinzutippen. <em>→ verworfen: schadet eher der Übersichtlichkeit der Tab-Leiste.</em></div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Meilenstein-Feedback bei 25/50/75/100% Gesamtfortschritt.</strong> Kleiner Konfetti-Moment/Toast, ähnlich der Champion-Feier, aber für Zwischenetappen.</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Kontextuelle Hilfe-Icons bei Einstellungen.</strong> Ein kleines „?" bei weniger selbsterklärenden Optionen (Dupes-Clause, Nickname-Pflicht, Einzelspieler-Modus), das kurz erklärt, was sie konkret bewirken. → umgesetzt in v1.8.33 (Level-Boost, Dupes-Clause, Nickname-Pflicht; Einzelspieler-Modus-Erklärung steht noch offen)</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Kurze Erste-Schritte-Tour beim allerersten Öffnen.</strong> Die App hat mittlerweile einige nicht ganz offensichtliche Mechaniken (Flaggen-Icon, Einklapp-Logik, Box-Suche, Swipe zwischen Tabs), die neue Nutzer:innen sonst nur durch Zufall entdecken.</div>
@@ -5250,16 +5282,16 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Sticky Mini-Fortschrittsleiste im Routen-Tab.</strong> Der Gesamtfortschritt immer sichtbar oben, nicht nur in der Statistik-Karte der Einstellungen. → umgesetzt in v1.8.40</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Eingabefeld statt nur +5%/-5% beim Boss-Level-Boost.</strong> Für größere Sprünge auf einmal, ohne oft hintereinander tippen zu müssen.</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Proaktiver Hinweis „Region jetzt ausblenden?"</strong> Sobald eine Region komplett abgeschlossen ist, aktiv anbieten, sie über die bestehende Regionen-ausblenden-Funktion aus der Übersicht zu nehmen.</div>
-    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Statusleisten-Farbe an die aktuelle Edition anpassen.</strong> <code>theme-color</code> passend zum Editions-Farbschema setzen, für ein noch nativeres Look&amp;Feel beim Wechseln.</div>
+    <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Statusleisten-Farbe an die aktuelle Edition anpassen.</strong> <code>theme-color</code> passend zum Editions-Farbschema setzen, für ein noch nativeres Look&amp;Feel beim Wechseln. → umgesetzt in v1.8.49</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Sanftes Fade-in beim Laden von Sprites.</strong> Statt hartem Pop-in ein kurzes Einblenden, sobald ein Sprite-Bild bereitsteht. → umgesetzt in v1.8.40</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>„Fast geschafft"-Hervorhebung.</strong> Die letzten 2–3 offenen Kacheln kurz vor 100% Gesamtabschluss optisch hervorheben — kleiner Motivations-Kick.</div>
-    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Editions-Akzentfarbe auch auf Tab-Leiste/FAB.</strong> Aktuell nur auf Karten-Rändern sichtbar — jede Edition würde sich dadurch stärker „eigen" anfühlen.</div>
+    <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Editions-Akzentfarbe auch auf Tab-Leiste/FAB.</strong> Aktuell nur auf Karten-Rändern sichtbar — jede Edition würde sich dadurch stärker „eigen" anfühlen. → umgesetzt in v1.8.49 (FAB nutzte schon Akzentfarben, Tab-Leiste bekommt jetzt zusätzlich einen farbigen oberen Rand)</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Konfetti-Farben an die Editionspalette koppeln.</strong> Statt fixer Standardfarben. → umgesetzt in v1.8.40</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>„✓ abgeschlossen"-Badge im Regions-Header.</strong> Sobald eine ganze Region fertig ist, auf einen Blick sichtbar, ohne reinscrollen zu müssen.</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Längere Sheet-Labels kürzen.</strong> Z.&nbsp;B. „Kampf trotz Niederlage als abgeschlossen zählen" → kurzes Button-Label + erklärender Untertext, statt alles in den Button-Text zu packen.</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Fokus-Sichtbarkeit &amp; aria-labels bei Icon-Buttons nachschärfen.</strong> Für Tastatur-/Screenreader-Nutzung, aktuell vermutlich lückenhaft. → umgesetzt in v1.8.33</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Run-Rückblick als Bild statt nur Text.</strong> Eine hübsche, teilbare Abschluss-Karte (Canvas/Screenshot-Stil) für Social Media statt nur der bestehenden Text-Kopie.</div>
-    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Web-Share-Sheet auf Mobile.</strong> Beim Kopieren des Run-Rückblicks direkt das native Teilen-Menü anbieten, statt nur Zwischenablage/Textfeld.</div>
+    <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Web-Share-Sheet auf Mobile.</strong> Beim Kopieren des Run-Rückblicks direkt das native Teilen-Menü anbieten, statt nur Zwischenablage/Textfeld. → umgesetzt in v1.8.49</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Kurzes Sound-Feedback als Pendant zum Vibrations-Feedback.</strong> Dezente Klänge bei Fang/Tod/Bosssieg, mit eigenem Lautstärke-/Ein-Aus-Schalter.</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Allgemeines „Letzte Aktion rückgängig".</strong> Statt nur einzelner Undo-Buttons pro Aktionstyp (Entwicklung, Boss-Sieg, …) ein universeller Rückgängig-Mechanismus für die zuletzt ausgeführte Aktion.</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Todesursache-Freitext direkt beim Markieren.</strong> Optionales kleines Feld („Wodurch gestorben?") direkt im „Als gestorben markieren"-Sheet, landet dann sichtbar im Friedhof. → umgesetzt in v1.8.48 (per Hausregel-Schalter, standardmäßig aus)</div>
@@ -5287,7 +5319,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.48.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.49.</footer>
 
 </div>`;
 
@@ -5581,10 +5613,25 @@ function fitNames(){
   });
 }
 
+/* Statusleiste (theme-color) folgt der aktuellen Edition statt eines fixen Werts - ein einzelnes
+   Meta-Tag statt der früheren zwei media-query-gebundenen Varianten, da eine manuell über den
+   Theme-Umschalter gewählte Vorliebe (data-theme) sonst vom Browser ignoriert würde (der wertet
+   media="(prefers-color-scheme: ...)" strikt gegen die System-Einstellung aus, nicht gegen den
+   App-internen Override). Liest den bereits aufgelösten CSS-Wert von --accent direkt aus, statt
+   den Umweg über GAMES[...].theme zu gehen - HGSS hat z.B. gar kein eigenes theme-Objekt (nutzt
+   die App-Basisfarbe aus :root), wäre über die GAMES-Struktur also ein Sonderfall gewesen. */
+function updateThemeColorMeta(){
+  const meta = document.getElementById("metaThemeColor");
+  if(!meta) return;
+  const accent = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim();
+  if(accent) meta.setAttribute("content", accent);
+}
+
 function applyEdition(){
   document.documentElement.dataset.edition = state.edition;
   const label = document.getElementById("editionLabel");
   if(label) label.textContent = currentGame().shortLabel;
+  updateThemeColorMeta();
 }
 
 function render(){
@@ -5707,6 +5754,12 @@ function openCatchSheet(locId){
     updatePreview();
     document.getElementById("inNick").focus();
   });
+  /* Enter sendet das Formular ab wie ein Klick auf "Speichern" - die bestehende Validierung dort
+     (leere Spezies, Nickname-Pflicht) greift dabei unverändert, da einfach derselbe Button-Klick
+     simuliert wird statt Logik zu duplizieren. */
+  const submitOnEnter = e=>{ if(e.key==="Enter"){ e.preventDefault(); document.querySelector('[data-act="save-catch"]')?.click(); } };
+  speciesInput.addEventListener("keydown", submitOnEnter);
+  nickInput.addEventListener("keydown", submitOnEnter);
   setTimeout(()=>speciesInput.focus(), 50);
 }
 
@@ -6499,26 +6552,16 @@ document.addEventListener("click", e=>{
   else if(act==="open-changelog") openChangelogSheet();
   else if(act==="open-setting-help") openSettingsHelpSheet(id);
   else if(act==="open-run-recap") openRunRecapSheet();
-  else if(act==="copy-run-recap"){
-    const text = runRecapText();
-    const done = ()=>{
-      openSheet(`
-        <h3>Kopiert</h3>
-        <div class="loc-sub" style="margin-bottom:14px;">Der Run-Rückblick liegt als Text in der Zwischenablage.</div>
-        <div class="sheet-footer"><button class="btn btn-primary btn-block" data-act="close-sheet">OK</button></div>
-      `);
-    };
-    const failed = ()=>{
-      openSheet(`
-        <h3>Kopieren nicht möglich</h3>
-        <div class="loc-sub" style="margin-bottom:14px;">Der Browser hat den Zugriff auf die Zwischenablage verweigert. Text zum manuellen Kopieren:</div>
-        <textarea readonly style="width:100%; min-height:140px; border:1.5px solid var(--line); border-radius:12px; padding:12px; font-size:.85rem; background:var(--bg); color:var(--ink);">${escapeHtml(text)}</textarea>
-        <div class="sheet-footer" style="margin-top:14px;"><button class="btn btn-primary btn-block" data-act="close-sheet">Schließen</button></div>
-      `);
-    };
-    if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, failed);
-    else failed();
+  else if(act==="share-run-recap"){
+    /* navigator.share() öffnet das native Teilen-Menü des Geräts (u.a. mit eigener
+       "In Zwischenablage kopieren"-Option) - AbortError bei Nutzerabbruch wird bewusst
+       stillschweigend geschluckt, alles andere fällt zurück auf die bestehende Kopieren-Sheet. */
+    navigator.share({ title: state.runTitle||"Nuzlocke", text: runRecapText() }).catch(err=>{
+      if(err && err.name === "AbortError") return;
+      copyRunRecapToClipboard();
+    });
   }
+  else if(act==="copy-run-recap") copyRunRecapToClipboard();
   else if(act==="open-new-save") openNewSaveSheet();
   else if(act==="pick-new-save-edition") openNewSaveModeSheet(id);
   else if(act==="create-save"){
@@ -6664,6 +6707,7 @@ function applyTheme(){
   if(mode==="system") document.documentElement.removeAttribute("data-theme");
   else document.documentElement.setAttribute("data-theme", mode);
   applyThemeIcon();
+  updateThemeColorMeta();
 }
 document.getElementById("themeBtn").addEventListener("click", ()=>{
   const next = effectiveTheme()==="light" ? "dark" : "light";
