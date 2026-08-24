@@ -463,10 +463,22 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 .boss-actions{ display:flex; gap:8px; margin-top:10px; }
 .boss-actions .btn{ font-family:var(--font-mono); font-variant-numeric:tabular-nums; }
 .boss-actions .btn-block{ flex:1; font-family:var(--font-body); font-variant-numeric:normal; }
+
+/* Lang-Drücken-Bestätigung (z.B. "Sieg zurücknehmen"): ein Balken füllt sich während des
+   Gedrückthaltens von links nach rechts, die Aktion feuert erst wenn er komplett gefüllt ist -
+   ein kurzer Tap allein reicht bewusst nicht (siehe longPressPointerDown/-Up). */
+.btn-longpress{ position:relative; overflow:hidden; }
+.btn-longpress-fill{
+  position:absolute; inset:0; background:rgba(255,255,255,.28);
+  transform-origin:left; transform:scaleX(0); pointer-events:none;
+}
+.btn-longpress.holding .btn-longpress-fill{ transition:transform 650ms linear; transform:scaleX(1); }
+.btn-longpress-label{ position:relative; }
 .boss-bulk{
-  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px;
   margin-bottom:14px;
 }
+.boss-bulk .field-row{ flex:1 1 100%; }
 .boss-bulk .loc-sub{ margin-top:3px; }
 .boss-bulk-actions{ display:flex; gap:8px; flex:none; }
 .boss-bulk-actions .btn{ min-height:40px; padding:9px 14px; font-family:var(--font-mono); }
@@ -706,6 +718,25 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 .achievement-toast-name{ font-size:.98rem; font-weight:800; color:var(--ink); margin-top:1px; }
 .achievement-toast-sub{ font-size:.78rem; color:var(--ink-soft); margin-top:2px; }
 
+.undo-toast{
+  position:fixed; left:50%; bottom:calc(160px + env(safe-area-inset-bottom)); transform:translateX(-50%);
+  z-index:80; max-width:360px; width:calc(100% - 32px);
+  background:var(--surface); border-radius:14px; padding:12px 8px 12px 16px;
+  display:flex; align-items:center; gap:10px; justify-content:space-between;
+  box-shadow:0 12px 32px rgba(0,0,0,.28), inset 0 0 0 1px var(--line);
+  animation:undoToastIn 260ms cubic-bezier(.34,1.4,.4,1) both;
+}
+.undo-toast.out{ transition:opacity .2s ease, transform .2s ease; opacity:0; transform:translateX(-50%) translateY(10px); }
+.undo-toast-label{ font-size:.86rem; font-weight:600; color:var(--ink); }
+.undo-toast-btn{
+  flex:none; background:none; border:none; color:var(--accent); font-weight:800;
+  font-size:.86rem; padding:8px 10px; cursor:pointer;
+}
+@keyframes undoToastIn{
+  from{ opacity:0; transform:translateX(-50%) translateY(10px); }
+  to{ opacity:1; transform:translateX(-50%) translateY(0); }
+}
+
 .fab{
   position:absolute; right:18px; bottom:calc(88px + env(safe-area-inset-bottom)); z-index:15;
   width:56px; height:56px; border-radius:50%; background:linear-gradient(155deg, var(--accent-shine), var(--accent) 55%, var(--accent-deep)); color:#fff;
@@ -752,12 +783,28 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 }
 .slot-menu-btn:active{ transform:scale(.9); }
 .slot-menu-btn svg{ width:16px; height:16px; color:var(--ink-soft); }
+.slot-drag-handle{
+  position:absolute; top:6px; left:6px; z-index:1; width:28px; height:28px; border-radius:50%;
+  border:none; background:var(--surface-alt); display:flex; align-items:center; justify-content:center;
+  touch-action:none; cursor:grab;
+}
+.slot-drag-handle svg{ width:16px; height:16px; color:var(--ink-soft); }
+.slot.drag-source{ opacity:.35; }
+.slot-drag-ghost{
+  position:fixed; z-index:200; pointer-events:none; border-radius:var(--radius);
+  box-shadow:0 16px 32px rgba(0,0,0,.35); transform:scale(1.04); opacity:.96; margin:0;
+}
 .slot-sprite-wrap{ flex:1; min-height:0; width:100%; display:flex; align-items:center; justify-content:center; cursor:pointer; color:inherit; text-decoration:none; }
 .slot-sprite-wrap img{ width:auto; height:auto; max-width:100%; max-height:100%; object-fit:contain; }
 .slot-info{ width:100%; text-align:center; }
 .slot .mon-name{ font-size:.9rem; }
 .slot .mon-species{ font-size:.7rem; }
 .slot .loc-sub{ margin-top:1px; font-size:.72rem; }
+.mon-name-input{
+  width:100%; text-align:center; font-size:.9rem; font-weight:700; font-family:inherit;
+  color:var(--ink); background:var(--bg); border:1.5px solid var(--accent); border-radius:8px;
+  padding:2px 6px; outline:none;
+}
 .slot .mon-actions{ margin-top:6px; justify-content:center; }
 
 .empty-state{ text-align:center; padding:60px 20px; color:var(--ink-soft); }
@@ -2433,6 +2480,7 @@ function wireSpeciesPicker(inputId, resultsId, onSelect){
 let lastEvolvedId = null;
 let lastDefeatedId = null;
 let lastFinalRivalFlash = false;
+let editingTeamNickId = null; // Team-Kachel: Spitzname wird gerade inline bearbeitet (nicht persistiert)
 let pendingCatchData = null;
 let savesArchiveOpen = false; // ob der eingeklappte "Archiv"-Abschnitt im Spielstände-Sheet offen ist - bewusst nicht persistiert
 /* Für Erfolge, die wissen müssen, wie viele Teammitglieder in GENAU diesem einen Kampf gestorben
@@ -2509,6 +2557,7 @@ const ICON_NOTE_FILLED = '<svg viewBox="0 0 24 24"><path d="M6 3h9l5 5v12a1 1 0 
 const ICON_KEBAB = '<svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.7" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.7" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="1.7" fill="currentColor" stroke="none"/></svg>';
 const ICON_INFO = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6" stroke-linecap="round"/><circle cx="12" cy="7.5" r="1" fill="currentColor" stroke="none"/></svg>';
 const ICON_X = '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+const ICON_DRAG = '<svg viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.4" fill="currentColor" stroke="none"/><circle cx="15" cy="6" r="1.4" fill="currentColor" stroke="none"/><circle cx="9" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="9" cy="18" r="1.4" fill="currentColor" stroke="none"/><circle cx="15" cy="18" r="1.4" fill="currentColor" stroke="none"/></svg>';
 
 function iconBtn(tone, act, id, iconSvg, label, disabled, small){
   const cls = "icon-act " + tone + (small?" small":"");
@@ -2541,7 +2590,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.8.52";
+const APP_VERSION = "1.8.53";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -2574,7 +2623,7 @@ function freshState(editionId, soloMode){
     names.forEach(entry=>{ locations.push(parseLocationEntry(region, entry)); });
   });
   const gameStarters = GAMES[edition].starters || { grass:"", fire:"", water:"" };
-  return { edition, runTitle:"Nuzlocke", soloMode:!!soloMode, locations, bossBoosts:{}, bossDefeated:{}, rivalNickname:"", duelPartnerName:"", dupesWarning:true, lastExportAt:null, evolutionCount:0, lossCount:0, nicknameRequired:false, pvp:{}, hallOfFame:{ rivalTeam:[], playerTeam:[], defeatedAt:null, result:null }, starterNames:{ ...gameStarters }, starterChoice:null, currentLocId:null, eventLog:[], hiddenRegions:[], achievements:{}, activeTitle:null, dupesIgnoredCount:0, bossLossIds:{}, cleanBossWins:{}, bossNotes:{}, randomizerSeed:"", vibrationEnabled:true, bossWinTeams:{}, hidePostgame:false, trackBossTeams:false, bossOpponentTeams:{}, trackDeathCause:false, colorBlindSafeMode:false };
+  return { edition, runTitle:"Nuzlocke", soloMode:!!soloMode, locations, bossBoosts:{}, bossDefeated:{}, rivalNickname:"", duelPartnerName:"", dupesWarning:true, lastExportAt:null, evolutionCount:0, lossCount:0, nicknameRequired:false, pvp:{}, hallOfFame:{ rivalTeam:[], playerTeam:[], defeatedAt:null, result:null }, starterNames:{ ...gameStarters }, starterChoice:null, currentLocId:null, eventLog:[], hiddenRegions:[], achievements:{}, activeTitle:null, dupesIgnoredCount:0, bossLossIds:{}, cleanBossWins:{}, bossNotes:{}, randomizerSeed:"", vibrationEnabled:true, bossWinTeams:{}, hidePostgame:false, trackBossTeams:false, bossOpponentTeams:{}, trackDeathCause:false, colorBlindSafeMode:false, teamOrder:[] };
 }
 
 /* Ergänzt neu hinzugekommene Standorte (z.B. nachträglich eingefügte Städte) in einen bereits
@@ -2630,6 +2679,7 @@ function normalizeState(parsed){
   if(!parsed.bossOpponentTeams) parsed.bossOpponentTeams = {};
   if(typeof parsed.trackDeathCause !== "boolean") parsed.trackDeathCause = false;
   if(typeof parsed.colorBlindSafeMode !== "boolean") parsed.colorBlindSafeMode = false;
+  if(!Array.isArray(parsed.teamOrder)) parsed.teamOrder = [];
   syncLocations(parsed);
   return parsed;
 }
@@ -3454,29 +3504,58 @@ function levelCapCardHtml(){
   </div>`;
 }
 
-function renderTeam(){
+/* Team-Reihenfolge: state.teamOrder hält eine Liste von Standort-IDs in gewünschter Anzeige-
+   reihenfolge. Nur die aktuell im Team befindlichen IDs daraus werden verwendet (tote/abgegebene/
+   entfernte IDs bleiben zwar ungenutzt im Array liegen, werden aber nirgends mehr angezeigt) -
+   neu hinzugekommene Team-Mitglieder, die noch nicht in teamOrder stehen, hängen sich hinten an. */
+function orderedTeamLocs(){
   const teamLocs = state.locations.filter(l=>l.mon && l.mon.inTeam && !l.mon.dead && !l.mon.given);
+  const order = state.teamOrder || [];
+  const byId = new Map(teamLocs.map(l=>[l.id, l]));
+  const ordered = order.map(id=>byId.get(id)).filter(Boolean);
+  const remaining = teamLocs.filter(l=>!order.includes(l.id));
+  return ordered.concat(remaining);
+}
+
+function teamSlotHtml(loc, flash){
+  const isEditingNick = editingTeamNickId === loc.id;
+  const nameHtml = isEditingNick
+    ? `<input class="mon-name-input" id="teamNickInline" data-id="${loc.id}" value="${escapeHtml(loc.mon.nickname||"")}" placeholder="${escapeHtml(loc.mon.species)}" maxlength="30" autocomplete="off" />`
+    : `<div class="mon-name" data-act="edit-team-nick" data-id="${loc.id}">${escapeHtml(loc.mon.nickname||loc.mon.species)}</div>`;
+  return `<div class="slot filled" data-loc-id="${loc.id}">
+    <button class="slot-drag-handle" data-drag-id="${loc.id}" aria-label="Ziehen zum Umsortieren" title="Ziehen zum Umsortieren">${ICON_DRAG}</button>
+    <button class="slot-menu-btn" data-act="open-team-actions" data-id="${loc.id}" aria-label="Aktionen">${ICON_KEBAB}</button>
+    ${monLinkHtml("slot-sprite-wrap", loc.mon.species, spriteImgHtml(loc.mon.species, 120, flash))}
+    <div class="slot-info">
+      ${nameHtml}
+      ${loc.mon.nickname? `<div class="mon-species">${escapeHtml(loc.mon.species)}</div>`:""}
+      <div class="loc-sub">${escapeHtml(loc.name)}</div>
+    </div>
+  </div>`;
+}
+
+function renderTeam(){
+  const teamLocs = orderedTeamLocs();
   let html = levelCapCardHtml();
-  html += `<div class="team-grid">`;
+  html += `<div class="team-grid" id="teamGrid">`;
   for(let i=0;i<6;i++){
     const loc = teamLocs[i];
     if(loc){
       const flash = loc.id === lastEvolvedId;
-      html += `<div class="slot filled">
-        <button class="slot-menu-btn" data-act="open-team-actions" data-id="${loc.id}" aria-label="Aktionen">${ICON_KEBAB}</button>
-        ${monLinkHtml("slot-sprite-wrap", loc.mon.species, spriteImgHtml(loc.mon.species, 120, flash))}
-        <div class="slot-info">
-          <div class="mon-name">${escapeHtml(loc.mon.nickname||loc.mon.species)}</div>
-          ${loc.mon.nickname? `<div class="mon-species">${escapeHtml(loc.mon.species)}</div>`:""}
-          <div class="loc-sub">${escapeHtml(loc.name)}</div>
-        </div>
-      </div>`;
+      html += teamSlotHtml(loc, flash);
     } else {
       html += `<div class="slot" data-act="open-team-picker"><div class="slot-empty">Leerer Platz<br>antippen zum Befüllen</div></div>`;
     }
   }
   html += `</div>`;
   document.getElementById("content").innerHTML = html;
+  /* Direkt auf der Kachel bearbeitbar statt nur über den Kontextmenü-Umweg (Kebab -> Umbenennen-
+     Sheet, bleibt als Alternative bestehen) - siehe editingTeamNickId/act "edit-team-nick". Fokus
+     + Textauswahl erst nach dem innerHTML-Ersetzen, da das Input-Element davor noch nicht existiert. */
+  if(editingTeamNickId){
+    const input = document.getElementById("teamNickInline");
+    if(input){ input.focus(); input.select(); }
+  }
 }
 
 const BOX_SORT_OPTIONS = [["default","Route"],["name","Name"],["caught","Fangdatum"]];
@@ -3807,6 +3886,27 @@ function bossSpriteHtml(boss, size, frozen){
   return `<img class="boss-sprite" src="${shownSrc}" width="${size}" height="${size}" alt="" />`;
 }
 
+/* Nimmt einen bereits eingetragenen Bosssieg/Abschluss wieder zurück - ausgelagert aus dem
+   Klick-Dispatcher, da der Button dafür (siehe bossCardHtml) inzwischen ein Lang-Drücken statt
+   eines einfachen Taps verlangt (siehe longPressDispatch) und beide Wege dieselbe Logik brauchen. */
+function toggleBossDefeat(id){
+  const wasDefeated = isBossDefeated(id);
+  state.bossDefeated[id] = !wasDefeated;
+  const boss = bossById(id);
+  if(!wasDefeated && boss){ logEvent("boss", `${boss.name || boss.cls} besiegt (${boss.place})`); vibrateFeedback([40,30,80]); snapshotBossWinTeam(id); }
+  const finalBoss = finalStoryBoss();
+  const isChamp = finalBoss && boss && boss.id===finalBoss.id;
+  if(state.soloMode && isChamp){
+    if(!wasDefeated) snapshotSoloHallOfFame();
+    else state.hallOfFame = { rivalTeam:[], playerTeam:[], defeatedAt:null, result:null };
+  }
+  saveState();
+  if(!wasDefeated) lastDefeatedId = id;
+  render();
+  lastDefeatedId = null;
+  if(!wasDefeated && isChamp) showChampionCelebration(boss);
+}
+
 function bossCardHtml(boss, isCurrent){
   const percent = bossPercent(boss.id);
   const lvl = bossLevel(boss);
@@ -3835,7 +3935,10 @@ function bossCardHtml(boss, isCurrent){
   const bottom = defeated
     ? `<div class="boss-actions">
         ${hasWinTeam ? `<button class="btn btn-secondary btn-block" data-act="open-boss-win-team" data-id="${boss.id}">Team anzeigen</button>` : ""}
-        <button class="btn btn-secondary btn-block" data-act="toggle-boss-defeat" data-id="${boss.id}">${settledAsLoss?"Abschluss zurücknehmen":"Sieg zurücknehmen"}</button>
+        <button class="btn btn-secondary btn-block btn-longpress" data-longpress-act="toggle-boss-defeat" data-id="${boss.id}" title="Gedrückt halten zum Bestätigen">
+          <span class="btn-longpress-fill" aria-hidden="true"></span>
+          <span class="btn-longpress-label">${settledAsLoss?"Abschluss zurücknehmen":"Sieg zurücknehmen"}</span>
+        </button>
       </div>`
     : `<div class="boss-actions">
         <button class="btn btn-secondary btn-block" data-act="open-boss-loss" data-id="${boss.id}">Niederlage eintragen</button>
@@ -3896,9 +3999,12 @@ function openBossResultSheet(bossId, result){
   /* Manche Story-Rivalenkämpfe (meist der erste) gehen auch bei einer Niederlage story-technisch
      einfach weiter - ohne Recherche pro Boss gilt die Option pauschal für jeden Bosskampf, die
      Spielerin/der Spieler weiß selbst am besten, ob das für den jeweiligen Kampf zutrifft. */
-  const continueRow = isLoss ? `<label class="sheet-option death-check-row" style="margin-top:4px;">
-      <input type="checkbox" id="bossContinueAnyway" />
-      <span>Kampf trotz Niederlage als abgeschlossen zählen (z.&nbsp;B. Story-Kampf, der auch so weitergeht)</span>
+  const continueRow = isLoss ? `<label class="sheet-option death-check-row" style="margin-top:4px; align-items:flex-start;">
+      <input type="checkbox" id="bossContinueAnyway" style="margin-top:2px;" />
+      <span>
+        <span style="display:block;">Trotzdem als abgeschlossen zählen</span>
+        <span class="loc-sub" style="display:block; margin-top:2px;">Z.&nbsp;B. Story-Kampf, der auch bei einer Niederlage weitergeht</span>
+      </span>
     </label>` : "";
   openSheet(`
     <h3>${isLoss?"Niederlage":"Sieg"} gegen ${escapeHtml(displayName)}</h3>
@@ -4777,6 +4883,49 @@ function dismissAchievementToast(toast){
   toast.classList.add("out");
   setTimeout(()=>{ toast.remove(); showNextAchievementToast(); }, 260);
 }
+/* Allgemeiner Rückgängig-Toast (siehe Klick-Listener weiter unten, der undoPreSnapshot zieht und
+   nach der Aktion showUndoToast aufruft): kuratierte Auswahl an leicht versehentlich ausgelösten,
+   schwer wieder auffindbaren Aktionen - bewusst NICHT jede State-Änderung (z.B. Settings-Schalter
+   brauchen keinen Toast, ein erneuter Klick macht sie trivial rückgängig). */
+const UNDOABLE_ACTIONS = {
+  "mark-failed": "Als „nicht gefangen“ markiert",
+  "mark-dead": "Als gestorben markiert",
+  "confirm-mark-dead": "Als gestorben markiert",
+  "confirm-boss-result": "Bosskampf-Ergebnis eingetragen",
+  "do-evolve": "Entwicklung eingetragen",
+  "remove-from-team": "Aus dem Team entfernt",
+  "save-catch": "Fang eingetragen",
+  "confirm-save-catch-dupe": "Fang eingetragen",
+  "delete-location": "Standort gelöscht"
+};
+let lastUndoSnapshot = null;
+function showUndoToast(label){
+  document.querySelector(".undo-toast")?.remove();
+  const toast = document.createElement("div");
+  toast.className = "undo-toast";
+  toast.innerHTML = `
+    <span class="undo-toast-label">${escapeHtml(label)}</span>
+    <button class="undo-toast-btn" type="button">Rückgängig</button>
+  `;
+  toast.querySelector(".undo-toast-btn").addEventListener("click", ()=>{
+    if(lastUndoSnapshot){
+      state = JSON.parse(lastUndoSnapshot);
+      lastUndoSnapshot = null;
+      saveState(); render();
+    }
+    dismissUndoToast(toast);
+  });
+  document.body.appendChild(toast);
+  toast._timer = setTimeout(()=>dismissUndoToast(toast), 6000);
+}
+function dismissUndoToast(toast){
+  if(!toast || toast._dismissing) return;
+  toast._dismissing = true;
+  clearTimeout(toast._timer);
+  toast.classList.add("out");
+  setTimeout(()=>toast.remove(), 220);
+}
+
 function renderActiveTitleBadge(){
   const el = document.getElementById("activeTitleBadge");
   if(!el) return;
@@ -4799,6 +4948,18 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.53</span><span class="tag tag-feat">Feature</span></div>
+      <h3>7 Komfort/UX-Punkte aus dem Backlog umgesetzt</h3>
+      <p><strong>Ausgelassene Routen:</strong> neue Übersicht unter „Werkzeuge" listet alle Standorte ohne bisherigen Fangversuch, gruppiert nach Region, mit Sprung zur jeweiligen Karte per Tap.</p>
+      <p><strong>Team-Reihenfolge per Drag & Drop:</strong> die Team-Kacheln lassen sich jetzt über einen Ziehpunkt (oben links) frei umsortieren, statt fest nach Fangreihenfolge zu stehen - die neue Reihenfolge bleibt gespeichert.</p>
+      <p><strong>Spitzname inline editierbar:</strong> auf der Team-Kachel antippen und direkt umbenennen (Enter speichert, Escape bricht ab) - der Umweg über Kontextmenü → Umbenennen-Sheet bleibt als Alternative bestehen.</p>
+      <p><strong>Allgemeiner Rückgängig-Toast:</strong> nach Fang, Tod, Entwicklung, Bosskampf-Ergebnis, Teamaustausch, „Kein Fang" oder Standort-Löschung erscheint kurz ein Hinweis mit „Rückgängig"-Button, statt erst über Kontextmenüs korrigieren zu müssen.</p>
+      <p><strong>Lang-Drücken für „Sieg zurücknehmen":</strong> ein einfacher Tap reicht nicht mehr - ein Balken füllt sich beim Gedrückthalten, erst wenn er komplett gefüllt ist, wird der Fortschritt zurückgenommen. Schützt vor versehentlichem Antippen.</p>
+      <p><strong>Eingabefeld beim Boss-Level-Boost:</strong> zusätzlich zu den bestehenden +5%/-5%-Buttons lässt sich jetzt direkt eine beliebige Prozentzahl für alle Bosstrainer gleichzeitig eintragen.</p>
+      <p><strong>Kürzere Sheet-Labels:</strong> die Story-Kampf-Option beim Eintragen einer Niederlage („Kampf trotz Niederlage als abgeschlossen zählen (z. B. Story-Kampf, der auch so weitergeht)") ist jetzt ein kurzes Label mit erklärendem Untertext statt eines langen Fließtext-Labels.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.8.52</span><span class="tag tag-fix">Zurückgenommen</span></div>
@@ -5507,7 +5668,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Plattformübergreifendes Speichersystem.</strong> Spielstände liegen bisher rein lokal (<code>localStorage</code>) im jeweiligen Browser/Gerät — der einzige Weg zwischen Geräten zu wechseln ist der manuelle JSON-Export/Import. Ein echter Sync (z.B. Konto-basiert oder über einen eigenen Cloud-Speicher) würde Spielstände automatisch zwischen Handy, Tablet und Desktop aktuell halten.</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Achievement-System mit verliehenen Titeln.</strong> Für bestimmte Situationen/Meilensteine im Run Achievements freischalten, die einen Titel verleihen — z.&nbsp;B. „Legenden-Trainer" bei 3 Legendären gleichzeitig im Team, „Champ" nach Championsieg. Weitere Ideen für Auslöser/Titel noch offen. → umgesetzt in v1.8.34 mit 10 Erfolgen/Titeln als erste Runde (u.&nbsp;a. Teamvoll, Ironman, fehlerfreier Champion-Sieg, Solo-Modus, Dupes-Regelbruch) - weitere Erfolge (z.&nbsp;B. Legenden-Trainer, editionsübergreifende) können jederzeit ergänzt werden.</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Run-Rückblick ausbauen: erzählte Zusammenfassung + kleine Analyse.</strong> Statt nur Kennzahlen eine spannend geschriebene Zusammenfassung des Abenteuers anhand von Kennzahlen/Verlauf generieren, dazu kleine Analyse-Einsichten (z.&nbsp;B. „hauptsächlich Wasser-Pokémon im Team", auffällige Typverteilung, Fang-/Todesserien o.&nbsp;Ä.). → umgesetzt in v1.8.51 (Fließtext-Zusammenfassung + Analyse-Punkte zu Fangserie, härtestem Gegner, Erfolgen und ignorierten Dupes-Warnungen; Typverteilung bewusst ausgelassen, da dafür eine komplette Arten→Typ-Referenztabelle fehlt - siehe „Typabdeckungs-Analyse fürs Team" weiter unten)</div>
-    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Zusammengefasste Encounter-Übersicht für ausgelassene Routen.</strong> Liste aller Standorte, an denen noch kein Fangversuch eingetragen wurde (übersprungene Routen), mit Sprung-Funktion zur jeweiligen Standort-Karte per Klick.</div>
+    <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Zusammengefasste Encounter-Übersicht für ausgelassene Routen.</strong> Liste aller Standorte, an denen noch kein Fangversuch eingetragen wurde (übersprungene Routen), mit Sprung-Funktion zur jeweiligen Standort-Karte per Klick. → umgesetzt in v1.8.53</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Game-Over-Bildschirm bei komplettem Team-Verlust.</strong> Sind alle Pokémon gestorben, soll ein Vollbild-Overlay ähnlich der Champion-Abschluss-Feier erscheinen — allerdings als Niederlage gerahmt statt als Sieg. → umgesetzt in v1.8.33</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Abgegebene Pokémon aus der Überlebensrate herausrechnen.</strong> Aktuell zählen abgegebene Pokémon (z.&nbsp;B. bei einer verlorenen Rivalenduell-Niederlage) weiter zur Überlebensrate mit — dadurch kann die Rate auch dann nicht auf 0% fallen, wenn tatsächlich das komplette verbliebene Team gestorben ist. Abgegebene sollten aus der Berechnung ausgeschlossen werden. → umgesetzt in v1.8.40</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Farbcodierte Überlebensrate.</strong> Die Statistik-Kachel „Überlebensrate" soll je nach Wert die Farbe wechseln: ab 50% Grün, 25–49% Gelb, 0–24% Rot. → umgesetzt in v1.8.40</div>
@@ -5526,8 +5687,8 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Fortschrittscheckliste für Schlüsselitems/VMs.</strong> Übersicht, welche VMs/Schlüsselitems (Surfer, Zerschneider usw.) schon eingesammelt wurden — hilfreich, um zu sehen, welche Standorte bereits erreichbar sind.</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Duo-Vergleichsansicht.</strong> Sobald es ein plattformübergreifendes Speichersystem gibt (siehe oben): beide Spielstände eines Duell-Runs nebeneinander vergleichen (Fortschritt, Überlebensrate, Bosse).</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Enter-Taste sendet das Fang-Formular ab.</strong> Tastatur-Komfort: im Spitzname-Feld Enter drücken, statt immer den Button antippen zu müssen. → umgesetzt in v1.8.49</div>
-    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Team-Reihenfolge per Drag &amp; Drop sortierbar.</strong> Im Original lässt sich die Team-Reihenfolge ändern — hier bisher fix nach Fangreihenfolge.</div>
-    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Spitzname inline auf der Team-Kachel bearbeitbar.</strong> Statt über den Umweg Kontextmenü → Umbenennen-Sheet direkt auf der Kachel editierbar — spart einen Schritt bei einer der häufigsten Aktionen.</div>
+    <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Team-Reihenfolge per Drag &amp; Drop sortierbar.</strong> Im Original lässt sich die Team-Reihenfolge ändern — hier bisher fix nach Fangreihenfolge. → umgesetzt in v1.8.53</div>
+    <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Spitzname inline auf der Team-Kachel bearbeitbar.</strong> Statt über den Umweg Kontextmenü → Umbenennen-Sheet direkt auf der Kachel editierbar — spart einen Schritt bei einer der häufigsten Aktionen. → umgesetzt in v1.8.53</div>
     <div class="followup-item"><span class="tag tag-fix" style="margin-right:8px;">Verworfen</span><strong>Badge-Zähler auf den Tabs.</strong> Z.&nbsp;B. „Team 4/6" oder eine kleine Zahl auf „Friedhof", damit der Status auf einen Blick sichtbar ist, ohne erst reinzutippen. <em>→ verworfen: schadet eher der Übersichtlichkeit der Tab-Leiste.</em></div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Meilenstein-Feedback bei 25/50/75/100% Gesamtfortschritt.</strong> Kleiner Konfetti-Moment/Toast, ähnlich der Champion-Feier, aber für Zwischenetappen.</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Kontextuelle Hilfe-Icons bei Einstellungen.</strong> Ein kleines „?" bei weniger selbsterklärenden Optionen (Dupes-Clause, Nickname-Pflicht, Einzelspieler-Modus), das kurz erklärt, was sie konkret bewirken. → umgesetzt in v1.8.33 (Level-Boost, Dupes-Clause, Nickname-Pflicht; Einzelspieler-Modus-Erklärung steht noch offen)</div>
@@ -5535,10 +5696,10 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Kurzes Vibrations-Feedback bei Fang/Tod/Bosssieg.</strong> Auf unterstützten Geräten, mit Ein/Aus-Schalter in den Einstellungen. → umgesetzt in v1.8.40</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Status nie nur über Farbe codieren.</strong> Gerade bei der geplanten farbcodierten Überlebensrate zusätzlich ein Symbol/Text verwenden, damit es auch für farbenblinde Nutzer:innen eindeutig bleibt. → umgesetzt in v1.8.51 als Schalter unter „Darstellung": aktiviert bekommt eine verlorene, aber abgeschlossene Bosskarte ein Kreuz-Symbol statt desselben Häkchens wie ein Sieg (die farbcodierte Überlebensrate selbst trägt zusätzlich immer schon Zahl/Label, nicht nur Farbe)</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Automatisches Scrollen zur aktuellen Kachel beim Öffnen des Routen-Tabs.</strong> Statt jedes Mal manuell den „Zum aktuellen Standort"-Button antippen zu müssen. → umgesetzt in v1.8.40</div>
-    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Rückgängig-Toast statt Kontextmenü-Umweg für schnelle Korrekturen.</strong> Z.&nbsp;B. nach versehentlichem „Kein Fang" ein kurzer Hinweis mit direktem „Rückgängig"-Button, statt erst über das Karten-Icon zurücksetzen zu müssen.</div>
-    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Lang-Drücken-Bestätigung für „Sieg zurücknehmen".</strong> Schutz vor versehentlichem Antippen, das sonst stillschweigend Fortschritt zurücknimmt.</div>
+    <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Rückgängig-Toast statt Kontextmenü-Umweg für schnelle Korrekturen.</strong> Z.&nbsp;B. nach versehentlichem „Kein Fang" ein kurzer Hinweis mit direktem „Rückgängig"-Button, statt erst über das Karten-Icon zurücksetzen zu müssen. → umgesetzt in v1.8.53, zusammen mit dem allgemeinen „Letzte Aktion rückgängig" weiter unten als ein gemeinsamer Mechanismus (Fang, Tod, Entwicklung, Bosskampf-Ergebnis, Teamaustausch, Standort-Löschung)</div>
+    <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Lang-Drücken-Bestätigung für „Sieg zurücknehmen".</strong> Schutz vor versehentlichem Antippen, das sonst stillschweigend Fortschritt zurücknimmt. → umgesetzt in v1.8.53</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Sticky Mini-Fortschrittsleiste im Routen-Tab.</strong> Der Gesamtfortschritt immer sichtbar oben, nicht nur in der Statistik-Karte der Einstellungen. → umgesetzt in v1.8.40</div>
-    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Eingabefeld statt nur +5%/-5% beim Boss-Level-Boost.</strong> Für größere Sprünge auf einmal, ohne oft hintereinander tippen zu müssen.</div>
+    <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Eingabefeld statt nur +5%/-5% beim Boss-Level-Boost.</strong> Für größere Sprünge auf einmal, ohne oft hintereinander tippen zu müssen. → umgesetzt in v1.8.53</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Proaktiver Hinweis „Region jetzt ausblenden?"</strong> Sobald eine Region komplett abgeschlossen ist, aktiv anbieten, sie über die bestehende Regionen-ausblenden-Funktion aus der Übersicht zu nehmen.</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Statusleisten-Farbe an die aktuelle Edition anpassen.</strong> <code>theme-color</code> passend zum Editions-Farbschema setzen, für ein noch nativeres Look&amp;Feel beim Wechseln. → umgesetzt in v1.8.49</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Sanftes Fade-in beim Laden von Sprites.</strong> Statt hartem Pop-in ein kurzes Einblenden, sobald ein Sprite-Bild bereitsteht. → umgesetzt in v1.8.40</div>
@@ -5546,12 +5707,12 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Editions-Akzentfarbe auch auf Tab-Leiste/FAB.</strong> Aktuell nur auf Karten-Rändern sichtbar — jede Edition würde sich dadurch stärker „eigen" anfühlen. → umgesetzt in v1.8.49 (FAB nutzte schon Akzentfarben, Tab-Leiste bekommt jetzt zusätzlich einen farbigen oberen Rand)</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Konfetti-Farben an die Editionspalette koppeln.</strong> Statt fixer Standardfarben. → umgesetzt in v1.8.40</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>„✓ abgeschlossen"-Badge im Regions-Header.</strong> Sobald eine ganze Region fertig ist, auf einen Blick sichtbar, ohne reinscrollen zu müssen.</div>
-    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Längere Sheet-Labels kürzen.</strong> Z.&nbsp;B. „Kampf trotz Niederlage als abgeschlossen zählen" → kurzes Button-Label + erklärender Untertext, statt alles in den Button-Text zu packen.</div>
+    <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Längere Sheet-Labels kürzen.</strong> Z.&nbsp;B. „Kampf trotz Niederlage als abgeschlossen zählen" → kurzes Button-Label + erklärender Untertext, statt alles in den Button-Text zu packen. → umgesetzt in v1.8.53 für das genannte Beispiel; weitere Fälle können bei Bedarf noch folgen</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Fokus-Sichtbarkeit &amp; aria-labels bei Icon-Buttons nachschärfen.</strong> Für Tastatur-/Screenreader-Nutzung, aktuell vermutlich lückenhaft. → umgesetzt in v1.8.33</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Run-Rückblick als Bild statt nur Text.</strong> Eine hübsche, teilbare Abschluss-Karte (Canvas/Screenshot-Stil) für Social Media statt nur der bestehenden Text-Kopie. → umgesetzt in v1.8.51</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Web-Share-Sheet auf Mobile.</strong> Beim Kopieren des Run-Rückblicks direkt das native Teilen-Menü anbieten, statt nur Zwischenablage/Textfeld. → umgesetzt in v1.8.49</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Kurzes Sound-Feedback als Pendant zum Vibrations-Feedback.</strong> Dezente Klänge bei Fang/Tod/Bosssieg, mit eigenem Lautstärke-/Ein-Aus-Schalter.</div>
-    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Allgemeines „Letzte Aktion rückgängig".</strong> Statt nur einzelner Undo-Buttons pro Aktionstyp (Entwicklung, Boss-Sieg, …) ein universeller Rückgängig-Mechanismus für die zuletzt ausgeführte Aktion.</div>
+    <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Allgemeines „Letzte Aktion rückgängig".</strong> Statt nur einzelner Undo-Buttons pro Aktionstyp (Entwicklung, Boss-Sieg, …) ein universeller Rückgängig-Mechanismus für die zuletzt ausgeführte Aktion. → umgesetzt in v1.8.53 als Toast mit „Rückgängig"-Button nach einer kuratierten Liste riskanter Aktionen (Fang, Tod, Entwicklung, Bosskampf-Ergebnis, Teamaustausch, „Kein Fang", Standort-Löschung)</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Todesursache-Freitext direkt beim Markieren.</strong> Optionales kleines Feld („Wodurch gestorben?") direkt im „Als gestorben markieren"-Sheet, landet dann sichtbar im Friedhof. → umgesetzt in v1.8.48 (per Hausregel-Schalter, standardmäßig aus)</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Weltenbummler-Erfolg.</strong> Runs in mindestens 3 verschiedenen Generationen abgeschlossen (Cross-Save-Erfolg, bräuchte Zugriff auf alle Spielstände beim Prüfen).</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Auferstanden-Erfolg.</strong> Nach einem Game-Over direkt einen neuen Run gestartet statt aufzugeben (Cross-Save-Erfolg).</div>
@@ -5577,7 +5738,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.52.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.53.</footer>
 
 </div>`;
 
@@ -5586,6 +5747,40 @@ function openChangelogSheet(){
     <h3>Änderungsprotokoll</h3>
     <div class="changelog-sheet">${CHANGELOG_HTML}</div>
     <div class="sheet-footer">
+      <button class="btn btn-secondary btn-block" data-act="close-sheet">Schließen</button>
+    </div>
+  `);
+}
+
+/* Übersprungene Standorte: gleiche Sichtbarkeits-Filter wie die Routen-Liste selbst (ausgeblendete
+   Regionen, Postgame-Ausblendung), damit die Übersicht nur Standorte zeigt, die aktuell auch
+   wirklich in der Routen-Liste auftauchen würden. */
+function pendingLocationsList(){
+  return state.locations.filter(l=>
+    l.status==="pending" && !l.noCatch &&
+    !(state.hiddenRegions||[]).includes(l.region) &&
+    !(state.hidePostgame && /Postgame/.test(l.note||""))
+  );
+}
+
+function openPendingLocationsSheet(){
+  const list = pendingLocationsList();
+  let rows;
+  if(list.length){
+    const byRegion = new Map();
+    list.forEach(l=>{ if(!byRegion.has(l.region)) byRegion.set(l.region, []); byRegion.get(l.region).push(l); });
+    rows = [...byRegion.entries()].map(([region, locs])=>`
+      <div class="loc-sub" style="margin:14px 0 6px; font-weight:700;">${escapeHtml(region)}</div>
+      ${locs.map(l=>`<button class="sheet-option" data-act="jump-to-pending-loc" data-id="${l.id}">${escapeHtml(l.name)}</button>`).join("")}
+    `).join("");
+  } else {
+    rows = `<div class="loc-sub">Keine ausgelassenen Standorte - überall wurde schon ein Fangversuch eingetragen.</div>`;
+  }
+  openSheet(`
+    <h3>Ausgelassene Routen</h3>
+    <div class="loc-sub" style="margin-bottom:6px;">${list.length} Standort${list.length===1?"":"e"} ohne bisherigen Fangversuch.</div>
+    ${rows}
+    <div class="sheet-footer" style="margin-top:14px;">
       <button class="btn btn-secondary btn-block" data-act="close-sheet">Schließen</button>
     </div>
   `);
@@ -5714,6 +5909,12 @@ function renderSettings(){
       <button class="btn btn-secondary" data-act="boss-dec-all">-5% Alle</button>
       <button class="btn btn-primary" data-act="boss-inc-all">+5% Alle</button>
     </div>
+    <div class="field-row" style="margin-top:10px; width:100%;">
+      <div class="field" style="margin-bottom:0;">
+        <input type="number" id="bossBoostInput" inputmode="numeric" min="0" step="5" placeholder="z. B. 20" />
+      </div>
+      <button class="btn btn-secondary" data-act="boss-set-all" style="flex:none;">Setzen</button>
+    </div>
   </div>
   <div class="card">
     <div class="loc-name">Gegner-Team tracken</div>
@@ -5840,6 +6041,11 @@ function renderSettings(){
     <div class="loc-name">Team-Rotation-Historie</div>
     <div class="loc-sub">Wer wann ins Team kam oder es verlassen hat</div>
     <button class="btn btn-secondary btn-block" style="margin-top:12px;" data-act="open-team-history">Historie öffnen</button>
+  </div>
+  <div class="card">
+    <div class="loc-name">Ausgelassene Routen</div>
+    <div class="loc-sub">Standorte ohne bisherigen Fangversuch, mit Sprung zur jeweiligen Karte (${pendingLocationsList().length} offen)</div>
+    <button class="btn btn-secondary btn-block" style="margin-top:12px;" data-act="open-pending-locations">Übersicht öffnen</button>
   </div>
   <div class="card">
     <div class="loc-name">Erste-Schritte-Tour</div>
@@ -6373,11 +6579,141 @@ function openConfirmSheet(title, message, confirmLabel, confirmAct, confirmId){
 }
 
 /* ---------- actions ---------- */
+/* Generischer Lang-Drücken-Mechanismus für Aktionen, die ein "data-longpress-act" statt eines
+   normalen "data-act" tragen - ein normaler Klick/Tap läuft dadurch ins Leere (kein [data-act]-
+   Attribut, der Klick-Listener unten greift also nicht), erst 650ms Gedrückthalten lösen die
+   Aktion aus (siehe LONGPRESS_ACTIONS). Über Pointer-Events statt touch-/mousedown getrennt
+   implementiert, damit Maus und Touch einheitlich funktionieren. */
+const LONGPRESS_MS = 650;
+const LONGPRESS_ACTIONS = {
+  "toggle-boss-defeat": id => toggleBossDefeat(id)
+};
+let longPressTimer = null, longPressEl = null;
+function clearLongPress(){
+  if(longPressTimer){ clearTimeout(longPressTimer); longPressTimer = null; }
+  if(longPressEl){ longPressEl.classList.remove("holding"); longPressEl = null; }
+}
+document.addEventListener("pointerdown", e=>{
+  const btn = e.target.closest("[data-longpress-act]");
+  if(!btn || btn.disabled) return;
+  clearLongPress();
+  longPressEl = btn;
+  btn.classList.add("holding");
+  longPressTimer = setTimeout(()=>{
+    const handler = LONGPRESS_ACTIONS[btn.dataset.longpressAct];
+    clearLongPress();
+    if(handler) handler(btn.dataset.id);
+  }, LONGPRESS_MS);
+});
+["pointerup","pointercancel","pointerleave"].forEach(evt=>{
+  document.addEventListener(evt, ()=>clearLongPress(), true);
+});
+
+/* Team-Reihenfolge per Drag & Drop: Pointer-Events statt nativem HTML5-DnD (auf Touch-Geräten
+   kaum brauchbar). Beim Ziehen entsteht ein frei schwebendes "Geister"-Element, das dem Finger/
+   der Maus folgt - das Original bleibt an seiner (neuen) Grid-Position liegen und wird nur
+   abgedunkelt (siehe .drag-source). Überquert der Zeiger eine andere Kachel, rückt die gezogene
+   Kachel an deren Stelle (wie bei den meisten Reorder-Listen), der Rest verschiebt sich passend -
+   erst beim Loslassen wird die neue Reihenfolge in state.teamOrder übernommen. */
+let dragState = null;
+document.addEventListener("pointerdown", e=>{
+  const handle = e.target.closest(".slot-drag-handle");
+  if(!handle) return;
+  const slot = handle.closest(".slot[data-loc-id]");
+  const grid = document.getElementById("teamGrid");
+  if(!slot || !grid) return;
+  e.preventDefault();
+  const order = [...grid.querySelectorAll(".slot[data-loc-id]")].map(s=>s.dataset.locId);
+  const rect = slot.getBoundingClientRect();
+  const ghost = slot.cloneNode(true);
+  ghost.classList.add("slot-drag-ghost");
+  ghost.style.width = rect.width+"px";
+  ghost.style.height = rect.height+"px";
+  ghost.style.left = rect.left+"px";
+  ghost.style.top = rect.top+"px";
+  document.body.appendChild(ghost);
+  slot.classList.add("drag-source");
+  dragState = {
+    id: slot.dataset.locId, order, ghost,
+    offsetX: e.clientX - rect.left, offsetY: e.clientY - rect.top,
+    pointerId: e.pointerId
+  };
+  try{ handle.setPointerCapture(e.pointerId); }catch(err){}
+});
+document.addEventListener("pointermove", e=>{
+  if(!dragState || e.pointerId !== dragState.pointerId) return;
+  const { ghost, offsetX, offsetY } = dragState;
+  ghost.style.left = (e.clientX - offsetX)+"px";
+  ghost.style.top = (e.clientY - offsetY)+"px";
+  const grid = document.getElementById("teamGrid");
+  if(!grid) return;
+  ghost.style.display = "none";
+  const overEl = document.elementFromPoint(e.clientX, e.clientY);
+  ghost.style.display = "";
+  const overSlot = overEl && overEl.closest && overEl.closest(".slot[data-loc-id]");
+  if(!overSlot) return;
+  const overId = overSlot.dataset.locId;
+  const order = dragState.order;
+  const fromIdx = order.indexOf(dragState.id);
+  const toIdx = order.indexOf(overId);
+  if(fromIdx===-1 || toIdx===-1 || fromIdx===toIdx) return;
+  order.splice(fromIdx,1);
+  order.splice(toIdx,0,dragState.id);
+  const byId = new Map(orderedTeamLocs().map(l=>[l.id,l]));
+  [...grid.querySelectorAll(".slot")].forEach((el,i)=>{
+    const loc = byId.get(order[i]);
+    if(loc) el.outerHTML = teamSlotHtml(loc, false);
+  });
+  const newSourceSlot = grid.querySelector(`.slot[data-loc-id="${dragState.id}"]`);
+  if(newSourceSlot) newSourceSlot.classList.add("drag-source");
+});
+function endTeamDrag(commit){
+  if(!dragState) return;
+  const { order, ghost } = dragState;
+  ghost.remove();
+  dragState = null;
+  if(commit){ state.teamOrder = order; saveState(); }
+  render();
+}
+document.addEventListener("pointerup", e=>{
+  if(!dragState || e.pointerId !== dragState.pointerId) return;
+  endTeamDrag(true);
+});
+document.addEventListener("pointercancel", e=>{
+  if(!dragState || e.pointerId !== dragState.pointerId) return;
+  endTeamDrag(false);
+});
+
+/* Spitzname inline auf der Team-Kachel (siehe renderTeam/editingTeamNickId): "focusout" statt
+   "blur" für die Delegation, da blur nicht bubbelt - Enter schließt per .blur() den Kreis zum
+   selben Speicherpfad, Escape bricht ohne zu speichern ab. */
+document.addEventListener("focusout", e=>{
+  if(e.target.id !== "teamNickInline" || !editingTeamNickId) return;
+  const loc = findLoc(e.target.dataset.id);
+  if(loc && loc.mon) loc.mon.nickname = e.target.value.trim().slice(0,30);
+  editingTeamNickId = null;
+  saveState(); render();
+});
+document.addEventListener("keydown", e=>{
+  if(e.target.id !== "teamNickInline") return;
+  if(e.key==="Enter"){ e.preventDefault(); e.target.blur(); }
+  else if(e.key==="Escape"){ e.preventDefault(); editingTeamNickId = null; render(); }
+});
+
 document.addEventListener("click", e=>{
   const t = e.target.closest("[data-act]");
   if(!t) return;
   const act = t.dataset.act, id = t.dataset.id;
   if(t.disabled) return;
+
+  /* Allgemeiner Rückgängig-Toast: für eine kuratierte Liste "riskanter" Aktionen (siehe
+     UNDOABLE_ACTIONS) wird VOR der eigentlichen Verarbeitung ein State-Snapshot gezogen - landet
+     die Aktion in einem frühen "return" (z.B. Validierung schlägt fehl, oder es öffnet sich erst
+     eine Zwischen-Sheet wie bei "mark-dead" mit aktivierter Todesursache-Abfrage), bleibt der
+     Vergleich am Ende unten unverändert und es erscheint kein Toast - erst eine tatsächliche
+     State-Änderung löst ihn aus. */
+  const undoLabel = UNDOABLE_ACTIONS[act];
+  const undoPreSnapshot = undoLabel ? JSON.stringify(state) : null;
 
   if(act==="open-catch") openCatchSheet(id);
   else if(act==="mark-failed"){ findLoc(id).status="failed"; saveState(); render(); }
@@ -6505,22 +6841,11 @@ document.addEventListener("click", e=>{
     currentGame().bosses.forEach(b=>{ state.bossBoosts[b.id] = Math.max(0, bossPercent(b.id) - 5); });
     saveState(); render();
   }
-  else if(act==="toggle-boss-defeat"){
-    const wasDefeated = isBossDefeated(id);
-    state.bossDefeated[id] = !wasDefeated;
-    const boss = bossById(id);
-    if(!wasDefeated && boss){ logEvent("boss", `${boss.name || boss.cls} besiegt (${boss.place})`); vibrateFeedback([40,30,80]); snapshotBossWinTeam(id); }
-    const finalBoss = finalStoryBoss();
-    const isChamp = finalBoss && boss && boss.id===finalBoss.id;
-    if(state.soloMode && isChamp){
-      if(!wasDefeated) snapshotSoloHallOfFame();
-      else state.hallOfFame = { rivalTeam:[], playerTeam:[], defeatedAt:null, result:null };
-    }
-    saveState();
-    if(!wasDefeated) lastDefeatedId = id;
-    render();
-    lastDefeatedId = null;
-    if(!wasDefeated && isChamp) showChampionCelebration(boss);
+  else if(act==="boss-set-all"){
+    const input = document.getElementById("bossBoostInput");
+    const val = Math.max(0, Math.round(Number(input?.value)) || 0);
+    currentGame().bosses.forEach(b=>{ state.bossBoosts[b.id] = val; });
+    saveState(); render();
   }
   else if(act==="open-boss-win") openBossResultSheet(id, "win");
   else if(act==="open-boss-loss") openBossResultSheet(id, "loss");
@@ -6573,7 +6898,18 @@ document.addEventListener("click", e=>{
   else if(act==="close-champion-overlay"){ document.querySelector(".champion-overlay")?.remove(); }
   else if(act==="close-game-over-overlay"){ document.querySelector(".game-over-overlay")?.remove(); }
   else if(act==="open-onboarding-tour") openOnboardingTour();
+  else if(act==="edit-team-nick"){ editingTeamNickId = id; render(); }
   else if(act==="open-team-history") openTeamHistorySheet();
+  else if(act==="open-pending-locations") openPendingLocationsSheet();
+  else if(act==="jump-to-pending-loc"){
+    closeSheet();
+    activeTab = "routes";
+    render();
+    requestAnimationFrame(()=>{
+      const el = document.querySelector(`[data-loc="${id}"]`);
+      if(el) el.scrollIntoView({ behavior:"smooth", block:"center" });
+    });
+  }
   else if(act==="open-leaderboard") openLeaderboardSheet();
   else if(act==="onboarding-next"){ onboardingStep = Math.min(onboardingStep+1, ONBOARDING_STEPS.length-1); renderOnboardingOverlay(); }
   else if(act==="onboarding-prev"){ onboardingStep = Math.max(onboardingStep-1, 0); renderOnboardingOverlay(); }
@@ -6859,6 +7195,10 @@ document.addEventListener("click", e=>{
     saveState(); renderActiveTitleBadge(); render();
   }
   checkAchievements();
+  if(undoPreSnapshot && JSON.stringify(state) !== undoPreSnapshot){
+    lastUndoSnapshot = undoPreSnapshot;
+    showUndoToast(undoLabel);
+  }
 });
 
 document.querySelectorAll(".tab").forEach(tab=>{
