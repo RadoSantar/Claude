@@ -1736,6 +1736,7 @@ const HOENN_RS_BOSSES = [
   { id:"winona", sprite:"SmWinona", name:"Wibke", cls:"Arenaleiterin", place:"Baumhausen City", ace:"Altaria", baseLevel:33, group:"Hoenn-Arenen", pvp:true },
   { id:"villain-admin3", sprite:"SmTabitha", name:"Kalle", cls:"Vorstand", place:"Team-Magma-Versteck, Seegrasulb City", ace:"Camerupt", baseLevel:32, group:"Team Magma" },
   { id:"rival4", sprite:"SmRival", name:"Maike", cls:"Rivale", place:"Seegrasulb City", ace:null, baseLevel:34, group:"Rivale", pvp:true },
+  { id:"tateliza", sprite:"SmTateLiza", name:"Ben & Svenja", cls:"Arenaleiter-Duo", place:"Moosbach City", ace:"Sonnfel", baseLevel:42, group:"Hoenn-Arenen", pvp:true },
   { id:"wallace", sprite:"SmWassili", name:"Wassili", cls:"Arenaleiter", place:"Xeneroville", ace:"Milotic", baseLevel:43, group:"Hoenn-Arenen", pvp:true },
   { id:"villain-admin4", sprite:"RSCourtney", name:"Jördis", cls:"Vorstand", place:"Tiefseehöhle (Zugang)", ace:"Magnayen", baseLevel:38, group:"Team Magma" },
   { id:"villain-boss2", sprite:"SmMaxie", name:"Marc", cls:"Teamboss", place:"Tiefseehöhle", ace:"Camerupt", baseLevel:43, group:"Team Magma" },
@@ -1760,6 +1761,7 @@ const HOENN_RS_BOSS_AFTER = {
   "Hoenn|Steilpass": ["norman"],
   "Hoenn|Baumhausen City": ["winona"],
   "Hoenn|Seegrasulb City": ["rival4","villain-admin3"],
+  "Hoenn|Moosbach City": ["tateliza"],
   "Hoenn|Xeneroville": ["wallace"],
   "Hoenn|Tiefseehöhle": ["villain-admin4","villain-boss2"],
   "Hoenn|Pokémon-Liga": ["wally2","e4-ulrich","e4-antonia","e4-frosina","e4-dragan","champion","duel-final"]
@@ -2537,7 +2539,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.8.46";
+const APP_VERSION = "1.8.47";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -4440,6 +4442,12 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="log">
 
     <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.47</span><span class="tag tag-fix">Korrektur</span></div>
+      <h3>Rubin/Saphir: fehlender Mossdeep-Arenakampf ergänzt</h3>
+      <p>Beim Durchsehen der Editionen auf Starter-Besonderheiten aufgefallen: Ben &amp; Svenja (Tate &amp; Liza), das Arenaleiter-Duo von Moosbach City, fehlte in Rubin/Saphir komplett - in Smaragd war der Kampf schon vorhanden. Jetzt ergänzt (Lv.&nbsp;42, wie in Smaragd, laut Recherche identisches Team in allen drei Editionen), an der richtigen Stelle zwischen Seegrasulb City und Wassilis Arena in Xeneroville.</p>
+    </div>
+
+    <div class="entry">
       <div class="entry-head"><span class="ver">v1.8.46</span><span class="tag tag-fix">Korrektur</span></div>
       <h3>Schwarz/Weiß: Orion-City-Arena starterabhängig</h3>
       <p>Besonderheit der ersten Arena in Schwarz/Weiß: sie wird von drei Geschwistern geführt, aber nur eines von ihnen tritt tatsächlich an - abhängig vom gewählten Starter (jeweils der Typ, der gegen den eigenen Starter im Vorteil ist). Bisher zeigte die App fälschlich alle drei gleichzeitig als aktive Bosskämpfe. Jetzt blendet die App die beiden nicht zutreffenden Geschwister komplett aus - aus der Kachelliste, der Fortschritts-/Levelcap-Berechnung und der Statistik - sobald der Starter gewählt ist. Vor der Starterwahl bleiben vorsorglich alle drei sichtbar, damit nichts fälschlich verschwindet.</p>
@@ -5173,7 +5181,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.46.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.47.</footer>
 
 </div>`;
 
