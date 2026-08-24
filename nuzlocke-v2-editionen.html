@@ -2539,7 +2539,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.8.47";
+const APP_VERSION = "1.8.48";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -2572,7 +2572,7 @@ function freshState(editionId, soloMode){
     names.forEach(entry=>{ locations.push(parseLocationEntry(region, entry)); });
   });
   const gameStarters = GAMES[edition].starters || { grass:"", fire:"", water:"" };
-  return { edition, runTitle:"Nuzlocke", soloMode:!!soloMode, locations, bossBoosts:{}, bossDefeated:{}, rivalNickname:"", duelPartnerName:"", dupesWarning:true, lastExportAt:null, evolutionCount:0, lossCount:0, nicknameRequired:false, pvp:{}, hallOfFame:{ rivalTeam:[], playerTeam:[], defeatedAt:null, result:null }, starterNames:{ ...gameStarters }, starterChoice:null, currentLocId:null, eventLog:[], hiddenRegions:[], achievements:{}, activeTitle:null, dupesIgnoredCount:0, bossLossIds:{}, cleanBossWins:{}, bossNotes:{}, randomizerSeed:"", vibrationEnabled:true, bossWinTeams:{}, hidePostgame:false };
+  return { edition, runTitle:"Nuzlocke", soloMode:!!soloMode, locations, bossBoosts:{}, bossDefeated:{}, rivalNickname:"", duelPartnerName:"", dupesWarning:true, lastExportAt:null, evolutionCount:0, lossCount:0, nicknameRequired:false, pvp:{}, hallOfFame:{ rivalTeam:[], playerTeam:[], defeatedAt:null, result:null }, starterNames:{ ...gameStarters }, starterChoice:null, currentLocId:null, eventLog:[], hiddenRegions:[], achievements:{}, activeTitle:null, dupesIgnoredCount:0, bossLossIds:{}, cleanBossWins:{}, bossNotes:{}, randomizerSeed:"", vibrationEnabled:true, bossWinTeams:{}, hidePostgame:false, trackBossTeams:false, bossOpponentTeams:{}, trackDeathCause:false };
 }
 
 /* Ergänzt neu hinzugekommene Standorte (z.B. nachträglich eingefügte Städte) in einen bereits
@@ -2624,6 +2624,9 @@ function normalizeState(parsed){
   if(typeof parsed.vibrationEnabled !== "boolean") parsed.vibrationEnabled = true;
   if(!parsed.bossWinTeams) parsed.bossWinTeams = {};
   if(typeof parsed.hidePostgame !== "boolean") parsed.hidePostgame = false;
+  if(typeof parsed.trackBossTeams !== "boolean") parsed.trackBossTeams = false;
+  if(!parsed.bossOpponentTeams) parsed.bossOpponentTeams = {};
+  if(typeof parsed.trackDeathCause !== "boolean") parsed.trackDeathCause = false;
   syncLocations(parsed);
   return parsed;
 }
@@ -3542,6 +3545,7 @@ function renderGrave(){
           `)}
           <span class="chip red">R.I.P.</span>
         </div>
+        ${loc.mon.deathCause ? `<div class="loc-note">Gestorben gegen: ${escapeHtml(loc.mon.deathCause)}</div>` : ""}
         ${monActionsHtml(loc, false, false)}
       </div>`;
     });
@@ -3641,6 +3645,11 @@ function bossCardHtml(boss, isCurrent){
   const hasBossNote = !!((state.bossNotes||{})[boss.id]||"").trim();
   const noteBtn = iconBtn(hasBossNote?"tone-gold":"tone-neutral","open-boss-note",boss.id,hasBossNote?ICON_NOTE_FILLED:ICON_NOTE,hasBossNote?"Notiz bearbeiten":"Notiz hinzufügen",false,true);
   const bossNoteHtml = hasBossNote ? `<div class="loc-note">${escapeHtml(state.bossNotes[boss.id])}</div>` : "";
+  const opponentTeam = (state.bossOpponentTeams||{})[boss.id] || [];
+  const opponentTeamBtn = state.trackBossTeams
+    ? iconBtn(opponentTeam.length?"tone-gold":"tone-neutral","open-boss-opponent-team",boss.id,opponentTeam.length?ICON_POKEBALL_FILLED:ICON_POKEBALL,opponentTeam.length?"Gegner-Team bearbeiten":"Gegner-Team eintragen",false,true)
+    : "";
+  const opponentTeamHtml = opponentTeam.length ? `<div class="loc-note">Gegnerteam: ${escapeHtml(opponentTeam.join(", "))}</div>` : "";
   const hasWinTeam = !!((state.bossWinTeams||{})[boss.id]||[]).length;
   const bottom = defeated
     ? `<div class="boss-actions">
@@ -3665,7 +3674,7 @@ function bossCardHtml(boss, isCurrent){
           <div class="loc-sub">${escapeHtml(boss.cls)} · ${escapeHtml(boss.place)}</div>
         </div>
       </div>
-      <div style="display:flex; gap:4px; flex:none;">${noteBtn}${flagBtn}</div>
+      <div style="display:flex; gap:4px; flex:none;">${opponentTeamBtn}${noteBtn}${flagBtn}</div>
     </div>
     <div class="boss-level-row">
       <div class="boss-level-main">
@@ -3675,6 +3684,7 @@ function bossCardHtml(boss, isCurrent){
       <div class="boss-ace"><span>Basis Lv. ${boss.baseLevel}</span></div>
     </div>
     ${bossNoteHtml}
+    ${opponentTeamHtml}
     ${bottom}
   </div>`;
 }
@@ -3854,6 +3864,49 @@ function showChampionCelebration(boss){
   document.body.appendChild(overlay);
 }
 
+/* Gemeinsame Kernlogik hinter "Als gestorben markieren" - unabhängig davon, ob die optionale
+   Todesursachen-Abfrage (state.trackDeathCause) dazwischengeschaltet war oder nicht, damit beide
+   Pfade (direkter Klick vs. über openDeathCauseSheet bestätigt) exakt dasselbe tun. */
+function performMarkDead(locId, cause){
+  const loc = findLoc(locId); const m = loc.mon;
+  m.dead=true; m.inTeam=false;
+  if(cause) m.deathCause = cause; else delete m.deathCause;
+  logEvent("dead", cause ? `${m.nickname || m.species} ist gestorben (${loc.name}, gegen ${cause})` : `${m.nickname || m.species} ist gestorben (${loc.name})`);
+  vibrateFeedback([25,40,25]);
+  saveState(); closeSheet(); render();
+  checkGameOver();
+}
+
+/* Optionale Todesursachen-Abfrage (Hausregel-Toggle, siehe state.trackDeathCause) für Tode
+   AUSSERHALB von Bosskämpfen - dort gibt es ja schon die Todesopfer-Checkliste mit klarem Gegner
+   (der Boss selbst), hier fehlt dieser Kontext sonst komplett (z.B. Tod durch ein wildes Pokémon
+   beim Grinden). Freitext mit Spezies-Autovervollständigung statt starrem Auswahlzwang, da nicht
+   jede Todesursache zwingend ein konkretes Pokémon ist. */
+function openDeathCauseSheet(locId){
+  const loc = findLoc(locId);
+  if(!loc || !loc.mon) return;
+  openSheet(`
+    <div class="sheet-mon-header">
+      ${spriteImgHtml(loc.mon.species, 56)}
+      <div>
+        <h3>${escapeHtml(loc.mon.nickname||loc.mon.species)} ist gestorben</h3>
+        <div class="loc-sub">Optional: gegen welches Pokémon?</div>
+      </div>
+    </div>
+    <div class="field species-picker">
+      <label for="inDeathCause">Todesursache</label>
+      <input id="inDeathCause" placeholder="z. B. wildes Rattfratz (optional)" autocomplete="off" />
+      <div class="species-results" id="inDeathCauseResults"></div>
+    </div>
+    <div class="sheet-footer" style="flex-direction:column; gap:10px;">
+      <button class="btn btn-danger btn-block" data-act="confirm-mark-dead" data-id="${locId}">Als gestorben markieren</button>
+      <button class="btn btn-secondary btn-block" data-act="close-sheet">Abbrechen</button>
+    </div>
+  `);
+  wireSpeciesPicker("inDeathCause","inDeathCauseResults", ()=>{});
+  setTimeout(()=>document.getElementById("inDeathCause").focus(), 50);
+}
+
 /* Kompletter Team-Wipe: nicht nur die sechs aktiven Team-Plätze, sondern wirklich ALLE jemals in
    diesem Run gefangenen Pokémon (Team + Box) sind tot - erst dann steckt man tatsächlich fest, ein
    Team-Wipe mit noch überlebenden Box-Pokémon wäre kein echtes Game Over. Wird nach jeder Aktion
@@ -4015,6 +4068,52 @@ function openFinalRivalSheet(bossId){
     wireSpeciesPicker(`finalMon${i}`, `finalMonResults${i}`, updatePreview);
   }
   setTimeout(()=>document.getElementById("finalMon0").focus(), 50);
+}
+
+/* Optionales Gegner-Team-Tracking (Hausregel-Toggle, siehe state.trackBossTeams) - unabhängig vom
+   Freitext-Bossnotizfeld, das eher für Strategie-/Gesamteindrücke gedacht ist: hier geht es um die
+   sechs konkreten Team-Pokémon selbst, mit Sprite-Vorschau wie beim finalen Rivalenduell. Jederzeit
+   editierbar (nicht nur direkt beim Sieg/Niederlage-Eintrag), damit sich das auch nachträglich noch
+   ergänzen lässt. */
+function openBossOpponentTeamSheet(bossId){
+  const boss = bossById(bossId);
+  if(!boss) return;
+  const existing = (state.bossOpponentTeams||{})[bossId] || [];
+  let rows = "";
+  for(let i=0;i<6;i++){
+    const val = existing[i] || "";
+    const src = val ? spriteFor(val) : null;
+    rows += `<div class="field-row" style="margin-bottom:14px;">
+      <div class="sprite-preview" id="oppPreview${i}">${src ? `<img src="${src}" width="70" height="70" alt="" />` : `<span>?</span>`}</div>
+      <div class="field species-picker" style="margin-bottom:0;">
+        <label for="oppMon${i}">Pokémon ${i+1}</label>
+        <input id="oppMon${i}" value="${escapeHtml(val)}" placeholder="Optional" autocomplete="off" />
+        <div class="species-results" id="oppMonResults${i}"></div>
+      </div>
+    </div>`;
+  }
+  openSheet(`
+    <h3>Gegner-Team</h3>
+    <div class="loc-sub" style="margin-bottom:14px;">${escapeHtml(boss.name || boss.cls)} · ${escapeHtml(boss.place)} - trage ein, welches Team dabei war. Leere Felder werden übersprungen.</div>
+    ${rows}
+    <div class="sheet-footer" style="flex-direction:column; gap:10px;">
+      ${existing.length ? `<button class="btn btn-danger btn-block" data-act="delete-boss-opponent-team" data-id="${bossId}">Team löschen</button>` : ""}
+      <div style="display:flex; gap:10px;">
+        <button class="btn btn-secondary btn-block" data-act="close-sheet">Abbrechen</button>
+        <button class="btn btn-primary btn-block" data-act="save-boss-opponent-team" data-id="${bossId}">Speichern</button>
+      </div>
+    </div>
+  `);
+  for(let i=0;i<6;i++){
+    const input = document.getElementById(`oppMon${i}`);
+    const updatePreview = ()=>{
+      const src = spriteFor(input.value);
+      document.getElementById(`oppPreview${i}`).innerHTML = src ? `<img src="${src}" width="70" height="70" alt="" />` : `<span>?</span>`;
+    };
+    input.addEventListener("input", updatePreview);
+    wireSpeciesPicker(`oppMon${i}`, `oppMonResults${i}`, updatePreview);
+  }
+  setTimeout(()=>document.getElementById("oppMon0").focus(), 50);
 }
 
 function hofSlotHtml(species, label){
@@ -4440,6 +4539,13 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.48</span><span class="tag tag-feat">Feature</span></div>
+      <h3>Gegner-Team pro Boss &amp; Todesursache - beides optional</h3>
+      <p><strong>Gegner-Team tracken:</strong> neuer Hausregel-Schalter unter „Duell &amp; Bosse" (standardmäßig aus). Aktiviert, erscheint auf jeder Bosskarte ein Pokéball-Icon, über das sich das tatsächliche gegnerische Team (bis zu 6 Pokémon, mit Sprite-Vorschau wie beim finalen Rivalenduell) eintragen und jederzeit wieder bearbeiten lässt - unabhängig vom bestehenden Freitext-Notizfeld, das eher für Strategie-Gedanken gedacht ist.</p>
+      <p><strong>Todesursache eintragen:</strong> neuer Hausregel-Schalter unter „Regeln" (ebenfalls standardmäßig aus). Aktiviert, fragt „Als gestorben markieren" außerhalb von Bosskämpfen optional ab, gegen welches Pokémon es passiert ist (Spitzname mit Autovervollständigung, aber auch Freitext möglich) - erscheint danach sichtbar im Friedhof. Bosskampf-Tode behalten ihren bisherigen, direkten Ablauf unverändert, da der Gegner dort ohnehin schon klar ist.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.8.47</span><span class="tag tag-fix">Korrektur</span></div>
@@ -5156,7 +5262,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Web-Share-Sheet auf Mobile.</strong> Beim Kopieren des Run-Rückblicks direkt das native Teilen-Menü anbieten, statt nur Zwischenablage/Textfeld.</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Kurzes Sound-Feedback als Pendant zum Vibrations-Feedback.</strong> Dezente Klänge bei Fang/Tod/Bosssieg, mit eigenem Lautstärke-/Ein-Aus-Schalter.</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Allgemeines „Letzte Aktion rückgängig".</strong> Statt nur einzelner Undo-Buttons pro Aktionstyp (Entwicklung, Boss-Sieg, …) ein universeller Rückgängig-Mechanismus für die zuletzt ausgeführte Aktion.</div>
-    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Todesursache-Freitext direkt beim Markieren.</strong> Optionales kleines Feld („Wodurch gestorben?") direkt im „Als gestorben markieren"-Sheet, landet dann sichtbar im Friedhof.</div>
+    <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Todesursache-Freitext direkt beim Markieren.</strong> Optionales kleines Feld („Wodurch gestorben?") direkt im „Als gestorben markieren"-Sheet, landet dann sichtbar im Friedhof. → umgesetzt in v1.8.48 (per Hausregel-Schalter, standardmäßig aus)</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Weltenbummler-Erfolg.</strong> Runs in mindestens 3 verschiedenen Generationen abgeschlossen (Cross-Save-Erfolg, bräuchte Zugriff auf alle Spielstände beim Prüfen).</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Auferstanden-Erfolg.</strong> Nach einem Game-Over direkt einen neuen Run gestartet statt aufzugeben (Cross-Save-Erfolg).</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Regenbogen-Team-Erfolg.</strong> 6 verschiedene Typen gleichzeitig im Team — bräuchte wie „The Collector" eine komplette Arten→Typ-Referenztabelle, größerer Aufwand.</div>
@@ -5181,7 +5287,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.47.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.48.</footer>
 
 </div>`;
 
@@ -5318,6 +5424,11 @@ function renderSettings(){
       <button class="btn btn-secondary" data-act="boss-dec-all">-5% Alle</button>
       <button class="btn btn-primary" data-act="boss-inc-all">+5% Alle</button>
     </div>
+  </div>
+  <div class="card">
+    <div class="loc-name">Gegner-Team tracken</div>
+    <div class="loc-sub">Blendet auf jeder Bosskarte ein Feld ein, um das tatsächliche gegnerische Team (bis zu 6 Pokémon) einzutragen und später wieder einzusehen.</div>
+    <button class="btn ${state.trackBossTeams?"btn-primary":"btn-secondary"} btn-block" style="margin-top:10px;" data-act="toggle-track-boss-teams">${state.trackBossTeams?"Aktiviert":"Deaktiviert"}</button>
   </div>`);
 
   html += settingsGroupHtml("rules", "Regeln", `
@@ -5341,6 +5452,11 @@ function renderSettings(){
     <div class="loc-name">Postgame-Inhalte ausblenden</div>
     <div class="loc-sub">Blendet Standorte aus, die als reine Postgame-Inhalte markiert sind (z.&nbsp;B. Nachfolge-Events nach dem Hauptspiel) - rein visuell, wirkt sich nicht auf die Statistik aus.</div>
     <button class="btn ${state.hidePostgame?"btn-primary":"btn-secondary"} btn-block" style="margin-top:10px;" data-act="toggle-hide-postgame">${state.hidePostgame?"Aktiviert":"Deaktiviert"}</button>
+  </div>
+  <div class="card">
+    <div class="loc-name">Todesursache eintragen</div>
+    <div class="loc-sub">Fragt beim Markieren als gestorben (außerhalb von Bosskämpfen) optional ab, gegen welches Pokémon es passiert ist - erscheint dann sichtbar im Friedhof.</div>
+    <button class="btn ${state.trackDeathCause?"btn-primary":"btn-secondary"} btn-block" style="margin-top:10px;" data-act="toggle-track-death-cause">${state.trackDeathCause?"Aktiviert":"Deaktiviert"}</button>
   </div>`);
 
   html += (()=>{
@@ -6020,14 +6136,18 @@ document.addEventListener("click", e=>{
     saveState(); closeSheet(); render();
   }
   else if(act==="mark-dead"){
-    const loc = findLoc(id); const m = loc.mon;
-    m.dead=true; m.inTeam=false;
-    logEvent("dead", `${m.nickname || m.species} ist gestorben (${loc.name})`);
-    vibrateFeedback([25,40,25]);
-    saveState(); closeSheet(); render();
-    checkGameOver();
+    if(state.trackDeathCause){ openDeathCauseSheet(id); return; }
+    performMarkDead(id, "");
   }
-  else if(act==="revive"){ findLoc(id).mon.dead=false; saveState(); closeSheet(); render(); }
+  else if(act==="confirm-mark-dead"){
+    const cause = (document.getElementById("inDeathCause")?.value||"").trim().slice(0,40);
+    performMarkDead(id, cause);
+  }
+  else if(act==="revive"){
+    const m = findLoc(id).mon;
+    m.dead=false; delete m.deathCause;
+    saveState(); closeSheet(); render();
+  }
   else if(act==="pvp-win") openPvpWinSheet(id);
   else if(act==="pvp-lose") openPvpLoseSheet(id);
   else if(act==="save-pvp-win"){
@@ -6203,6 +6323,20 @@ document.addEventListener("click", e=>{
     delete state.bossNotes[id];
     saveState(); closeSheet(); render();
   }
+  else if(act==="open-boss-opponent-team") openBossOpponentTeamSheet(id);
+  else if(act==="save-boss-opponent-team"){
+    const team = [];
+    for(let i=0;i<6;i++){
+      const v = (document.getElementById(`oppMon${i}`)?.value||"").trim();
+      if(v) team.push(v);
+    }
+    if(team.length) state.bossOpponentTeams[id] = team; else delete state.bossOpponentTeams[id];
+    saveState(); closeSheet(); render();
+  }
+  else if(act==="delete-boss-opponent-team"){
+    delete state.bossOpponentTeams[id];
+    saveState(); closeSheet(); render();
+  }
   else if(act==="open-rival-rename") openRivalRenameSheet();
   else if(act==="save-rival-nick"){
     const v = document.getElementById("editRivalNick").value.trim().slice(0,30);
@@ -6333,6 +6467,14 @@ document.addEventListener("click", e=>{
   }
   else if(act==="toggle-hide-postgame"){
     state.hidePostgame = !state.hidePostgame;
+    saveState(); render();
+  }
+  else if(act==="toggle-track-boss-teams"){
+    state.trackBossTeams = !state.trackBossTeams;
+    saveState(); render();
+  }
+  else if(act==="toggle-track-death-cause"){
+    state.trackDeathCause = !state.trackDeathCause;
     saveState(); render();
   }
   else if(act==="toggle-vibration"){
