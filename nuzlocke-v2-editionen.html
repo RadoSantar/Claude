@@ -2735,7 +2735,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.8.55";
+const APP_VERSION = "1.8.56";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -2768,7 +2768,7 @@ function freshState(editionId, soloMode){
     names.forEach(entry=>{ locations.push(parseLocationEntry(region, entry)); });
   });
   const gameStarters = GAMES[edition].starters || { grass:"", fire:"", water:"" };
-  return { edition, runTitle:"Nuzlocke", soloMode:!!soloMode, locations, bossBoosts:{}, bossDefeated:{}, rivalNickname:"", duelPartnerName:"", dupesWarning:true, lastExportAt:null, evolutionCount:0, lossCount:0, nicknameRequired:false, pvp:{}, hallOfFame:{ rivalTeam:[], playerTeam:[], defeatedAt:null, result:null }, starterNames:{ ...gameStarters }, starterChoice:null, currentLocId:null, eventLog:[], hiddenRegions:[], achievements:{}, activeTitle:null, dupesIgnoredCount:0, bossLossIds:{}, cleanBossWins:{}, bossNotes:{}, randomizerSeed:"", vibrationEnabled:true, bossWinTeams:{}, hidePostgame:false, trackBossTeams:false, bossOpponentTeams:{}, trackDeathCause:false, colorBlindSafeMode:false, teamOrder:[] };
+  return { edition, runTitle:"Nuzlocke", soloMode:!!soloMode, locations, bossBoosts:{}, bossDefeated:{}, rivalNickname:"", duelPartnerName:"", dupesWarning:true, lastExportAt:null, evolutionCount:0, lossCount:0, nicknameRequired:false, pvp:{}, hallOfFame:{ rivalTeam:[], playerTeam:[], defeatedAt:null, result:null }, starterNames:{ ...gameStarters }, starterChoice:null, currentLocId:null, eventLog:[], hiddenRegions:[], achievements:{}, activeTitle:null, dupesIgnoredCount:0, bossLossIds:{}, cleanBossWins:{}, bossNotes:{}, randomizerSeed:"", vibrationEnabled:true, bossWinTeams:{}, hidePostgame:false, trackBossTeams:false, bossOpponentTeams:{}, trackDeathCause:false, colorBlindSafeMode:false, teamOrder:[], syncCode:null, lastSyncedAt:null };
 }
 
 /* Ergänzt neu hinzugekommene Standorte (z.B. nachträglich eingefügte Städte) in einen bereits
@@ -2825,6 +2825,8 @@ function normalizeState(parsed){
   if(typeof parsed.trackDeathCause !== "boolean") parsed.trackDeathCause = false;
   if(typeof parsed.colorBlindSafeMode !== "boolean") parsed.colorBlindSafeMode = false;
   if(!Array.isArray(parsed.teamOrder)) parsed.teamOrder = [];
+  if(typeof parsed.syncCode !== "string") parsed.syncCode = null;
+  if(typeof parsed.lastSyncedAt !== "number") parsed.lastSyncedAt = null;
   syncLocations(parsed);
   return parsed;
 }
@@ -3001,6 +3003,174 @@ function bootstrapActiveSave(){
 }
 
 function saveState(){ writeSave(activeSaveId, state); }
+
+/* ---------- Cloud-Sync (Supabase) ----------
+   Bewusst OHNE Login/Konto - ein zufälliger, hochentropischer Sync-Code (50 Bit, wie ein "Wer den
+   Link/Code kennt, kommt rein"-Share) verknüpft einen Spielstand mit einer Zeile in Supabase.
+   Der direkte Tabellenzugriff ist per RLS komplett gesperrt; anon darf nur die beiden RPC-
+   Funktionen nuzlocke_get_save/nuzlocke_put_save aufrufen, die serverseitig fest nach genau
+   diesem Code filtern - ein Enumerieren fremder Spielstände über die REST-API ist damit nicht
+   möglich, nur wer den eigenen Code kennt kommt an die eigene Zeile. Bewusst ohne die Supabase-
+   JS-SDK (per CDN) eingebunden, um die App als reine Single-File ohne externe Skript-Abhängigkeit
+   zu erhalten - die paar REST-Aufrufe reichen über fetch() völlig aus. */
+const SUPABASE_URL = "https://cyaanqljqxzsqlzeaaev.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN5YWFucWxqcXh6c3FsemVhYWV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc2NzcwODEsImV4cCI6MjEwMzI1MzA4MX0.XxPP3X0vpOZ5DtYJvjPeyV3JaVE2uO0FhQE64vIowi4";
+
+function generateSyncCode(){
+  const alphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"; // ohne 0/O, 1/I/L - beim Abtippen verwechselbar
+  const bytes = new Uint8Array(10);
+  crypto.getRandomValues(bytes);
+  let code = "";
+  bytes.forEach(b=>{ code += alphabet[b % alphabet.length]; });
+  return code;
+}
+
+async function supabaseRpc(fnName, payload){
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fnName}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "apikey": SUPABASE_ANON_KEY,
+      "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
+    },
+    body: JSON.stringify(payload)
+  });
+  if(!res.ok) throw new Error(`Supabase-Fehler (${res.status})`);
+  return res.json();
+}
+
+/* Liefert {data, updated_at} der Cloud-Zeile zu diesem Code, oder null wenn (noch) keine existiert. */
+async function pullCloudSave(code){
+  const rows = await supabaseRpc("nuzlocke_get_save", { p_code: code });
+  return (rows && rows[0]) ? rows[0] : null;
+}
+/* Schreibt den kompletten aktuellen state als JSON in die Cloud-Zeile (Insert-or-Update über den
+   Code als Primärschlüssel), liefert den serverseitigen updated_at-Zeitstempel zurück. */
+async function pushCloudSave(code, dataObj){
+  const rows = await supabaseRpc("nuzlocke_put_save", { p_code: code, p_data: dataObj });
+  return (rows && rows[0]) ? rows[0].updated_at : null;
+}
+
+let syncInProgress = false;
+let pendingSyncRemote = null;
+
+function cloudSyncCardHtml(){
+  if(!state.syncCode){
+    return `<div class="card">
+      <div class="loc-name">Cloud-Sync</div>
+      <div class="loc-sub" style="margin-bottom:10px;">Diesen Spielstand geräteübergreifend abgleichen - über einen Code statt Konto/Login.</div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-primary" data-act="create-sync-code">Sync-Code erzeugen</button>
+        <button class="btn btn-secondary" data-act="open-link-sync-code">Code eingeben</button>
+      </div>
+    </div>`;
+  }
+  return `<div class="card">
+    <div class="loc-name">Cloud-Sync</div>
+    <div class="loc-sub" style="margin-bottom:10px;">Code: <strong style="font-family:var(--font-mono); letter-spacing:.05em;">${escapeHtml(state.syncCode)}</strong> · Zuletzt synchronisiert: ${formatRelativeTime(state.lastSyncedAt)}</div>
+    <button class="btn btn-primary btn-block" style="margin-bottom:8px;" data-act="run-sync" ${syncInProgress?"disabled":""}>${syncInProgress?"Synchronisiert …":"Jetzt synchronisieren"}</button>
+    <button class="btn btn-ghost" data-act="unlink-sync">Sync trennen</button>
+  </div>`;
+}
+
+function openSyncResultSheet(title, text){
+  openSheet(`
+    <h3>${escapeHtml(title)}</h3>
+    <div class="loc-sub" style="margin-bottom:14px;">${escapeHtml(text)}</div>
+    <div class="sheet-footer"><button class="btn btn-primary btn-block" data-act="close-sheet">OK</button></div>
+  `);
+}
+
+function openSyncConflictSheet(remote){
+  pendingSyncRemote = remote;
+  openSheet(`
+    <h3>Unterschiedliche Stände</h3>
+    <div class="loc-sub" style="margin-bottom:14px;">Die Cloud-Version wurde zuletzt ${escapeHtml(formatRelativeTime(new Date(remote.updated_at).getTime()))} aktualisiert - vermutlich von einem anderen Gerät. Welche Version soll gelten?</div>
+    <div class="sheet-footer" style="flex-direction:column; gap:10px;">
+      <button class="btn btn-primary btn-block" data-act="use-cloud-save">Cloud-Version übernehmen</button>
+      <button class="btn btn-secondary btn-block" data-act="use-local-save">Lokale Version behalten (Cloud überschreiben)</button>
+      <button class="btn btn-ghost btn-block" data-act="close-sheet">Abbrechen</button>
+    </div>
+  `);
+}
+
+/* Manuelles "Jetzt synchronisieren": zieht zuerst den Cloud-Stand, um zu prüfen, ob der seit dem
+   letzten bekannten Sync-Zeitpunkt von einem anderen Gerät verändert wurde (echter Konflikt) -
+   nur dann wird nachgefragt, statt eine Seite stillschweigend zu überschreiben. Ohne Konflikt
+   (kein Cloud-Stand oder unverändert seit dem letzten Sync) wird der lokale Stand einfach
+   hochgeladen, das ist der Normalfall bei nur einem aktiv genutzten Gerät. */
+async function runSyncFlow(){
+  if(!state.syncCode || syncInProgress) return;
+  syncInProgress = true; render();
+  try{
+    const remote = await pullCloudSave(state.syncCode);
+    if(remote && (!state.lastSyncedAt || new Date(remote.updated_at).getTime() > state.lastSyncedAt + 2000)){
+      syncInProgress = false; render();
+      openSyncConflictSheet(remote);
+      return;
+    }
+    const updatedAt = await pushCloudSave(state.syncCode, state);
+    state.lastSyncedAt = new Date(updatedAt).getTime();
+    saveState();
+    syncInProgress = false; render();
+    openSyncResultSheet("Synchronisiert", "Dein Spielstand ist jetzt aktuell in der Cloud.");
+  }catch(e){
+    syncInProgress = false; render();
+    openSyncResultSheet("Synchronisierung fehlgeschlagen", "Keine Verbindung zur Cloud möglich - prüfe deine Internetverbindung und versuch es erneut.");
+  }
+}
+
+async function createSyncCode(){
+  const code = generateSyncCode();
+  state.syncCode = code;
+  saveState(); render();
+  try{
+    const updatedAt = await pushCloudSave(code, state);
+    state.lastSyncedAt = new Date(updatedAt).getTime();
+    saveState(); render();
+    openSyncResultSheet("Sync-Code erzeugt", `Dein Code lautet ${code}. Trage ihn auf einem anderen Gerät unter „Code eingeben" ein, um denselben Spielstand dort zu laden.`);
+  }catch(e){
+    render();
+    openSyncResultSheet("Cloud nicht erreichbar", `Der Code ${code} wurde lokal gespeichert, aber noch nicht hochgeladen - „Jetzt synchronisieren" versucht es erneut, sobald wieder eine Verbindung besteht.`);
+  }
+}
+
+function openLinkSyncCodeSheet(){
+  openSheet(`
+    <h3>Sync-Code eingeben</h3>
+    <div class="loc-sub" style="margin-bottom:14px;">Verknüpft diesen Spielstand mit einem bereits bestehenden Cloud-Stand - der lokale Fortschritt hier wird dabei durch die Cloud-Version ersetzt.</div>
+    <div class="field">
+      <input id="inSyncCode" placeholder="z. B. AB3D9F7K2M" autocomplete="off" style="text-transform:uppercase; font-family:var(--font-mono); letter-spacing:.05em;" maxlength="10" />
+    </div>
+    <div class="sheet-footer">
+      <button class="btn btn-secondary btn-block" data-act="close-sheet">Abbrechen</button>
+      <button class="btn btn-primary btn-block" data-act="confirm-link-sync-code">Verknüpfen</button>
+    </div>
+  `);
+  setTimeout(()=>document.getElementById("inSyncCode")?.focus(), 50);
+}
+
+async function confirmLinkSyncCode(){
+  const input = document.getElementById("inSyncCode");
+  const code = (input?.value||"").trim().toUpperCase();
+  if(!code) return;
+  closeSheet();
+  try{
+    const remote = await pullCloudSave(code);
+    if(!remote){
+      openSyncResultSheet("Code nicht gefunden", `Zu ${code} existiert noch kein Cloud-Spielstand. Nutze stattdessen „Sync-Code erzeugen", wenn du diesen Spielstand erstmalig hochladen willst.`);
+      return;
+    }
+    const remoteData = normalizeState(remote.data);
+    remoteData.syncCode = code;
+    remoteData.lastSyncedAt = new Date(remote.updated_at).getTime();
+    state = remoteData;
+    saveState(); render();
+    openSyncResultSheet("Verknüpft", "Der Cloud-Spielstand wurde geladen.");
+  }catch(e){
+    openSyncResultSheet("Cloud nicht erreichbar", "Keine Verbindung möglich - versuch es später erneut.");
+  }
+}
 
 function bossPercent(id){ return state.bossBoosts[id] || 0; }
 function isBossDefeated(id){ return !!state.bossDefeated[id]; }
@@ -5101,6 +5271,12 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="log">
 
     <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.56</span><span class="tag tag-feat">Feature</span></div>
+      <h3>Cross-Save Cloud-Sync</h3>
+      <p>Ein Spielstand lässt sich jetzt geräteübergreifend abgleichen - unter „Spielstände" per „Sync-Code erzeugen" einen 10-stelligen Code erhalten und auf einem zweiten Gerät unter „Code eingeben" hinterlegen, um denselben Stand dort zu laden. Bewusst ohne Konto/Login, nur über den Code als gemeinsamen Schlüssel. „Jetzt synchronisieren" gleicht danach manuell ab; ändern sich lokaler und Cloud-Stand unabhängig voneinander, fragt die App nach, welche Version gelten soll, statt still zu überschreiben. Der Zugriff läuft ausschließlich über zwei serverseitige Funktionen mit striktem Zeilenschutz (RLS default-deny) - direkter Tabellenzugriff bleibt komplett gesperrt, sodass der öffentliche API-Schlüssel niemanden an fremde Spielstände lässt.</p>
+    </div>
+
+    <div class="entry">
       <div class="entry-head"><span class="ver">v1.8.55</span><span class="tag tag-feat">Feature</span></div>
       <h3>Team-Kacheln in Typfarben</h3>
       <p>Die Team-Kacheln färben sich jetzt dezent in den Typfarben des jeweiligen Pokémon ein - Pikachu wirkt gelb-elektrisch, Glurak zeigt einen Verlauf von Feuer-Orange zu Flug-Lila. Bei Dual-Typen bewusst zwei klar getrennte Farbzonen statt eines durchgehenden Verlaufs, der sonst in der Mitte zu einem matschigen Mischton verwaschen würde. Rand und Hintergrund nutzen dieselbe Typ-Farbtabelle wie die Typabdeckungs-Analyse (v1.8.54).</p>
@@ -5901,7 +6077,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.55.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.56.</footer>
 
 </div>`;
 
@@ -6039,7 +6215,8 @@ function renderSettings(){
     <div class="field" style="margin-bottom:0;">
       <input id="randomizerSeedInput" value="${escapeHtml(state.randomizerSeed||"")}" placeholder="z. B. Seed-Code oder Link zu den Einstellungen" autocomplete="off" />
     </div>
-  </div>`);
+  </div>
+  ${cloudSyncCardHtml()}`);
 
   html += settingsGroupHtml("duel-bosses", state.soloMode ? "Bosse" : "Duell & Bosse", `
   ${state.soloMode ? `<div class="card">
@@ -7267,6 +7444,40 @@ document.addEventListener("click", e=>{
       reader.readAsText(file);
     };
     inp.click();
+  }
+  else if(act==="create-sync-code") createSyncCode();
+  else if(act==="open-link-sync-code") openLinkSyncCodeSheet();
+  else if(act==="confirm-link-sync-code") confirmLinkSyncCode();
+  else if(act==="run-sync") runSyncFlow();
+  else if(act==="unlink-sync"){
+    openConfirmSheet("Sync trennen", "Die Verknüpfung mit der Cloud wird hier entfernt - der Cloud-Spielstand selbst bleibt bestehen und lässt sich später mit demselben Code wieder verknüpfen.", "Trennen", "confirm-unlink-sync");
+  }
+  else if(act==="confirm-unlink-sync"){
+    state.syncCode = null;
+    state.lastSyncedAt = null;
+    saveState(); closeSheet(); render();
+  }
+  else if(act==="use-cloud-save"){
+    if(!pendingSyncRemote){ closeSheet(); return; }
+    const remoteData = normalizeState(pendingSyncRemote.data);
+    remoteData.syncCode = state.syncCode;
+    remoteData.lastSyncedAt = new Date(pendingSyncRemote.updated_at).getTime();
+    state = remoteData;
+    pendingSyncRemote = null;
+    saveState(); closeSheet(); render();
+  }
+  else if(act==="use-local-save"){
+    closeSheet();
+    if(!pendingSyncRemote) return;
+    const code = state.syncCode;
+    pendingSyncRemote = null;
+    pushCloudSave(code, state).then(updatedAt=>{
+      state.lastSyncedAt = new Date(updatedAt).getTime();
+      saveState(); render();
+      openSyncResultSheet("Synchronisiert", "Deine lokale Version wurde in die Cloud übernommen.");
+    }).catch(()=>{
+      openSyncResultSheet("Synchronisierung fehlgeschlagen", "Keine Verbindung zur Cloud möglich - prüfe deine Internetverbindung und versuch es erneut.");
+    });
   }
   else if(act==="set-theme"){
     localStorage.setItem("hgss-theme-mode", id);
