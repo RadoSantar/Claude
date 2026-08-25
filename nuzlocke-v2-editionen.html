@@ -2735,7 +2735,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.8.57";
+const APP_VERSION = "1.8.58";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -3073,20 +3073,26 @@ let syncInProgress = false;
 let pendingSyncRemote = null;
 
 function cloudSyncCardHtml(){
+  const nameField = `<div class="field" style="margin-bottom:12px;">
+      <input id="usernameInput" maxlength="40" value="${escapeHtml(globalUsername)}" placeholder="z. B. dein Name" autocomplete="off" />
+    </div>`;
   if(!state.syncCode){
     return `<div class="card">
       <div class="loc-name">Cloud-Sync</div>
-      <div class="loc-sub" style="margin-bottom:10px;">Diesen Spielstand geräteübergreifend abgleichen - über einen Code statt Konto/Login.</div>
+      <div class="loc-sub" style="margin-bottom:10px;">Name für den Header - erscheint dort, solange dieser Spielstand keinen eigenen Titel hat. Für den Abgleich zwischen Geräten unten „Sync aktivieren" antippen; das andere Gerät braucht dann nur den dabei angezeigten Code.</div>
+      ${nameField}
       <div style="display:flex; gap:8px;">
-        <button class="btn btn-primary" data-act="create-sync-code">Sync-Code erzeugen</button>
-        <button class="btn btn-secondary" data-act="open-link-sync-code">Code eingeben</button>
+        <button class="btn btn-primary" data-act="create-sync-code">Sync aktivieren</button>
+        <button class="btn btn-secondary" data-act="open-link-sync-code">Code eines anderen Geräts eingeben</button>
       </div>
     </div>`;
   }
   return `<div class="card">
     <div class="loc-name">Cloud-Sync</div>
-    <div class="loc-sub" style="margin-bottom:10px;">Code: <strong style="font-family:var(--font-mono); letter-spacing:.05em;">${escapeHtml(state.syncCode)}</strong> · Zuletzt synchronisiert: ${formatRelativeTime(state.lastSyncedAt)}</div>
+    <div class="loc-sub" style="margin-bottom:10px;">Sync aktiv · Zuletzt synchronisiert: ${formatRelativeTime(state.lastSyncedAt)}</div>
+    ${nameField}
     <button class="btn btn-primary btn-block" style="margin-bottom:8px;" data-act="run-sync" ${syncInProgress?"disabled":""}>${syncInProgress?"Synchronisiert …":"Jetzt synchronisieren"}</button>
+    <div class="loc-sub" style="margin-bottom:8px;">Um ein weiteres Gerät zu verknüpfen, dort diesen Code eingeben: <strong style="font-family:var(--font-mono); letter-spacing:.05em;">${escapeHtml(state.syncCode)}</strong></div>
     <button class="btn btn-ghost" data-act="unlink-sync">Sync trennen</button>
   </div>`;
 }
@@ -3146,7 +3152,7 @@ async function createSyncCode(){
     const updatedAt = await pushCloudSave(code, state);
     state.lastSyncedAt = new Date(updatedAt).getTime();
     saveState(); render();
-    openSyncResultSheet("Sync-Code erzeugt", `Dein Code lautet ${code}. Trage ihn auf einem anderen Gerät unter „Code eingeben" ein, um denselben Spielstand dort zu laden.`);
+    openSyncResultSheet("Sync aktiviert", `Um ein weiteres Gerät zu verknüpfen: dort die App öffnen und unter „Code eines anderen Geräts eingeben" diesen Code eintragen: ${code}`);
   }catch(e){
     render();
     openSyncResultSheet("Cloud nicht erreichbar", `Der Code ${code} wurde lokal gespeichert, aber noch nicht hochgeladen - „Jetzt synchronisieren" versucht es erneut, sobald wieder eine Verbindung besteht.`);
@@ -3155,8 +3161,8 @@ async function createSyncCode(){
 
 function openLinkSyncCodeSheet(){
   openSheet(`
-    <h3>Sync-Code eingeben</h3>
-    <div class="loc-sub" style="margin-bottom:14px;">Verknüpft diesen Spielstand mit einem bereits bestehenden Cloud-Stand - der lokale Fortschritt hier wird dabei durch die Cloud-Version ersetzt.</div>
+    <h3>Code eines anderen Geräts eingeben</h3>
+    <div class="loc-sub" style="margin-bottom:14px;">Verknüpft diesen Spielstand mit einem bereits bestehenden Cloud-Stand - der lokale Fortschritt hier wird dabei durch die Cloud-Version ersetzt. Der Name im Header bleibt davon unberührt, er gilt nur lokal auf diesem Gerät.</div>
     <div class="field">
       <input id="inSyncCode" placeholder="z. B. AB3D9F7K2M" autocomplete="off" style="text-transform:uppercase; font-family:var(--font-mono); letter-spacing:.05em;" maxlength="10" />
     </div>
@@ -3176,7 +3182,7 @@ async function confirmLinkSyncCode(){
   try{
     const remote = await pullCloudSave(code);
     if(!remote){
-      openSyncResultSheet("Code nicht gefunden", `Zu ${code} existiert noch kein Cloud-Spielstand. Nutze stattdessen „Sync-Code erzeugen", wenn du diesen Spielstand erstmalig hochladen willst.`);
+      openSyncResultSheet("Code nicht gefunden", `Zu ${code} existiert noch kein Cloud-Spielstand. Nutze stattdessen „Sync aktivieren", wenn du diesen Spielstand erstmalig hochladen willst.`);
       return;
     }
     const remoteData = normalizeState(remote.data);
@@ -5289,6 +5295,12 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="log">
 
     <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.58</span><span class="tag tag-feat">Feature</span></div>
+      <h3>Anzeigename in Cloud-Sync integriert</h3>
+      <p>Das Namensfeld aus v1.8.57 sitzt jetzt direkt in der Cloud-Sync-Karte statt separat bei „Mehrere Runs" - Name und Geräte-Abgleich gehören inhaltlich zusammen. Die Buttons heißen jetzt „Sync aktivieren" und „Code eines anderen Geräts eingeben" statt „Sync-Code erzeugen"/„Code eingeben", der zum Verknüpfen nötige Code bleibt dabei sichtbar (auch nachträglich in der Karte, nicht nur einmalig im Erfolgs-Sheet). Bewusst weiterhin ein separater Code statt des Namens selbst als Sync-Schlüssel: ein frei wählbarer Name wäre erratbar bzw. es könnten zwei Personen zufällig denselben wählen und sich so gegenseitig den Spielstand überschreiben - der Name bleibt rein lokale Kosmetik, der Code bleibt das eigentliche, unerratbare Sync-Geheimnis im Hintergrund.</p>
+    </div>
+
+    <div class="entry">
       <div class="entry-head"><span class="ver">v1.8.57</span><span class="tag tag-feat">Feature</span></div>
       <h3>Globaler Anzeigename im Header</h3>
       <p>Neues Feld „Anzeigename" unter „Spielstände": einmal eingetragen, ersetzt er geräteweit „Nuzlocke" im Header-Titel für jeden Spielstand, der selbst noch keinen eigenen Titel gesetzt hat. Der Header-Titel bleibt weiterhin direkt antippbar und lässt sich pro Spielstand individuell überschreiben - der globale Name ist nur der Standardwert, kein Zwang. Bisher wurde bei jedem neuen Spielstand automatisch der Literal-Text „Nuzlocke" als Titel gespeichert; das lief dem neuen Fallback in die Quere und wurde entsprechend korrigiert.</p>
@@ -6101,7 +6113,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.57.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.58.</footer>
 
 </div>`;
 
@@ -6224,13 +6236,6 @@ function renderSettings(){
   let html = `<div class="region-header">Fortschritt</div>` + statsCardHtml() + hallOfFameCardHtml();
 
   html += settingsGroupHtml("saves", "Spielstände", `
-  <div class="card">
-    <div class="loc-name">Anzeigename</div>
-    <div class="loc-sub" style="margin-bottom:10px;">Gilt für alle Spielstände und erscheint im Header, solange ein Spielstand keinen eigenen Titel gesetzt hat (den Header-Titel direkt antippen, um ihn nur für diesen einen Spielstand zu überschreiben).</div>
-    <div class="field" style="margin-bottom:0;">
-      <input id="usernameInput" maxlength="40" value="${escapeHtml(globalUsername)}" placeholder="z. B. dein Name" autocomplete="off" />
-    </div>
-  </div>
   <div class="card">
     <div class="loc-name">Mehrere Runs</div>
     <div class="loc-sub" style="margin-bottom:10px;">Zwischen Spielständen wechseln oder einen neuen anlegen, ohne den aktuellen zu verlieren. Zuletzt exportiert: ${formatRelativeTime(state.lastExportAt)}</div>
