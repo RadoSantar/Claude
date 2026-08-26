@@ -2735,7 +2735,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.8.58";
+const APP_VERSION = "1.8.59";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -3072,6 +3072,17 @@ async function pushCloudSave(code, dataObj){
 let syncInProgress = false;
 let pendingSyncRemote = null;
 
+/* Zwei separate Buttons (statt wie beim Run-Rückblick nur einem umgeschalteten) - hier explizit
+   gewünscht: "Kopieren" geht immer (Zwischenablage-API ist praktisch überall verfügbar), "Teilen"
+   nur wenn navigator.share existiert (progressive enhancement, gleiches Muster wie sonst im Code). */
+function syncCodeActionsHtml(code){
+  const canShare = typeof navigator!=="undefined" && !!navigator.share;
+  return `<div style="display:flex; gap:8px; margin-bottom:8px;">
+    <button class="btn btn-secondary" data-act="copy-sync-code">Kopieren</button>
+    ${canShare ? `<button class="btn btn-secondary" data-act="share-sync-code">Teilen</button>` : ""}
+  </div>`;
+}
+
 function cloudSyncCardHtml(){
   const nameField = `<div class="field" style="margin-bottom:12px;">
       <input id="usernameInput" maxlength="40" value="${escapeHtml(globalUsername)}" placeholder="z. B. dein Name" autocomplete="off" />
@@ -3093,6 +3104,7 @@ function cloudSyncCardHtml(){
     ${nameField}
     <button class="btn btn-primary btn-block" style="margin-bottom:8px;" data-act="run-sync" ${syncInProgress?"disabled":""}>${syncInProgress?"Synchronisiert …":"Jetzt synchronisieren"}</button>
     <div class="loc-sub" style="margin-bottom:8px;">Um ein weiteres Gerät zu verknüpfen, dort diesen Code eingeben: <strong style="font-family:var(--font-mono); letter-spacing:.05em;">${escapeHtml(state.syncCode)}</strong></div>
+    ${syncCodeActionsHtml(state.syncCode)}
     <button class="btn btn-ghost" data-act="unlink-sync">Sync trennen</button>
   </div>`;
 }
@@ -3105,11 +3117,35 @@ function openSyncResultSheet(title, text){
   `);
 }
 
+function openSyncActivatedSheet(code){
+  openSheet(`
+    <h3>Sync aktiviert</h3>
+    <div class="loc-sub" style="margin-bottom:14px;">Um ein weiteres Gerät zu verknüpfen: dort die App öffnen und unter „Code eines anderen Geräts eingeben" diesen Code eintragen:</div>
+    <div class="loc-sub" style="font-family:var(--font-mono); font-size:1.3rem; letter-spacing:.08em; text-align:center; margin-bottom:14px;">${escapeHtml(code)}</div>
+    ${syncCodeActionsHtml(code)}
+    <div class="sheet-footer"><button class="btn btn-primary btn-block" data-act="close-sheet">OK</button></div>
+  `);
+}
+
+/* Grobe, editionsunabhängige Kennzahlen für den Konflikt-Vergleich - bewusst NICHT über die
+   bestehenden aliveCount()/deadCount()/activeBosses()-Helfer, die alle fest auf den globalen
+   state zugreifen: hier muss dieselbe Zählung auch auf dem rohen Cloud-Datensatz laufen, ohne
+   den globalen state dafür umzuschalten. */
+function progressSummary(s){
+  const locs = Array.isArray(s.locations) ? s.locations : [];
+  const caught = locs.filter(l=>l.mon && !l.mon.dead).length;
+  const dead = locs.filter(l=>l.mon && l.mon.dead).length;
+  const bossesDefeated = Object.keys(s.bossDefeated||{}).length;
+  return `${caught} gefangen · ${dead} gestorben · ${bossesDefeated} Bosse besiegt`;
+}
+
 function openSyncConflictSheet(remote){
   pendingSyncRemote = remote;
   openSheet(`
     <h3>Unterschiedliche Stände</h3>
-    <div class="loc-sub" style="margin-bottom:14px;">Die Cloud-Version wurde zuletzt ${escapeHtml(formatRelativeTime(new Date(remote.updated_at).getTime()))} aktualisiert - vermutlich von einem anderen Gerät. Welche Version soll gelten?</div>
+    <div class="loc-sub" style="margin-bottom:10px;">Die Cloud-Version wurde zuletzt ${escapeHtml(formatRelativeTime(new Date(remote.updated_at).getTime()))} aktualisiert - vermutlich von einem anderen Gerät. Welche Version soll gelten?</div>
+    <div class="loc-sub" style="margin-bottom:4px;"><strong>Cloud:</strong> ${escapeHtml(progressSummary(remote.data||{}))}</div>
+    <div class="loc-sub" style="margin-bottom:14px;"><strong>Lokal:</strong> ${escapeHtml(progressSummary(state))}</div>
     <div class="sheet-footer" style="flex-direction:column; gap:10px;">
       <button class="btn btn-primary btn-block" data-act="use-cloud-save">Cloud-Version übernehmen</button>
       <button class="btn btn-secondary btn-block" data-act="use-local-save">Lokale Version behalten (Cloud überschreiben)</button>
@@ -3152,19 +3188,19 @@ async function createSyncCode(){
     const updatedAt = await pushCloudSave(code, state);
     state.lastSyncedAt = new Date(updatedAt).getTime();
     saveState(); render();
-    openSyncResultSheet("Sync aktiviert", `Um ein weiteres Gerät zu verknüpfen: dort die App öffnen und unter „Code eines anderen Geräts eingeben" diesen Code eintragen: ${code}`);
+    openSyncActivatedSheet(code);
   }catch(e){
     render();
     openSyncResultSheet("Cloud nicht erreichbar", `Der Code ${code} wurde lokal gespeichert, aber noch nicht hochgeladen - „Jetzt synchronisieren" versucht es erneut, sobald wieder eine Verbindung besteht.`);
   }
 }
 
-function openLinkSyncCodeSheet(){
+function openLinkSyncCodeSheet(prefillCode){
   openSheet(`
     <h3>Code eines anderen Geräts eingeben</h3>
     <div class="loc-sub" style="margin-bottom:14px;">Verknüpft diesen Spielstand mit einem bereits bestehenden Cloud-Stand - der lokale Fortschritt hier wird dabei durch die Cloud-Version ersetzt. Der Name im Header bleibt davon unberührt, er gilt nur lokal auf diesem Gerät.</div>
     <div class="field">
-      <input id="inSyncCode" placeholder="z. B. AB3D9F7K2M" autocomplete="off" style="text-transform:uppercase; font-family:var(--font-mono); letter-spacing:.05em;" maxlength="10" />
+      <input id="inSyncCode" value="${escapeHtml(prefillCode||"")}" placeholder="z. B. AB3D9F7K2M" autocomplete="off" style="text-transform:uppercase; font-family:var(--font-mono); letter-spacing:.05em;" maxlength="10" />
     </div>
     <div class="sheet-footer">
       <button class="btn btn-secondary btn-block" data-act="close-sheet">Abbrechen</button>
@@ -3194,6 +3230,43 @@ async function confirmLinkSyncCode(){
   }catch(e){
     openSyncResultSheet("Cloud nicht erreichbar", "Keine Verbindung möglich - versuch es später erneut.");
   }
+}
+
+/* Teilen-Link, der beim Öffnen auf einem anderen Gerät (Auswertung ganz am Dateiende) das
+   Code-Eingabefeld automatisch vorausfüllt - verknüpft wird trotzdem erst nach Bestätigung im
+   Sheet, nie automatisch beim bloßen Öffnen des Links. */
+function syncShareUrl(code){
+  return location.href.split("#")[0] + "#sync=" + code;
+}
+
+/* Eigene Funktion statt nur inline im Klick-Handler, da sie zweifach gebraucht wird: direkt über
+   "Kopieren" und als Fallback, falls das native Teilen-Menü (navigator.share) fehlschlägt. */
+function copySyncCode(code){
+  const done = ()=>{
+    openSheet(`
+      <h3>Kopiert</h3>
+      <div class="loc-sub" style="margin-bottom:14px;">Der Sync-Code liegt in der Zwischenablage.</div>
+      <div class="sheet-footer"><button class="btn btn-primary btn-block" data-act="close-sheet">OK</button></div>
+    `);
+  };
+  const failed = ()=>{
+    openSheet(`
+      <h3>Kopieren nicht möglich</h3>
+      <div class="loc-sub" style="margin-bottom:14px;">Der Browser hat den Zugriff auf die Zwischenablage verweigert. Code zum manuellen Abtippen:</div>
+      <div class="loc-sub" style="font-family:var(--font-mono); font-size:1.3rem; letter-spacing:.08em; text-align:center;">${escapeHtml(code)}</div>
+      <div class="sheet-footer" style="margin-top:14px;"><button class="btn btn-primary btn-block" data-act="close-sheet">Schließen</button></div>
+    `);
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(code).then(done, failed);
+  else failed();
+}
+
+function shareSyncCode(code){
+  if(!navigator.share){ copySyncCode(code); return; }
+  navigator.share({ title: "Nuzlocke Cloud-Sync", text: `Sync-Code für meinen Nuzlocke-Spielstand: ${code}`, url: syncShareUrl(code) }).catch(err=>{
+    if(err && err.name === "AbortError") return;
+    copySyncCode(code);
+  });
 }
 
 function bossPercent(id){ return state.bossBoosts[id] || 0; }
@@ -5295,6 +5368,12 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="log">
 
     <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.59</span><span class="tag tag-feat">Feature</span></div>
+      <h3>Cloud-Sync: Kopieren, Teilen, Verknüpfungslink, Konflikt-Vergleich</h3>
+      <p>Der Sync-Code muss nicht mehr abgetippt werden: „Kopieren" legt ihn in die Zwischenablage, „Teilen" öffnet (wo verfügbar) das native Teilen-Menü des Geräts. Geteilt wird dabei auch ein Link, der beim Öffnen auf einem anderen Gerät das Code-Feld automatisch vorausfüllt - verknüpft wird trotzdem erst nach expliziter Bestätigung, nie automatisch beim bloßen Öffnen des Links. Der Konflikt-Dialog bei unterschiedlichen Ständen zeigt jetzt zusätzlich zum Zeitstempel eine grobe Kennzahl je Version (gefangen/gestorben/Bosse besiegt), um die Entscheidung zu erleichtern.</p>
+    </div>
+
+    <div class="entry">
       <div class="entry-head"><span class="ver">v1.8.58</span><span class="tag tag-feat">Feature</span></div>
       <h3>Anzeigename in Cloud-Sync integriert</h3>
       <p>Das Namensfeld aus v1.8.57 sitzt jetzt direkt in der Cloud-Sync-Karte statt separat bei „Mehrere Runs" - Name und Geräte-Abgleich gehören inhaltlich zusammen. Die Buttons heißen jetzt „Sync aktivieren" und „Code eines anderen Geräts eingeben" statt „Sync-Code erzeugen"/„Code eingeben", der zum Verknüpfen nötige Code bleibt dabei sichtbar (auch nachträglich in der Karte, nicht nur einmalig im Erfolgs-Sheet). Bewusst weiterhin ein separater Code statt des Namens selbst als Sync-Schlüssel: ein frei wählbarer Name wäre erratbar bzw. es könnten zwei Personen zufällig denselben wählen und sich so gegenseitig den Spielstand überschreiben - der Name bleibt rein lokale Kosmetik, der Code bleibt das eigentliche, unerratbare Sync-Geheimnis im Hintergrund.</p>
@@ -6113,7 +6192,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.58.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.59.</footer>
 
 </div>`;
 
@@ -7485,6 +7564,8 @@ document.addEventListener("click", e=>{
   else if(act==="open-link-sync-code") openLinkSyncCodeSheet();
   else if(act==="confirm-link-sync-code") confirmLinkSyncCode();
   else if(act==="run-sync") runSyncFlow();
+  else if(act==="copy-sync-code"){ if(state.syncCode) copySyncCode(state.syncCode); }
+  else if(act==="share-sync-code"){ if(state.syncCode) shareSyncCode(state.syncCode); }
   else if(act==="unlink-sync"){
     openConfirmSheet("Sync trennen", "Die Verknüpfung mit der Cloud wird hier entfernt - der Cloud-Spielstand selbst bleibt bestehen und lässt sich später mit demselben Code wieder verknüpfen.", "Trennen", "confirm-unlink-sync");
   }
@@ -7752,6 +7833,19 @@ triggerTabEnterAnim();
 checkAchievements();
 try{ if(!localStorage.getItem("nuzlocke-onboarding-seen")) openOnboardingTour(); }catch(e){}
 Object.keys(BOSS_SPRITES).forEach(key=>freezeSpriteSrc(key, BOSS_SPRITES[key]));
+
+/* Über einen geteilten Sync-Link geöffnet (#sync=CODE, siehe syncShareUrl) - füllt das Code-Feld
+   nur vor, verknüpft aber nie automatisch beim bloßen Öffnen des Links, das bleibt eine bewusste
+   Bestätigung im Sheet. Hash wird sofort entfernt, damit ein Neuladen der Seite nicht erneut
+   auslöst. Greift nicht, wenn dieser Spielstand schon verknüpft ist. */
+try{
+  const syncLinkMatch = location.hash.match(/sync=([A-Z0-9]{6,12})/i);
+  if(syncLinkMatch && !state.syncCode){
+    const incomingSyncCode = syncLinkMatch[1].toUpperCase();
+    history.replaceState(null, "", location.pathname + location.search);
+    openLinkSyncCodeSheet(incomingSyncCode);
+  }
+}catch(e){}
 </script>
 
 <script>
