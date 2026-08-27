@@ -2452,18 +2452,32 @@ function spriteFor(speciesName){
   return dex ? SPRITES[dex] : null;
 }
 
+/* Rückwirkende Fee-Typisierung ab Generation 6 (siehe Kommentar bei SPECIES_TYPES): dieselbe Art
+   hat je nach Edition unterschiedliche Typen - in Gen1-5-Editionen bleibt SPECIES_TYPES exakt wie
+   damals im Spiel, ab Gen6-Editionen überschreibt diese schlanke, nur die betroffenen ~20 Arten
+   enthaltende Map (Dex-Nr. -> neuer Typ-String) gezielt den Basiswert, statt die 649er-Tabelle zu
+   duplizieren. Quelle/Auswahl gegen Bulbapedia "Fairy (type)"-Retcon-Liste geprüft. */
+const POST_FAIRY_TYPES = {
+  35:"Fee", 36:"Fee", 39:"Normal/Fee", 40:"Normal/Fee", 122:"Psycho/Fee",
+  174:"Normal/Fee", 175:"Fee", 176:"Fee/Flug", 183:"Wasser/Fee", 184:"Wasser/Fee",
+  209:"Fee", 210:"Fee", 280:"Psycho/Fee", 281:"Psycho/Fee", 282:"Psycho/Fee",
+  298:"Normal/Fee", 303:"Stahl/Fee", 439:"Psycho/Fee", 468:"Fee/Flug",
+  546:"Pflanze/Fee", 547:"Pflanze/Fee"
+};
+
 function typesFor(speciesName){
   if(!speciesName) return [];
   const dex = SPECIES_LOOKUP.get(String(speciesName).trim().toLowerCase());
   if(!dex || !SPECIES_TYPES[dex-1]) return [];
-  return SPECIES_TYPES[dex-1].split("/");
+  const raw = (currentGame().generation>=6 && POST_FAIRY_TYPES[dex]) ? POST_FAIRY_TYPES[dex] : SPECIES_TYPES[dex-1];
+  return raw.split("/");
 }
 
 /* Typ-Effektivität für die Generationen 1-5 (17 Typen, kein Fee) - je Verteidiger-Typ, welche
    Angriffstypen 2x/0,5x/0x treffen. Stahl behält hier bewusst seine damalige Resistenz gegen
    Geist UND Unlicht (siehe SPECIES_TYPES-Kommentar), die erst mit Einführung von Fee in
    Generation 6 entfernt wurde - für die hier abgedeckten Editionen ist das der korrekte Stand. */
-const TYPE_DEFENSE = {
+const TYPE_DEFENSE_PRE6 = {
   Normal:   { weak:["Kampf"], resist:[], immune:["Geist"] },
   Feuer:    { weak:["Wasser","Boden","Gestein"], resist:["Feuer","Pflanze","Eis","Käfer","Stahl"], immune:[] },
   Wasser:   { weak:["Elektro","Pflanze"], resist:["Feuer","Wasser","Eis","Stahl"], immune:[] },
@@ -2482,12 +2496,27 @@ const TYPE_DEFENSE = {
   Unlicht:  { weak:["Kampf","Käfer"], resist:["Geist","Unlicht"], immune:["Psycho"] },
   Stahl:    { weak:["Feuer","Kampf","Boden"], resist:["Normal","Pflanze","Eis","Flug","Psycho","Käfer","Gestein","Drache","Stahl","Geist","Unlicht"], immune:["Gift"] }
 };
-const ALL_TYPES = Object.keys(TYPE_DEFENSE);
+/* Typ-Effektivität ab Generation 6: identisch zu TYPE_DEFENSE_PRE6, plus der neue Fee-Typ und die
+   damit verbundenen Änderungen an bestehenden Typen (Kampf/Drache/Unlicht neu schwach gegen Fee,
+   Stahl neu resistent gegen Fee, Stahl verliert dafür seine alte Resistenz gegen Geist/Unlicht). */
+const TYPE_DEFENSE_POST6 = {
+  ...TYPE_DEFENSE_PRE6,
+  Kampf:   { weak:["Flug","Psycho","Fee"], resist:["Käfer","Gestein","Unlicht"], immune:[] },
+  Gift:    { weak:["Boden","Psycho"], resist:["Pflanze","Kampf","Gift","Käfer","Fee"], immune:[] },
+  Feuer:   { weak:["Wasser","Boden","Gestein"], resist:["Feuer","Pflanze","Eis","Käfer","Stahl","Fee"], immune:[] },
+  Drache:  { weak:["Eis","Drache","Fee"], resist:["Feuer","Wasser","Elektro","Pflanze"], immune:[] },
+  Unlicht: { weak:["Kampf","Käfer","Fee"], resist:["Geist","Unlicht"], immune:["Psycho"] },
+  Stahl:   { weak:["Feuer","Kampf","Boden"], resist:["Normal","Pflanze","Eis","Flug","Psycho","Käfer","Gestein","Drache","Stahl","Fee"], immune:["Gift"] },
+  Fee:     { weak:["Gift","Stahl"], resist:["Kampf","Käfer","Unlicht"], immune:["Drache"] }
+};
+function currentTypeDefense(){ return currentGame().generation>=6 ? TYPE_DEFENSE_POST6 : TYPE_DEFENSE_PRE6; }
+function currentAllTypes(){ return Object.keys(currentTypeDefense()); }
+const ALL_TYPES = Object.keys(TYPE_DEFENSE_PRE6);
 const TYPE_COLORS = {
   Normal:"#A8A878", Feuer:"#F08030", Wasser:"#6890F0", Elektro:"#F8D030", Pflanze:"#78C850",
   Eis:"#98D8D8", Kampf:"#C03028", Gift:"#A040A0", Boden:"#E0C068", Flug:"#A890F0",
   Psycho:"#F85888", Käfer:"#A8B820", Gestein:"#B8A038", Geist:"#705898", Drache:"#7038F8",
-  Unlicht:"#705848", Stahl:"#B8B8D0"
+  Unlicht:"#705848", Stahl:"#B8B8D0", Fee:"#EE99AC"
 };
 
 function hexToRgba(hex, alpha){
@@ -2513,9 +2542,10 @@ function typeGradientStyle(types){
 }
 
 function typeMultiplier(attackType, defendTypes){
+  const defense = currentTypeDefense();
   let mult = 1;
   defendTypes.forEach(dt=>{
-    const info = TYPE_DEFENSE[dt];
+    const info = defense[dt];
     if(!info) return;
     if(info.immune.includes(attackType)) mult *= 0;
     else if(info.weak.includes(attackType)) mult *= 2;
@@ -2537,18 +2567,20 @@ function typeChipHtml(type, muted){
    Backlog so vermerkte Vereinfachung statt eines vollen Moveset-Trackers. Defensiv ist die
    Berechnung exakt (Dual-Typ-Multiplikation über TYPE_DEFENSE). */
 function teamTypeAnalysis(){
+  const allTypes = currentAllTypes();
+  const defense = currentTypeDefense();
   const members = orderedTeamLocs().map(l=>({ label: l.mon.nickname||l.mon.species, species: l.mon.species, types: typesFor(l.mon.species) }));
   const known = members.filter(m=>m.types.length);
   const covered = new Set();
   known.forEach(m=>{
     m.types.forEach(attackType=>{
-      ALL_TYPES.forEach(defendType=>{
-        if(TYPE_DEFENSE[defendType].weak.includes(attackType)) covered.add(defendType);
+      allTypes.forEach(defendType=>{
+        if(defense[defendType].weak.includes(attackType)) covered.add(defendType);
       });
     });
   });
-  const gaps = ALL_TYPES.filter(t=>!covered.has(t));
-  const weaknesses = ALL_TYPES.map(attackType=>{
+  const gaps = allTypes.filter(t=>!covered.has(t));
+  const weaknesses = allTypes.map(attackType=>{
     const weakMembers = known.filter(m=>typeMultiplier(attackType, m.types) >= 2);
     return { type: attackType, count: weakMembers.length, names: weakMembers.map(m=>m.label) };
   }).filter(w=>w.count>=2).sort((a,b)=>b.count-a.count);
@@ -2566,7 +2598,7 @@ function openTypeCoverageSheet(){
     return;
   }
   const unknownCount = a.members.length - a.known.length;
-  const coverageGrid = ALL_TYPES.map(t=>typeChipHtml(t, !a.covered.has(t))).join(" ");
+  const coverageGrid = currentAllTypes().map(t=>typeChipHtml(t, !a.covered.has(t))).join(" ");
   const weaknessRows = a.weaknesses.length
     ? a.weaknesses.map(w=>`<div class="type-weak-row">${typeChipHtml(w.type, false)} <span class="loc-sub">${w.count} schwach - ${escapeHtml(w.names.join(", "))}</span></div>`).join("")
     : `<div class="loc-sub">Keine geteilten Schwächen im Team.</div>`;
@@ -2808,7 +2840,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.1";
+const APP_VERSION = "1.9.2";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -5837,6 +5869,12 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="log">
 
     <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.2</span><span class="tag tag-note">Vorbereitung</span></div>
+      <h3>Generationsabhängige Typen als Basis für Generation 6+</h3>
+      <p>Erster Baustein, um die App künftig auf Kalos und weitere Editionen ab Generation 6 zu erweitern: der Fee-Typ (eingeführt in Generation 6) wird jetzt korrekt nur für Editionen ab Generation 6 angewendet - die betroffenen ~20 Arten (u.&nbsp;a. Fluffeluff, Pixi, Marill, Togepi, Ralts/Kirlia/Guardevoir, Flunkifer) behalten in allen 14 bestehenden Gen1-5-Editionen exakt ihre damaligen, historisch korrekten Typen. Auch die Typ-Effektivitätstabelle (u.&nbsp;a. für die Typabdeckungs-Analyse) ist jetzt generationsabhängig, inklusive der alten Stahl-Resistenz gegen Geist/Unlicht, die erst mit Fee entfernt wurde. Rein intern, ohne sichtbare Änderung für bestehende Runs.</p>
+    </div>
+
+    <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.1</span><span class="tag tag-feat">Feature</span></div>
       <h3>17 neue Typ-Sammel-Erfolge</h3>
       <p>Ein Erfolg pro Typ (Generation 1-5, kein Fee): 10 gefangene Pokémon eines Typs schalten einen thematischen Erfolg samt Titel frei - u.&nbsp;a. „Grounded" / „Landratte" (Boden), „Über den Wolken" / „Flieger-Ass" (Flug), „Schwimmer" / „Seepferdchen" (Wasser), „Fels in der Brandung" / „Geröllheimer" (Gestein), „Nachtschicht" / „Geisterjäger" (Geist) und zwölf weitere. Zählt die komplette Fang-Historie des Runs (unabhängig davon, ob das Pokémon noch lebt, im Team, in der Box oder abgegeben ist), Dual-Typen zählen für beide Typen mit - dieselbe Zählweise wie beim bestehenden Regenbogen-Team-Erfolg.</p>
@@ -6733,7 +6771,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.1.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.2.</footer>
 
 </div>`;
 
