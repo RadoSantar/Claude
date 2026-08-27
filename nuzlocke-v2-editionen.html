@@ -2775,7 +2775,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.8.65";
+const APP_VERSION = "1.8.66";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -3338,18 +3338,26 @@ function duoCompareCardHtml(){
     <div class="loc-sub" style="margin-bottom:10px;">Verglichen mit Code <strong style="font-family:var(--font-mono); letter-spacing:.05em;">${escapeHtml(state.duoCode)}</strong></div>
     <button class="btn btn-primary btn-block" style="margin-bottom:8px;" data-act="open-duo-compare" ${duoCompareLoading?"disabled":""}>${duoCompareLoading?"Lädt …":"Vergleich anzeigen"}</button>
     <button class="btn ${state.soulLinkMode?"btn-primary":"btn-secondary"} btn-block" style="margin-bottom:8px;" data-act="toggle-soul-link">Soul-Link-Modus: ${state.soulLinkMode?"Aktiviert":"Deaktiviert"}</button>
-    <div class="loc-sub" style="margin-bottom:8px;">Koppelt eure Encounter 1:1 pro Standort (braucht dieselbe Edition wie dein Partner): stirbt dein Pokémon irgendwo, bekommst du einen Hinweis, falls das Partner-Pokémon an derselben Stelle noch lebt - und umgekehrt in der Vergleichsansicht. Rein informativ, ihr müsst euch jeweils selbst um euer eigenes Team kümmern.</div>
+    <div class="loc-sub" style="margin-bottom:8px;">Koppelt eure Encounter 1:1 pro Standort - stirbt dein Pokémon irgendwo, bekommst du einen Hinweis, falls das Partner-Pokémon an derselben Stelle noch lebt, und umgekehrt in der Vergleichsansicht. Funktioniert automatisch überall dort, wo eure Editionen dieselben Standortnamen verwenden, z.&nbsp;B. bei Partnerversionen wie Schwarz/Weiß, Rubin/Saphir, Gold/Silber+Kristall oder Diamant/Perl+Platin - bei sehr unterschiedlichen Editionen (z.&nbsp;B. Kanto vs. Johto) gibt es keine Übereinstimmung. Rein informativ, ihr müsst euch jeweils selbst um euer eigenes Team kümmern.</div>
     <button class="btn btn-ghost" data-act="unlink-duo">Vergleich trennen</button>
   </div>`;
 }
 
 /* Liefert die Standorte, an denen genau eine Seite (ich oder Partner) das dortige Pokémon verloren
    hat, die andere aber noch nicht - also der klassische Soul-Link-Fall "eine Seite muss noch
-   nachziehen". null statt eines (ggf. leeren) Arrays signalisiert "kein Abgleich möglich", weil die
-   Editionen nicht übereinstimmen (unterschiedliche Standort-IDs, kein sinnvolles 1:1 mehr). */
+   nachziehen". Standort-IDs werden rein aus dem Text "Region-Name" gebildet (siehe
+   parseLocationEntry) - unabhängig von der Editions-ID selbst matchen sie deshalb automatisch
+   überall dort, wo zwei Editionen dieselben Standortnamen verwenden (z.B. Partnerversionen wie
+   Schwarz/Weiß oder Rubin/Saphir, die intern denselben Standort-Datensatz nutzen). Ein starrer
+   Editions-Gleichheits-Check wäre daher zu streng und würde genau den klassischen Soul-Link-Fall
+   (zwei verschiedene, aber routenidentische Partnerversionen) blockieren. null statt eines (ggf.
+   leeren) Arrays signalisiert "keine gemeinsamen Standorte gefunden", weil die Editionen strukturell
+   zu unterschiedlich sind (z.B. Kanto vs. Johto). */
 function soulLinkMismatches(partnerSave){
-  if(!partnerSave || partnerSave.edition !== state.edition) return null;
+  if(!partnerSave) return null;
   const partnerLocs = new Map((partnerSave.locations||[]).map(l=>[l.id, l]));
+  const anyShared = state.locations.some(l=>partnerLocs.has(l.id));
+  if(!anyShared) return null;
   const mismatches = [];
   state.locations.forEach(loc=>{
     if(!loc.mon) return;
@@ -3366,7 +3374,7 @@ function soulLinkSectionHtml(partnerSave){
   const mismatches = soulLinkMismatches(partnerSave);
   if(mismatches === null){
     const partnerEdition = GAMES[partnerSave.edition] ? GAMES[partnerSave.edition].shortLabel : partnerSave.edition;
-    return `<div class="loc-sub" style="margin-top:14px;">Soul-Link: dein Partner spielt eine andere Edition (${escapeHtml(partnerEdition)}) - kein Standort-Abgleich möglich.</div>`;
+    return `<div class="loc-sub" style="margin-top:14px;">Soul-Link: keine gemeinsamen Standorte zwischen deiner Edition (${escapeHtml(currentGame().shortLabel)}) und der deines Partners (${escapeHtml(partnerEdition)}) gefunden.</div>`;
   }
   if(!mismatches.length) return `<div class="loc-sub" style="margin-top:14px;">Soul-Link: keine offenen Diskrepanzen.</div>`;
   return `<div class="loc-name" style="margin-top:14px;">Soul-Link-Hinweise (${mismatches.length})</div>
@@ -3416,7 +3424,6 @@ async function checkSoulLinkAfterDeath(deadLocIds){
     const remote = await pullCloudSave(state.duoCode);
     if(!remote) return;
     const partnerSave = normalizeState(remote.data);
-    if(partnerSave.edition !== state.edition) return;
     const partnerLocs = new Map((partnerSave.locations||[]).map(l=>[l.id, l]));
     const hints = [];
     deadLocIds.forEach(locId=>{
@@ -5582,6 +5589,12 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="log">
 
     <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.66</span><span class="tag tag-fix">Korrektur</span></div>
+      <h3>Soul-Link funktioniert jetzt auch zwischen Partnerversionen</h3>
+      <p>Der Soul-Link-Modus (v1.8.65) verlangte bisher fälschlich exakt dieselbe Edition auf beiden Seiten - dabei sind Standort-IDs rein textbasiert (Region+Name) und damit unabhängig von der Editions-ID: Partnerversionen wie Schwarz/Weiß, Rubin/Saphir, Gold/Silber+Kristall oder Rot/Blau+Gelb teilen sich intern ohnehin denselben Standort-Datensatz (Diamant/Perl+Platin zu 81 von 83 Standorten). Genau das ist der klassische Soul-Link-Fall - zwei verschiedene, aber routenidentische Versionen gemeinsam spielen. Der Abgleich matcht jetzt einfach über gemeinsame Standort-IDs, unabhängig von der Editions-ID; nur bei wirklich unterschiedlichen Editionen (z.&nbsp;B. Kanto vs. Johto) gibt es weiterhin einen klaren Hinweis statt eines kaputten Vergleichs.</p>
+    </div>
+
+    <div class="entry">
       <div class="entry-head"><span class="ver">v1.8.65</span><span class="tag tag-feat">Feature</span></div>
       <h3>Soul-Link-Modus</h3>
       <p>Neuer Schalter „Soul-Link-Modus" in der Duo-Vergleich-Karte: koppelt eure Encounter 1:1 pro Standort (setzt dieselbe Edition wie der Partner voraus, da die Kopplung über die Standort-ID läuft). Stirbt dein Pokémon irgendwo, kommt ein Hinweis, falls das Partner-Pokémon an derselben Stelle laut letztem Abgleich noch lebt - und umgekehrt taucht der Fall als Diskrepanz in der Duo-Vergleichsansicht auf. Bewusst rein informativ: aus denselben Sicherheitsgründen wie beim Duo-Vergleich selbst (nur Lesezugriff über den Cloud-Sync-Code) schreibt die App nie in den Spielstand der Partner-Person - das eigentliche Aufgeben muss jede Seite selbst auf dem eigenen Gerät vornehmen.</p>
@@ -6448,7 +6461,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.65.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.66.</footer>
 
 </div>`;
 
