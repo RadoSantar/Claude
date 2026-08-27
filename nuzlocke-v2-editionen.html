@@ -2808,7 +2808,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.0";
+const APP_VERSION = "1.9.1";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -5495,6 +5495,17 @@ function championWon(){
   const fb = finalStoryBoss();
   return !!fb && state.bossDefeated[fb.id] === true;
 }
+/* Zähl-Helfer für die 17 Typ-Sammel-Erfolge weiter unten - zählt jeden in diesem Run jemals
+   gefangenen Fund mit passendem Typ, unabhängig von Status (Team/Box/Friedhof/abgegeben), da es um
+   die Fang-Historie geht, nicht das aktuelle Team. Dual-Typen zählen für beide Typen. */
+function countTypeCaught(type){
+  let n = 0;
+  state.locations.forEach(l=>{
+    if(!l.mon) return;
+    if(typesFor(l.mon.species).includes(type)) n++;
+  });
+  return n;
+}
 const ACHIEVEMENTS = [
   { id:"teamplayer", name:"Volles Haus", title:"Teamplayer", icon:"🤝",
     desc:"6 lebende Pokémon gleichzeitig im Team.",
@@ -5655,6 +5666,63 @@ const ACHIEVEMENTS = [
   { id:"minimalist", name:"Minimalist", title:"Minimalist", icon:"🎒",
     desc:"Champion besiegt mit insgesamt höchstens 2 gefangenen Pokémon im gesamten Run.",
     check: ()=> championWon() && (aliveCount()+deadCount())<=2 },
+  /* Ein Sammel-Erfolg pro Typ (17 Typen aus Generation 1-5, kein Fee - siehe SPECIES_TYPES-
+     Kommentar) - Idee vom Nutzer, Namen/Titel für Boden/Flug/Wasser vorgegeben, der Rest in
+     gleichem Ton ergänzt. countTypeCaught() zählt JEDEN in diesem Run jemals gefangenen Fund mit
+     passendem Typ, unabhängig von Status (Team/Box/Friedhof/abgegeben) - es geht um die
+     Fang-Historie, nicht das aktuelle Team. Dual-Typen zählen für beide Typen (analog zu
+     rainbowteam weiter oben). */
+  { id:"type10-normal", name:"Nichts Besonderes", title:"Alltagsheld", icon:"📋",
+    desc:"10 Pokémon vom Typ Normal gefangen (Dual-Typen zählen mit).",
+    check: ()=> countTypeCaught("Normal") >= 10 },
+  { id:"type10-kampf", name:"Sparringspartner", title:"Kampfmaschine", icon:"🥋",
+    desc:"10 Pokémon vom Typ Kampf gefangen (Dual-Typen zählen mit).",
+    check: ()=> countTypeCaught("Kampf") >= 10 },
+  { id:"type10-flug", name:"Über den Wolken", title:"Flieger-Ass", icon:"🕊️",
+    desc:"10 Pokémon vom Typ Flug gefangen (Dual-Typen zählen mit).",
+    check: ()=> countTypeCaught("Flug") >= 10 },
+  { id:"type10-gift", name:"Giftmischer", title:"Giftzwerg", icon:"🧪",
+    desc:"10 Pokémon vom Typ Gift gefangen (Dual-Typen zählen mit).",
+    check: ()=> countTypeCaught("Gift") >= 10 },
+  { id:"type10-boden", name:"Grounded", title:"Landratte", icon:"🕳️",
+    desc:"10 Pokémon vom Typ Boden gefangen (Dual-Typen zählen mit).",
+    check: ()=> countTypeCaught("Boden") >= 10 },
+  { id:"type10-gestein", name:"Fels in der Brandung", title:"Geröllheimer", icon:"🪨",
+    desc:"10 Pokémon vom Typ Gestein gefangen (Dual-Typen zählen mit).",
+    check: ()=> countTypeCaught("Gestein") >= 10 },
+  { id:"type10-kaefer", name:"Krabbelgruppe", title:"Käfersammler", icon:"🐛",
+    desc:"10 Pokémon vom Typ Käfer gefangen (Dual-Typen zählen mit).",
+    check: ()=> countTypeCaught("Käfer") >= 10 },
+  { id:"type10-geist", name:"Nachtschicht", title:"Geisterjäger", icon:"👻",
+    desc:"10 Pokémon vom Typ Geist gefangen (Dual-Typen zählen mit).",
+    check: ()=> countTypeCaught("Geist") >= 10 },
+  { id:"type10-stahl", name:"Hart im Nehmen", title:"Eisenfresser", icon:"🔩",
+    desc:"10 Pokémon vom Typ Stahl gefangen (Dual-Typen zählen mit).",
+    check: ()=> countTypeCaught("Stahl") >= 10 },
+  { id:"type10-feuer", name:"Zündstoff", title:"Brandstifter", icon:"🔥",
+    desc:"10 Pokémon vom Typ Feuer gefangen (Dual-Typen zählen mit).",
+    check: ()=> countTypeCaught("Feuer") >= 10 },
+  { id:"type10-wasser", name:"Schwimmer", title:"Seepferdchen", icon:"🏊",
+    desc:"10 Pokémon vom Typ Wasser gefangen (Dual-Typen zählen mit).",
+    check: ()=> countTypeCaught("Wasser") >= 10 },
+  { id:"type10-pflanze", name:"Grüner Daumen", title:"Gärtner", icon:"🌿",
+    desc:"10 Pokémon vom Typ Pflanze gefangen (Dual-Typen zählen mit).",
+    check: ()=> countTypeCaught("Pflanze") >= 10 },
+  { id:"type10-elektro", name:"Unter Strom", title:"Blitzableiter", icon:"⚡",
+    desc:"10 Pokémon vom Typ Elektro gefangen (Dual-Typen zählen mit).",
+    check: ()=> countTypeCaught("Elektro") >= 10 },
+  { id:"type10-psycho", name:"Sechster Sinn", title:"Hellseher", icon:"🔮",
+    desc:"10 Pokémon vom Typ Psycho gefangen (Dual-Typen zählen mit).",
+    check: ()=> countTypeCaught("Psycho") >= 10 },
+  { id:"type10-eis", name:"Eiskalt erwischt", title:"Frostbeule", icon:"❄️",
+    desc:"10 Pokémon vom Typ Eis gefangen (Dual-Typen zählen mit).",
+    check: ()=> countTypeCaught("Eis") >= 10 },
+  { id:"type10-drache", name:"Drachenzähmer", title:"Drachenreiter", icon:"🐉",
+    desc:"10 Pokémon vom Typ Drache gefangen (Dual-Typen zählen mit).",
+    check: ()=> countTypeCaught("Drache") >= 10 },
+  { id:"type10-unlicht", name:"Dunkle Seite", title:"Nachtschwärmer", icon:"🌑",
+    desc:"10 Pokémon vom Typ Unlicht gefangen (Dual-Typen zählen mit).",
+    check: ()=> countTypeCaught("Unlicht") >= 10 },
   { id:"pokemonmeister", name:"Pokémon Meister", title:"Pokémon-Meister", icon:"💎", hidden:true,
     desc:"Alle anderen Erfolge freigeschaltet.",
     check: ()=> ACHIEVEMENTS.filter(a=>a.id!=="pokemonmeister").every(a=>!!state.achievements[a.id]) }
@@ -5767,6 +5835,12 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.1</span><span class="tag tag-feat">Feature</span></div>
+      <h3>17 neue Typ-Sammel-Erfolge</h3>
+      <p>Ein Erfolg pro Typ (Generation 1-5, kein Fee): 10 gefangene Pokémon eines Typs schalten einen thematischen Erfolg samt Titel frei - u.&nbsp;a. „Grounded" / „Landratte" (Boden), „Über den Wolken" / „Flieger-Ass" (Flug), „Schwimmer" / „Seepferdchen" (Wasser), „Fels in der Brandung" / „Geröllheimer" (Gestein), „Nachtschicht" / „Geisterjäger" (Geist) und zwölf weitere. Zählt die komplette Fang-Historie des Runs (unabhängig davon, ob das Pokémon noch lebt, im Team, in der Box oder abgegeben ist), Dual-Typen zählen für beide Typen mit - dieselbe Zählweise wie beim bestehenden Regenbogen-Team-Erfolg.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.0</span><span class="tag tag-feat">Feature</span></div>
@@ -6659,7 +6733,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.0.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.1.</footer>
 
 </div>`;
 
