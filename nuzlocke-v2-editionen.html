@@ -2775,7 +2775,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.8.64";
+const APP_VERSION = "1.8.65";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -2826,7 +2826,7 @@ function freshState(editionId, soloMode){
     names.forEach(entry=>{ locations.push(parseLocationEntry(region, entry)); });
   });
   const gameStarters = GAMES[edition].starters || { grass:"", fire:"", water:"" };
-  return { edition, runTitle:"", soloMode:!!soloMode, locations, bossBoosts:{}, bossDefeated:{}, rivalNickname:"", duelPartnerName:"", dupesWarning:true, lastExportAt:null, evolutionCount:0, lossCount:0, nicknameRequired:false, pvp:{}, hallOfFame:{ rivalTeam:[], playerTeam:[], defeatedAt:null, result:null }, starterNames:{ ...gameStarters }, starterChoice:null, currentLocId:null, eventLog:[], hiddenRegions:[], achievements:{}, activeTitle:null, dupesIgnoredCount:0, bossLossIds:{}, cleanBossWins:{}, bossNotes:{}, randomizerSeed:"", vibrationEnabled:true, bossWinTeams:{}, hidePostgame:false, trackBossTeams:false, bossOpponentTeams:{}, trackDeathCause:false, colorBlindSafeMode:false, teamOrder:[], syncCode:null, lastSyncedAt:null, keyItemsChecked:{}, houseRules:{ setMode:true, speciesClause:true, noItems:true, levelCap:true }, duoCode:null };
+  return { edition, runTitle:"", soloMode:!!soloMode, locations, bossBoosts:{}, bossDefeated:{}, rivalNickname:"", duelPartnerName:"", dupesWarning:true, lastExportAt:null, evolutionCount:0, lossCount:0, nicknameRequired:false, pvp:{}, hallOfFame:{ rivalTeam:[], playerTeam:[], defeatedAt:null, result:null }, starterNames:{ ...gameStarters }, starterChoice:null, currentLocId:null, eventLog:[], hiddenRegions:[], achievements:{}, activeTitle:null, dupesIgnoredCount:0, bossLossIds:{}, cleanBossWins:{}, bossNotes:{}, randomizerSeed:"", vibrationEnabled:true, bossWinTeams:{}, hidePostgame:false, trackBossTeams:false, bossOpponentTeams:{}, trackDeathCause:false, colorBlindSafeMode:false, teamOrder:[], syncCode:null, lastSyncedAt:null, keyItemsChecked:{}, houseRules:{ setMode:true, speciesClause:true, noItems:true, levelCap:true }, duoCode:null, soulLinkMode:false };
 }
 
 /* Ergänzt neu hinzugekommene Standorte (z.B. nachträglich eingefügte Städte) in einen bereits
@@ -2888,6 +2888,7 @@ function normalizeState(parsed){
   if(!parsed.keyItemsChecked) parsed.keyItemsChecked = {};
   if(!parsed.houseRules) parsed.houseRules = { setMode:true, speciesClause:true, noItems:true, levelCap:true };
   if(typeof parsed.duoCode !== "string") parsed.duoCode = null;
+  if(typeof parsed.soulLinkMode !== "boolean") parsed.soulLinkMode = false;
   syncLocations(parsed);
   return parsed;
 }
@@ -3336,8 +3337,42 @@ function duoCompareCardHtml(){
     <div class="loc-name">Duo-Vergleich</div>
     <div class="loc-sub" style="margin-bottom:10px;">Verglichen mit Code <strong style="font-family:var(--font-mono); letter-spacing:.05em;">${escapeHtml(state.duoCode)}</strong></div>
     <button class="btn btn-primary btn-block" style="margin-bottom:8px;" data-act="open-duo-compare" ${duoCompareLoading?"disabled":""}>${duoCompareLoading?"Lädt …":"Vergleich anzeigen"}</button>
+    <button class="btn ${state.soulLinkMode?"btn-primary":"btn-secondary"} btn-block" style="margin-bottom:8px;" data-act="toggle-soul-link">Soul-Link-Modus: ${state.soulLinkMode?"Aktiviert":"Deaktiviert"}</button>
+    <div class="loc-sub" style="margin-bottom:8px;">Koppelt eure Encounter 1:1 pro Standort (braucht dieselbe Edition wie dein Partner): stirbt dein Pokémon irgendwo, bekommst du einen Hinweis, falls das Partner-Pokémon an derselben Stelle noch lebt - und umgekehrt in der Vergleichsansicht. Rein informativ, ihr müsst euch jeweils selbst um euer eigenes Team kümmern.</div>
     <button class="btn btn-ghost" data-act="unlink-duo">Vergleich trennen</button>
   </div>`;
+}
+
+/* Liefert die Standorte, an denen genau eine Seite (ich oder Partner) das dortige Pokémon verloren
+   hat, die andere aber noch nicht - also der klassische Soul-Link-Fall "eine Seite muss noch
+   nachziehen". null statt eines (ggf. leeren) Arrays signalisiert "kein Abgleich möglich", weil die
+   Editionen nicht übereinstimmen (unterschiedliche Standort-IDs, kein sinnvolles 1:1 mehr). */
+function soulLinkMismatches(partnerSave){
+  if(!partnerSave || partnerSave.edition !== state.edition) return null;
+  const partnerLocs = new Map((partnerSave.locations||[]).map(l=>[l.id, l]));
+  const mismatches = [];
+  state.locations.forEach(loc=>{
+    if(!loc.mon) return;
+    const theirs = partnerLocs.get(loc.id);
+    if(!theirs || !theirs.mon) return;
+    const mineDead = !!loc.mon.dead, theirsDead = !!theirs.mon.dead;
+    if(mineDead !== theirsDead) mismatches.push({ name: loc.name, needsAction: mineDead ? "partner" : "du" });
+  });
+  return mismatches;
+}
+
+function soulLinkSectionHtml(partnerSave){
+  if(!state.soulLinkMode) return "";
+  const mismatches = soulLinkMismatches(partnerSave);
+  if(mismatches === null){
+    const partnerEdition = GAMES[partnerSave.edition] ? GAMES[partnerSave.edition].shortLabel : partnerSave.edition;
+    return `<div class="loc-sub" style="margin-top:14px;">Soul-Link: dein Partner spielt eine andere Edition (${escapeHtml(partnerEdition)}) - kein Standort-Abgleich möglich.</div>`;
+  }
+  if(!mismatches.length) return `<div class="loc-sub" style="margin-top:14px;">Soul-Link: keine offenen Diskrepanzen.</div>`;
+  return `<div class="loc-name" style="margin-top:14px;">Soul-Link-Hinweise (${mismatches.length})</div>
+    <ul style="margin:6px 0 0; padding-left:20px; color:var(--ink-soft); font-size:.92rem; line-height:1.6;">
+      ${mismatches.map(m=>`<li><strong>${escapeHtml(m.name)}:</strong> ${m.needsAction==="partner"?"Partner sollte noch aufgeben":"Du solltest noch aufgeben"}</li>`).join("")}
+    </ul>`;
 }
 
 function duoCompareSheetHtml(partnerSave, updatedAt){
@@ -3361,11 +3396,46 @@ function duoCompareSheetHtml(partnerSave, updatedAt){
     <h3>Duo-Vergleich</h3>
     <div class="loc-sub" style="margin-bottom:14px;">Stand der Cloud-Version des Vergleichs-Spielstands: ${escapeHtml(formatRelativeTime(new Date(updatedAt).getTime()))}.</div>
     <div class="leaderboard-list">${row(mine, true, leaderIsMine)}${row(theirs, false, !leaderIsMine)}</div>
+    ${soulLinkSectionHtml(partnerSave)}
     <div class="sheet-footer" style="margin-top:14px;">
       <button class="btn btn-secondary btn-block" data-act="open-duo-compare">Aktualisieren</button>
       <button class="btn btn-primary btn-block" data-act="close-sheet">Schließen</button>
     </div>
   `;
+}
+
+/* Proaktiver Soul-Link-Hinweis direkt beim Sterben (Pendant zu maybeOfferHideRegion()): zieht
+   frisch den Partner-Stand (keine eigene Zwischenspeicherung, um keine veralteten Stände zu
+   zeigen) und meldet sich nur, wenn an DERSELBEN Stelle das Partner-Pokémon laut letztem Abgleich
+   noch lebt. Bewusst NICHT bei einem gerade ausgelösten Game-Over/Champion-Overlay (aliveCount()
+   bzw. isChamp-Gewinn) - zwei sich überlappende Overlays gleichzeitig wären verwirrend, der
+   Hinweis taucht dann eben erst beim nächsten Öffnen der Duo-Vergleichsansicht auf. */
+async function checkSoulLinkAfterDeath(deadLocIds){
+  if(!state.soulLinkMode || !state.duoCode || !deadLocIds || !deadLocIds.length) return;
+  try{
+    const remote = await pullCloudSave(state.duoCode);
+    if(!remote) return;
+    const partnerSave = normalizeState(remote.data);
+    if(partnerSave.edition !== state.edition) return;
+    const partnerLocs = new Map((partnerSave.locations||[]).map(l=>[l.id, l]));
+    const hints = [];
+    deadLocIds.forEach(locId=>{
+      const mine = findLoc(locId);
+      const theirs = partnerLocs.get(locId);
+      if(mine && theirs && theirs.mon && !theirs.mon.dead) hints.push({ name: mine.name, mon: theirs.mon.nickname || theirs.mon.species });
+    });
+    if(hints.length) openSoulLinkHintSheet(hints);
+  }catch(e){}
+}
+
+function openSoulLinkHintSheet(hints){
+  const list = hints.map(h=>`<li><strong>${escapeHtml(h.name)}:</strong> ${escapeHtml(h.mon)} lebt beim Partner laut letztem Abgleich noch</li>`).join("");
+  openSheet(`
+    <h3>Soul-Link-Hinweis</h3>
+    <div class="loc-sub" style="margin-bottom:10px;">Dein Duo-Partner sollte jetzt ebenfalls aufgeben:</div>
+    <ul style="margin:0 0 14px; padding-left:20px; color:var(--ink-soft); font-size:.92rem; line-height:1.6;">${list}</ul>
+    <div class="sheet-footer"><button class="btn btn-primary btn-block" data-act="close-sheet">OK</button></div>
+  `);
 }
 
 async function openDuoCompareSheet(){
@@ -4714,6 +4784,7 @@ function performMarkDead(locId, cause){
   vibrateFeedback([25,40,25]);
   saveState(); closeSheet(); render();
   checkGameOver();
+  if(aliveCount()>0) checkSoulLinkAfterDeath([locId]);
 }
 
 /* Optionale Todesursachen-Abfrage (Hausregel-Toggle, siehe state.trackDeathCause) für Tode
@@ -5509,6 +5580,12 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.65</span><span class="tag tag-feat">Feature</span></div>
+      <h3>Soul-Link-Modus</h3>
+      <p>Neuer Schalter „Soul-Link-Modus" in der Duo-Vergleich-Karte: koppelt eure Encounter 1:1 pro Standort (setzt dieselbe Edition wie der Partner voraus, da die Kopplung über die Standort-ID läuft). Stirbt dein Pokémon irgendwo, kommt ein Hinweis, falls das Partner-Pokémon an derselben Stelle laut letztem Abgleich noch lebt - und umgekehrt taucht der Fall als Diskrepanz in der Duo-Vergleichsansicht auf. Bewusst rein informativ: aus denselben Sicherheitsgründen wie beim Duo-Vergleich selbst (nur Lesezugriff über den Cloud-Sync-Code) schreibt die App nie in den Spielstand der Partner-Person - das eigentliche Aufgeben muss jede Seite selbst auf dem eigenen Gerät vornehmen.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.8.64</span><span class="tag tag-feat">Feature</span></div>
@@ -6307,7 +6384,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Farbcodierte Überlebensrate.</strong> Die Statistik-Kachel „Überlebensrate" soll je nach Wert die Farbe wechseln: ab 50% Grün, 25–49% Gelb, 0–24% Rot. → umgesetzt in v1.8.40</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Rivalen-Umbenennung auch in den Einstellungen.</strong> Der Ingame-Rivalenname lässt sich bisher nur per Klick auf den Namen selbst anpassen (bleibt so erhalten) — zusätzlich soll dafür unter „Duell &amp; Bosse" ein Eingabefeld analog zum Duellpartner-Namen stehen. → umgesetzt in v1.8.40</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Gefangene Pokémon automatisch ins Team statt in die Box.</strong> Ist das Team noch nicht voll (unter sechs), tritt ein neu gefangenes Pokémon automatisch dem Team bei statt in der Box zu landen — entspricht dem tatsächlichen Spielverhalten. <em>→ umgesetzt in v1.8.28.</em></div>
-    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Soul-Link-Modus.</strong> Für den Coop-Ursprung der App passend: Encounter zwischen beiden Spieler:innen 1:1 koppeln — stirbt das erste Pokémon von Partner A, muss Partner B seins an derselben Stelle ebenfalls aufgeben. Klassische Nuzlocke-Coop-Hausregel, aktuell nicht abgebildet.</div>
+    <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Soul-Link-Modus.</strong> Für den Coop-Ursprung der App passend: Encounter zwischen beiden Spieler:innen 1:1 koppeln — stirbt das erste Pokémon von Partner A, muss Partner B seins an derselben Stelle ebenfalls aufgeben. Klassische Nuzlocke-Coop-Hausregel, aktuell nicht abgebildet. → umgesetzt in v1.8.65 als Schalter in der Duo-Vergleich-Karte, gekoppelt über die Standort-ID (setzt dieselbe Edition wie der Partner voraus): proaktiver Hinweis direkt beim Markieren als gestorben, falls das Partner-Pokémon an derselben Stelle laut letztem Abgleich noch lebt, plus eine passive Übersicht offener Diskrepanzen in der Duo-Vergleichsansicht. Bewusst rein informativ - aus denselben Sicherheitsgründen wie beim Duo-Vergleich selbst schreibt die App nie in den Spielstand der anderen Person, das eigentliche Aufgeben muss jede Seite selbst auf dem eigenen Gerät vornehmen.</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Regelwerk-Checkliste pro Run.</strong> Die üblichen Nuzlocke-Hausregeln (Set-Modus, Species Clause, kein Item im Kampf, Level-Cap je Boss, Dupes Clause gibt es schon) als an-/abwählbare Liste zu Beginn eines Runs, rein zur Dokumentation, welche Regeln galten. → umgesetzt in v1.8.62, jederzeit editierbar statt fest nur bei Run-Beginn</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Notizfeld pro Boss statt nur pro Standort.</strong> Bei einem Randomizer ist das gegnerische Team jedes Mal anders — aktuell lässt sich nur der „Ace" nachschlagen. Ein Freitextfeld pro Boss fürs komplette gegnerische Team wäre für Strategie-Notizen hilfreich. → umgesetzt in v1.8.40</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Zufalls-Spitznamen-Generator.</strong> Ein Würfel-Button im Fang-Formular, der einen witzigen Spitznamen vorschlägt. → umgesetzt in v1.8.41 (Tag hier versehentlich nicht mit-aktualisiert worden)</div>
@@ -6371,7 +6448,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.64.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.65.</footer>
 
 </div>`;
 
@@ -7573,11 +7650,13 @@ document.addEventListener("click", e=>{
     const rivalNick = isRival ? (state.rivalNickname||"").trim() : "";
     const displayName = rivalNick || boss.name;
     const deadNames = [];
+    const deadLocIds = [];
     document.querySelectorAll("[data-death-loc]:checked").forEach(cb=>{
       const loc = findLoc(cb.dataset.deathLoc);
       if(!loc || !loc.mon || loc.mon.dead) return;
       loc.mon.dead = true; loc.mon.inTeam = false;
       deadNames.push(loc.mon.nickname || loc.mon.species);
+      deadLocIds.push(loc.id);
     });
     if(result==="win"){
       state.bossDefeated[id] = true;
@@ -7609,6 +7688,7 @@ document.addEventListener("click", e=>{
     lastDefeatedId = null;
     if(result==="win" && isChamp) showChampionCelebration(boss);
     if(deadNames.length) checkGameOver();
+    if(deadLocIds.length && aliveCount()>0 && !(result==="win" && isChamp)) checkSoulLinkAfterDeath(deadLocIds);
   }
   else if(act==="open-boss-win-team") openBossWinTeamSheet(id);
   else if(act==="close-champion-overlay"){ document.querySelector(".champion-overlay")?.remove(); }
@@ -7871,6 +7951,10 @@ document.addEventListener("click", e=>{
     saveState(); render();
   }
   else if(act==="open-duo-compare") openDuoCompareSheet();
+  else if(act==="toggle-soul-link"){
+    state.soulLinkMode = !state.soulLinkMode;
+    saveState(); render();
+  }
   else if(act==="set-theme"){
     localStorage.setItem("hgss-theme-mode", id);
     applyTheme(); render();
