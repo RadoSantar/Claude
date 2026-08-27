@@ -244,7 +244,13 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
   font-family:var(--font-display); font-size:.72rem; font-weight:700; letter-spacing:.08em;
   text-transform:uppercase; color:var(--ink-soft); padding:14px 2px 8px;
 }
+/* In den Einstellungen stehen viele Gruppenköpfe dicht hintereinander - würden sie wie in der
+   Routen-Liste alle bei top:0 kleben bleiben, stapeln sich beim Scrollen mehrere gleichzeitig
+   übereinander und ihr Text überlappt sich unleserlich. Sticky ist hier ohnehin weniger nützlich
+   (kurze, einklappbare Abschnitte statt langer Listen) - deshalb explizit deaktiviert. */
+.region-header.no-sticky{ position:static; }
 .settings-group-header{
+  position:static;
   display:flex; align-items:center; justify-content:space-between; width:100%;
   border:none; background:none; transition:transform .15s ease, opacity .15s ease;
 }
@@ -2770,7 +2776,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.8.60";
+const APP_VERSION = "1.8.61";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -5421,6 +5427,12 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="log">
 
     <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.61</span><span class="tag tag-fix">Fix</span></div>
+      <h3>Überlappende Überschriften in den Einstellungen</h3>
+      <p>Beim Scrollen durch die Einstellungen blieben mehrere Abschnittsüberschriften gleichzeitig oben kleben (alle nutzten dieselbe "sticky"-Positionierung wie die Regionsüberschriften in der Routen-Liste) und überlagerten sich dadurch unleserlich. Die Routen-Liste profitiert vom Stehenbleiben der Regionsüberschrift beim Scrollen (wenige, lange Abschnitte) - in den Einstellungen mit vielen kurzen, einklappbaren Gruppen bringt das dagegen nichts außer dem Überlappungs-Bug. Sticky-Verhalten deshalb gezielt nur für die Einstellungen deaktiviert.</p>
+    </div>
+
+    <div class="entry">
       <div class="entry-head"><span class="ver">v1.8.60</span><span class="tag tag-feat">Feature</span></div>
       <h3>Schlüsselitems-Checkliste, Region-Ausblenden-Hinweis, „Fast geschafft"</h3>
       <p><strong>Schlüsselitems/VMs-Checkliste:</strong> neue Übersicht unter „Werkzeuge" listet die VMs der aktuellen Edition zum Abhaken - zeigt auf einen Blick, welche Hindernisse (Surfer, Zerschneider, Stärke, …) schon freigeschaltet sind. Editionsspezifisch hinterlegt, da sich das VM-Set je nach Spiel-Engine unterscheidet.</p>
@@ -6254,7 +6266,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.60.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.61.</footer>
 
 </div>`;
 
@@ -6419,7 +6431,7 @@ function renderSettings(){
   const percentLabel = min===max ? `${min>0?'+':''}${min}%` : `${min}%–${max}%`;
   const eff = effectiveTheme();
 
-  let html = `<div class="region-header">Fortschritt</div>` + statsCardHtml() + hallOfFameCardHtml();
+  let html = `<div class="region-header no-sticky">Fortschritt</div>` + statsCardHtml() + hallOfFameCardHtml();
 
   html += settingsGroupHtml("saves", "Spielstände", `
   <div class="card">
