@@ -908,6 +908,13 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 .sheet-option:disabled{ opacity:.4; }
 .death-check-row{ display:flex; align-items:center; gap:10px; cursor:pointer; }
 .death-check-row input[type="checkbox"]{ width:20px; height:20px; flex:none; accent-color:var(--red); }
+.check-row{ display:flex; align-items:center; gap:10px; cursor:pointer; padding:10px 4px; border-bottom:1px solid var(--line); }
+.check-row:last-of-type{ border-bottom:none; }
+.check-row input[type="checkbox"]{ width:20px; height:20px; flex:none; accent-color:var(--accent); }
+.check-row.done span{ color:var(--ink-soft); text-decoration:line-through; }
+/* Dezenter, dauerhafter Ring statt einer Einmal-Animation (wie boss-defeat-flash) - bleibt sichtbar,
+   solange die Kachel offen ist, statt nach kurzer Zeit wieder zu verschwinden. */
+.card.almost-done{ box-shadow:var(--shadow), 0 0 0 2px rgba(var(--gold-glow),.55); }
 .sheet-footer{ display:flex; gap:10px; margin-top:6px; }
 .preset-row{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
 .preset-chip{
@@ -2644,8 +2651,33 @@ let expandedSettingsGroups = new Set(); // welche Einstellungs-Gruppen aufgeklap
 let boxSearchQuery = ""; // Box-Suche - nicht persistiert, jeder Tab-Wechsel startet leer
 let boxSortMode = "default"; // "default" (Routen-Reihenfolge) | "name" | "caught"
 
+/* Region gilt als abgeschlossen, wenn jeder fangbare (nicht noCatch) Standort dort einen Fangversuch
+   hat - Bosse zählen bewusst nicht mit rein, das Ausblenden bezieht sich nur auf die Routen-Liste. */
+function isRegionFullyCaught(region){
+  const locs = state.locations.filter(l=>l.region===region && !l.noCatch);
+  return locs.length>0 && locs.every(l=>l.status!=="pending");
+}
+
+/* Proaktiver Hinweis, sobald eine Region durch die gerade eingetragene Aktion GERADE JETZT komplett
+   wurde (nicht bei jedem erneuten Render) - nutzt die bereits bestehende Regionen-ausblenden-Funktion
+   aus den Einstellungen. Nur bei mehrreigigen Editionen sinnvoll und nur, wenn nicht schon versteckt. */
+function maybeOfferHideRegion(region){
+  if(currentGame().regions.length <= 1) return;
+  if((state.hiddenRegions||[]).includes(region)) return;
+  if(!isRegionFullyCaught(region)) return;
+  openSheet(`
+    <h3>Region abgeschlossen</h3>
+    <div class="loc-sub" style="margin-bottom:14px;">„${escapeHtml(region)}" ist jetzt komplett abgeschlossen. Aus der Routen-Liste ausblenden, um sie übersichtlicher zu halten? Der Fortschritt bleibt erhalten, jederzeit über Einstellungen → Regionen wieder einblendbar.</div>
+    <div class="sheet-footer">
+      <button class="btn btn-secondary btn-block" data-act="close-sheet">Sichtbar lassen</button>
+      <button class="btn btn-primary btn-block" data-act="toggle-region-visibility" data-id="${escapeHtml(region)}">Ausblenden</button>
+    </div>
+  `);
+}
+
 function performCatch(id, species, nick){
   const loc = findLoc(id);
+  const wasComplete = isRegionFullyCaught(loc.region);
   loc.status="caught";
   /* Wie im Original: ist im Team noch Platz, tritt ein frisch gefangenes Pokémon automatisch bei,
      statt erst in der Box zu landen. */
@@ -2657,8 +2689,11 @@ function performCatch(id, species, nick){
   saveState(); render();
   /* Team ist beim Fangen bereits voll - statt den Fang stillschweigend in der Box zu versenken,
      direkt fragen: ins Team (dann Ersatz wählen wie beim manuellen "Ins Team aufnehmen") oder
-     bewusst auf die Bank. */
-  if(!joinsTeam) openCatchTeamFullSheet(id); else closeSheet();
+     bewusst auf die Bank. Der Region-Hinweis hat hier Vorrang, falls beides zuträfe - "Team voll"
+     ist die seltenere, dringendere Entscheidung. */
+  if(!joinsTeam) openCatchTeamFullSheet(id);
+  else if(!wasComplete && isRegionFullyCaught(loc.region)) maybeOfferHideRegion(loc.region);
+  else closeSheet();
 }
 
 function openCatchTeamFullSheet(locId){
@@ -2735,7 +2770,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.8.59";
+const APP_VERSION = "1.8.60";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -2786,7 +2821,7 @@ function freshState(editionId, soloMode){
     names.forEach(entry=>{ locations.push(parseLocationEntry(region, entry)); });
   });
   const gameStarters = GAMES[edition].starters || { grass:"", fire:"", water:"" };
-  return { edition, runTitle:"", soloMode:!!soloMode, locations, bossBoosts:{}, bossDefeated:{}, rivalNickname:"", duelPartnerName:"", dupesWarning:true, lastExportAt:null, evolutionCount:0, lossCount:0, nicknameRequired:false, pvp:{}, hallOfFame:{ rivalTeam:[], playerTeam:[], defeatedAt:null, result:null }, starterNames:{ ...gameStarters }, starterChoice:null, currentLocId:null, eventLog:[], hiddenRegions:[], achievements:{}, activeTitle:null, dupesIgnoredCount:0, bossLossIds:{}, cleanBossWins:{}, bossNotes:{}, randomizerSeed:"", vibrationEnabled:true, bossWinTeams:{}, hidePostgame:false, trackBossTeams:false, bossOpponentTeams:{}, trackDeathCause:false, colorBlindSafeMode:false, teamOrder:[], syncCode:null, lastSyncedAt:null };
+  return { edition, runTitle:"", soloMode:!!soloMode, locations, bossBoosts:{}, bossDefeated:{}, rivalNickname:"", duelPartnerName:"", dupesWarning:true, lastExportAt:null, evolutionCount:0, lossCount:0, nicknameRequired:false, pvp:{}, hallOfFame:{ rivalTeam:[], playerTeam:[], defeatedAt:null, result:null }, starterNames:{ ...gameStarters }, starterChoice:null, currentLocId:null, eventLog:[], hiddenRegions:[], achievements:{}, activeTitle:null, dupesIgnoredCount:0, bossLossIds:{}, cleanBossWins:{}, bossNotes:{}, randomizerSeed:"", vibrationEnabled:true, bossWinTeams:{}, hidePostgame:false, trackBossTeams:false, bossOpponentTeams:{}, trackDeathCause:false, colorBlindSafeMode:false, teamOrder:[], syncCode:null, lastSyncedAt:null, keyItemsChecked:{} };
 }
 
 /* Ergänzt neu hinzugekommene Standorte (z.B. nachträglich eingefügte Städte) in einen bereits
@@ -2845,6 +2880,7 @@ function normalizeState(parsed){
   if(!Array.isArray(parsed.teamOrder)) parsed.teamOrder = [];
   if(typeof parsed.syncCode !== "string") parsed.syncCode = null;
   if(typeof parsed.lastSyncedAt !== "number") parsed.lastSyncedAt = null;
+  if(!parsed.keyItemsChecked) parsed.keyItemsChecked = {};
   syncLocations(parsed);
   return parsed;
 }
@@ -3355,7 +3391,7 @@ function escapeHtml(s){
 }
 
 function chipFor(loc){
-  if(loc.status==="pending") return '<span class="chip silver">Offen</span>';
+  if(loc.status==="pending") return isAlmostDoneHighlight() ? '<span class="chip gold">✨ Fast geschafft</span>' : '<span class="chip silver">Offen</span>';
   if(loc.status==="failed") return '<span class="chip warn">Nicht gefangen</span>';
   if(loc.mon.given) return '<span class="chip accent">Abgegeben</span>';
   if(loc.mon.dead) return '<span class="chip red">Gestorben</span>';
@@ -3363,7 +3399,7 @@ function chipFor(loc){
   return '<span class="chip gold">In der Box</span>';
 }
 function cardClass(loc){
-  if(loc.status==="pending") return "st-pending";
+  if(loc.status==="pending") return "st-pending" + (isAlmostDoneHighlight() ? " almost-done" : "");
   if(loc.status==="failed") return "st-failed";
   if(loc.mon.given) return "st-given";
   if(loc.mon.dead) return "st-dead";
@@ -3406,6 +3442,22 @@ function completionPercent(){
   const bossesDone = bosses.filter(b=>isBossDefeated(b.id)).length;
   const total = catchable.length + bosses.length;
   return total ? Math.round((locsDone+bossesDone)/total*100) : 0;
+}
+
+/* "Fast geschafft"-Hervorhebung: sobald insgesamt (Standorte + Bosse zusammen, wie in
+   completionPercent()) nur noch ganz wenige offene Kacheln übrig sind, werden GENAU diese optisch
+   hervorgehoben - da es per Definition nur noch <= ALMOST_DONE_THRESHOLD offene Kacheln geben kann,
+   muss nicht extra ausgewählt werden "welche 3", jede noch offene Kachel qualifiziert sich. */
+const ALMOST_DONE_THRESHOLD = 3;
+function remainingOverallCount(){
+  const catchable = state.locations.filter(l=>!l.noCatch);
+  const locsLeft = catchable.filter(l=>l.status==="pending").length;
+  const bossesLeft = activeBosses().filter(b=>!isBossDefeated(b.id)).length;
+  return locsLeft + bossesLeft;
+}
+function isAlmostDoneHighlight(){
+  const remaining = remainingOverallCount();
+  return remaining>0 && remaining<=ALMOST_DONE_THRESHOLD;
 }
 
 /* Run-Dauer: grob aus dem Verlauf abgeleitet (erstes Ereignis bis jetzt bzw. bis zum übergebenen
@@ -4334,7 +4386,8 @@ function bossCardHtml(boss, isCurrent){
      zwar wie ein Sieg einklappt/zählt, sich optisch aber weiter als Niederlage zu erkennen gibt. */
   const settledAsLoss = state.bossDefeated[boss.id] === "loss";
   const flash = boss.id === lastDefeatedId;
-  const cls = "card boss-card" + (defeated?(settledAsLoss?" boss-done-loss":" boss-done"):"") + (flash?" boss-defeat-flash":"");
+  const almostDone = !defeated && isAlmostDoneHighlight();
+  const cls = "card boss-card" + (defeated?(settledAsLoss?" boss-done-loss":" boss-done"):"") + (flash?" boss-defeat-flash":"") + (almostDone?" almost-done":"");
   const currentAttr = isCurrent ? ` data-current="true"` : "";
   const badge = defeated ? `<div class="boss-defeat-badge${settledAsLoss?" badge-loss":""}" aria-hidden="true">${(settledAsLoss && state.colorBlindSafeMode) ? ICON_X : ICON_CHECK}</div>` : "";
   /* Kein Flaggen-Icon für bereits besiegte Bosse: würde optisch mit dem Sieg-Badge (ebenfalls
@@ -4376,7 +4429,7 @@ function bossCardHtml(boss, isCurrent){
           <div class="loc-sub">${escapeHtml(boss.cls)} · ${escapeHtml(boss.place)}</div>
         </div>
       </div>
-      <div style="display:flex; gap:4px; flex:none;">${opponentTeamBtn}${noteBtn}${flagBtn}</div>
+      <div style="display:flex; gap:4px; align-items:center; flex:none;">${almostDone?'<span class="chip gold">✨ Fast geschafft</span>':""}${opponentTeamBtn}${noteBtn}${flagBtn}</div>
     </div>
     <div class="boss-level-row">
       <div class="boss-level-main">
@@ -5368,6 +5421,15 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="log">
 
     <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.60</span><span class="tag tag-feat">Feature</span></div>
+      <h3>Schlüsselitems-Checkliste, Region-Ausblenden-Hinweis, „Fast geschafft"</h3>
+      <p><strong>Schlüsselitems/VMs-Checkliste:</strong> neue Übersicht unter „Werkzeuge" listet die VMs der aktuellen Edition zum Abhaken - zeigt auf einen Blick, welche Hindernisse (Surfer, Zerschneider, Stärke, …) schon freigeschaltet sind. Editionsspezifisch hinterlegt, da sich das VM-Set je nach Spiel-Engine unterscheidet.</p>
+      <p><strong>Proaktiver Hinweis „Region jetzt ausblenden?":</strong> sobald der letzte offene Standort einer Region eingetragen wird (Fang oder Kein Fang), fragt die App direkt, ob die jetzt komplette Region über die bestehende Ausblenden-Funktion aus der Routen-Liste genommen werden soll - statt das nur passiv in den Einstellungen anzubieten.</p>
+      <p><strong>„Fast geschafft"-Hervorhebung:</strong> sind insgesamt (Standorte + Bosse zusammen) nur noch 1-3 offene Kacheln übrig, werden genau diese mit einem goldenen Rahmen und Hinweis-Chip hervorgehoben - kleiner Motivations-Kick kurz vor 100%.</p>
+      <p><strong>Backlog aufgeräumt:</strong> „✓ abgeschlossen"-Badge im Regions-Header, Meilenstein-Feedback bei 25/50/75% und Sound-Feedback als Verworfen markiert - in Kombination mit den drei neuen Punkten hier wäre das an optischem/akustischem Feedback zu viel geworden. Das plattformübergreifende Speichersystem ist nachträglich als umgesetzt vermerkt (Cloud-Sync, siehe v1.8.56–1.8.59 oben).</p>
+    </div>
+
+    <div class="entry">
       <div class="entry-head"><span class="ver">v1.8.59</span><span class="tag tag-feat">Feature</span></div>
       <h3>Cloud-Sync: Kopieren, Teilen, Verknüpfungslink, Konflikt-Vergleich</h3>
       <p>Der Sync-Code muss nicht mehr abgetippt werden: „Kopieren" legt ihn in die Zwischenablage, „Teilen" öffnet (wo verfügbar) das native Teilen-Menü des Geräts. Geteilt wird dabei auch ein Link, der beim Öffnen auf einem anderen Gerät das Code-Feld automatisch vorausfüllt - verknüpft wird trotzdem erst nach expliziter Bestätigung, nie automatisch beim bloßen Öffnen des Links. Der Konflikt-Dialog bei unterschiedlichen Ständen zeigt jetzt zusätzlich zum Zeitstempel eine grobe Kennzahl je Version (gefangen/gestorben/Bosse besiegt), um die Entscheidung zu erleichtern.</p>
@@ -6119,7 +6181,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
 
   <div class="followups" id="offene-punkte">
     <h2>Offene Punkte, Ideen &amp; Optimierungen</h2>
-    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Plattformübergreifendes Speichersystem.</strong> Spielstände liegen bisher rein lokal (<code>localStorage</code>) im jeweiligen Browser/Gerät — der einzige Weg zwischen Geräten zu wechseln ist der manuelle JSON-Export/Import. Ein echter Sync (z.B. Konto-basiert oder über einen eigenen Cloud-Speicher) würde Spielstände automatisch zwischen Handy, Tablet und Desktop aktuell halten.</div>
+    <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Plattformübergreifendes Speichersystem.</strong> Spielstände liegen bisher rein lokal (<code>localStorage</code>) im jeweiligen Browser/Gerät — der einzige Weg zwischen Geräten zu wechseln ist der manuelle JSON-Export/Import. Ein echter Sync (z.B. Konto-basiert oder über einen eigenen Cloud-Speicher) würde Spielstände automatisch zwischen Handy, Tablet und Desktop aktuell halten. → umgesetzt in v1.8.56–1.8.59 als Cloud-Sync über Supabase (Sync-Code statt Konto/Login)</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Achievement-System mit verliehenen Titeln.</strong> Für bestimmte Situationen/Meilensteine im Run Achievements freischalten, die einen Titel verleihen — z.&nbsp;B. „Legenden-Trainer" bei 3 Legendären gleichzeitig im Team, „Champ" nach Championsieg. Weitere Ideen für Auslöser/Titel noch offen. → umgesetzt in v1.8.34 mit 10 Erfolgen/Titeln als erste Runde (u.&nbsp;a. Teamvoll, Ironman, fehlerfreier Champion-Sieg, Solo-Modus, Dupes-Regelbruch) - weitere Erfolge (z.&nbsp;B. Legenden-Trainer, editionsübergreifende) können jederzeit ergänzt werden.</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Run-Rückblick ausbauen: erzählte Zusammenfassung + kleine Analyse.</strong> Statt nur Kennzahlen eine spannend geschriebene Zusammenfassung des Abenteuers anhand von Kennzahlen/Verlauf generieren, dazu kleine Analyse-Einsichten (z.&nbsp;B. „hauptsächlich Wasser-Pokémon im Team", auffällige Typverteilung, Fang-/Todesserien o.&nbsp;Ä.). → umgesetzt in v1.8.51 (Fließtext-Zusammenfassung + Analyse-Punkte zu Fangserie, härtestem Gegner, Erfolgen und ignorierten Dupes-Warnungen; Typverteilung bewusst ausgelassen, da dafür eine komplette Arten→Typ-Referenztabelle fehlt - siehe „Typabdeckungs-Analyse fürs Team" weiter unten)</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Zusammengefasste Encounter-Übersicht für ausgelassene Routen.</strong> Liste aller Standorte, an denen noch kein Fangversuch eingetragen wurde (übersprungene Routen), mit Sprung-Funktion zur jeweiligen Standort-Karte per Klick. → umgesetzt in v1.8.53</div>
@@ -6138,13 +6200,13 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>PWA-Schnellzugriffe.</strong> Über das Home-Bildschirm-Icon direkt Schnellaktionen anbieten (z.&nbsp;B. „Fangen", „Team") via <code>shortcuts</code> im Manifest, ohne die App erst öffnen und navigieren zu müssen.</div>
     <div class="followup-item"><span class="tag tag-fix" style="margin-right:8px;">Verworfen</span><strong>Levelkurve als Mini-Diagramm.</strong> Kleine Sparkline in der Statistik, die den Levelverlauf des Teams über den Run hinweg zeigt. <em>→ verworfen: die App trackt aktuell keine Level der Team-Pokémon (nur den Boss-Level-Boost in %), es gäbe also keine Datengrundlage dafür.</em></div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Fangmethode als strukturiertes Feld mit Icon.</strong> Statt nur als Freitext-Notiz (z.&nbsp;B. „Angeln", „Surfen", „Gras") die Fangmethode als eigenes Feld mit passendem Icon auf der Standort-Kachel abbilden.</div>
-    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Fortschrittscheckliste für Schlüsselitems/VMs.</strong> Übersicht, welche VMs/Schlüsselitems (Surfer, Zerschneider usw.) schon eingesammelt wurden — hilfreich, um zu sehen, welche Standorte bereits erreichbar sind.</div>
+    <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Fortschrittscheckliste für Schlüsselitems/VMs.</strong> Übersicht, welche VMs/Schlüsselitems (Surfer, Zerschneider usw.) schon eingesammelt wurden — hilfreich, um zu sehen, welche Standorte bereits erreichbar sind. → umgesetzt in v1.8.60</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Duo-Vergleichsansicht.</strong> Sobald es ein plattformübergreifendes Speichersystem gibt (siehe oben): beide Spielstände eines Duell-Runs nebeneinander vergleichen (Fortschritt, Überlebensrate, Bosse).</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Enter-Taste sendet das Fang-Formular ab.</strong> Tastatur-Komfort: im Spitzname-Feld Enter drücken, statt immer den Button antippen zu müssen. → umgesetzt in v1.8.49</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Team-Reihenfolge per Drag &amp; Drop sortierbar.</strong> Im Original lässt sich die Team-Reihenfolge ändern — hier bisher fix nach Fangreihenfolge. → umgesetzt in v1.8.53</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Spitzname inline auf der Team-Kachel bearbeitbar.</strong> Statt über den Umweg Kontextmenü → Umbenennen-Sheet direkt auf der Kachel editierbar — spart einen Schritt bei einer der häufigsten Aktionen. → umgesetzt in v1.8.53</div>
     <div class="followup-item"><span class="tag tag-fix" style="margin-right:8px;">Verworfen</span><strong>Badge-Zähler auf den Tabs.</strong> Z.&nbsp;B. „Team 4/6" oder eine kleine Zahl auf „Friedhof", damit der Status auf einen Blick sichtbar ist, ohne erst reinzutippen. <em>→ verworfen: schadet eher der Übersichtlichkeit der Tab-Leiste.</em></div>
-    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Meilenstein-Feedback bei 25/50/75/100% Gesamtfortschritt.</strong> Kleiner Konfetti-Moment/Toast, ähnlich der Champion-Feier, aber für Zwischenetappen.</div>
+    <div class="followup-item"><span class="tag tag-fix" style="margin-right:8px;">Verworfen</span><strong>Meilenstein-Feedback bei 25/50/75/100% Gesamtfortschritt.</strong> Kleiner Konfetti-Moment/Toast, ähnlich der Champion-Feier, aber für Zwischenetappen. <em>→ verworfen: zusammen mit dem Regions-Badge und dem Sound-Feedback als zu viel gleichzeitiges Feedback eingeschätzt, wirkt sonst überladen.</em></div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Kontextuelle Hilfe-Icons bei Einstellungen.</strong> Ein kleines „?" bei weniger selbsterklärenden Optionen (Dupes-Clause, Nickname-Pflicht, Einzelspieler-Modus), das kurz erklärt, was sie konkret bewirken. → umgesetzt in v1.8.33 (Level-Boost, Dupes-Clause, Nickname-Pflicht; Einzelspieler-Modus-Erklärung steht noch offen)</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Kurze Erste-Schritte-Tour beim allerersten Öffnen.</strong> Die App hat mittlerweile einige nicht ganz offensichtliche Mechaniken (Flaggen-Icon, Einklapp-Logik, Box-Suche, Swipe zwischen Tabs), die neue Nutzer:innen sonst nur durch Zufall entdecken.</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Kurzes Vibrations-Feedback bei Fang/Tod/Bosssieg.</strong> Auf unterstützten Geräten, mit Ein/Aus-Schalter in den Einstellungen. → umgesetzt in v1.8.40</div>
@@ -6154,18 +6216,18 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Lang-Drücken-Bestätigung für „Sieg zurücknehmen".</strong> Schutz vor versehentlichem Antippen, das sonst stillschweigend Fortschritt zurücknimmt. → umgesetzt in v1.8.53</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Sticky Mini-Fortschrittsleiste im Routen-Tab.</strong> Der Gesamtfortschritt immer sichtbar oben, nicht nur in der Statistik-Karte der Einstellungen. → umgesetzt in v1.8.40</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Eingabefeld statt nur +5%/-5% beim Boss-Level-Boost.</strong> Für größere Sprünge auf einmal, ohne oft hintereinander tippen zu müssen. → umgesetzt in v1.8.53</div>
-    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Proaktiver Hinweis „Region jetzt ausblenden?"</strong> Sobald eine Region komplett abgeschlossen ist, aktiv anbieten, sie über die bestehende Regionen-ausblenden-Funktion aus der Übersicht zu nehmen.</div>
+    <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Proaktiver Hinweis „Region jetzt ausblenden?"</strong> Sobald eine Region komplett abgeschlossen ist, aktiv anbieten, sie über die bestehende Regionen-ausblenden-Funktion aus der Übersicht zu nehmen. → umgesetzt in v1.8.60</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Statusleisten-Farbe an die aktuelle Edition anpassen.</strong> <code>theme-color</code> passend zum Editions-Farbschema setzen, für ein noch nativeres Look&amp;Feel beim Wechseln. → umgesetzt in v1.8.49</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Sanftes Fade-in beim Laden von Sprites.</strong> Statt hartem Pop-in ein kurzes Einblenden, sobald ein Sprite-Bild bereitsteht. → umgesetzt in v1.8.40</div>
-    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>„Fast geschafft"-Hervorhebung.</strong> Die letzten 2–3 offenen Kacheln kurz vor 100% Gesamtabschluss optisch hervorheben — kleiner Motivations-Kick.</div>
+    <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>„Fast geschafft"-Hervorhebung.</strong> Die letzten 2–3 offenen Kacheln kurz vor 100% Gesamtabschluss optisch hervorheben — kleiner Motivations-Kick. → umgesetzt in v1.8.60</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Editions-Akzentfarbe auch auf Tab-Leiste/FAB.</strong> Aktuell nur auf Karten-Rändern sichtbar — jede Edition würde sich dadurch stärker „eigen" anfühlen. → umgesetzt in v1.8.49 (FAB nutzte schon Akzentfarben, Tab-Leiste bekommt jetzt zusätzlich einen farbigen oberen Rand)</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Konfetti-Farben an die Editionspalette koppeln.</strong> Statt fixer Standardfarben. → umgesetzt in v1.8.40</div>
-    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>„✓ abgeschlossen"-Badge im Regions-Header.</strong> Sobald eine ganze Region fertig ist, auf einen Blick sichtbar, ohne reinscrollen zu müssen.</div>
+    <div class="followup-item"><span class="tag tag-fix" style="margin-right:8px;">Verworfen</span><strong>„✓ abgeschlossen"-Badge im Regions-Header.</strong> Sobald eine ganze Region fertig ist, auf einen Blick sichtbar, ohne reinscrollen zu müssen. <em>→ verworfen: zusammen mit dem proaktiven Ausblenden-Hinweis und der "Fast geschafft"-Hervorhebung als zu viel gleichzeitiges visuelles Feedback eingeschätzt, wirkt sonst überladen.</em></div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Längere Sheet-Labels kürzen.</strong> Z.&nbsp;B. „Kampf trotz Niederlage als abgeschlossen zählen" → kurzes Button-Label + erklärender Untertext, statt alles in den Button-Text zu packen. → umgesetzt in v1.8.53 für das genannte Beispiel; weitere Fälle können bei Bedarf noch folgen</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Fokus-Sichtbarkeit &amp; aria-labels bei Icon-Buttons nachschärfen.</strong> Für Tastatur-/Screenreader-Nutzung, aktuell vermutlich lückenhaft. → umgesetzt in v1.8.33</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Run-Rückblick als Bild statt nur Text.</strong> Eine hübsche, teilbare Abschluss-Karte (Canvas/Screenshot-Stil) für Social Media statt nur der bestehenden Text-Kopie. → umgesetzt in v1.8.51</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Web-Share-Sheet auf Mobile.</strong> Beim Kopieren des Run-Rückblicks direkt das native Teilen-Menü anbieten, statt nur Zwischenablage/Textfeld. → umgesetzt in v1.8.49</div>
-    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Kurzes Sound-Feedback als Pendant zum Vibrations-Feedback.</strong> Dezente Klänge bei Fang/Tod/Bosssieg, mit eigenem Lautstärke-/Ein-Aus-Schalter.</div>
+    <div class="followup-item"><span class="tag tag-fix" style="margin-right:8px;">Verworfen</span><strong>Kurzes Sound-Feedback als Pendant zum Vibrations-Feedback.</strong> Dezente Klänge bei Fang/Tod/Bosssieg, mit eigenem Lautstärke-/Ein-Aus-Schalter. <em>→ verworfen: zusammen mit dem Regions-Badge und dem Meilenstein-Feedback als zu viel gleichzeitiges Feedback eingeschätzt, wirkt sonst überladen.</em></div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Allgemeines „Letzte Aktion rückgängig".</strong> Statt nur einzelner Undo-Buttons pro Aktionstyp (Entwicklung, Boss-Sieg, …) ein universeller Rückgängig-Mechanismus für die zuletzt ausgeführte Aktion. → umgesetzt in v1.8.53 als Toast mit „Rückgängig"-Button nach einer kuratierten Liste riskanter Aktionen (Fang, Tod, Entwicklung, Bosskampf-Ergebnis, Teamaustausch, „Kein Fang", Standort-Löschung)</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Todesursache-Freitext direkt beim Markieren.</strong> Optionales kleines Feld („Wodurch gestorben?") direkt im „Als gestorben markieren"-Sheet, landet dann sichtbar im Friedhof. → umgesetzt in v1.8.48 (per Hausregel-Schalter, standardmäßig aus)</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Weltenbummler-Erfolg.</strong> Runs in mindestens 3 verschiedenen Generationen abgeschlossen (Cross-Save-Erfolg, bräuchte Zugriff auf alle Spielstände beim Prüfen).</div>
@@ -6192,7 +6254,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.59.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.60.</footer>
 
 </div>`;
 
@@ -6215,6 +6277,51 @@ function pendingLocationsList(){
     !(state.hiddenRegions||[]).includes(l.region) &&
     !(state.hidePostgame && /Postgame/.test(l.note||""))
   );
+}
+
+/* Pro Editions-Engine (nicht pro ursprünglicher Generation) - HG/SS nutzt trotz Johto-Setting das
+   Gen4-VM-Set, da es technisch ein Gen4-Remake ist (siehe GAMES-Kommentar oben). Bewusst nur VMs,
+   keine sonstigen Schlüsselitems (Rad, Angel, Story-Items) - die Liste soll eine schnelle
+   "was brauche ich noch, um weiterzukommen"-Übersicht bleiben statt zu einer vollständigen
+   Item-Datenbank zu wachsen. Nummerierung (VM01 usw.) bewusst weggelassen, da sie sich zwischen
+   den Editionen unterscheidet und für die eigentliche Nutzung (Hindernis freigeschaltet?) nicht
+   relevant ist - nur der Move-Name zählt. */
+const KEY_ITEMS_BY_EDITION = {
+  "rot-blau": ["Zerschneider","Fliegen","Surfer","Stärke","Blitzschlag"],
+  gelb: ["Zerschneider","Fliegen","Surfer","Stärke","Blitzschlag"],
+  "gold-silber": ["Zerschneider","Fliegen","Surfer","Stärke","Blitzschlag","Strudel","Wasserfall"],
+  kristall: ["Zerschneider","Fliegen","Surfer","Stärke","Blitzschlag","Strudel","Wasserfall"],
+  "feuerrot-blattgruen": ["Zerschneider","Fliegen","Surfer","Stärke","Blitzschlag","Zertrümmerer","Wasserfall","Tauchen"],
+  smaragd: ["Zerschneider","Fliegen","Surfer","Stärke","Blitzschlag","Zertrümmerer","Wasserfall","Tauchen"],
+  rubin: ["Zerschneider","Fliegen","Surfer","Stärke","Blitzschlag","Zertrümmerer","Wasserfall","Tauchen"],
+  saphir: ["Zerschneider","Fliegen","Surfer","Stärke","Blitzschlag","Zertrümmerer","Wasserfall","Tauchen"],
+  hgss: ["Zerschneider","Fliegen","Surfer","Stärke","Strudel","Zertrümmerer","Wasserfall","Klettern"],
+  "diamant-perl": ["Zerschneider","Fliegen","Surfer","Stärke","Nebelschwaden","Zertrümmerer","Wasserfall","Klettern"],
+  platin: ["Zerschneider","Fliegen","Surfer","Stärke","Nebelschwaden","Zertrümmerer","Wasserfall","Klettern"],
+  schwarz: ["Zerschneider","Fliegen","Surfer","Stärke","Wasserfall","Zertrümmerer","Klettern"],
+  weiss: ["Zerschneider","Fliegen","Surfer","Stärke","Wasserfall","Zertrümmerer","Klettern"],
+  "schwarz2-weiss2": ["Zerschneider","Fliegen","Surfer","Stärke","Wasserfall","Zertrümmerer","Klettern"],
+};
+function currentKeyItems(){ return KEY_ITEMS_BY_EDITION[state.edition] || []; }
+
+function openKeyItemsSheet(){
+  const items = currentKeyItems();
+  const checkedCount = items.filter(name=>state.keyItemsChecked[name]).length;
+  const rows = items.map(name=>{
+    const checked = !!state.keyItemsChecked[name];
+    return `<label class="sheet-option check-row${checked?" done":""}">
+      <input type="checkbox" data-key-item="${escapeHtml(name)}" ${checked?"checked":""} />
+      <span>${escapeHtml(name)}</span>
+    </label>`;
+  }).join("");
+  openSheet(`
+    <h3>Schlüsselitems / VMs</h3>
+    <div class="loc-sub" style="margin-bottom:14px;">${items.length ? `${checkedCount}/${items.length} eingesammelt - hilft zu sehen, welche Standorte schon erreichbar sind.` : "Für diese Edition sind hier keine VMs hinterlegt."}</div>
+    ${rows}
+    <div class="sheet-footer" style="margin-top:14px;">
+      <button class="btn btn-secondary btn-block" data-act="close-sheet">Schließen</button>
+    </div>
+  `);
 }
 
 function openPendingLocationsSheet(){
@@ -6501,6 +6608,11 @@ function renderSettings(){
     <div class="loc-name">Ausgelassene Routen</div>
     <div class="loc-sub">Standorte ohne bisherigen Fangversuch, mit Sprung zur jeweiligen Karte (${pendingLocationsList().length} offen)</div>
     <button class="btn btn-secondary btn-block" style="margin-top:12px;" data-act="open-pending-locations">Übersicht öffnen</button>
+  </div>
+  <div class="card">
+    <div class="loc-name">Schlüsselitems / VMs</div>
+    <div class="loc-sub">Checkliste der VMs dieser Edition (${currentKeyItems().filter(name=>state.keyItemsChecked[name]).length}/${currentKeyItems().length} eingesammelt) - hilft zu sehen, welche Standorte schon erreichbar sind.</div>
+    <button class="btn btn-secondary btn-block" style="margin-top:12px;" data-act="open-key-items">Checkliste öffnen</button>
   </div>
   <div class="card">
     <div class="loc-name">Erste-Schritte-Tour</div>
@@ -7171,7 +7283,13 @@ document.addEventListener("click", e=>{
   const undoPreSnapshot = undoLabel ? JSON.stringify(state) : null;
 
   if(act==="open-catch") openCatchSheet(id);
-  else if(act==="mark-failed"){ findLoc(id).status="failed"; saveState(); render(); }
+  else if(act==="mark-failed"){
+    const loc = findLoc(id);
+    const wasComplete = isRegionFullyCaught(loc.region);
+    loc.status="failed";
+    saveState(); render();
+    if(!wasComplete && isRegionFullyCaught(loc.region)) maybeOfferHideRegion(loc.region);
+  }
   else if(act==="reset-loc"){ findLoc(id).status="pending"; saveState(); render(); }
   else if(act==="toggle-loc-visited"){
     const loc = findLoc(id);
@@ -7356,6 +7474,7 @@ document.addEventListener("click", e=>{
   else if(act==="edit-team-nick"){ editingTeamNickId = id; render(); }
   else if(act==="open-team-history") openTeamHistorySheet();
   else if(act==="open-pending-locations") openPendingLocationsSheet();
+  else if(act==="open-key-items") openKeyItemsSheet();
   else if(act==="open-type-coverage") openTypeCoverageSheet();
   else if(act==="jump-to-pending-loc"){
     closeSheet();
@@ -7634,7 +7753,7 @@ document.addEventListener("click", e=>{
     if(!Array.isArray(state.hiddenRegions)) state.hiddenRegions = [];
     const idx = state.hiddenRegions.indexOf(id);
     if(idx>=0) state.hiddenRegions.splice(idx,1); else state.hiddenRegions.push(id);
-    saveState(); render();
+    saveState(); closeSheet(); render();
   }
   else if(act==="reset-run"){
     openConfirmSheet("Spielstand zurücksetzen", "Wirklich den gesamten Fortschritt dieses Spielstands zurücksetzen? Er bleibt als Spielstand erhalten, startet aber wieder bei null. Das kann nicht rückgängig gemacht werden.", "Zurücksetzen", "confirm-reset-run");
@@ -7785,6 +7904,13 @@ document.addEventListener("input", e=>{
   if(e.target && e.target.id==="duelPartnerInput"){ state.duelPartnerName = e.target.value; saveState(); }
   if(e.target && e.target.id==="rivalNicknameInput"){ state.rivalNickname = e.target.value; saveState(); }
   if(e.target && e.target.id==="randomizerSeedInput"){ state.randomizerSeed = e.target.value; saveState(); }
+  if(e.target && e.target.dataset && e.target.dataset.keyItem){
+    const name = e.target.dataset.keyItem;
+    if(e.target.checked) state.keyItemsChecked[name] = true; else delete state.keyItemsChecked[name];
+    saveState();
+    const row = e.target.closest(".check-row");
+    if(row) row.classList.toggle("done", e.target.checked);
+  }
   if(e.target && e.target.id==="usernameInput"){
     setGlobalUsername(e.target.value);
     const rt = document.getElementById("runTitle");
