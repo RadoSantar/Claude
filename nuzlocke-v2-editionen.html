@@ -2775,7 +2775,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.8.63";
+const APP_VERSION = "1.8.64";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -2826,7 +2826,7 @@ function freshState(editionId, soloMode){
     names.forEach(entry=>{ locations.push(parseLocationEntry(region, entry)); });
   });
   const gameStarters = GAMES[edition].starters || { grass:"", fire:"", water:"" };
-  return { edition, runTitle:"", soloMode:!!soloMode, locations, bossBoosts:{}, bossDefeated:{}, rivalNickname:"", duelPartnerName:"", dupesWarning:true, lastExportAt:null, evolutionCount:0, lossCount:0, nicknameRequired:false, pvp:{}, hallOfFame:{ rivalTeam:[], playerTeam:[], defeatedAt:null, result:null }, starterNames:{ ...gameStarters }, starterChoice:null, currentLocId:null, eventLog:[], hiddenRegions:[], achievements:{}, activeTitle:null, dupesIgnoredCount:0, bossLossIds:{}, cleanBossWins:{}, bossNotes:{}, randomizerSeed:"", vibrationEnabled:true, bossWinTeams:{}, hidePostgame:false, trackBossTeams:false, bossOpponentTeams:{}, trackDeathCause:false, colorBlindSafeMode:false, teamOrder:[], syncCode:null, lastSyncedAt:null, keyItemsChecked:{}, houseRules:{ setMode:true, speciesClause:true, noItems:true, levelCap:true } };
+  return { edition, runTitle:"", soloMode:!!soloMode, locations, bossBoosts:{}, bossDefeated:{}, rivalNickname:"", duelPartnerName:"", dupesWarning:true, lastExportAt:null, evolutionCount:0, lossCount:0, nicknameRequired:false, pvp:{}, hallOfFame:{ rivalTeam:[], playerTeam:[], defeatedAt:null, result:null }, starterNames:{ ...gameStarters }, starterChoice:null, currentLocId:null, eventLog:[], hiddenRegions:[], achievements:{}, activeTitle:null, dupesIgnoredCount:0, bossLossIds:{}, cleanBossWins:{}, bossNotes:{}, randomizerSeed:"", vibrationEnabled:true, bossWinTeams:{}, hidePostgame:false, trackBossTeams:false, bossOpponentTeams:{}, trackDeathCause:false, colorBlindSafeMode:false, teamOrder:[], syncCode:null, lastSyncedAt:null, keyItemsChecked:{}, houseRules:{ setMode:true, speciesClause:true, noItems:true, levelCap:true }, duoCode:null };
 }
 
 /* Ergänzt neu hinzugekommene Standorte (z.B. nachträglich eingefügte Städte) in einen bereits
@@ -2887,6 +2887,7 @@ function normalizeState(parsed){
   if(typeof parsed.lastSyncedAt !== "number") parsed.lastSyncedAt = null;
   if(!parsed.keyItemsChecked) parsed.keyItemsChecked = {};
   if(!parsed.houseRules) parsed.houseRules = { setMode:true, speciesClause:true, noItems:true, levelCap:true };
+  if(typeof parsed.duoCode !== "string") parsed.duoCode = null;
   syncLocations(parsed);
   return parsed;
 }
@@ -3309,6 +3310,80 @@ function shareSyncCode(code){
     if(err && err.name === "AbortError") return;
     copySyncCode(code);
   });
+}
+
+/* ---------- Duo-Vergleichsansicht ----------
+   Baut direkt auf Cloud-Sync auf, aber bewusst READ-ONLY und ohne eigene Verknüpfung: der hier
+   eingetragene Code gehört einer anderen Person (z.B. dem Duellpartner), deren Spielstand wird
+   nur zum Vergleich abgerufen (pullCloudSave), nie verändert oder mit dem eigenen state
+   überschrieben. statsForSave() liefert dafür schon alle nötigen Kennzahlen (wird sonst für die
+   eigene Bestenliste genutzt) - nur der Titel wird danach überschrieben, weil effectiveRunTitle()
+   sonst bei leerem runTitle fälschlich den EIGENEN globalUsername als Fallback einsetzen würde. */
+let duoCompareLoading = false;
+
+function duoCompareCardHtml(){
+  if(!state.duoCode){
+    return `<div class="card">
+      <div class="loc-name">Duo-Vergleich</div>
+      <div class="loc-sub" style="margin-bottom:10px;">Vergleiche deinen Fortschritt mit dem einer anderen Person, die ebenfalls Cloud-Sync nutzt - trag dazu deren Sync-Code ein (den bekommt ihr z.&nbsp;B. über den „Teilen"-Button bei Cloud-Sync). Rein lesend, der fremde Spielstand wird dadurch nicht verändert.</div>
+      <div class="field">
+        <input id="duoCodeInput" value="" placeholder="z. B. AB3D9F7K2M" autocomplete="off" style="text-transform:uppercase; font-family:var(--font-mono); letter-spacing:.05em;" maxlength="10" />
+      </div>
+      <button class="btn btn-primary btn-block" data-act="link-duo-code">Vergleich starten</button>
+    </div>`;
+  }
+  return `<div class="card">
+    <div class="loc-name">Duo-Vergleich</div>
+    <div class="loc-sub" style="margin-bottom:10px;">Verglichen mit Code <strong style="font-family:var(--font-mono); letter-spacing:.05em;">${escapeHtml(state.duoCode)}</strong></div>
+    <button class="btn btn-primary btn-block" style="margin-bottom:8px;" data-act="open-duo-compare" ${duoCompareLoading?"disabled":""}>${duoCompareLoading?"Lädt …":"Vergleich anzeigen"}</button>
+    <button class="btn btn-ghost" data-act="unlink-duo">Vergleich trennen</button>
+  </div>`;
+}
+
+function duoCompareSheetHtml(partnerSave, updatedAt){
+  const mine = statsForSave(state);
+  const theirs = statsForSave(partnerSave);
+  theirs.title = (partnerSave.runTitle && partnerSave.runTitle.trim()) ? partnerSave.runTitle : "Partner";
+  const leaderIsMine = mine.completionPct >= theirs.completionPct;
+  const row = (stats, isMine, isLeader)=> `
+    <div class="leaderboard-row${isLeader?" active":""}">
+      <div class="leaderboard-main">
+        <div class="leaderboard-title">${escapeHtml(stats.title)}${isMine?' <span class="leaderboard-tag">du</span>':""}</div>
+        <div class="leaderboard-sub">${escapeHtml(stats.editionLabel)} · ${stats.durationDays===null?"–":(stats.durationDays<1?"<1 Tag":stats.durationDays===1?"1 Tag":stats.durationDays+" Tage")}</div>
+      </div>
+      <div class="leaderboard-stats">
+        <div><span>${stats.completionPct}%</span><label>Abschluss</label></div>
+        <div><span>${stats.survival===null?"–":stats.survival+"%"}</span><label>Überlebt</label></div>
+        <div><span>${stats.bossesDone}/${stats.bossesTotal}</span><label>Bosse</label></div>
+      </div>
+    </div>`;
+  return `
+    <h3>Duo-Vergleich</h3>
+    <div class="loc-sub" style="margin-bottom:14px;">Stand der Cloud-Version des Vergleichs-Spielstands: ${escapeHtml(formatRelativeTime(new Date(updatedAt).getTime()))}.</div>
+    <div class="leaderboard-list">${row(mine, true, leaderIsMine)}${row(theirs, false, !leaderIsMine)}</div>
+    <div class="sheet-footer" style="margin-top:14px;">
+      <button class="btn btn-secondary btn-block" data-act="open-duo-compare">Aktualisieren</button>
+      <button class="btn btn-primary btn-block" data-act="close-sheet">Schließen</button>
+    </div>
+  `;
+}
+
+async function openDuoCompareSheet(){
+  if(!state.duoCode || duoCompareLoading) return;
+  duoCompareLoading = true; render();
+  try{
+    const remote = await pullCloudSave(state.duoCode);
+    duoCompareLoading = false; render();
+    if(!remote){
+      openSyncResultSheet("Noch kein Vergleich möglich", "Zu diesem Code existiert noch kein Cloud-Spielstand.");
+      return;
+    }
+    const partnerSave = normalizeState(remote.data);
+    openSheet(duoCompareSheetHtml(partnerSave, remote.updated_at));
+  }catch(e){
+    duoCompareLoading = false; render();
+    openSyncResultSheet("Cloud nicht erreichbar", "Kein Abruf möglich - prüfe deine Internetverbindung und versuch es erneut.");
+  }
 }
 
 function bossPercent(id){ return state.bossBoosts[id] || 0; }
@@ -5436,6 +5511,12 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="log">
 
     <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.64</span><span class="tag tag-feat">Feature</span></div>
+      <h3>Duo-Vergleichsansicht</h3>
+      <p>Neue Karte „Duo-Vergleich" unter „Spielstände": den Cloud-Sync-Code einer anderen Person eintragen, um den eigenen Fortschritt (Gesamtabschluss, Überlebensrate, besiegte Bosse) direkt neben ihrem zu sehen - rein lesend über den bestehenden Cloud-Sync-Mechanismus, ohne die eigene Sync-Verknüpfung zu berühren oder den fremden Spielstand zu verändern. Außerdem: die geplanten editionsübergreifenden Erfolge „Weltenbummler" und „Auferstanden" wieder aus dem Backlog gestrichen - auf Wunsch bewusst kein Fokus auf Cross-Save-Erfolge, sondern auf Erfolge pro einzelnem Run/Edition.</p>
+    </div>
+
+    <div class="entry">
       <div class="entry-head"><span class="ver">v1.8.63</span><span class="tag tag-fix">Zurückgenommen</span></div>
       <h3>Fangmethode-Icons wieder entfernt</h3>
       <p>Die in v1.8.62 hinzugefügten Fangmethode-Icons (Angeln, Surfen, Zertrümmerer, Kopfnuss-Bäume, Tauchen, Klettern) auf den Standort-Kacheln wurden auf Wunsch wieder entfernt - optisch nicht überzeugend. Die anderen drei Punkte aus derselben Version (PWA-Schnellzugriffe, Regenbogen-Team-Erfolg, Regelwerk-Checkliste) bleiben unverändert bestehen.</p>
@@ -6237,7 +6318,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><span class="tag tag-fix" style="margin-right:8px;">Verworfen</span><strong>Levelkurve als Mini-Diagramm.</strong> Kleine Sparkline in der Statistik, die den Levelverlauf des Teams über den Run hinweg zeigt. <em>→ verworfen: die App trackt aktuell keine Level der Team-Pokémon (nur den Boss-Level-Boost in %), es gäbe also keine Datengrundlage dafür.</em></div>
     <div class="followup-item"><span class="tag tag-fix" style="margin-right:8px;">Verworfen</span><strong>Fangmethode als strukturiertes Feld mit Icon.</strong> Statt nur als Freitext-Notiz (z.&nbsp;B. „Angeln", „Surfen", „Gras") die Fangmethode als eigenes Feld mit passendem Icon auf der Standort-Kachel abbilden. <em>→ in v1.8.62 umgesetzt, in v1.8.63 auf Wunsch wieder entfernt: die Icons gefielen optisch nicht.</em></div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Fortschrittscheckliste für Schlüsselitems/VMs.</strong> Übersicht, welche VMs/Schlüsselitems (Surfer, Zerschneider usw.) schon eingesammelt wurden — hilfreich, um zu sehen, welche Standorte bereits erreichbar sind. → umgesetzt in v1.8.60</div>
-    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Duo-Vergleichsansicht.</strong> Sobald es ein plattformübergreifendes Speichersystem gibt (siehe oben): beide Spielstände eines Duell-Runs nebeneinander vergleichen (Fortschritt, Überlebensrate, Bosse).</div>
+    <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Duo-Vergleichsansicht.</strong> Sobald es ein plattformübergreifendes Speichersystem gibt (siehe oben): beide Spielstände eines Duell-Runs nebeneinander vergleichen (Fortschritt, Überlebensrate, Bosse). → umgesetzt in v1.8.64, rein lesend über den Cloud-Sync-Code der anderen Person, ohne die eigene Sync-Verknüpfung zu berühren</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Enter-Taste sendet das Fang-Formular ab.</strong> Tastatur-Komfort: im Spitzname-Feld Enter drücken, statt immer den Button antippen zu müssen. → umgesetzt in v1.8.49</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Team-Reihenfolge per Drag &amp; Drop sortierbar.</strong> Im Original lässt sich die Team-Reihenfolge ändern — hier bisher fix nach Fangreihenfolge. → umgesetzt in v1.8.53</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Spitzname inline auf der Team-Kachel bearbeitbar.</strong> Statt über den Umweg Kontextmenü → Umbenennen-Sheet direkt auf der Kachel editierbar — spart einen Schritt bei einer der häufigsten Aktionen. → umgesetzt in v1.8.53</div>
@@ -6266,8 +6347,8 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><span class="tag tag-fix" style="margin-right:8px;">Verworfen</span><strong>Kurzes Sound-Feedback als Pendant zum Vibrations-Feedback.</strong> Dezente Klänge bei Fang/Tod/Bosssieg, mit eigenem Lautstärke-/Ein-Aus-Schalter. <em>→ verworfen: zusammen mit dem Regions-Badge und dem Meilenstein-Feedback als zu viel gleichzeitiges Feedback eingeschätzt, wirkt sonst überladen.</em></div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Allgemeines „Letzte Aktion rückgängig".</strong> Statt nur einzelner Undo-Buttons pro Aktionstyp (Entwicklung, Boss-Sieg, …) ein universeller Rückgängig-Mechanismus für die zuletzt ausgeführte Aktion. → umgesetzt in v1.8.53 als Toast mit „Rückgängig"-Button nach einer kuratierten Liste riskanter Aktionen (Fang, Tod, Entwicklung, Bosskampf-Ergebnis, Teamaustausch, „Kein Fang", Standort-Löschung)</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Todesursache-Freitext direkt beim Markieren.</strong> Optionales kleines Feld („Wodurch gestorben?") direkt im „Als gestorben markieren"-Sheet, landet dann sichtbar im Friedhof. → umgesetzt in v1.8.48 (per Hausregel-Schalter, standardmäßig aus)</div>
-    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Weltenbummler-Erfolg.</strong> Runs in mindestens 3 verschiedenen Generationen abgeschlossen (Cross-Save-Erfolg, bräuchte Zugriff auf alle Spielstände beim Prüfen).</div>
-    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Auferstanden-Erfolg.</strong> Nach einem Game-Over direkt einen neuen Run gestartet statt aufzugeben (Cross-Save-Erfolg).</div>
+    <div class="followup-item"><span class="tag tag-fix" style="margin-right:8px;">Verworfen</span><strong>Weltenbummler-Erfolg.</strong> Runs in mindestens 3 verschiedenen Generationen abgeschlossen (Cross-Save-Erfolg, bräuchte Zugriff auf alle Spielstände beim Prüfen). <em>→ verworfen: auf Wunsch bewusst keine editionsübergreifenden Erfolge, stattdessen Fokus auf Erfolge pro einzelnem Run/Edition.</em></div>
+    <div class="followup-item"><span class="tag tag-fix" style="margin-right:8px;">Verworfen</span><strong>Auferstanden-Erfolg.</strong> Nach einem Game-Over direkt einen neuen Run gestartet statt aufzugeben (Cross-Save-Erfolg). <em>→ verworfen: auf Wunsch bewusst keine editionsübergreifenden Erfolge, stattdessen Fokus auf Erfolge pro einzelnem Run/Edition.</em></div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Regenbogen-Team-Erfolg.</strong> 6 verschiedene Typen gleichzeitig im Team. → umgesetzt in v1.8.62 (nutzt die seit v1.8.54 vorhandene Arten→Typ-Referenztabelle)</div>
   </div>
 
@@ -6290,7 +6371,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.63.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.64.</footer>
 
 </div>`;
 
@@ -6498,7 +6579,8 @@ function renderSettings(){
       <input id="randomizerSeedInput" value="${escapeHtml(state.randomizerSeed||"")}" placeholder="z. B. Seed-Code oder Link zu den Einstellungen" autocomplete="off" />
     </div>
   </div>
-  ${cloudSyncCardHtml()}`);
+  ${cloudSyncCardHtml()}
+  ${duoCompareCardHtml()}`);
 
   html += settingsGroupHtml("duel-bosses", state.soloMode ? "Bosse" : "Duell & Bosse", `
   ${state.soloMode ? `<div class="card">
@@ -7776,6 +7858,19 @@ document.addEventListener("click", e=>{
       openSyncResultSheet("Synchronisierung fehlgeschlagen", "Keine Verbindung zur Cloud möglich - prüfe deine Internetverbindung und versuch es erneut.");
     });
   }
+  else if(act==="link-duo-code"){
+    const input = document.getElementById("duoCodeInput");
+    const code = (input?.value||"").trim().toUpperCase();
+    if(!code) return;
+    state.duoCode = code;
+    saveState(); render();
+    openDuoCompareSheet();
+  }
+  else if(act==="unlink-duo"){
+    state.duoCode = null;
+    saveState(); render();
+  }
+  else if(act==="open-duo-compare") openDuoCompareSheet();
   else if(act==="set-theme"){
     localStorage.setItem("hgss-theme-mode", id);
     applyTheme(); render();
