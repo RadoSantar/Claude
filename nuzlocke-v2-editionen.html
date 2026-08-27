@@ -693,26 +693,54 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 .game-over-stats span{ display:block; font-family:var(--font-mono); font-variant-numeric:tabular-nums; font-size:1.15rem; font-weight:800; color:var(--red); }
 .game-over-stats label{ display:block; font-size:.68rem; color:var(--ink-soft); margin-top:3px; }
 
-.onboarding-overlay{
-  position:fixed; inset:0; z-index:75; display:flex; align-items:center; justify-content:center;
-  padding:24px; background:rgba(10,8,4,0.55); backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px);
+/* Aktive Tour (siehe ONBOARDING_STEPS weiter unten): .tour-block ist ein unsichtbarer, aber
+   klickfester Vollbild-Layer (fängt alle Taps ab, damit während der Tour nichts an der echten
+   Oberfläche darunter ausgelöst wird - bewusst KEINE echte Interaktion, siehe playOnboardingDemo()
+   für simulierte Demos ohne echten State-Zugriff). .tour-spotlight liegt darüber und erzeugt per
+   Box-Shadow-Trick (riesiger Spread) ein "Loch" exakt über dem echten Zielelement, das dadurch
+   trotz des abgedunkelten Rests sichtbar bleibt - pointer-events:none, damit Taps im ausgeleuchteten
+   Bereich trotzdem beim .tour-block darunter landen (blockiert), nicht am echten Element. */
+.tour-block{ position:fixed; inset:0; z-index:76; }
+.tour-spotlight{
+  position:fixed; z-index:76; border-radius:16px; pointer-events:none;
+  box-shadow:0 0 0 9999px rgba(10,8,4,0.62);
+  transition:top .3s ease, left .3s ease, width .3s ease, height .3s ease;
 }
-.onboarding-card{
-  position:relative; background:var(--surface); border-radius:24px; padding:40px 26px 26px; max-width:360px; width:100%;
-  text-align:center; box-shadow:0 20px 60px rgba(0,0,0,0.4);
+.tour-card{
+  position:fixed; z-index:77; left:50%; transform:translateX(-50%);
+  background:var(--surface); border-radius:20px; padding:20px 20px 18px; max-width:340px; width:calc(100% - 32px);
+  box-shadow:0 20px 60px rgba(0,0,0,0.4); transition:top .3s ease;
 }
-.onboarding-skip{
-  position:absolute; top:14px; right:14px; background:none; border:none; font-size:.78rem; font-weight:700;
+.tour-card.centered{ top:50% !important; transform:translate(-50%,-50%); text-align:center; }
+.tour-card-skip{
+  position:absolute; top:12px; right:12px; background:none; border:none; font-size:.76rem; font-weight:700;
   color:var(--ink-soft); padding:6px 8px; cursor:pointer;
 }
-.onboarding-icon{ font-size:3rem; line-height:1; margin-bottom:10px; }
-.onboarding-card h2{ font-size:1.15rem; font-weight:800; margin:4px 0 10px; }
-.onboarding-text{ font-size:.9rem; color:var(--ink-soft); line-height:1.5; margin-bottom:18px; }
-.onboarding-dots{ display:flex; gap:6px; justify-content:center; margin-bottom:20px; }
-.onboarding-dot{ width:7px; height:7px; border-radius:50%; background:var(--line); }
-.onboarding-dot.active{ background:var(--accent); }
-.onboarding-actions{ display:flex; justify-content:space-between; align-items:center; gap:10px; }
-.onboarding-actions .btn{ flex:1; }
+.tour-card-icon{ font-size:2.2rem; line-height:1; margin-bottom:8px; }
+.tour-card h2{ font-size:1.05rem; font-weight:800; margin:2px 0 8px; }
+.tour-card-text{ font-size:.86rem; color:var(--ink-soft); line-height:1.5; margin-bottom:14px; }
+.tour-progress{ display:flex; gap:8px; justify-content:center; margin-bottom:16px; }
+.tour-progress-icon{
+  width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+  background:var(--surface-alt); color:var(--ink-soft); opacity:.5; transition:opacity .2s, background .2s, color .2s;
+}
+.tour-progress-icon svg{ width:13px; height:13px; stroke:currentColor; fill:none; stroke-width:2; }
+.tour-progress-icon.active{ opacity:1; background:var(--accent); color:#fff; }
+.tour-progress-icon.done{ opacity:.85; }
+.tour-actions{ display:flex; justify-content:space-between; align-items:center; gap:10px; }
+.tour-actions .btn{ flex:1; }
+/* Simulierte Demo (siehe playOnboardingDemo()): rein visuell, fasst nie echten State an. */
+.tour-demo-ripple{
+  position:fixed; z-index:78; width:16px; height:16px; margin:-8px; border-radius:50%; background:var(--accent);
+  pointer-events:none; opacity:.9; animation:tourRipple .6s ease-out forwards;
+}
+@keyframes tourRipple{ from{ transform:scale(0.3); opacity:.9; } to{ transform:scale(6); opacity:0; } }
+.tour-demo-badge{
+  position:fixed; z-index:78; left:50%; transform:translate(-50%,6px); background:var(--good); color:#fff;
+  font-size:.78rem; font-weight:700; padding:6px 12px; border-radius:999px; box-shadow:0 6px 18px rgba(0,0,0,.25);
+  opacity:0; transition:opacity .25s ease, transform .25s ease; pointer-events:none; white-space:nowrap;
+}
+.tour-demo-badge.show{ opacity:1; transform:translate(-50%,0); }
 
 .achievement-toast{
   position:fixed; top:calc(14px + env(safe-area-inset-top)); left:50%; transform:translateX(-50%);
@@ -2775,7 +2803,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.8.67";
+const APP_VERSION = "1.8.68";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -3133,7 +3161,10 @@ function cloudSyncCardHtml(){
     </div>`;
   if(!state.syncCode){
     return `<div class="card">
-      <div class="loc-name">Cloud-Sync</div>
+      <div class="card-top">
+        <div class="loc-name">Cloud-Sync</div>
+        ${iconBtn("tone-neutral","open-setting-help","cloudsync",ICON_INFO,"Erklärung anzeigen",false,true)}
+      </div>
       <div class="loc-sub" style="margin-bottom:10px;">Name für den Header - erscheint dort, solange dieser Spielstand keinen eigenen Titel hat. Für den Abgleich zwischen Geräten unten „Sync aktivieren" antippen; das andere Gerät braucht dann nur den dabei angezeigten Code.</div>
       ${nameField}
       <div style="display:flex; gap:8px;">
@@ -3143,7 +3174,10 @@ function cloudSyncCardHtml(){
     </div>`;
   }
   return `<div class="card">
-    <div class="loc-name">Cloud-Sync</div>
+    <div class="card-top">
+      <div class="loc-name">Cloud-Sync</div>
+      ${iconBtn("tone-neutral","open-setting-help","cloudsync",ICON_INFO,"Erklärung anzeigen",false,true)}
+    </div>
     <div class="loc-sub" style="margin-bottom:10px;">Sync aktiv · Zuletzt synchronisiert: ${formatRelativeTime(state.lastSyncedAt)}</div>
     ${nameField}
     <button class="btn btn-primary btn-block" style="margin-bottom:8px;" data-act="run-sync" ${syncInProgress?"disabled":""}>${syncInProgress?"Synchronisiert …":"Jetzt synchronisieren"}</button>
@@ -3325,7 +3359,10 @@ let duoCompareLoading = false;
 function duoCompareCardHtml(){
   if(!state.duoCode){
     return `<div class="card">
-      <div class="loc-name">Duo-Vergleich</div>
+      <div class="card-top">
+        <div class="loc-name">Duo-Vergleich</div>
+        ${iconBtn("tone-neutral","open-setting-help","duocompare",ICON_INFO,"Erklärung anzeigen",false,true)}
+      </div>
       <div class="loc-sub" style="margin-bottom:10px;">Vergleiche deinen Fortschritt mit dem einer anderen Person, die ebenfalls Cloud-Sync nutzt - trag dazu deren Sync-Code ein (den bekommt ihr z.&nbsp;B. über den „Teilen"-Button bei Cloud-Sync). Rein lesend, der fremde Spielstand wird dadurch nicht verändert.</div>
       <div class="field">
         <input id="duoCodeInput" value="" placeholder="z. B. AB3D9F7K2M" autocomplete="off" style="text-transform:uppercase; font-family:var(--font-mono); letter-spacing:.05em;" maxlength="10" />
@@ -3334,10 +3371,16 @@ function duoCompareCardHtml(){
     </div>`;
   }
   return `<div class="card">
-    <div class="loc-name">Duo-Vergleich</div>
+    <div class="card-top">
+      <div class="loc-name">Duo-Vergleich</div>
+      ${iconBtn("tone-neutral","open-setting-help","duocompare",ICON_INFO,"Erklärung anzeigen",false,true)}
+    </div>
     <div class="loc-sub" style="margin-bottom:10px;">Verglichen mit Code <strong style="font-family:var(--font-mono); letter-spacing:.05em;">${escapeHtml(state.duoCode)}</strong></div>
     <button class="btn btn-primary btn-block" style="margin-bottom:8px;" data-act="open-duo-compare" ${duoCompareLoading?"disabled":""}>${duoCompareLoading?"Lädt …":"Vergleich anzeigen"}</button>
-    <button class="btn ${state.soulLinkMode?"btn-primary":"btn-secondary"} btn-block" style="margin-bottom:8px;" data-act="toggle-soul-link">Soul-Link-Modus: ${state.soulLinkMode?"Aktiviert":"Deaktiviert"}</button>
+    <div class="card-top" style="margin-bottom:8px;">
+      <button class="btn ${state.soulLinkMode?"btn-primary":"btn-secondary"}" style="flex:1;" data-act="toggle-soul-link">Soul-Link-Modus: ${state.soulLinkMode?"Aktiviert":"Deaktiviert"}</button>
+      ${iconBtn("tone-neutral","open-setting-help","soullink",ICON_INFO,"Erklärung anzeigen",false,true)}
+    </div>
     <div class="loc-sub" style="margin-bottom:8px;">Koppelt eure Encounter 1:1 pro Standort - stirbt dein Pokémon irgendwo, bekommst du einen Hinweis, falls das Partner-Pokémon an derselben Stelle noch lebt, und umgekehrt in der Vergleichsansicht. Funktioniert automatisch überall dort, wo eure Editionen dieselben Standortnamen verwenden, z.&nbsp;B. bei Partnerversionen wie Schwarz/Weiß, Rubin/Saphir, Gold/Silber+Kristall oder Diamant/Perl+Platin - bei sehr unterschiedlichen Editionen (z.&nbsp;B. Kanto vs. Johto) gibt es keine Übereinstimmung. Rein informativ, ihr müsst euch jeweils selbst um euer eigenes Team kümmern.</div>
     <button class="btn btn-ghost" data-act="unlink-duo">Vergleich trennen</button>
   </div>`;
@@ -4857,46 +4900,135 @@ function showGameOverOverlay(){
   document.body.appendChild(overlay);
 }
 
-/* Kurze Erste-Schritte-Tour beim allerersten Öffnen der App (geräteweit per localStorage gemerkt,
+/* Aktive Erste-Schritte-Tour beim allerersten Öffnen der App (geräteweit per localStorage gemerkt,
    NICHT im Spielstand - eine neue Runde soll die Tour nicht erneut auslösen). Lässt sich jederzeit
-   über "Werkzeuge" in den Einstellungen erneut starten (siehe act==="open-onboarding-tour"), dann
-   unabhängig vom gespeicherten "schon gesehen"-Status. */
+   über "Werkzeuge" in den Einstellungen erneut starten (act==="open-onboarding-tour"), dann
+   unabhängig vom gespeicherten "schon gesehen"-Status.
+   Bewusst KEIN reines Info-Overlay mehr (Vorgänger-Version bis v1.8.67): jeder Schritt mit `tab`
+   schaltet activeTab wirklich um und rendert die ECHTE Oberfläche, `target` zeigt per Spotlight
+   (siehe CSS .tour-spotlight) auf das echte Element dazu. `demo` spielt an manchen Stellen eine rein
+   visuelle, simulierte Aktion ab (siehe playOnboardingDemo()) - bewusst KEINE echte Interaktion mit
+   dem Spielstand, um nie versehentlich echten Fortschritt zu verändern. Für vertiefte Erklärungen zu
+   JEDEM Feature gibt es zusätzlich die durchsuchbare "Ausführliche Tour" (siehe openFeatureIndexSheet)
+   sowie einzelne "?"-Hinweise direkt an den jeweiligen Stellen (siehe SETTINGS_HELP) - diese kurze
+   Tour hier bleibt bewusst auf die wichtigsten fünf Stationen begrenzt. */
 const ONBOARDING_STEPS = [
-  { icon:"👋", title:"Willkommen bei Nuzlocke", text:"Diese App begleitet dich durch deinen Nuzlocke-Run: Fänge, Bosskämpfe, Team und Fortschritt - alles an einem Ort, komplett offline nutzbar." },
-  { icon:"🎯", title:"Fangen & Bosse", text:"Im Routen-Tab trägst du pro Standort ein, ob du gefangen hast oder nicht, und hältst Bosskämpfe mit Sieg oder Niederlage fest. Ein Level-Boost für alle Bosstrainer gleichzeitig lässt sich als Randomizer-Hausregel anpassen." },
-  { icon:"🎒", title:"Team & Box", text:"Frisch gefangene Pokémon wandern automatisch ins Team, wenn dort noch Platz ist - sonst landen sie in der Box. Beides lässt sich jederzeit per Fingertipp tauschen." },
-  { icon:"🏆", title:"Erfolge & Titel", text:"Für besondere Momente im Run gibt es Erfolge freizuschalten, die dir auch einen Titel verleihen - wähl deinen Favoriten in den Einstellungen und zeig ihn im Kopfbereich." },
-  { icon:"⚙️", title:"Alles anpassbar", text:"In den Einstellungen findest du Mehrfach-Speicherstände, Hausregeln, Darstellung und mehr. Diese Tour lässt sich dort jederzeit unter „Werkzeuge“ erneut starten." }
+  { icon:"👋", title:"Willkommen bei Nuzlocke", text:"Diese App begleitet dich durch deinen Nuzlocke-Run: Fänge, Bosskämpfe, Team und Fortschritt - alles an einem Ort, komplett offline nutzbar. Die Tour zeigt dir jetzt kurz die wichtigsten Bereiche direkt an der echten Oberfläche." },
+  { tab:"routes", target:'#content .card[data-loc]', title:"Fangen & Bosse", text:"Hier trägst du pro Standort ein, ob du gefangen hast, und hältst Bosskämpfe mit Sieg oder Niederlage fest. Ein Tipp auf eine Karte öffnet die passenden Optionen dafür.", demo:"catch" },
+  { tab:"team", target:'#teamGrid', title:"Team & Box", text:"Frisch gefangene Pokémon wandern automatisch ins Team, wenn dort noch Platz ist - sonst landen sie in der Box (eigener Tab daneben). Beides lässt sich jederzeit per Fingertipp tauschen." },
+  { tab:"settings", target:'[data-group="achievements"]', expandGroup:"achievements", title:"Erfolge & Titel", text:"Für besondere Momente im Run gibt es Erfolge freizuschalten, die dir auch einen Titel verleihen - wähl deinen Favoriten hier aus und zeig ihn im Kopfbereich." },
+  { tab:"settings", target:'[data-group="tools"]', expandGroup:"tools", title:"Werkzeuge & alles andere", text:"Hier findest du Mehrfach-Speicherstände, Hausregeln, Darstellung, Cloud-Sync und mehr. Unter „Werkzeuge“ startest du diese kurze Tour jederzeit neu - oder öffnest die ausführliche, durchsuchbare Themen-Übersicht für jedes Detail." }
 ];
 let onboardingStep = 0;
 function openOnboardingTour(){
   onboardingStep = 0;
   renderOnboardingOverlay();
 }
+function clearOnboardingDom(){
+  document.querySelectorAll(".tour-block, .tour-spotlight, .tour-card, .tour-demo-ripple, .tour-demo-badge").forEach(el=>el.remove());
+}
+function onboardingProgressHtml(){
+  const TOUR_TAB_ICONS = {
+    routes: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h5.1M15.9 12H21"/><circle cx="12" cy="12" r="2.3"/></svg>',
+    team: '<svg viewBox="0 0 24 24"><circle cx="6" cy="7.5" r="2.4"/><circle cx="12" cy="7.5" r="2.4"/><circle cx="18" cy="7.5" r="2.4"/><circle cx="6" cy="16.5" r="2.4"/><circle cx="12" cy="16.5" r="2.4"/><circle cx="18" cy="16.5" r="2.4"/></svg>',
+    settings: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 13a7.6 7.6 0 000-2l2-1.5-2-3.4-2.3.9a7.5 7.5 0 00-1.7-1l-.3-2.4h-4l-.3 2.4a7.5 7.5 0 00-1.7 1l-2.3-.9-2 3.4L6.6 11a7.6 7.6 0 000 2l-2 1.5 2 3.4 2.3-.9a7.5 7.5 0 001.7 1l.3 2.4h4l.3-2.4a7.5 7.5 0 001.7-1l2.3.9 2-3.4-2-1.5z"/></svg>'
+  };
+  const fallbackIcon = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/></svg>';
+  return `<div class="tour-progress">${ONBOARDING_STEPS.map((s,i)=>{
+    const cls = i===onboardingStep ? "active" : (i<onboardingStep ? "done" : "");
+    return `<span class="tour-progress-icon ${cls}">${TOUR_TAB_ICONS[s.tab] || fallbackIcon}</span>`;
+  }).join("")}</div>`;
+}
 function renderOnboardingOverlay(){
-  document.querySelector(".onboarding-overlay")?.remove();
+  clearOnboardingDom();
   const step = ONBOARDING_STEPS[onboardingStep];
+  if(step.tab){
+    activeTab = step.tab;
+    if(step.expandGroup) expandedSettingsGroups.add(step.expandGroup);
+    render();
+  }
+  setTimeout(()=>{
+    const targetEl = step.target ? document.querySelector(step.target) : null;
+    if(targetEl) targetEl.scrollIntoView({ behavior:"instant", block:"center" });
+    setTimeout(()=>placeOnboardingCard(step, targetEl), targetEl ? 60 : 0);
+  }, step.tab ? 50 : 0);
+}
+function placeOnboardingCard(step, targetEl){
+  clearOnboardingDom();
   const isLast = onboardingStep === ONBOARDING_STEPS.length-1;
-  const dots = ONBOARDING_STEPS.map((_,i)=>`<span class="onboarding-dot${i===onboardingStep?" active":""}"></span>`).join("");
-  const overlay = document.createElement("div");
-  overlay.className = "onboarding-overlay";
-  overlay.innerHTML = `
-    <div class="onboarding-card">
-      <button class="onboarding-skip" data-act="onboarding-close">Überspringen</button>
-      <div class="onboarding-icon" aria-hidden="true">${step.icon}</div>
-      <h2>${escapeHtml(step.title)}</h2>
-      <div class="onboarding-text">${escapeHtml(step.text)}</div>
-      <div class="onboarding-dots">${dots}</div>
-      <div class="onboarding-actions">
-        ${onboardingStep>0 ? `<button class="btn btn-secondary" data-act="onboarding-prev">Zurück</button>` : `<span></span>`}
-        <button class="btn btn-primary" data-act="${isLast?"onboarding-close":"onboarding-next"}">${isLast?"Los geht's":"Weiter"}</button>
-      </div>
+  const block = document.createElement("div");
+  block.className = "tour-block";
+  document.body.appendChild(block);
+
+  const card = document.createElement("div");
+  card.innerHTML = `
+    <button class="tour-card-skip" data-act="onboarding-close">Überspringen</button>
+    ${step.icon?`<div class="tour-card-icon" aria-hidden="true">${step.icon}</div>`:""}
+    <h2>${escapeHtml(step.title)}</h2>
+    <div class="tour-card-text">${escapeHtml(step.text)}</div>
+    ${onboardingProgressHtml()}
+    <div class="tour-actions">
+      ${onboardingStep>0 ? `<button class="btn btn-secondary" data-act="onboarding-prev">Zurück</button>` : `<span></span>`}
+      <button class="btn btn-primary" data-act="${isLast?"onboarding-close":"onboarding-next"}">${isLast?"Los geht's":"Weiter"}</button>
     </div>
   `;
-  document.body.appendChild(overlay);
+
+  if(targetEl){
+    const rect = targetEl.getBoundingClientRect();
+    const pad = 8;
+    const spot = document.createElement("div");
+    spot.className = "tour-spotlight";
+    spot.style.top = (rect.top-pad)+"px";
+    spot.style.left = (rect.left-pad)+"px";
+    spot.style.width = (rect.width+pad*2)+"px";
+    spot.style.height = (rect.height+pad*2)+"px";
+    document.body.appendChild(spot);
+
+    card.className = "tour-card";
+    document.body.appendChild(card);
+    const cardH = card.offsetHeight;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const placeBelow = spaceBelow > cardH+40 || spaceBelow > rect.top;
+    card.style.top = (placeBelow
+      ? Math.min(rect.bottom+pad+8, window.innerHeight-cardH-16)
+      : Math.max(16, rect.top-pad-8-cardH)) + "px";
+
+    if(step.demo) setTimeout(()=>playOnboardingDemo(step.demo, targetEl), 500);
+  } else {
+    block.style.background = "rgba(10,8,4,0.55)";
+    block.style.backdropFilter = "blur(3px)";
+    block.style.webkitBackdropFilter = "blur(3px)";
+    card.className = "tour-card centered";
+    document.body.appendChild(card);
+  }
+}
+/* Rein visuelle "So funktioniert's"-Demo (Tap-Ripple + kurz eingeblendete Info-Blase) direkt über
+   dem echten Zielelement - fasst bewusst NIE state/DOM des echten Elements an, nur eine schwebende
+   Anzeige obendrauf, die sich von selbst wieder entfernt. So lässt sich eine Aktion zeigen, ohne bei
+   einem frischen Run versehentlich echten Fortschritt (z.B. einen Fang) einzutragen. */
+function playOnboardingDemo(kind, targetEl){
+  if(!targetEl || !document.body.contains(targetEl)) return;
+  const rect = targetEl.getBoundingClientRect();
+  const ripple = document.createElement("div");
+  ripple.className = "tour-demo-ripple";
+  ripple.style.left = (rect.left+rect.width/2)+"px";
+  ripple.style.top = (rect.top+rect.height/2)+"px";
+  document.body.appendChild(ripple);
+  ripple.addEventListener("animationend", ()=>ripple.remove());
+
+  const badge = document.createElement("div");
+  badge.className = "tour-demo-badge";
+  badge.textContent = kind==="catch" ? "✓ So trägst du einen Fang ein (Demo)" : "Demo";
+  badge.style.top = Math.max(16, rect.top-42)+"px";
+  document.body.appendChild(badge);
+  requestAnimationFrame(()=>badge.classList.add("show"));
+  setTimeout(()=>{
+    badge.classList.remove("show");
+    setTimeout(()=>badge.remove(), 300);
+  }, 1800);
 }
 function closeOnboardingTour(){
-  document.querySelector(".onboarding-overlay")?.remove();
+  clearOnboardingDom();
   try{ localStorage.setItem("nuzlocke-onboarding-seen","1"); }catch(e){}
 }
 
@@ -5587,6 +5719,12 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.68</span><span class="tag tag-feat">Feature</span></div>
+      <h3>Erste-Schritte-Tour überarbeitet: aktiv statt nur Info-Karten</h3>
+      <p>Die bisherige 5-Seiten-Info-Tour (v1.8.33) war zu abstrakt - jetzt navigiert die Tour wirklich durch die echte Oberfläche: sie schaltet zwischen Routen-, Team- und Einstellungen-Tab um und hebt das jeweils erklärte Element per Spotlight hervor, statt nur davon zu erzählen. Beim Fangen-Schritt läuft zusätzlich eine simulierte Mini-Demo (Tap-Animation + kurze Einblendung) - bewusst rein visuell und ohne echten Zugriff auf den Spielstand, damit nie versehentlich echter Fortschritt eingetragen wird. Die Fortschrittsanzeige nutzt jetzt dieselben Tab-Icons wie die echte Tab-Leiste statt bloßer Punkte. Neu daneben: eine zweite, durchsuchbare „Ausführliche Tour" unter Einstellungen → Werkzeuge mit Detail-Erklärungen zu jedem Thema zum Nachschlagen, plus fünf neue „?"-Kontexthinweise direkt an den entsprechenden Stellen (Cloud-Sync, Duo-Vergleich, Soul-Link, Regelwerk-Checkliste, Schlüsselitems/VMs) - dieselbe Inhaltsquelle wie die Themen-Übersicht, nichts doppelt gepflegt.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.8.67</span><span class="tag tag-fix">Korrektur</span></div>
@@ -6421,7 +6559,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><span class="tag tag-fix" style="margin-right:8px;">Verworfen</span><strong>Badge-Zähler auf den Tabs.</strong> Z.&nbsp;B. „Team 4/6" oder eine kleine Zahl auf „Friedhof", damit der Status auf einen Blick sichtbar ist, ohne erst reinzutippen. <em>→ verworfen: schadet eher der Übersichtlichkeit der Tab-Leiste.</em></div>
     <div class="followup-item"><span class="tag tag-fix" style="margin-right:8px;">Verworfen</span><strong>Meilenstein-Feedback bei 25/50/75/100% Gesamtfortschritt.</strong> Kleiner Konfetti-Moment/Toast, ähnlich der Champion-Feier, aber für Zwischenetappen. <em>→ verworfen: zusammen mit dem Regions-Badge und dem Sound-Feedback als zu viel gleichzeitiges Feedback eingeschätzt, wirkt sonst überladen.</em></div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Kontextuelle Hilfe-Icons bei Einstellungen.</strong> Ein kleines „?" bei weniger selbsterklärenden Optionen (Dupes-Clause, Nickname-Pflicht, Einzelspieler-Modus), das kurz erklärt, was sie konkret bewirken. → umgesetzt in v1.8.33 (Level-Boost, Dupes-Clause, Nickname-Pflicht; Einzelspieler-Modus-Erklärung steht noch offen)</div>
-    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Kurze Erste-Schritte-Tour beim allerersten Öffnen.</strong> Die App hat mittlerweile einige nicht ganz offensichtliche Mechaniken (Flaggen-Icon, Einklapp-Logik, Box-Suche, Swipe zwischen Tabs), die neue Nutzer:innen sonst nur durch Zufall entdecken.</div>
+    <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Kurze Erste-Schritte-Tour beim allerersten Öffnen.</strong> Die App hat mittlerweile einige nicht ganz offensichtliche Mechaniken (Flaggen-Icon, Einklapp-Logik, Box-Suche, Swipe zwischen Tabs), die neue Nutzer:innen sonst nur durch Zufall entdecken. → als einfache 5-Seiten-Info-Tour bereits in v1.8.33 umgesetzt, in v1.8.68 grundlegend überarbeitet: aktive Navigation durch die echte Oberfläche mit Spotlight-Hervorhebung statt reiner Beschreibung, plus simulierte Mini-Demo, tab-basierte Fortschrittsanzeige, eine zweite durchsuchbare Themen-Übersicht und mehrere neue kontextuelle „?"-Hinweise.</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Kurzes Vibrations-Feedback bei Fang/Tod/Bosssieg.</strong> Auf unterstützten Geräten, mit Ein/Aus-Schalter in den Einstellungen. → umgesetzt in v1.8.40</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Status nie nur über Farbe codieren.</strong> Gerade bei der geplanten farbcodierten Überlebensrate zusätzlich ein Symbol/Text verwenden, damit es auch für farbenblinde Nutzer:innen eindeutig bleibt. → umgesetzt in v1.8.51 als Schalter unter „Darstellung": aktiviert bekommt eine verlorene, aber abgeschlossene Bosskarte ein Kreuz-Symbol statt desselben Häkchens wie ein Sieg (die farbcodierte Überlebensrate selbst trägt zusätzlich immer schon Zahl/Label, nicht nur Farbe)</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Automatisches Scrollen zur aktuellen Kachel beim Öffnen des Routen-Tabs.</strong> Statt jedes Mal manuell den „Zum aktuellen Standort"-Button antippen zu müssen. → umgesetzt in v1.8.40</div>
@@ -6467,7 +6605,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.67.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.68.</footer>
 
 </div>`;
 
@@ -6535,7 +6673,10 @@ function houseRulesCardHtml(){
     </label>`;
   }).join("");
   return `<div class="card">
-    <div class="loc-name">Regelwerk-Checkliste</div>
+    <div class="card-top">
+      <div class="loc-name">Regelwerk-Checkliste</div>
+      ${iconBtn("tone-neutral","open-setting-help","houserules",ICON_INFO,"Erklärung anzeigen",false,true)}
+    </div>
     <div class="loc-sub" style="margin-bottom:6px;">Rein zur Dokumentation, welche Hausregeln für diesen Run gelten - ohne Auswirkung auf die App selbst (Dupes-Clause und Level-Cap-Berechnung sind eigene, tatsächlich wirksame Einstellungen).</div>
     ${rows}
   </div>`;
@@ -6633,10 +6774,22 @@ function openTeamHistorySheet(){
 
 /* Kurze Erklärtexte für Einstellungen, deren Wirkung über den einzeiligen Untertitel hinausgeht -
    öffnet ein simples Info-Sheet statt die Einstellungsliste dauerhaft mit Fließtext vollzustopfen. */
+/* Dient zwei Zwecken: den einzelnen "?"-Hinweisen direkt an der jeweiligen Stelle (bewährtes Muster
+   seit v1.8.33, siehe iconBtn(...,"open-setting-help",...)) UND als gemeinsame Datenquelle für die
+   durchsuchbare "Ausführliche Tour" (siehe openFeatureIndexSheet) - ein Eintrag hier taucht deshalb
+   automatisch an beiden Stellen auf, ohne Inhalte doppelt pflegen zu müssen. `category` gruppiert die
+   Einträge in der Themen-Übersicht. Bewusst nicht für JEDE Einstellung ein Eintrag: nur für Stellen,
+   die über ihren eigenen Kartentext hinaus wirklich vertiefte Erklärung brauchen (siehe Backlog-Notiz
+   "Kontextuelle Hilfe-Icons ... bei weniger selbsterklärenden Optionen"). */
 const SETTINGS_HELP = {
-  bossboost: { title:"Level-Boost für Bosstrainer", text:"Erhöht die angezeigten Level aller Bosstrainer gemeinsam um den gewählten Prozentsatz - z. B. wird aus einem Basis-Level 50 bei +5% ein angezeigtes Level 53 (aufgerundet). Rein informativ für den Schwierigkeitsgrad eures Randomizers, ändert nichts an echten Spieldaten." },
-  dupes: { title:"Dupes-Clause-Warnung", text:"Klassische Nuzlocke-Hausregel: pro Entwicklungsreihe darf meist nur ein Pokémon gefangen werden. Ist die Warnung aktiv, meldet sich die App beim Fangen, wenn die Art (oder eine verwandte Entwicklungsstufe) schon im Team, in der Box oder im Friedhof vorhanden ist - der Fang bleibt trotzdem möglich, es ist nur ein Hinweis, keine Sperre." },
-  nickname: { title:"Nickname-Pflicht", text:"Erzwingt beim Fangen einen Spitznamen, bevor sich der Fang speichern lässt - hilfreich, wenn ihr euch als Hausregel vorgenommen habt, jedem Pokémon einen eigenen Namen zu geben." }
+  bossboost: { category:"Duell & Bosse", title:"Level-Boost für Bosstrainer", text:"Erhöht die angezeigten Level aller Bosstrainer gemeinsam um den gewählten Prozentsatz - z. B. wird aus einem Basis-Level 50 bei +5% ein angezeigtes Level 53 (aufgerundet). Rein informativ für den Schwierigkeitsgrad eures Randomizers, ändert nichts an echten Spieldaten." },
+  dupes: { category:"Regeln", title:"Dupes-Clause-Warnung", text:"Klassische Nuzlocke-Hausregel: pro Entwicklungsreihe darf meist nur ein Pokémon gefangen werden. Ist die Warnung aktiv, meldet sich die App beim Fangen, wenn die Art (oder eine verwandte Entwicklungsstufe) schon im Team, in der Box oder im Friedhof vorhanden ist - der Fang bleibt trotzdem möglich, es ist nur ein Hinweis, keine Sperre." },
+  nickname: { category:"Regeln", title:"Nickname-Pflicht", text:"Erzwingt beim Fangen einen Spitznamen, bevor sich der Fang speichern lässt - hilfreich, wenn ihr euch als Hausregel vorgenommen habt, jedem Pokémon einen eigenen Namen zu geben." },
+  houserules: { category:"Regeln", title:"Regelwerk-Checkliste", text:"Dokumentiert, welche der üblichen Nuzlocke-Hausregeln (Set-Modus, Species-Klausel, kein Item im Kampf, Level-Cap je Bosskampf) für diesen Run gelten - rein zur Erinnerung/Dokumentation, jederzeit an-/abwählbar. Wirkt sich anders als die Dupes-Clause-Warnung und die Level-Cap-Berechnung nicht auf die App-Logik aus, das sind eigene, tatsächlich wirksame Einstellungen." },
+  cloudsync: { category:"Spielstände & Mehrspieler", title:"Cloud-Sync", text:"Verknüpft einen Spielstand über einen zufälligen, hochentropischen Code mit einer Cloud-Zeile - ganz ohne Konto oder Login. Wer den Code kennt, kann den Spielstand abrufen oder überschreiben, deshalb gilt er wie ein Passwort: nicht öffentlich teilen, nur an die eigenen Geräte oder eine vertraute Person für den Duo-Vergleich weitergeben. „Jetzt synchronisieren“ gleicht ab - gibt es seit dem letzten bekannten Abgleich eine neuere Cloud-Version (z.&nbsp;B. von einem anderen Gerät), fragt die App nach, welche Version gelten soll, statt automatisch etwas zu überschreiben." },
+  duocompare: { category:"Spielstände & Mehrspieler", title:"Duo-Vergleich", text:"Vergleicht den eigenen Fortschritt rein lesend mit dem einer anderen Person über deren Cloud-Sync-Code: Gesamtabschluss, Überlebensrate und besiegte Bosse nebeneinander. Verändert den fremden Spielstand nie und rührt die eigene Sync-Verknüpfung nicht an - der Partner-Code ist unabhängig vom eigenen Sync-Code." },
+  soullink: { category:"Spielstände & Mehrspieler", title:"Soul-Link-Modus", text:"Koppelt Encounter 1:1 mit dem Duo-Partner über die Standort-ID - funktioniert automatisch überall dort, wo beide Editionen dieselben Standortnamen verwenden (z.&nbsp;B. Partnerversionen wie Schwarz/Weiß oder Rubin/Saphir), nicht nur bei exakt identischer Edition. Stirbt ein Pokémon an einem gekoppelten Standort, gibt es einen Hinweis, falls das Partner-Pokémon dort laut letztem Abgleich noch lebt. Rein informativ: aus denselben Sicherheitsgründen wie beim Duo-Vergleich schreibt die App nie in den Spielstand der Partner-Person, das Aufgeben muss jede Seite selbst vornehmen." },
+  keyitems: { category:"Werkzeuge", title:"Schlüsselitems/VMs-Checkliste", text:"Zeigt, welche VMs/Schlüsselitems (Surfer, Zerschneider, Stärke, …) schon eingesammelt wurden - hilfreich, um zu sehen, welche Standorte bereits erreichbar sind. Editionsspezifisch hinterlegt, da sich das VM-Set je nach Spiel-Engine unterscheidet (z.&nbsp;B. Whirlpool/Kaskade nur in manchen Generationen)." }
 };
 function openSettingsHelpSheet(key){
   const info = SETTINGS_HELP[key];
@@ -6648,6 +6801,44 @@ function openSettingsHelpSheet(key){
       <button class="btn btn-primary btn-block" data-act="close-sheet">Verstanden</button>
     </div>
   `);
+}
+
+/* "Ausführliche Tour": durchsuchbare, nach Themen gruppierte Übersicht über ALLE SETTINGS_HELP-
+   Einträge - Ergänzung zur kurzen aktiven Erste-Schritte-Tour (siehe ONBOARDING_STEPS), für alle,
+   die wirklich jedes Detail nachschlagen wollen, statt sich linear durch fünf Stationen zu klicken.
+   Tippen auf einen Eintrag öffnet dieselbe Detail-Sheet wie der jeweilige "?"-Icon dort im Kontext
+   (openSettingsHelpSheet, data-act bleibt identisch) - eine einzige Inhaltsquelle für beides. */
+let featureIndexQuery = "";
+function featureIndexResultsHtml(query){
+  const q = query.trim().toLowerCase();
+  const entries = Object.entries(SETTINGS_HELP).filter(([,info])=>
+    !q || info.title.toLowerCase().includes(q) || info.text.toLowerCase().includes(q)
+  );
+  if(!entries.length) return `<div class="loc-sub">Keine Treffer.</div>`;
+  const byCategory = new Map();
+  entries.forEach(([key,info])=>{
+    if(!byCategory.has(info.category)) byCategory.set(info.category, []);
+    byCategory.get(info.category).push([key,info]);
+  });
+  return [...byCategory.entries()].map(([cat, items])=>`
+    <div class="loc-sub" style="margin:14px 0 6px; font-weight:700;">${escapeHtml(cat)}</div>
+    ${items.map(([key,info])=>`<button class="sheet-option" data-act="open-setting-help" data-id="${key}">${escapeHtml(info.title)}</button>`).join("")}
+  `).join("");
+}
+function openFeatureIndexSheet(){
+  featureIndexQuery = "";
+  openSheet(`
+    <h3>Ausführliche Tour</h3>
+    <div class="loc-sub" style="margin-bottom:10px;">Alle Erklärungen zu einem Thema zum Nachschlagen - durchsuchbar, unabhängig von der kurzen Erste-Schritte-Tour.</div>
+    <div class="field" style="margin-bottom:0;">
+      <input type="search" id="featureIndexSearchInput" placeholder="Thema suchen..." autocomplete="off" />
+    </div>
+    <div id="featureIndexResults">${featureIndexResultsHtml(featureIndexQuery)}</div>
+    <div class="sheet-footer" style="margin-top:14px;">
+      <button class="btn btn-secondary btn-block" data-act="close-sheet">Schließen</button>
+    </div>
+  `);
+  setTimeout(()=>document.getElementById("featureIndexSearchInput")?.focus(), 50);
 }
 
 function renderSettings(){
@@ -6849,14 +7040,22 @@ function renderSettings(){
     <button class="btn btn-secondary btn-block" style="margin-top:12px;" data-act="open-pending-locations">Übersicht öffnen</button>
   </div>
   <div class="card">
-    <div class="loc-name">Schlüsselitems / VMs</div>
+    <div class="card-top">
+      <div class="loc-name">Schlüsselitems / VMs</div>
+      ${iconBtn("tone-neutral","open-setting-help","keyitems",ICON_INFO,"Erklärung anzeigen",false,true)}
+    </div>
     <div class="loc-sub">Checkliste der VMs dieser Edition (${currentKeyItems().filter(name=>state.keyItemsChecked[name]).length}/${currentKeyItems().length} eingesammelt) - hilft zu sehen, welche Standorte schon erreichbar sind.</div>
     <button class="btn btn-secondary btn-block" style="margin-top:12px;" data-act="open-key-items">Checkliste öffnen</button>
   </div>
   <div class="card">
     <div class="loc-name">Erste-Schritte-Tour</div>
-    <div class="loc-sub">Kurze Einführung in die wichtigsten Funktionen erneut ansehen</div>
+    <div class="loc-sub">Kurze, aktive Einführung durch die echte Oberfläche erneut ansehen</div>
     <button class="btn btn-secondary btn-block" style="margin-top:12px;" data-act="open-onboarding-tour">Tour erneut starten</button>
+  </div>
+  <div class="card">
+    <div class="loc-name">Ausführliche Tour</div>
+    <div class="loc-sub">Durchsuchbare Themen-Übersicht mit allen Detail-Erklärungen zum Nachschlagen</div>
+    <button class="btn btn-secondary btn-block" style="margin-top:12px;" data-act="open-feature-index">Themen-Übersicht öffnen</button>
   </div>`);
 
   html += settingsGroupHtml("app-info", "App-Info", `
@@ -7713,6 +7912,7 @@ document.addEventListener("click", e=>{
   else if(act==="close-champion-overlay"){ document.querySelector(".champion-overlay")?.remove(); }
   else if(act==="close-game-over-overlay"){ document.querySelector(".game-over-overlay")?.remove(); }
   else if(act==="open-onboarding-tour") openOnboardingTour();
+  else if(act==="open-feature-index") openFeatureIndexSheet();
   else if(act==="edit-team-nick"){ editingTeamNickId = id; render(); }
   else if(act==="open-team-history") openTeamHistorySheet();
   else if(act==="open-pending-locations") openPendingLocationsSheet();
@@ -8186,6 +8386,11 @@ document.addEventListener("input", e=>{
     const boxLocs = state.locations.filter(l=>l.mon && !l.mon.inTeam && !l.mon.dead && !l.mon.given);
     const resultsEl = document.getElementById("boxResults");
     if(resultsEl) resultsEl.innerHTML = boxResultsHtml(boxLocs);
+  }
+  if(e.target && e.target.id==="featureIndexSearchInput"){
+    featureIndexQuery = e.target.value;
+    const resultsEl = document.getElementById("featureIndexResults");
+    if(resultsEl) resultsEl.innerHTML = featureIndexResultsHtml(featureIndexQuery);
   }
 });
 
