@@ -918,6 +918,12 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 .check-row:last-of-type{ border-bottom:none; }
 .check-row input[type="checkbox"]{ width:20px; height:20px; flex:none; accent-color:var(--accent); }
 .check-row.done span{ color:var(--ink-soft); text-decoration:line-through; }
+.method-icons{ display:flex; gap:5px; margin-top:6px; }
+.method-icon{
+  width:22px; height:22px; border-radius:50%; background:var(--surface-alt);
+  display:flex; align-items:center; justify-content:center; flex:none;
+}
+.method-icon svg{ width:13px; height:13px; stroke:var(--ink-soft); fill:none; stroke-width:2; }
 /* Dezenter, dauerhafter Ring statt einer Einmal-Animation (wie boss-defeat-flash) - bleibt sichtbar,
    solange die Kachel offen ist, statt nach kurzer Zeit wieder zu verschwinden. */
 .card.almost-done{ box-shadow:var(--shadow), 0 0 0 2px rgba(var(--gold-glow),.55); }
@@ -2733,6 +2739,31 @@ const ICON_FLAG_FILLED = '<svg viewBox="0 0 24 24"><path d="M6 21V4" stroke-line
 const ICON_NOTE = '<svg viewBox="0 0 24 24"><path d="M6 3h9l5 5v12a1 1 0 01-1 1H6a1 1 0 01-1-1V4a1 1 0 011-1z"/><path d="M14.5 3v5.5H20"/><path d="M8 13h8M8 17h5"/></svg>';
 const ICON_DICE = '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8" cy="8" r="1.3" fill="currentColor" stroke="none"/><circle cx="16" cy="8" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="8" cy="16" r="1.3" fill="currentColor" stroke="none"/><circle cx="16" cy="16" r="1.3" fill="currentColor" stroke="none"/></svg>';
 const ICON_ARCHIVE = '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="4.5" rx="1.2"/><path d="M5 8.5V19a1 1 0 001 1h12a1 1 0 001-1V8.5"/><path d="M10 13h4"/></svg>';
+const ICON_METHOD_ROD = '<svg viewBox="0 0 24 24"><path d="M4 20L17 5" stroke-linecap="round"/><path d="M17 5q3.5 1.5 1 6" stroke-linecap="round"/><circle cx="18.3" cy="4.2" r="1.2" fill="currentColor" stroke="none"/></svg>';
+const ICON_METHOD_SURF = '<svg viewBox="0 0 24 24"><path d="M3 14q3-4 6 0t6 0 6 0" stroke-linecap="round"/><path d="M3 18.5q3-4 6 0t6 0 6 0" stroke-linecap="round"/></svg>';
+const ICON_METHOD_SMASH = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.5 8.5l3.5 3.5-3.5 3.5M15.5 8.5L12 12l3.5 3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const ICON_METHOD_TREE = '<svg viewBox="0 0 24 24"><path d="M12 21v-8" stroke-linecap="round"/><circle cx="12" cy="8" r="5.2"/></svg>';
+const ICON_METHOD_DIVE = '<svg viewBox="0 0 24 24"><path d="M12 3v12" stroke-linecap="round"/><path d="M7 11l5 5 5-5" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 20q4-2 8 0t8 0" stroke-linecap="round"/></svg>';
+const ICON_METHOD_CLIMB = '<svg viewBox="0 0 24 24"><path d="M3 18l5.5-8 3.5 4 2.5-3.5 6.5 7.5z" stroke-linejoin="round"/></svg>';
+/* Fangmethode als Icon: bewusst KEIN eigenes strukturiertes Datenfeld pro Standort (das hätte
+   bedeutet, für alle 14 Editionen sämtliche Standort-Notizen händisch neu zu erfassen) - stattdessen
+   werden die ohnehin schon vorhandenen Standort-Notizen (z.B. "Nur Surfen, Angeln.") per Stichwort
+   erkannt. Deckt dadurch nur ab, was in der Notiz auch tatsächlich erwähnt ist - kein Anspruch auf
+   Vollständigkeit, aber ohne zusätzlichen Recherche-/Pflegeaufwand nutzbar. */
+const CATCH_METHOD_ICONS = [
+  { re:/Angeln/i, label:"Angeln", icon:ICON_METHOD_ROD },
+  { re:/Surfen/i, label:"Surfen", icon:ICON_METHOD_SURF },
+  { re:/Zertrümmerer/i, label:"Zertrümmerer", icon:ICON_METHOD_SMASH },
+  { re:/Kopfnuss/i, label:"Kopfnuss-Bäume", icon:ICON_METHOD_TREE },
+  { re:/Tauchen/i, label:"Tauchen", icon:ICON_METHOD_DIVE },
+  { re:/Klettern/i, label:"Klettern", icon:ICON_METHOD_CLIMB },
+];
+function catchMethodIconsHtml(loc){
+  if(!loc.note) return "";
+  const matches = CATCH_METHOD_ICONS.filter(m=>m.re.test(loc.note));
+  if(!matches.length) return "";
+  return `<div class="method-icons">${matches.map(m=>`<span class="method-icon" title="${escapeHtml(m.label)}">${m.icon}</span>`).join("")}</div>`;
+}
 
 /* Zufalls-Spitznamen-Generator: bewusst spezies-unabhängige, generische Namen statt z.B. aus dem
    Typ oder der Art abgeleiteter Vorschläge - einfacher zu pflegen und passt trotzdem auf jedes
@@ -2776,7 +2807,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.8.61";
+const APP_VERSION = "1.8.62";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -2827,7 +2858,7 @@ function freshState(editionId, soloMode){
     names.forEach(entry=>{ locations.push(parseLocationEntry(region, entry)); });
   });
   const gameStarters = GAMES[edition].starters || { grass:"", fire:"", water:"" };
-  return { edition, runTitle:"", soloMode:!!soloMode, locations, bossBoosts:{}, bossDefeated:{}, rivalNickname:"", duelPartnerName:"", dupesWarning:true, lastExportAt:null, evolutionCount:0, lossCount:0, nicknameRequired:false, pvp:{}, hallOfFame:{ rivalTeam:[], playerTeam:[], defeatedAt:null, result:null }, starterNames:{ ...gameStarters }, starterChoice:null, currentLocId:null, eventLog:[], hiddenRegions:[], achievements:{}, activeTitle:null, dupesIgnoredCount:0, bossLossIds:{}, cleanBossWins:{}, bossNotes:{}, randomizerSeed:"", vibrationEnabled:true, bossWinTeams:{}, hidePostgame:false, trackBossTeams:false, bossOpponentTeams:{}, trackDeathCause:false, colorBlindSafeMode:false, teamOrder:[], syncCode:null, lastSyncedAt:null, keyItemsChecked:{} };
+  return { edition, runTitle:"", soloMode:!!soloMode, locations, bossBoosts:{}, bossDefeated:{}, rivalNickname:"", duelPartnerName:"", dupesWarning:true, lastExportAt:null, evolutionCount:0, lossCount:0, nicknameRequired:false, pvp:{}, hallOfFame:{ rivalTeam:[], playerTeam:[], defeatedAt:null, result:null }, starterNames:{ ...gameStarters }, starterChoice:null, currentLocId:null, eventLog:[], hiddenRegions:[], achievements:{}, activeTitle:null, dupesIgnoredCount:0, bossLossIds:{}, cleanBossWins:{}, bossNotes:{}, randomizerSeed:"", vibrationEnabled:true, bossWinTeams:{}, hidePostgame:false, trackBossTeams:false, bossOpponentTeams:{}, trackDeathCause:false, colorBlindSafeMode:false, teamOrder:[], syncCode:null, lastSyncedAt:null, keyItemsChecked:{}, houseRules:{ setMode:true, speciesClause:true, noItems:true, levelCap:true } };
 }
 
 /* Ergänzt neu hinzugekommene Standorte (z.B. nachträglich eingefügte Städte) in einen bereits
@@ -2887,6 +2918,7 @@ function normalizeState(parsed){
   if(typeof parsed.syncCode !== "string") parsed.syncCode = null;
   if(typeof parsed.lastSyncedAt !== "number") parsed.lastSyncedAt = null;
   if(!parsed.keyItemsChecked) parsed.keyItemsChecked = {};
+  if(!parsed.houseRules) parsed.houseRules = { setMode:true, speciesClause:true, noItems:true, levelCap:true };
   syncLocations(parsed);
   return parsed;
 }
@@ -3779,6 +3811,7 @@ function routeCard(loc, isCurrent){
       <div>
         <div class="loc-name">${escapeHtml(loc.name)}</div>
         ${loc.note ? `<div class="loc-sub">${escapeHtml(loc.note)}</div>` : ""}
+        ${catchMethodIconsHtml(loc)}
       </div>
       <div style="display:flex; align-items:center; gap:6px; flex:none;">
         ${chipFor(loc)}
@@ -5166,6 +5199,15 @@ const ACHIEVEMENTS = [
   { id:"teamplayer", name:"Volles Haus", title:"Teamplayer", icon:"🤝",
     desc:"6 lebende Pokémon gleichzeitig im Team.",
     check: ()=> teamCount() === 6 },
+  { id:"rainbowteam", name:"Regenbogen-Team", title:"Regenbogen-Team", icon:"🌈",
+    desc:"6 verschiedene Typen gleichzeitig im Team (Dual-Typen zählen mit beiden Typen).",
+    check: ()=>{
+      const teamTypes = new Set();
+      state.locations.filter(l=>l.mon && l.mon.inTeam && !l.mon.dead).forEach(l=>{
+        typesFor(l.mon.species).forEach(t=>teamTypes.add(t));
+      });
+      return teamTypes.size >= 6;
+    } },
   { id:"ironwill", name:"Eiserner Wille", title:"Unbezwungen", icon:"🛡️",
     desc:"Champion besiegt, ohne im gesamten Run ein einziges Pokémon zu verlieren.",
     check: ()=> championWon() && deadCount() === 0 },
@@ -5425,6 +5467,15 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.62</span><span class="tag tag-feat">Feature</span></div>
+      <h3>PWA-Schnellzugriffe, Fangmethode-Icons, Regenbogen-Team, Regelwerk-Checkliste</h3>
+      <p><strong>PWA-Schnellzugriffe:</strong> per Rechtsklick/Lang-Drücken auf das Home-Bildschirm-Icon direkt „Fangen" oder „Team" öffnen, ohne erst die App zu starten und zu navigieren.</p>
+      <p><strong>Fangmethode-Icons:</strong> Standort-Kacheln zeigen jetzt kleine Icons für die dort nötige Fangmethode (Angeln, Surfen, Zertrümmerer, Kopfnuss-Bäume, Tauchen, Klettern) - per Stichwort aus der ohnehin vorhandenen Standort-Notiz erkannt, kein neues, separat gepflegtes Datenfeld. Deckt deshalb nur ab, was die Notiz auch tatsächlich erwähnt.</p>
+      <p><strong>Regenbogen-Team-Erfolg:</strong> neuer Erfolg für 6 verschiedene Typen gleichzeitig im Team, nutzt die seit v1.8.54 vorhandene Arten→Typ-Tabelle.</p>
+      <p><strong>Regelwerk-Checkliste:</strong> neue Karte unter Einstellungen → Regeln mit den üblichen Nuzlocke-Hausregeln (Set-Modus, Species-Klausel, keine Items im Kampf, Level-Cap je Bosskampf) zum An-/Abhaken - rein zur Dokumentation, ohne Auswirkung auf die App-Logik (im Unterschied zu Dupes-Clause-Warnung und Level-Cap-Berechnung, die eigene, tatsächlich wirksame Einstellungen bleiben).</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.8.61</span><span class="tag tag-fix">Fix</span></div>
@@ -6203,15 +6254,15 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Rivalen-Umbenennung auch in den Einstellungen.</strong> Der Ingame-Rivalenname lässt sich bisher nur per Klick auf den Namen selbst anpassen (bleibt so erhalten) — zusätzlich soll dafür unter „Duell &amp; Bosse" ein Eingabefeld analog zum Duellpartner-Namen stehen. → umgesetzt in v1.8.40</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Gefangene Pokémon automatisch ins Team statt in die Box.</strong> Ist das Team noch nicht voll (unter sechs), tritt ein neu gefangenes Pokémon automatisch dem Team bei statt in der Box zu landen — entspricht dem tatsächlichen Spielverhalten. <em>→ umgesetzt in v1.8.28.</em></div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Soul-Link-Modus.</strong> Für den Coop-Ursprung der App passend: Encounter zwischen beiden Spieler:innen 1:1 koppeln — stirbt das erste Pokémon von Partner A, muss Partner B seins an derselben Stelle ebenfalls aufgeben. Klassische Nuzlocke-Coop-Hausregel, aktuell nicht abgebildet.</div>
-    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Regelwerk-Checkliste pro Run.</strong> Die üblichen Nuzlocke-Hausregeln (Set-Modus, Species Clause, kein Item im Kampf, Level-Cap je Boss, Dupes Clause gibt es schon) als an-/abwählbare Liste zu Beginn eines Runs, rein zur Dokumentation, welche Regeln galten.</div>
+    <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Regelwerk-Checkliste pro Run.</strong> Die üblichen Nuzlocke-Hausregeln (Set-Modus, Species Clause, kein Item im Kampf, Level-Cap je Boss, Dupes Clause gibt es schon) als an-/abwählbare Liste zu Beginn eines Runs, rein zur Dokumentation, welche Regeln galten. → umgesetzt in v1.8.62, jederzeit editierbar statt fest nur bei Run-Beginn</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Notizfeld pro Boss statt nur pro Standort.</strong> Bei einem Randomizer ist das gegnerische Team jedes Mal anders — aktuell lässt sich nur der „Ace" nachschlagen. Ein Freitextfeld pro Boss fürs komplette gegnerische Team wäre für Strategie-Notizen hilfreich. → umgesetzt in v1.8.40</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Zufalls-Spitznamen-Generator.</strong> Ein Würfel-Button im Fang-Formular, der einen witzigen Spitznamen vorschlägt. → umgesetzt in v1.8.41 (Tag hier versehentlich nicht mit-aktualisiert worden)</div>
     <div class="followup-item"><span class="tag tag-fix" style="margin-right:8px;">Verworfen</span><strong>Team als teilbare Bild-Karte exportieren.</strong> Das aktuelle Team als hübsche Bild-Kachel generieren (ähnlich dem Run-Rückblick-Text, aber visuell) — für Social-Media/Chat-Sharing. <em>→ in v1.8.51 umgesetzt, in v1.8.52 auf Wunsch wieder entfernt: Button/Idee hat sich in der Praxis nicht bewährt.</em></div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Randomizer-Seed-Feld.</strong> Ein Metadaten-Feld pro Run für den verwendeten Randomizer-Seed/die Einstellungen, damit sich die Konfiguration später nachvollziehen lässt. → umgesetzt in v1.8.40</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Typabdeckungs-Analyse fürs Team.</strong> Welche Typen deckt das Team offensiv/defensiv ab, wo sind Lücken — visualisiert als kleine Übersicht. Kippt etwas Richtung Strategie-Tool statt reinem Tracker, daher nur bei explizitem Wunsch umsetzen. → umgesetzt in v1.8.54 auf expliziten Wunsch, inklusive vollständiger Typ-Tabelle für alle 649 Arten</div>
-    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>PWA-Schnellzugriffe.</strong> Über das Home-Bildschirm-Icon direkt Schnellaktionen anbieten (z.&nbsp;B. „Fangen", „Team") via <code>shortcuts</code> im Manifest, ohne die App erst öffnen und navigieren zu müssen.</div>
+    <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>PWA-Schnellzugriffe.</strong> Über das Home-Bildschirm-Icon direkt Schnellaktionen anbieten (z.&nbsp;B. „Fangen", „Team") via <code>shortcuts</code> im Manifest, ohne die App erst öffnen und navigieren zu müssen. → umgesetzt in v1.8.62</div>
     <div class="followup-item"><span class="tag tag-fix" style="margin-right:8px;">Verworfen</span><strong>Levelkurve als Mini-Diagramm.</strong> Kleine Sparkline in der Statistik, die den Levelverlauf des Teams über den Run hinweg zeigt. <em>→ verworfen: die App trackt aktuell keine Level der Team-Pokémon (nur den Boss-Level-Boost in %), es gäbe also keine Datengrundlage dafür.</em></div>
-    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Fangmethode als strukturiertes Feld mit Icon.</strong> Statt nur als Freitext-Notiz (z.&nbsp;B. „Angeln", „Surfen", „Gras") die Fangmethode als eigenes Feld mit passendem Icon auf der Standort-Kachel abbilden.</div>
+    <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Fangmethode als strukturiertes Feld mit Icon.</strong> Statt nur als Freitext-Notiz (z.&nbsp;B. „Angeln", „Surfen", „Gras") die Fangmethode als eigenes Feld mit passendem Icon auf der Standort-Kachel abbilden. → umgesetzt in v1.8.62, allerdings ohne neues Datenfeld: die Icons werden per Stichwort-Erkennung aus der ohnehin vorhandenen Standort-Notiz abgeleitet statt aus einem eigens gepflegten Feld (siehe Kommentar bei CATCH_METHOD_ICONS im Code) - deckt daher nur ab, was die Notiz auch erwähnt.</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Fortschrittscheckliste für Schlüsselitems/VMs.</strong> Übersicht, welche VMs/Schlüsselitems (Surfer, Zerschneider usw.) schon eingesammelt wurden — hilfreich, um zu sehen, welche Standorte bereits erreichbar sind. → umgesetzt in v1.8.60</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Duo-Vergleichsansicht.</strong> Sobald es ein plattformübergreifendes Speichersystem gibt (siehe oben): beide Spielstände eines Duell-Runs nebeneinander vergleichen (Fortschritt, Überlebensrate, Bosse).</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Enter-Taste sendet das Fang-Formular ab.</strong> Tastatur-Komfort: im Spitzname-Feld Enter drücken, statt immer den Button antippen zu müssen. → umgesetzt in v1.8.49</div>
@@ -6244,7 +6295,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Todesursache-Freitext direkt beim Markieren.</strong> Optionales kleines Feld („Wodurch gestorben?") direkt im „Als gestorben markieren"-Sheet, landet dann sichtbar im Friedhof. → umgesetzt in v1.8.48 (per Hausregel-Schalter, standardmäßig aus)</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Weltenbummler-Erfolg.</strong> Runs in mindestens 3 verschiedenen Generationen abgeschlossen (Cross-Save-Erfolg, bräuchte Zugriff auf alle Spielstände beim Prüfen).</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Auferstanden-Erfolg.</strong> Nach einem Game-Over direkt einen neuen Run gestartet statt aufzugeben (Cross-Save-Erfolg).</div>
-    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Idee</span><strong>Regenbogen-Team-Erfolg.</strong> 6 verschiedene Typen gleichzeitig im Team. <em>Update: die Arten→Typ-Referenztabelle existiert seit v1.8.54 (Typabdeckungs-Analyse) bereits, der Erfolg selbst ist noch nicht umgesetzt.</em></div>
+    <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Regenbogen-Team-Erfolg.</strong> 6 verschiedene Typen gleichzeitig im Team. → umgesetzt in v1.8.62 (nutzt die seit v1.8.54 vorhandene Arten→Typ-Referenztabelle)</div>
   </div>
 
   <div class="followups">
@@ -6266,7 +6317,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.61.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.62.</footer>
 
 </div>`;
 
@@ -6315,6 +6366,30 @@ const KEY_ITEMS_BY_EDITION = {
   "schwarz2-weiss2": ["Zerschneider","Fliegen","Surfer","Stärke","Wasserfall","Zertrümmerer","Klettern"],
 };
 function currentKeyItems(){ return KEY_ITEMS_BY_EDITION[state.edition] || []; }
+
+/* Rein dokumentarische Checkliste - im Unterschied zu Dupes-Clause-Warnung und Level-Cap (eigene,
+   tatsächlich wirksame Funktionen) hat das An-/Abwählen hier keinerlei Effekt auf die App-Logik,
+   hält nur fest, welche Hausregeln für diesen Run gelten sollten. */
+const HOUSE_RULES = [
+  { id:"setMode", label:"Set-Modus (kein Wechsel-Angebot bei gegnerischem Pokémon-Wechsel)" },
+  { id:"speciesClause", label:"Species-Klausel (pro Art nur ein Fangversuch)" },
+  { id:"noItems", label:"Keine Items im Kampf" },
+  { id:"levelCap", label:"Level-Cap je Bosskampf" },
+];
+function houseRulesCardHtml(){
+  const rows = HOUSE_RULES.map(r=>{
+    const checked = !!state.houseRules[r.id];
+    return `<label class="check-row${checked?" done":""}">
+      <input type="checkbox" data-house-rule="${r.id}" ${checked?"checked":""} />
+      <span>${escapeHtml(r.label)}</span>
+    </label>`;
+  }).join("");
+  return `<div class="card">
+    <div class="loc-name">Regelwerk-Checkliste</div>
+    <div class="loc-sub" style="margin-bottom:6px;">Rein zur Dokumentation, welche Hausregeln für diesen Run gelten - ohne Auswirkung auf die App selbst (Dupes-Clause und Level-Cap-Berechnung sind eigene, tatsächlich wirksame Einstellungen).</div>
+    ${rows}
+  </div>`;
+}
 
 function openKeyItemsSheet(){
   const items = currentKeyItems();
@@ -6522,7 +6597,8 @@ function renderSettings(){
     <div class="loc-name">Todesursache eintragen</div>
     <div class="loc-sub">Fragt beim Markieren als gestorben (außerhalb von Bosskämpfen) optional ab, gegen welches Pokémon es passiert ist - erscheint dann sichtbar im Friedhof.</div>
     <button class="btn ${state.trackDeathCause?"btn-primary":"btn-secondary"} btn-block" style="margin-top:10px;" data-act="toggle-track-death-cause">${state.trackDeathCause?"Aktiviert":"Deaktiviert"}</button>
-  </div>`);
+  </div>
+  ${houseRulesCardHtml()}`);
 
   html += (()=>{
     const unlocked = ACHIEVEMENTS.filter(a=>state.achievements[a.id]);
@@ -7923,6 +7999,12 @@ document.addEventListener("input", e=>{
     const row = e.target.closest(".check-row");
     if(row) row.classList.toggle("done", e.target.checked);
   }
+  if(e.target && e.target.dataset && e.target.dataset.houseRule){
+    state.houseRules[e.target.dataset.houseRule] = e.target.checked;
+    saveState();
+    const row = e.target.closest(".check-row");
+    if(row) row.classList.toggle("done", e.target.checked);
+  }
   if(e.target && e.target.id==="usernameInput"){
     setGlobalUsername(e.target.value);
     const rt = document.getElementById("runTitle");
@@ -7965,6 +8047,18 @@ applyTheme();
    ein touchstart-Listener hängt - sonst bleibt z.B. der Scale-Down-Effekt auf Buttons dort komplett
    aus. Ein leerer, passiver Listener auf dem gesamten Dokument reicht, um das global zu aktivieren. */
 document.addEventListener("touchstart", function(){}, {passive:true});
+
+/* PWA-Schnellzugriffe vom Home-Bildschirm-Icon (siehe manifest.json "shortcuts") landen auf
+   ?tab=routes bzw. ?tab=team - vor dem ersten render() ausgewertet, damit direkt der richtige Tab
+   erscheint statt kurz "Routen" aufzublitzen und dann umzuschalten. Nur bekannte Tab-IDs werden
+   übernommen, alles andere (manuell veränderte URL) wird ignoriert. */
+try{
+  const requestedTab = new URLSearchParams(location.search).get("tab");
+  if(requestedTab && [...document.querySelectorAll(".tab")].some(t=>t.dataset.tab===requestedTab)){
+    activeTab = requestedTab;
+    history.replaceState(null, "", location.pathname + location.hash);
+  }
+}catch(e){}
 
 render();
 triggerTabEnterAnim();
