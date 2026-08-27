@@ -2775,7 +2775,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.8.66";
+const APP_VERSION = "1.8.67";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -5589,6 +5589,12 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="log">
 
     <div class="entry">
+      <div class="entry-head"><span class="ver">v1.8.67</span><span class="tag tag-fix">Korrektur</span></div>
+      <h3>Falsche VM-Namen in der Schlüsselitem-Checkliste korrigiert</h3>
+      <p>Drei VM-Namen in der Fortschrittscheckliste (siehe v1.8.60) waren falsch übersetzt bzw. verwechselt, gegen PokéWiki geprüft: „Strudel" → korrekt <strong>Whirlpool</strong> (offizieller deutscher Name, kein deutsches Wort), „Wasserfall" → korrekt <strong>Kaskade</strong>, „Blitzschlag" → korrekt <strong>Blitz</strong> (Blitzschlag ist eine andere, eigenständige Attacke aus Gen 5). Betrifft alle Editionen, die diese drei VMs führen.</p>
+    </div>
+
+    <div class="entry">
       <div class="entry-head"><span class="ver">v1.8.66</span><span class="tag tag-fix">Korrektur</span></div>
       <h3>Soul-Link funktioniert jetzt auch zwischen Partnerversionen</h3>
       <p>Der Soul-Link-Modus (v1.8.65) verlangte bisher fälschlich exakt dieselbe Edition auf beiden Seiten - dabei sind Standort-IDs rein textbasiert (Region+Name) und damit unabhängig von der Editions-ID: Partnerversionen wie Schwarz/Weiß, Rubin/Saphir, Gold/Silber+Kristall oder Rot/Blau+Gelb teilen sich intern ohnehin denselben Standort-Datensatz (Diamant/Perl+Platin zu 81 von 83 Standorten). Genau das ist der klassische Soul-Link-Fall - zwei verschiedene, aber routenidentische Versionen gemeinsam spielen. Der Abgleich matcht jetzt einfach über gemeinsame Standort-IDs, unabhängig von der Editions-ID; nur bei wirklich unterschiedlichen Editionen (z.&nbsp;B. Kanto vs. Johto) gibt es weiterhin einen klaren Hinweis statt eines kaputten Vergleichs.</p>
@@ -6461,7 +6467,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.66.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.8.67.</footer>
 
 </div>`;
 
@@ -6494,20 +6500,20 @@ function pendingLocationsList(){
    den Editionen unterscheidet und für die eigentliche Nutzung (Hindernis freigeschaltet?) nicht
    relevant ist - nur der Move-Name zählt. */
 const KEY_ITEMS_BY_EDITION = {
-  "rot-blau": ["Zerschneider","Fliegen","Surfer","Stärke","Blitzschlag"],
-  gelb: ["Zerschneider","Fliegen","Surfer","Stärke","Blitzschlag"],
-  "gold-silber": ["Zerschneider","Fliegen","Surfer","Stärke","Blitzschlag","Strudel","Wasserfall"],
-  kristall: ["Zerschneider","Fliegen","Surfer","Stärke","Blitzschlag","Strudel","Wasserfall"],
-  "feuerrot-blattgruen": ["Zerschneider","Fliegen","Surfer","Stärke","Blitzschlag","Zertrümmerer","Wasserfall","Tauchen"],
-  smaragd: ["Zerschneider","Fliegen","Surfer","Stärke","Blitzschlag","Zertrümmerer","Wasserfall","Tauchen"],
-  rubin: ["Zerschneider","Fliegen","Surfer","Stärke","Blitzschlag","Zertrümmerer","Wasserfall","Tauchen"],
-  saphir: ["Zerschneider","Fliegen","Surfer","Stärke","Blitzschlag","Zertrümmerer","Wasserfall","Tauchen"],
-  hgss: ["Zerschneider","Fliegen","Surfer","Stärke","Strudel","Zertrümmerer","Wasserfall","Klettern"],
-  "diamant-perl": ["Zerschneider","Fliegen","Surfer","Stärke","Nebelschwaden","Zertrümmerer","Wasserfall","Klettern"],
-  platin: ["Zerschneider","Fliegen","Surfer","Stärke","Nebelschwaden","Zertrümmerer","Wasserfall","Klettern"],
-  schwarz: ["Zerschneider","Fliegen","Surfer","Stärke","Wasserfall","Zertrümmerer","Klettern"],
-  weiss: ["Zerschneider","Fliegen","Surfer","Stärke","Wasserfall","Zertrümmerer","Klettern"],
-  "schwarz2-weiss2": ["Zerschneider","Fliegen","Surfer","Stärke","Wasserfall","Zertrümmerer","Klettern"],
+  "rot-blau": ["Zerschneider","Fliegen","Surfer","Stärke","Blitz"],
+  gelb: ["Zerschneider","Fliegen","Surfer","Stärke","Blitz"],
+  "gold-silber": ["Zerschneider","Fliegen","Surfer","Stärke","Blitz","Whirlpool","Kaskade"],
+  kristall: ["Zerschneider","Fliegen","Surfer","Stärke","Blitz","Whirlpool","Kaskade"],
+  "feuerrot-blattgruen": ["Zerschneider","Fliegen","Surfer","Stärke","Blitz","Zertrümmerer","Kaskade","Tauchen"],
+  smaragd: ["Zerschneider","Fliegen","Surfer","Stärke","Blitz","Zertrümmerer","Kaskade","Tauchen"],
+  rubin: ["Zerschneider","Fliegen","Surfer","Stärke","Blitz","Zertrümmerer","Kaskade","Tauchen"],
+  saphir: ["Zerschneider","Fliegen","Surfer","Stärke","Blitz","Zertrümmerer","Kaskade","Tauchen"],
+  hgss: ["Zerschneider","Fliegen","Surfer","Stärke","Whirlpool","Zertrümmerer","Kaskade","Klettern"],
+  "diamant-perl": ["Zerschneider","Fliegen","Surfer","Stärke","Nebelschwaden","Zertrümmerer","Kaskade","Klettern"],
+  platin: ["Zerschneider","Fliegen","Surfer","Stärke","Nebelschwaden","Zertrümmerer","Kaskade","Klettern"],
+  schwarz: ["Zerschneider","Fliegen","Surfer","Stärke","Kaskade","Zertrümmerer","Klettern"],
+  weiss: ["Zerschneider","Fliegen","Surfer","Stärke","Kaskade","Zertrümmerer","Klettern"],
+  "schwarz2-weiss2": ["Zerschneider","Fliegen","Surfer","Stärke","Kaskade","Zertrümmerer","Klettern"],
 };
 function currentKeyItems(){ return KEY_ITEMS_BY_EDITION[state.edition] || []; }
 
