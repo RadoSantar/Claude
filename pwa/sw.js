@@ -1,4 +1,4 @@
-const CACHE_NAME = "nuzlocke-tracker-v1.9.13";
+const CACHE_NAME = "nuzlocke-tracker-v1.9.14";
 const ASSETS = [
   "./",
   "./index.html",
@@ -31,7 +31,7 @@ self.addEventListener("fetch", event => {
       return fetch(event.request)
         .then(response => {
           const copy = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy)).catch(() => {});
           return response;
         })
         .catch(() => caches.match("./index.html"));

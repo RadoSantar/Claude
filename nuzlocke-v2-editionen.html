@@ -850,7 +850,7 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 .slot .mon-species{ font-size:.7rem; }
 .slot .loc-sub{ margin-top:1px; font-size:.72rem; }
 .mon-name-input{
-  width:100%; text-align:center; font-size:.9rem; font-weight:700; font-family:inherit;
+  width:100%; text-align:center; font-size:1rem; font-weight:700; font-family:inherit;
   color:var(--ink); background:var(--bg); border:1.5px solid var(--accent); border-radius:8px;
   padding:2px 6px; outline:none;
 }
@@ -3309,7 +3309,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.13";
+const APP_VERSION = "1.9.14";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -3446,7 +3446,7 @@ function loadSavesIndex(){
   }catch(e){}
   return [];
 }
-function persistSavesIndex(index){ try{ localStorage.setItem(SAVES_INDEX_KEY, JSON.stringify(index)); }catch(e){} }
+function persistSavesIndex(index){ try{ localStorage.setItem(SAVES_INDEX_KEY, JSON.stringify(index)); }catch(e){ warnOnSaveFailure(); } }
 
 function loadSaveState(id){
   try{
@@ -3524,8 +3524,19 @@ function openLeaderboardSheet(){
   `);
 }
 
+/* Schlägt localStorage.setItem fehl (voller Speicher, Safari-Privatmodus o.ä.), fingen writeSave()/
+   persistSavesIndex() das bisher lautlos ab - man hätte munter weitergespielt, ohne dass je wieder
+   etwas gesichert wird, und es erst beim nächsten App-Start gemerkt (alte Daten). warnOnSaveFailure()
+   zeigt das jetzt einmal pro Sitzung sichtbar an, statt bei jedem weiteren fehlgeschlagenen Schreiben
+   erneut zu nerven. */
+let storageWarnShown = false;
+function warnOnSaveFailure(){
+  if(storageWarnShown) return;
+  storageWarnShown = true;
+  showStorageWarnToast();
+}
 function writeSave(id, saveData){
-  try{ localStorage.setItem(saveStorageKey(id), JSON.stringify(saveData)); }catch(e){}
+  try{ localStorage.setItem(saveStorageKey(id), JSON.stringify(saveData)); }catch(e){ warnOnSaveFailure(); }
   const index = loadSavesIndex();
   const meta = { id, title: effectiveRunTitle(saveData.runTitle), edition: saveData.edition, updatedAt: Date.now() };
   const entry = index.find(s=>s.id===id);
@@ -3566,7 +3577,7 @@ function switchToSave(id){
   const loaded = loadSaveState(id);
   if(!loaded) return false;
   activeSaveId = id;
-  localStorage.setItem(ACTIVE_SAVE_KEY, id);
+  try{ localStorage.setItem(ACTIVE_SAVE_KEY, id); }catch(e){}
   state = loaded;
   return true;
 }
@@ -3582,20 +3593,21 @@ function migrateLegacyStateIfNeeded(){
   }catch(e){}
   const id = newSaveId();
   writeSave(id, legacy || freshState("hgss"));
-  localStorage.setItem(ACTIVE_SAVE_KEY, id);
-  if(legacy) localStorage.removeItem(LEGACY_STORAGE_KEY);
+  try{ localStorage.setItem(ACTIVE_SAVE_KEY, id); }catch(e){}
+  if(legacy) try{ localStorage.removeItem(LEGACY_STORAGE_KEY); }catch(e){}
 }
 
 function bootstrapActiveSave(){
   migrateLegacyStateIfNeeded();
   const index = loadSavesIndex();
-  let id = localStorage.getItem(ACTIVE_SAVE_KEY);
+  let id = null;
+  try{ id = localStorage.getItem(ACTIVE_SAVE_KEY); }catch(e){}
   if(!id || !index.some(s=>s.id===id)) id = index[0] ? index[0].id : null;
   const loaded = id ? loadSaveState(id) : null;
-  if(loaded){ activeSaveId = id; localStorage.setItem(ACTIVE_SAVE_KEY, id); state = loaded; return; }
+  if(loaded){ activeSaveId = id; try{ localStorage.setItem(ACTIVE_SAVE_KEY, id); }catch(e){} state = loaded; return; }
   // Index leer oder Spielstand-Daten defekt/verschwunden -> sauberen neuen Spielstand anlegen
   activeSaveId = createSave("hgss");
-  localStorage.setItem(ACTIVE_SAVE_KEY, activeSaveId);
+  try{ localStorage.setItem(ACTIVE_SAVE_KEY, activeSaveId); }catch(e){}
   state = loadSaveState(activeSaveId);
 }
 
@@ -6327,9 +6339,8 @@ function showUndoToast(label){
   `;
   toast.querySelector(".undo-toast-btn").addEventListener("click", ()=>{
     if(lastUndoSnapshot){
-      state = JSON.parse(lastUndoSnapshot);
+      try{ state = JSON.parse(lastUndoSnapshot); saveState(); render(); }catch(e){}
       lastUndoSnapshot = null;
-      saveState(); render();
     }
     dismissUndoToast(toast);
   });
@@ -6342,6 +6353,21 @@ function dismissUndoToast(toast){
   clearTimeout(toast._timer);
   toast.classList.add("out");
   setTimeout(()=>toast.remove(), 220);
+}
+/* Gleiche Optik wie der Rückgängig-Toast, aber ohne Undo-Aktion - reine Warnung, dass das
+   Speichern gerade fehlschlägt (siehe warnOnSaveFailure()). Bleibt bewusst länger stehen als der
+   Rückgängig-Toast (10s statt 6s), da es eine wichtigere Meldung ist. */
+function showStorageWarnToast(){
+  document.querySelector(".undo-toast")?.remove();
+  const toast = document.createElement("div");
+  toast.className = "undo-toast";
+  toast.innerHTML = `
+    <span class="undo-toast-label">Speichern fehlgeschlagen - Speicherplatz voll oder eingeschränkt (z.B. privater Modus)</span>
+    <button class="undo-toast-btn" type="button">OK</button>
+  `;
+  toast.querySelector(".undo-toast-btn").addEventListener("click", ()=>dismissUndoToast(toast));
+  document.body.appendChild(toast);
+  toast._timer = setTimeout(()=>dismissUndoToast(toast), 10000);
 }
 
 function renderActiveTitleBadge(){
@@ -6366,6 +6392,12 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.14</span><span class="tag tag-fix">Fix</span></div>
+      <h3>Android-/iOS-Kompatibilitäts-Audit: 6 Fixes</h3>
+      <p>Gezielter Bug-/Kompatibilitäts-Durchgang, losgelöst vom letzten Editions-Feature. Zwei größere Funde: erstens konnten drei ungeschützte <code>localStorage</code>-Aufrufe beim App-Start (Safari-Privatmodus oder blockierte Cookies auf iOS) die App komplett zum Absturz bringen, bevor überhaupt etwas gerendert wird - jetzt wie alle anderen Speicher-Zugriffe try/catch-abgesichert. Zweitens schloss die System-Zurück-Taste auf Android (installierte PWA) offene Sheets nicht, sondern verließ direkt die App - Sheets pushen jetzt einen History-Eintrag beim Öffnen, Zurück-Taste UND normales Schließen (Backdrop, Sheet-Griff, Schließen-Buttons) laufen über denselben Pfad, inklusive Schutz gegen schnelles Doppel-Antippen. Dazu: das inline editierbare Team-Spitzname-Feld löste auf iOS ungewollten Auto-Zoom aus (Schriftgröße war unter 16px), fehlgeschlagenes Speichern (z.B. voller Speicherplatz) blieb bisher komplett unbemerkt - zeigt jetzt einmal pro Sitzung eine Warnung, dazu zwei kleinere Absicherungen (Undo-Zustand, Service-Worker-Cache-Write).</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.13</span><span class="tag tag-feat">Feature</span></div>
@@ -7336,7 +7368,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.13.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.14.</footer>
 
 </div>`;
 
@@ -7881,11 +7913,38 @@ document.getElementById("content").addEventListener("animationend", e=>{
 /* ---------- sheet ---------- */
 const sheetBackdrop = document.getElementById("sheetBackdrop");
 const sheetEl = document.getElementById("sheet");
+/* Android/installierte PWA: die System-Zurück-Taste soll ein offenes Sheet schließen statt die App
+   zu verlassen. Dafür beim ersten Öffnen EINEN History-Eintrag pushen (Sheets wechseln intern oft
+   per erneutem openSheet()-Aufruf ohne Backdrop zu schließen, siehe sheetHistoryPushed-Flag - das
+   verhindert doppelte Einträge bei reinem Inhaltswechsel). closeSheet() geht danach über
+   history.back() statt direkt die Klasse zu entfernen, damit Zurück-Taste UND normales Schließen
+   (Backdrop-Klick, Sheet-Griff, "Schließen"-Buttons) über denselben popstate-Pfad laufen und nie
+   einen verwaisten History-Eintrag hinterlassen. */
+let sheetHistoryPushed = false;
+let sheetClosing = false; // während history.back() auf das popstate-Event wartet - verhindert einen doppelten history.back() bei schnellem Doppel-Antippen von Backdrop/Griff/"Schließen"
 function openSheet(html){
   sheetEl.innerHTML = `<div class="sheet-handle-bar"><div class="sheet-handle"></div></div><div class="sheet-body">${html}</div>`;
   sheetBackdrop.classList.add("active");
+  if(!sheetHistoryPushed){
+    try{ history.pushState({__sheet:true}, ""); sheetHistoryPushed = true; }catch(e){}
+  }
 }
-function closeSheet(){ sheetBackdrop.classList.remove("active"); }
+function closeSheet(){
+  if(!sheetBackdrop.classList.contains("active") || sheetClosing) return;
+  if(sheetHistoryPushed){
+    sheetHistoryPushed = false;
+    sheetClosing = true;
+    try{ history.back(); return; }catch(e){ sheetClosing = false; }
+  }
+  sheetBackdrop.classList.remove("active");
+}
+window.addEventListener("popstate", ()=>{
+  sheetClosing = false;
+  if(sheetBackdrop.classList.contains("active")){
+    sheetHistoryPushed = false;
+    sheetBackdrop.classList.remove("active");
+  }
+});
 sheetBackdrop.addEventListener("click", e=>{ if(e.target===sheetBackdrop) closeSheet(); });
 
 /* Herunterziehen am Griff zum Schließen - gilt generisch für JEDES Sheet (Editionswahl,
