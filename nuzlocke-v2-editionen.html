@@ -2914,23 +2914,34 @@ injectEditionMaterialCSS();
    (reagiert auf die AKTIVE Edition am <html>-Element) passt hier also nicht - stattdessen generische,
    editionsunabhängige Utility-Klassen (.mat-bg-* bzw. .mat-shape-*), denen editionMaterialAttrs() pro
    Karte die passenden --accent/--accent-shine/--accent-deep/--gold-glow-Werte inline mitgibt. */
+/* Alle Regeln hier als .sheet-option.mat-bg-x (Verbund-Selektor, zwei Klassen) statt bloß .mat-bg-x
+   (eine Klasse) - .mat-bg-x allein hätte dieselbe Spezifität wie die Basisregel .sheet-option weiter
+   oben (je 0-1-0) und wäre dadurch von der Dokumentreihenfolge abhängig. Bei einer Veröffentlichung
+   als eigenständiges Artefakt landet der App-eigene <style>-Block wegen der doppelten <head>/<html>-
+   Verschachtelung dort nachweislich HINTER statt VOR diesem hier zur Laufzeit injizierten Block (der
+   Browser parst die zweite, verschachtelte <head>-Öffnung als Fehler und hängt ihren Inhalt an <body>
+   statt an <head> - <body> steht im Dokumentbaum immer NACH <head>) - die Basisregel würde dann bei
+   gleicher Spezifität gewinnen und die Karten blieben ungefärbt. Der Verbund-Selektor (0-2-0) gewinnt
+   dagegen unabhängig von der Reihenfolge - robuster und deshalb auch hier statt der einfacheren
+   Einzelklasse verwendet, obwohl .btn-primary (immer schon [data-edition]-Verbundselektoren, ebenfalls
+   0-2-0) von diesem Problem nie betroffen war. */
 function injectMaterialUtilityClasses(){
   let css = "";
   Object.keys(MATERIAL_BG).forEach(key=>{
-    css += `.mat-bg-${key}{ background-image:${MATERIAL_BG[key]}; color:#fff; }\n`;
+    css += `.sheet-option.mat-bg-${key}{ background-image:${MATERIAL_BG[key]}; color:#fff; }\n`;
   });
   Object.keys(MATERIAL_SHAPE).forEach(key=>{
-    css += `.mat-shape-${key}{ ${MATERIAL_SHAPE[key]} }\n`;
+    css += `.sheet-option.mat-shape-${key}{ ${MATERIAL_SHAPE[key]} }\n`;
   });
-  css += `.mat-bg-sun{ background-image:${SUN_IMG}; color:#fff; }\n`;
-  css += `.mat-bg-moon{ background-image:${MOON_IMG}; color:#fff; }\n`;
-  css += `.mat-bg-mono-light{ background-image:${MONO_LIGHT_IMG}; color:#fff; }\n`;
-  css += `.mat-bg-mono-dark{ background-image:${MONO_DARK_IMG}; color:#141414; }\n`;
-  css += `.mat-bg-mono-light.crack{ background-image:${CRACK_LIGHT_IMG}${MONO_LIGHT_IMG}; }\n`;
-  css += `.mat-bg-mono-dark.crack{ background-image:${CRACK_DARK_IMG}${MONO_DARK_IMG}; }\n`;
-  css += `.mat-fx-lacquer{ box-shadow:inset 0 1px 0 rgba(255,255,255,.35), inset 0 -1px 2px rgba(0,0,0,.15), inset 0 0 0 1.5px rgba(230,190,110,.55); }\n`;
-  css += `.mat-fx-aura{ box-shadow:inset 0 1px 0 rgba(255,255,255,.35), inset 0 -1px 2px rgba(0,0,0,.15), 0 0 10px 1px rgba(var(--gold-glow),.5); }\n`;
-  css += `.mat-fx-patina{ filter:saturate(.85) brightness(.97); }\n`;
+  css += `.sheet-option.mat-bg-sun{ background-image:${SUN_IMG}; color:#fff; }\n`;
+  css += `.sheet-option.mat-bg-moon{ background-image:${MOON_IMG}; color:#fff; }\n`;
+  css += `.sheet-option.mat-bg-mono-light{ background-image:${MONO_LIGHT_IMG}; color:#fff; }\n`;
+  css += `.sheet-option.mat-bg-mono-dark{ background-image:${MONO_DARK_IMG}; color:#141414; }\n`;
+  css += `.sheet-option.mat-bg-mono-light.crack{ background-image:${CRACK_LIGHT_IMG}${MONO_LIGHT_IMG}; }\n`;
+  css += `.sheet-option.mat-bg-mono-dark.crack{ background-image:${CRACK_DARK_IMG}${MONO_DARK_IMG}; }\n`;
+  css += `.sheet-option.mat-fx-lacquer{ box-shadow:inset 0 1px 0 rgba(255,255,255,.35), inset 0 -1px 2px rgba(0,0,0,.15), inset 0 0 0 1.5px rgba(230,190,110,.55); }\n`;
+  css += `.sheet-option.mat-fx-aura{ box-shadow:inset 0 1px 0 rgba(255,255,255,.35), inset 0 -1px 2px rgba(0,0,0,.15), 0 0 10px 1px rgba(var(--gold-glow),.5); }\n`;
+  css += `.sheet-option.mat-fx-patina{ filter:saturate(.85) brightness(.97); }\n`;
   const styleEl = document.createElement("style");
   styleEl.textContent = css;
   document.head.appendChild(styleEl);
@@ -3459,7 +3470,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.16";
+const APP_VERSION = "1.9.17";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -6544,6 +6555,12 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="log">
 
     <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.17</span><span class="tag tag-fix">Fix</span></div>
+      <h3>Editionswahl-Farben griffen nicht, wenn die App als eigenständiges Artefakt veröffentlicht ist</h3>
+      <p>Nutzerbestätigt per Screenshot: in der als eigene Seite veröffentlichten App-Kopie zeigten die neuen Editionswahl-Karten aus v1.9.16 keine Werkstoff-Textur, Schwarz und Weiß blieben ungefärbt - im normalen PWA-/ZIP-Betrieb dagegen unauffällig korrekt. Ursache: eine Artefakt-Veröffentlichung bettet die App (selbst ein vollständiges <code>&lt;html&gt;&lt;head&gt;…&lt;/head&gt;&lt;body&gt;…</code>-Dokument) in ein zweites, äußeres HTML-Grundgerüst - der Browser verwirft dabei die verschachtelte, zweite <code>&lt;head&gt;</code>-Öffnung als Fehler und hängt den App-eigenen <code>&lt;style&gt;</code>-Block stattdessen an <code>&lt;body&gt;</code>, das im Dokumentbaum immer NACH <code>&lt;head&gt;</code> steht - und damit nach den zur Laufzeit per JavaScript in <code>&lt;head&gt;</code> injizierten Werkstoff-Regeln. Bei gleicher Selektor-Spezifität (je eine Klasse) gewann dadurch die spätere, unstylte Basisregel. Die Editionswahl-Regeln nutzen nach diesem Fix denselben Verbund-Selektor-Kniff wie <code>.btn-primary</code> (zwei Klassen statt einer) und sind damit unabhängig von dieser Dokumentreihenfolge.</p>
+    </div>
+
+    <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.16</span><span class="tag tag-feat">Feature</span></div>
       <h3>Werkstoff-Design auch auf der Editionswahl, Namen ohne "Edition"</h3>
       <p>Direkter Folgeschritt zu v1.9.15: Beim Anlegen eines neuen Spielstands zeigt "Neuer Spielstand" jetzt ebenfalls die Werkstoff-Textur & Button-Form jeder Edition, nicht mehr nur graue Einheitskarten - genau dieselben Rezepte wie auf den primären Buttons, nur diesmal alle 22 gleichzeitig sichtbar statt nur der aktuell aktiven Edition. Da hier anders als bei <code>.btn-primary</code> nicht die gerade aktive Edition, sondern alle 22 auf einmal dargestellt werden, konnte die bestehende <code>[data-edition]</code>-Selektor-Kaskade nicht direkt wiederverwendet werden: neue editionsunabhängige <code>.mat-bg-*</code>/<code>.mat-shape-*</code>-Hilfsklassen, denen jede Karte ihre eigenen Farbwerte per Inline-Style mitgibt, bekommen so pro Karte ihre korrekte Farbe unabhängig von der aktuell aktiven Edition. Zusätzlich auf Wunsch die Editionsnamen entschlackt: aus "Rote / Blaue Edition", "Schwarze Edition" &amp; Co. wird schlicht "Rot / Blau", "Schwarz" usw. - passend zum bereits kürzeren Diamant/Perl-, Gold/Silber- und FeuerRot/BlattGrün-Stil, den es für diese 14 Editionen vorher noch nicht gab.</p>
@@ -7530,7 +7547,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.16.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.17.</footer>
 
 </div>`;
 
