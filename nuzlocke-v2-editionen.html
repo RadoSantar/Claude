@@ -1483,7 +1483,8 @@ const KANTO_RB_LOCATIONS = [
     {name:"Orania City", note:"Inkl. S.S. Anne (Geschenk: HM Zerschneider vom Kapitän)."},
     "Route 9","Route 10",
     {name:"Felstunnel", note:"Nur Höhlen-Wildfang, kein Licht ohne Blitz/HM."},
-    {name:"Lavandia", note:"Inkl. Pokémon-Turm (Rivale + Ghastly/Marowak-Auflösung, Mr. Fuji-Rettung, Poké-Flöte)."},
+    {name:"Lavandia", note:"Keine wilden Pokémon in der Stadt selbst - Nebulak/Alpollo/Tragosso stecken ausschließlich im Pokémon-Turm.", noCatch:true},
+    {name:"Pokémon-Turm", note:"Eigene Wildpokémon (Nebulak, Alpollo, Tragosso). Rivale + Knogga-Geist-Auflösung, Mr. Fuji-Rettung, Poké-Flöte."},
     "Route 8",
     {name:"Saffronia City", note:"Inkl. Sabrina-Arena + Silph Co. (Rivale, danach Giovanni)."},
     "Route 7",
@@ -1516,7 +1517,7 @@ const KANTO_RB_BOSSES = [
   { id:"misty", sprite:"Misty", name:"Misty", cls:"Arenaleiterin", place:"Azuria City", ace:"Starmie", baseLevel:21, group:"Kanto-Arenen", pvp:true },
   { id:"rival3", sprite:"Blue", name:"Blau", cls:"Rivale", place:"Orania City (S.S. Anne)", ace:null, baseLevel:20, group:"Rivale" },
   { id:"surge", sprite:"Lt_Surge", name:"Major Bob", cls:"Arenaleiter", place:"Orania City", ace:"Raichu", baseLevel:24, group:"Kanto-Arenen", pvp:true },
-  { id:"rival4", sprite:"Blue", name:"Blau", cls:"Rivale", place:"Lavandia (Pokémon-Turm)", ace:null, baseLevel:25, group:"Rivale" },
+  { id:"rival4", sprite:"Blue", name:"Blau", cls:"Rivale", place:"Pokémon-Turm", ace:null, baseLevel:25, group:"Rivale" },
   { id:"sabrina", sprite:"Sabrina", name:"Sabrina", cls:"Arenaleiterin", place:"Saffronia City", ace:"Simsala", baseLevel:43, group:"Kanto-Arenen", pvp:true },
   { id:"rival5", sprite:"Blue", name:"Blau", cls:"Rivale", place:"Saffronia City (Silph Co.)", ace:null, baseLevel:40, group:"Rivale" },
   { id:"giovanni2", sprite:"Giovanni", name:"Giovanni", cls:"Teamboss", place:"Silph Co., Saffronia City", ace:"Nidoqueen", baseLevel:41, group:"Team Rocket" },
@@ -1539,7 +1540,7 @@ const KANTO_RB_BOSS_AFTER = {
   "Kanto|Marmoria City": ["brock"],
   "Kanto|Azuria City": ["rival2","misty"],
   "Kanto|Orania City": ["rival3","surge"],
-  "Kanto|Lavandia": ["rival4"],
+  "Kanto|Pokémon-Turm": ["rival4"],
   "Kanto|Saffronia City": ["sabrina","rival5","giovanni2"],
   "Kanto|Prismania City": ["erika","giovanni1"],
   "Kanto|Fuchsania City": ["koga"],
@@ -1587,7 +1588,8 @@ const KANTO_YELLOW_LOCATIONS = [
     {name:"Orania City", note:"Inkl. S.S. Anne (Geschenk: HM Zerschneider vom Kapitän) + Geschenk: Schiggy (Lv. 10, erst nach dem Donner-Orden)."},
     "Route 9","Route 10",
     {name:"Felstunnel", note:"Nur Höhlen-Wildfang, kein Licht ohne Blitz/HM."},
-    {name:"Lavandia", note:"Inkl. Pokémon-Turm (Rivale + Ghastly/Marowak-Auflösung, Mr. Fuji-Rettung, Poké-Flöte, Doppelkampf gegen Jessie & James)."},
+    {name:"Lavandia", note:"Keine wilden Pokémon in der Stadt selbst - Nebulak/Alpollo/Tragosso stecken ausschließlich im Pokémon-Turm.", noCatch:true},
+    {name:"Pokémon-Turm", note:"Eigene Wildpokémon (Nebulak, Alpollo, Tragosso). Rivale + Knogga-Geist-Auflösung, Mr. Fuji-Rettung, Poké-Flöte, Doppelkampf gegen Jessie & James."},
     "Route 8",
     {name:"Saffronia City", note:"Inkl. Sabrina-Arena + Silph Co. (Doppelkampf gegen Jessie & James, dann Rivale, danach Giovanni)."},
     "Route 7",
@@ -1615,8 +1617,8 @@ const KANTO_YELLOW_BOSSES = [
   { id:"misty", sprite:"Misty", name:"Misty", cls:"Arenaleiterin", place:"Azuria City", ace:"Starmie", baseLevel:21, group:"Kanto-Arenen", pvp:true },
   { id:"rival3", sprite:"Blue", name:"Blau", cls:"Rivale", place:"Orania City (S.S. Anne)", ace:null, baseLevel:20, group:"Rivale" },
   { id:"surge", sprite:"Lt_Surge", name:"Major Bob", cls:"Arenaleiter", place:"Orania City", ace:"Raichu", baseLevel:28, group:"Kanto-Arenen", pvp:true },
-  { id:"rival4", sprite:"Blue", name:"Blau", cls:"Rivale", place:"Lavandia (Pokémon-Turm)", ace:null, baseLevel:25, group:"Rivale" },
-  { id:"jj3", sprite:"JessieJames", name:"Jessie & James", cls:"Team Rocket-Duo", place:"Lavandia (Pokémon-Turm)", ace:"Smogmog", baseLevel:27, group:"Team Rocket" },
+  { id:"rival4", sprite:"Blue", name:"Blau", cls:"Rivale", place:"Pokémon-Turm", ace:null, baseLevel:25, group:"Rivale" },
+  { id:"jj3", sprite:"JessieJames", name:"Jessie & James", cls:"Team Rocket-Duo", place:"Pokémon-Turm", ace:"Smogmog", baseLevel:27, group:"Team Rocket" },
   { id:"jj4", sprite:"JessieJames", name:"Jessie & James", cls:"Team Rocket-Duo", place:"Silph Co., Saffronia City", ace:"Mauzi", baseLevel:31, group:"Team Rocket" },
   { id:"sabrina", sprite:"Sabrina", name:"Sabrina", cls:"Arenaleiterin", place:"Saffronia City", ace:"Simsala", baseLevel:50, group:"Kanto-Arenen", pvp:true },
   { id:"rival5", sprite:"Blue", name:"Blau", cls:"Rivale", place:"Saffronia City (Silph Co.)", ace:null, baseLevel:40, group:"Rivale" },
@@ -1642,7 +1644,7 @@ const KANTO_YELLOW_BOSS_AFTER = {
   "Kanto|Mondberg": ["jj1"],
   "Kanto|Azuria City": ["rival2","misty"],
   "Kanto|Orania City": ["rival3","surge"],
-  "Kanto|Lavandia": ["rival4","jj3"],
+  "Kanto|Pokémon-Turm": ["rival4","jj3"],
   "Kanto|Saffronia City": ["jj4","sabrina","rival5","giovanni2"],
   "Kanto|Prismania City": ["jj2","erika","giovanni1"],
   "Kanto|Fuchsania City": ["koga"],
@@ -1912,14 +1914,19 @@ const KANTO_FRLG_LOCATIONS = [
   ...KANTO_RB_LOCATIONS,
   ["Sevii-Inseln",[
     {name:"Eiland Eins", note:"Postgame, per Tri-Pass nach dem 7. Orden erreichbar."},
-    {name:"Eiland Zwei", note:"Inkl. Beerenwald."},
-    {name:"Eiland Drei", note:"Inkl. Brückenpass."},
+    {name:"Eiland Zwei", note:"Keine wilden Pokémon.", noCatch:true},
+    "Eiland Drei",
+    {name:"Brückenpass", note:"Verbindet Eiland Drei mit dem Beerenwald - eigene Wildpokémon (u.a. Tauboga, Bluzuk, Simsala)."},
+    {name:"Beerenwald", note:"Liegt am Ende des Brückenpasses (Eiland Drei, nicht Eiland Zwei) - eigene Wildpokémon (u.a. Bluzuk, Omot, Flegmon), teils versionsabhängig unterschiedlich."},
     {name:"Eiland Vier", note:"Nur mit Regenbogen-Pass (nach Nationaldex) erreichbar."},
-    {name:"Eiland Fünf", note:"Inkl. Wiesental."},
+    "Eiland Fünf",
+    {name:"Wiesental", note:"Kurze Route direkt bei Eiland Fünf - eigene Wildpokémon (u.a. Wiesor, Hoppspross, Snobilikat)."},
     {name:"Rocket-Lager", note:"Doppelkämpfe gegen die früheren Team-Rocket-Vorstände Athena und Atlas (zwei Passwörter nötig: eines von einem Rüpel am Feuerberg, eines von Gideon im Punktloch)."},
-    {name:"Eiland Sechs", note:"Inkl. Ruinental."},
+    "Eiland Sechs",
+    {name:"Ruinental", note:"Eigene Wildpokémon (u.a. Habitak, Natu, Yanma, Marill, Felino)."},
     {name:"Punktloch", note:"Kein Kampf - Gideon verrät gegen den Saphir eines der beiden Passwörter fürs Rocket-Lager."},
-    {name:"Eiland Sieben", note:"Inkl. Tanoby-Ruinen und Trainerturm."},
+    {name:"Eiland Sieben", note:"Inkl. Trainerturm (reine Kampfeinrichtung, keine wilden Pokémon)."},
+    {name:"Tanoby-Ruinen", note:"Einziger Fundort für Icognito in allen 28 Buchstabenformen."},
     {name:"Pokémon-Liga (Rückkampf)", note:"Optionaler zweiter Kampf gegen Blau nach den Sevii-Inseln, deutlich höheres Level als beim ersten Titelgewinn.", noCatch:true}
   ]]
 ];
@@ -1932,7 +1939,7 @@ const KANTO_FRLG_BOSSES = [
   { id:"misty", sprite:"Misty", name:"Misty", cls:"Arenaleiterin", place:"Azuria City", ace:"Starmie", baseLevel:21, group:"Kanto-Arenen", pvp:true },
   { id:"rival3", sprite:"Blue", name:"Blau", cls:"Rivale", place:"Orania City (S.S. Anne)", ace:null, baseLevel:20, group:"Rivale" },
   { id:"surge", sprite:"Lt_Surge", name:"Major Bob", cls:"Arenaleiter", place:"Orania City", ace:"Raichu", baseLevel:24, group:"Kanto-Arenen", pvp:true },
-  { id:"rival4", sprite:"Blue", name:"Blau", cls:"Rivale", place:"Lavandia (Pokémon-Turm)", ace:null, baseLevel:25, group:"Rivale" },
+  { id:"rival4", sprite:"Blue", name:"Blau", cls:"Rivale", place:"Pokémon-Turm", ace:null, baseLevel:25, group:"Rivale" },
   { id:"sabrina", sprite:"Sabrina", name:"Sabrina", cls:"Arenaleiterin", place:"Saffronia City", ace:"Simsala", baseLevel:43, group:"Kanto-Arenen", pvp:true },
   { id:"rival5", sprite:"Blue", name:"Blau", cls:"Rivale", place:"Saffronia City (Silph Co.)", ace:null, baseLevel:40, group:"Rivale" },
   { id:"giovanni2", sprite:"Giovanni", name:"Giovanni", cls:"Teamboss", place:"Silph Co., Saffronia City", ace:"Nidoqueen", baseLevel:41, group:"Team Rocket" },
@@ -1958,7 +1965,7 @@ const KANTO_FRLG_BOSS_AFTER = {
   "Kanto|Marmoria City": ["brock"],
   "Kanto|Azuria City": ["rival2","misty"],
   "Kanto|Orania City": ["rival3","surge"],
-  "Kanto|Lavandia": ["rival4"],
+  "Kanto|Pokémon-Turm": ["rival4"],
   "Kanto|Saffronia City": ["sabrina","rival5","giovanni2"],
   "Kanto|Prismania City": ["erika","giovanni1"],
   "Kanto|Fuchsania City": ["koga"],
@@ -3472,7 +3479,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.18";
+const APP_VERSION = "1.9.19";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -6557,6 +6564,14 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="log">
 
     <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.19</span><span class="tag tag-fix">Fix</span></div>
+      <h3>6 weitere fehlende Standorte ergänzt (Kanto/Sevii-Inseln)</h3>
+      <p>Direkter Folgeschritt zu v1.9.18: dieselbe Prüfung noch einmal quer über alle Editionen laufen lassen (jede Notiz mit "Inkl. ..." auf einen echten, separat begehbaren Nebendungeon mit eigener Wildpokémon-Auswahl hin geprüft) und dabei 6 weitere Fälle gefunden.</p>
+      <p><strong>Pokémon-Turm (Rote/Blaue und Gelbe Edition, dadurch auch FeuerRot/BlattGrün):</strong> stand bisher nur als Notiz bei Lavandia, obwohl die Stadt selbst laut Recherche gar keine wilden Pokémon hat - Nebulak/Alpollo/Tragosso stecken ausschließlich im Turm. Jetzt als eigener Standort ergänzt, Lavandia entsprechend auf "keine wilden Pokémon" korrigiert.</p>
+      <p><strong>5 Sevii-Insel-Nebenbereiche (FeuerRot/BlattGrün):</strong> Brückenpass, Beerenwald, Wiesental, Ruinental und die Tanoby-Ruinen waren bisher nur als beiläufige Erwähnung in der Notiz der jeweiligen Hauptinsel geführt, haben aber laut Recherche jeweils eine komplett eigene Wildpokémon-Auswahl. Dabei zusätzlich eine falsche Insel-Zuordnung korrigiert: der Beerenwald hing bisher an Eiland Zwei, liegt laut Bulbapedia aber tatsächlich am Ende des Brückenpasses auf Eiland Drei - Eiland Zwei selbst hat gar keine wilden Pokémon und ist entsprechend als "keine wilden Pokémon" markiert.</p>
+    </div>
+
+    <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.18</span><span class="tag tag-fix">Fix</span></div>
       <h3>Fehlender Standort ergänzt: Alter Palast (Schwarz/Weiß/Schwarz2-Weiß2)</h3>
       <p>Nutzerbestätigt: der Alte Palast (Relic Castle), ein separater Nebendungeon mitten im Wüstenresort, fehlte bisher als eigener Standort - er stand nur als beiläufige Erwähnung in der Notiz des Wüstenresorts, obwohl er laut Recherche eine komplett eigene Wildpokémon-Auswahl hat (u.&nbsp;a. Yamask, Krokorok, Cofagrigus statt der Wüsten-eigenen Sandile/Darumaka/Maractus/Scraggy/Dwebble/Sigilyph) und denselben Nebenareal-Charakter wie z.&nbsp;B. die Panaero-Höhle hat, die bereits als eigene Kachel geführt wird. Jetzt als eigener Standort ergänzt, inklusive der einmaligen Fossilienwahl (Kanto-/Flug-Fossil) und des besonderen Volcarona-Fangs auf der untersten Etage. In Schwarz/Weiß ist der Palast laut Recherche erst nach der Ligashow vollständig begehbar, in Schwarz2/Weiß2 dagegen von Anfang an - nur eben zunächst mit nur zwei zugänglichen Etagen - jeweils passend in der Standort-Notiz vermerkt.</p>
@@ -7555,7 +7570,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.18.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.19.</footer>
 
 </div>`;
 
