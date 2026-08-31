@@ -2444,7 +2444,7 @@ const GAMES = {
      die diese App ohnehin nicht trackt) - deshalb wie Diamant/Perl EIN gemeinsamer Eintrag statt
      zweier separater Editionen. Rot = hell (rot), Blau = dunkel (blau) - eigene Farbidentität statt
      nur unterschiedlicher Helligkeit derselben Farbe, analog zum bestehenden Muster. */
-  "rot-blau": { id:"rot-blau", label:"Rote / Blaue Edition", shortLabel:"Rot/Blau", regions:KANTO_RB_LOCATIONS, bosses:KANTO_RB_BOSSES, bossAfter:KANTO_RB_BOSS_AFTER, starters:{ grass:"Bisasam", fire:"Glumanda", water:"Schiggy" }, generation:1, releaseOrder:1,
+  "rot-blau": { id:"rot-blau", label:"Rot / Blau", shortLabel:"Rot/Blau", regions:KANTO_RB_LOCATIONS, bosses:KANTO_RB_BOSSES, bossAfter:KANTO_RB_BOSS_AFTER, starters:{ grass:"Bisasam", fire:"Glumanda", water:"Schiggy" }, generation:1, releaseOrder:1,
     theme:{ light:{ accent:"#E0393C", accentSoft:"#FBDEDE", accentShine:"#FDF2F2", accentDeep:"#A32621", glow:"224,57,60" },
             dark:{ accent:"#4E8FE0", accentSoft:"#17233A", accentShine:"#A9C8F5", accentDeep:"#2F5FAE", glow:"78,143,224" } }, material:{ bg:"plastic", shape:"plastic" } },
   /* starters:{fixed,rivalGets} statt {grass,fire,water}: Gelb hat keine Dreier-Starterwahl, Pikachu
@@ -2454,7 +2454,7 @@ const GAMES = {
      selbst weiterhin für einen unabhängigen wilden Fang (Angeln) nutzbar bleibt. Eigenständiges
      Gelb-Thema (nicht wie Rot/Blau als Hell/Dunkel-Paar zweier Versionen, da Gelb nur eine einzelne
      Version ist) - warmes Gelb/Gold in beiden Modi, je nur unterschiedlich hell. */
-  gelb: { id:"gelb", label:"Gelbe Edition", shortLabel:"Gelb", regions:KANTO_YELLOW_LOCATIONS, bosses:KANTO_YELLOW_BOSSES, bossAfter:KANTO_YELLOW_BOSS_AFTER, starters:{ fixed:"Pikachu", rivalGets:"Evoli" }, generation:1, releaseOrder:2,
+  gelb: { id:"gelb", label:"Gelb", shortLabel:"Gelb", regions:KANTO_YELLOW_LOCATIONS, bosses:KANTO_YELLOW_BOSSES, bossAfter:KANTO_YELLOW_BOSS_AFTER, starters:{ fixed:"Pikachu", rivalGets:"Evoli" }, generation:1, releaseOrder:2,
     theme:{ light:{ accent:"#E3A712", accentSoft:"#FBF0D2", accentShine:"#FEFBF0", accentDeep:"#8F6A0A", glow:"227,167,18" },
             dark:{ accent:"#F5CB4C", accentSoft:"#2E2410", accentShine:"#FCE9A0", accentDeep:"#C99A1E", glow:"245,203,76" } }, material:{ bg:"rubber", shape:"rubber" } },
   /* Durchgängiges Muster für alle Generationen mit "Partner-Paar + dritte Solo-Edition": das
@@ -2467,7 +2467,7 @@ const GAMES = {
   "gold-silber": { id:"gold-silber", label:"Gold / Silber", shortLabel:"Gold/Silber", regions:GSC_LOCATIONS, bosses:GSC_BOSSES, bossAfter:GSC_BOSS_AFTER, starters:{ grass:"Endivie", fire:"Feurigel", water:"Karnimani" }, generation:2, releaseOrder:3,
     theme:{ light:{ accent:"#9BA4AE", accentSoft:"#E7EAED", accentShine:"#F5F6F8", accentDeep:"#5F6B76", glow:"155,164,174" },
             dark:{ accent:"#D9A536", accentSoft:"#2E2410", accentShine:"#F0D488", accentDeep:"#A67C1E", glow:"217,165,54" } }, material:{ bg:"brushed", shape:"metal-brushed" } },
-  kristall: { id:"kristall", label:"Kristall-Edition", shortLabel:"Kristall", regions:GSC_LOCATIONS, bosses:GSC_BOSSES, bossAfter:GSC_BOSS_AFTER, starters:{ grass:"Endivie", fire:"Feurigel", water:"Karnimani" }, generation:2, releaseOrder:4,
+  kristall: { id:"kristall", label:"Kristall", shortLabel:"Kristall", regions:GSC_LOCATIONS, bosses:GSC_BOSSES, bossAfter:GSC_BOSS_AFTER, starters:{ grass:"Endivie", fire:"Feurigel", water:"Karnimani" }, generation:2, releaseOrder:4,
     theme:{ light:{ accent:"#2FA6A0", accentSoft:"#D8F1EF", accentShine:"#F0FAF9", accentDeep:"#1E6E6A", glow:"47,166,160" },
             dark:{ accent:"#5FD6CE", accentSoft:"#123332", accentShine:"#A6EDE8", accentDeep:"#2FA6A0", glow:"95,214,206" } }, material:{ bg:"facet", shape:"diamant" } },
   /* FeuerRot/BlattGrün sind laut Recherche für Arenen/Rivale/Top-Vier/Champion identisch (ein
@@ -2485,7 +2485,7 @@ const GAMES = {
      für ALLE Arten, nicht nur die 72 neuen Kalos-Arten. genderNames aktiviert die Geschlechtswahl
      der Spielfigur (siehe genderCardHtml()/resolveBossGender()) - der Rivale ist automatisch die
      jeweils andere Figur (Kalem/Serena). */
-  xy: { id:"xy", label:"X- / Y-Edition", shortLabel:"X/Y", regions:KALOS_LOCATIONS, bosses:KALOS_BOSSES, bossAfter:KALOS_BOSS_AFTER, starters:{ grass:"Igamaro", fire:"Fynx", water:"Froxy" }, genderNames:{ male:"Kalem", female:"Serena" }, generation:6, releaseOrder:14,
+  xy: { id:"xy", label:"X / Y", shortLabel:"X/Y", regions:KALOS_LOCATIONS, bosses:KALOS_BOSSES, bossAfter:KALOS_BOSS_AFTER, starters:{ grass:"Igamaro", fire:"Fynx", water:"Froxy" }, genderNames:{ male:"Kalem", female:"Serena" }, generation:6, releaseOrder:14,
     theme:{ light:{ accent:"#5E72C4", accentSoft:"#E3E7F7", accentShine:"#F3F5FC", accentDeep:"#3B4A94", glow:"94,114,196" },
             dark:{ accent:"#8B9AE8", accentSoft:"#1E2340", accentShine:"#C4CDF5", accentDeep:"#5E72C4", glow:"139,154,232" } }, material:{ bg:"lacquer", shape:"lacquer" } },
   /* Sonne/Mond: erste echte Gen7-Region (kein Remake wie ORAS) - EIN gemeinsamer Eintrag wie X/Y,
@@ -2494,7 +2494,7 @@ const GAMES = {
      bestehenden Hell/Dunkel-Prinzip bei Versionspaaren. Kein genderNames-Mechanismus nötig - anders
      als Kalos/Hoenn bleibt der Rivale Hau unabhängig von der Spielfigur-Wahl immer derselbe
      Charakter (laut Recherche bestätigt). */
-  "sonne-mond": { id:"sonne-mond", label:"Sonne- / Mond-Edition", shortLabel:"Sonne/Mond", regions:ALOLA_LOCATIONS, bosses:ALOLA_BOSSES, bossAfter:ALOLA_BOSS_AFTER, starters:{ grass:"Bauz", fire:"Flamiau", water:"Robball" }, generation:7, releaseOrder:16,
+  "sonne-mond": { id:"sonne-mond", label:"Sonne / Mond", shortLabel:"Sonne/Mond", regions:ALOLA_LOCATIONS, bosses:ALOLA_BOSSES, bossAfter:ALOLA_BOSS_AFTER, starters:{ grass:"Bauz", fire:"Flamiau", water:"Robball" }, generation:7, releaseOrder:16,
     theme:{ light:{ accent:"#E0932E", accentSoft:"#FBE9D2", accentShine:"#FEF6EB", accentDeep:"#95591A", glow:"224,147,46" },
             dark:{ accent:"#4A5FBF", accentSoft:"#1A1F3D", accentShine:"#9AA8EA", accentDeep:"#2E3B85", glow:"74,95,191" } }, material:{ bg:"dual-sm", shape:"perl" } },
   /* Ultrasonne/Ultramond: eigene Edition (wie Platin/Kristall/Smaragd) statt Zusammenlegung mit
@@ -2502,7 +2502,7 @@ const GAMES = {
      (Molayne statt Hala), siehe Kommentar bei USUM_BOSSES. Eigene, aber verwandte Farbtöne
      (kräftigeres Korallenrot/tieferes Violettblau), damit beide Alola-Editionspaare in der
      Editionswahl unterscheidbar bleiben. */
-  "ultrasonne-ultramond": { id:"ultrasonne-ultramond", label:"Ultrasonne- / Ultramond-Edition", shortLabel:"Ultrasonne/Ultramond", regions:USUM_LOCATIONS, bosses:USUM_BOSSES, bossAfter:USUM_BOSS_AFTER, starters:{ grass:"Bauz", fire:"Flamiau", water:"Robball" }, generation:7, releaseOrder:17,
+  "ultrasonne-ultramond": { id:"ultrasonne-ultramond", label:"Ultrasonne / Ultramond", shortLabel:"Ultrasonne/Ultramond", regions:USUM_LOCATIONS, bosses:USUM_BOSSES, bossAfter:USUM_BOSS_AFTER, starters:{ grass:"Bauz", fire:"Flamiau", water:"Robball" }, generation:7, releaseOrder:17,
     theme:{ light:{ accent:"#D9553F", accentSoft:"#FAE0DA", accentShine:"#FDF1EE", accentDeep:"#902F1F", glow:"217,85,63" },
             dark:{ accent:"#6A4FC4", accentSoft:"#211A3D", accentShine:"#B6A4EE", accentDeep:"#46308F", glow:"106,79,196" } }, material:{ bg:"dual-sm", shape:"perl" } }
 };
@@ -2515,10 +2515,10 @@ const GAMES = {
    der Editionswahl unterscheidbar bleiben - Omega Rubin: tieferes Karmesin, Alpha Saphir: helleres
    Türkis-Blau. */
 Object.assign(GAMES, buildVersionGames(ORAS_BOSSES, ORAS_LOCATIONS, ORAS_BOSS_AFTER, [
-  { id:"omegarubin", label:"Omega Rubin-Edition", shortLabel:"Omega Rubin", releaseOrder:15,
+  { id:"omegarubin", label:"Omega Rubin", shortLabel:"Omega Rubin", releaseOrder:15,
     theme:{ light:{ accent:"#C41E3A", accentSoft:"#F8DDE2", accentShine:"#FCF0F2", accentDeep:"#7F0F22", glow:"196,30,58" },
             dark:{ accent:"#F06A82", accentSoft:"#361219", accentShine:"#F8B4C0", accentDeep:"#C41E3A", glow:"240,106,130" } }, material:{ bg:"facet-aura", shape:"diamant" } },
-  { id:"alphasaphir", label:"Alpha Saphir-Edition", shortLabel:"Alpha Saphir", bossOverrides:ORAS_TEAM_AQUA_OVERRIDES, releaseOrder:15,
+  { id:"alphasaphir", label:"Alpha Saphir", shortLabel:"Alpha Saphir", bossOverrides:ORAS_TEAM_AQUA_OVERRIDES, releaseOrder:15,
     theme:{ light:{ accent:"#1AA6B7", accentSoft:"#D9F0F3", accentShine:"#EEFAFB", accentDeep:"#0E6D79", glow:"26,166,183" },
             dark:{ accent:"#5FD6E5", accentSoft:"#11302F", accentShine:"#A6EDF2", accentDeep:"#1AA6B7", glow:"95,214,229" } }, material:{ bg:"facet-aura", shape:"diamant" } }
 ], { grass:"Geckarbor", fire:"Flemmli", water:"Hydropi" }, 6, { male:"Brix", female:"Maike" }));
@@ -2555,10 +2555,10 @@ GAMES["bdsp"] = { id:"bdsp", label:"Strahlender Diamant / Leuchtende Perle", sho
    jede bekommt trotzdem nur EIN Farbthema (Hell/Dunkel = Helligkeitsstufen derselben Edelstein-
    Farbidentität, wie bei Platin/Gelb/Kristall), kein Versionspaar-Farbschema nötig. */
 Object.assign(GAMES, buildVersionGames(HOENN_RS_BOSSES, SMARAGD_LOCATIONS, HOENN_RS_BOSS_AFTER, [
-  { id:"rubin", label:"Rubin-Edition", shortLabel:"Rubin", releaseOrder:5,
+  { id:"rubin", label:"Rubin", shortLabel:"Rubin", releaseOrder:5,
     theme:{ light:{ accent:"#B4193F", accentSoft:"#F7DCE3", accentShine:"#FCF0F3", accentDeep:"#7A0F2B", glow:"180,25,63" },
             dark:{ accent:"#E8547A", accentSoft:"#33131C", accentShine:"#F5A8BC", accentDeep:"#B4193F", glow:"232,84,122" } }, material:{ bg:"facet", shape:"diamant" } },
-  { id:"saphir", label:"Saphir-Edition", shortLabel:"Saphir", bossOverrides:TEAM_AQUA_OVERRIDES, releaseOrder:6,
+  { id:"saphir", label:"Saphir", shortLabel:"Saphir", bossOverrides:TEAM_AQUA_OVERRIDES, releaseOrder:6,
     theme:{ light:{ accent:"#1856B8", accentSoft:"#DCE6F7", accentShine:"#F0F5FC", accentDeep:"#0F3B80", glow:"24,86,184" },
             dark:{ accent:"#5B90E0", accentSoft:"#13233F", accentShine:"#A8C4F0", accentDeep:"#1856B8", glow:"91,144,224" } }, material:{ bg:"facet", shape:"diamant" } }
 ], { grass:"Geckarbor", fire:"Flemmli", water:"Hydropi" }, 3, { male:"Brix", female:"Maike" }));
@@ -2567,10 +2567,10 @@ Object.assign(GAMES, buildVersionGames(HOENN_RS_BOSSES, SMARAGD_LOCATIONS, HOENN
    Helligkeitsstufen derselben Farbidentität), passend zu den jeweiligen Versions-Legendären:
    Weiß = Eisblau (Reshiram), Schwarz = gedämpftes Violett (Zekrom). */
 Object.assign(GAMES, buildVersionGames(EINALL_BW_BOSSES, EINALL_BW_LOCATIONS, EINALL_BW_BOSS_AFTER, [
-  { id:"schwarz", label:"Schwarze Edition", shortLabel:"Schwarz", releaseOrder:12,
+  { id:"schwarz", label:"Schwarz", shortLabel:"Schwarz", releaseOrder:12,
     theme:{ light:{ accent:"#5C4A8A", accentSoft:"#E6E1F0", accentShine:"#F5F2FA", accentDeep:"#3D3060", glow:"92,74,138" },
             dark:{ accent:"#8B6FC4", accentSoft:"#221B33", accentShine:"#C9B8EA", accentDeep:"#5C4A8A", glow:"139,111,196" } }, material:{ bg:"mono-matte", shape:"mono" } },
-  { id:"weiss", label:"Weiße Edition", shortLabel:"Weiß", bossOverrides:TEAM_WHITE_OVERRIDES, releaseOrder:13,
+  { id:"weiss", label:"Weiß", shortLabel:"Weiß", bossOverrides:TEAM_WHITE_OVERRIDES, releaseOrder:13,
     theme:{ light:{ accent:"#4A90D6", accentSoft:"#E4F0FA", accentShine:"#F5FAFF", accentDeep:"#2C5F8F", glow:"74,144,214" },
             dark:{ accent:"#7EB8EA", accentSoft:"#16283A", accentShine:"#BFE0FA", accentDeep:"#4A90D6", glow:"126,184,234" } }, material:{ bg:"mono-glossy", shape:"mono" } }
 ], { grass:"Serpifeu", fire:"Floink", water:"Ottaro" }, 5));
@@ -2759,10 +2759,10 @@ const GALAR_SCHILD_OVERRIDES = {
   "finale-saida": {sprite:"GaAllister",name:"Nio",cls:"Arenaleiter",ace:"Gengar"}
 };
 Object.assign(GAMES, buildVersionGames(GALAR_BOSSES, GALAR_LOCATIONS, GALAR_BOSS_AFTER, [
-  { id:"schwert", label:"Schwert-Edition", shortLabel:"Schwert", releaseOrder:18,
+  { id:"schwert", label:"Schwert", shortLabel:"Schwert", releaseOrder:18,
     theme:{ light:{ accent:"#1E5FA8", accentSoft:"#DCE6F4", accentShine:"#EEF3FA", accentDeep:"#123A6B", glow:"30,95,168" },
             dark:{ accent:"#5C9AE0", accentSoft:"#132335", accentShine:"#AFCCF2", accentDeep:"#1E5FA8", glow:"92,154,224" } }, material:{ bg:"brushed", shape:"metal-brushed" } },
-  { id:"schild", label:"Schild-Edition", shortLabel:"Schild", bossOverrides:GALAR_SCHILD_OVERRIDES, releaseOrder:18,
+  { id:"schild", label:"Schild", shortLabel:"Schild", bossOverrides:GALAR_SCHILD_OVERRIDES, releaseOrder:18,
     theme:{ light:{ accent:"#B8305C", accentSoft:"#F5DCE4", accentShine:"#FBEFF3", accentDeep:"#7A1E3C", glow:"184,48,92" },
             dark:{ accent:"#E06A93", accentSoft:"#33131F", accentShine:"#F2B0C6", accentDeep:"#B8305C", glow:"224,106,147" } }, material:{ bg:"hammered", shape:"metal-hammered" } }
 ], { grass:"Chimpep", fire:"Hopplo", water:"Memmeon" }, 8));
@@ -2861,14 +2861,16 @@ const MATERIAL_SHAPE = {
   lacquer: `border-radius:11px;`,
   mono: `border-radius:13px;`
 };
+/* Auf Modulebene statt lokal in injectEditionMaterialCSS(), damit injectMaterialUtilityClasses()
+   (Editionswahl-Karten, siehe unten) dieselben Rezepte wiederverwenden kann, ohne sie zu duplizieren. */
+const MONO_LIGHT_IMG = "linear-gradient(155deg, #3a3a3a 0%, #000 80%)";
+const MONO_DARK_IMG = "linear-gradient(155deg, #ffffff 0%, #d5d5d5 80%)";
+const CRACK_LIGHT_IMG = "linear-gradient(72deg, transparent 48%, rgba(0,0,0,.35) 49%, transparent 51%), linear-gradient(15deg, transparent 30%, rgba(0,0,0,.28) 31%, transparent 33%), ";
+const CRACK_DARK_IMG = "linear-gradient(72deg, transparent 48%, rgba(255,255,255,.45) 49%, transparent 51%), linear-gradient(15deg, transparent 30%, rgba(255,255,255,.36) 31%, transparent 33%), ";
+const SUN_IMG = "radial-gradient(circle at 50% 50%, var(--accent-shine) 0%, var(--accent) 42%, var(--accent-deep) 100%), linear-gradient(0deg, transparent 47%, rgba(255,255,255,.35) 49%, transparent 51%), linear-gradient(90deg, transparent 47%, rgba(255,255,255,.3) 49%, transparent 51%)";
+const MOON_IMG = "radial-gradient(circle at 35% 35%, var(--accent-shine) 0%, var(--accent) 45%, var(--accent-deep) 100%), radial-gradient(circle 1.2px at 20% 70%, #fff, transparent), radial-gradient(circle 1px at 75% 25%, #fff, transparent), radial-gradient(circle 1.1px at 82% 68%, #fff, transparent)";
 function injectEditionMaterialCSS(){
   let css = "";
-  const monoLight = "linear-gradient(155deg, #3a3a3a 0%, #000 80%)";
-  const monoDark = "linear-gradient(155deg, #ffffff 0%, #d5d5d5 80%)";
-  const crackLight = "linear-gradient(72deg, transparent 48%, rgba(0,0,0,.35) 49%, transparent 51%), linear-gradient(15deg, transparent 30%, rgba(0,0,0,.28) 31%, transparent 33%), ";
-  const crackDark = "linear-gradient(72deg, transparent 48%, rgba(255,255,255,.45) 49%, transparent 51%), linear-gradient(15deg, transparent 30%, rgba(255,255,255,.36) 31%, transparent 33%), ";
-  const sun = "radial-gradient(circle at 50% 50%, var(--accent-shine) 0%, var(--accent) 42%, var(--accent-deep) 100%), linear-gradient(0deg, transparent 47%, rgba(255,255,255,.35) 49%, transparent 51%), linear-gradient(90deg, transparent 47%, rgba(255,255,255,.3) 49%, transparent 51%)";
-  const moon = "radial-gradient(circle at 35% 35%, var(--accent-shine) 0%, var(--accent) 45%, var(--accent-deep) 100%), radial-gradient(circle 1.2px at 20% 70%, #fff, transparent), radial-gradient(circle 1px at 75% 25%, #fff, transparent), radial-gradient(circle 1.1px at 82% 68%, #fff, transparent)";
   Object.values(GAMES).forEach(g=>{
     const m = g.material;
     if(!m) return;
@@ -2879,15 +2881,15 @@ function injectEditionMaterialCSS(){
       return;
     }
     if(m.bg === "dual-sm"){
-      css += `[data-edition="${g.id}"][data-theme="light"] .btn-primary{ background-image:${sun}; border-radius:999px; }\n`;
-      css += `[data-edition="${g.id}"][data-theme="dark"] .btn-primary{ background-image:${moon}; border-radius:999px; }\n`;
-      css += `@media (prefers-color-scheme: dark){ [data-edition="${g.id}"]:not([data-theme="light"]) .btn-primary{ background-image:${moon}; border-radius:999px; } }\n`;
+      css += `[data-edition="${g.id}"][data-theme="light"] .btn-primary{ background-image:${SUN_IMG}; border-radius:999px; }\n`;
+      css += `[data-edition="${g.id}"][data-theme="dark"] .btn-primary{ background-image:${MOON_IMG}; border-radius:999px; }\n`;
+      css += `@media (prefers-color-scheme: dark){ [data-edition="${g.id}"]:not([data-theme="light"]) .btn-primary{ background-image:${MOON_IMG}; border-radius:999px; } }\n`;
       return;
     }
     if(m.bg.indexOf("mono") === 0){
       const crack = m.bg === "mono-craquele";
-      const lightImg = (crack ? crackLight : "") + monoLight;
-      const darkImg = (crack ? crackDark : "") + monoDark;
+      const lightImg = (crack ? CRACK_LIGHT_IMG : "") + MONO_LIGHT_IMG;
+      const darkImg = (crack ? CRACK_DARK_IMG : "") + MONO_DARK_IMG;
       css += `[data-edition="${g.id}"][data-theme="light"] .btn-primary{ background-image:${lightImg}; color:#fff; border-radius:13px; }\n`;
       css += `[data-edition="${g.id}"][data-theme="dark"] .btn-primary{ background-image:${darkImg}; color:#141414; border-radius:13px; }\n`;
       css += `@media (prefers-color-scheme: dark){ [data-edition="${g.id}"]:not([data-theme="light"]) .btn-primary{ background-image:${darkImg}; color:#141414; border-radius:13px; } }\n`;
@@ -2905,6 +2907,63 @@ function injectEditionMaterialCSS(){
   document.head.appendChild(styleEl);
 }
 injectEditionMaterialCSS();
+
+/* Dieselben Werkstoff-Rezepte auch für die Editionswahl-Karten (.sheet-option in
+   openNewSaveSheet()) - anders als .btn-primary zeigen die aber ALLE 22 Editionen gleichzeitig,
+   unabhängig von der gerade aktiven Edition. Die [data-edition="x"]-Selektor-Kaskade von oben
+   (reagiert auf die AKTIVE Edition am <html>-Element) passt hier also nicht - stattdessen generische,
+   editionsunabhängige Utility-Klassen (.mat-bg-* bzw. .mat-shape-*), denen editionMaterialAttrs() pro
+   Karte die passenden --accent/--accent-shine/--accent-deep/--gold-glow-Werte inline mitgibt. */
+function injectMaterialUtilityClasses(){
+  let css = "";
+  Object.keys(MATERIAL_BG).forEach(key=>{
+    css += `.mat-bg-${key}{ background-image:${MATERIAL_BG[key]}; color:#fff; }\n`;
+  });
+  Object.keys(MATERIAL_SHAPE).forEach(key=>{
+    css += `.mat-shape-${key}{ ${MATERIAL_SHAPE[key]} }\n`;
+  });
+  css += `.mat-bg-sun{ background-image:${SUN_IMG}; color:#fff; }\n`;
+  css += `.mat-bg-moon{ background-image:${MOON_IMG}; color:#fff; }\n`;
+  css += `.mat-bg-mono-light{ background-image:${MONO_LIGHT_IMG}; color:#fff; }\n`;
+  css += `.mat-bg-mono-dark{ background-image:${MONO_DARK_IMG}; color:#141414; }\n`;
+  css += `.mat-bg-mono-light.crack{ background-image:${CRACK_LIGHT_IMG}${MONO_LIGHT_IMG}; }\n`;
+  css += `.mat-bg-mono-dark.crack{ background-image:${CRACK_DARK_IMG}${MONO_DARK_IMG}; }\n`;
+  css += `.mat-fx-lacquer{ box-shadow:inset 0 1px 0 rgba(255,255,255,.35), inset 0 -1px 2px rgba(0,0,0,.15), inset 0 0 0 1.5px rgba(230,190,110,.55); }\n`;
+  css += `.mat-fx-aura{ box-shadow:inset 0 1px 0 rgba(255,255,255,.35), inset 0 -1px 2px rgba(0,0,0,.15), 0 0 10px 1px rgba(var(--gold-glow),.5); }\n`;
+  css += `.mat-fx-patina{ filter:saturate(.85) brightness(.97); }\n`;
+  const styleEl = document.createElement("style");
+  styleEl.textContent = css;
+  document.head.appendChild(styleEl);
+}
+injectMaterialUtilityClasses();
+
+/* Liefert Klassenliste + Inline-Style (--accent/--accent-shine/--accent-deep/--gold-glow) für eine
+   einzelne Editionswahl-Karte im gewünschten Hell/Dunkel-Modus. HG/SS hat kein eigenes theme-Objekt
+   (nutzt im echten Spielbetrieb ohnehin nur die App-Standardfarbe) - deshalb hier derselbe Fallback-
+   Akzent wie die App-Basis-:root-Regel weiter oben im <style>-Block (kein neuer/erfundener Wert). */
+const EDITION_DEFAULT_THEME = {
+  light:{ accent:"#64738A", accentShine:"#F5F7FA", accentDeep:"#48536A", glow:"169,118,46" },
+  dark:{ accent:"#DDB05F", accentShine:"#F6D998", accentDeep:"#8C6B2E", glow:"221,176,95" }
+};
+function editionMaterialAttrs(g, mode){
+  const t = (g.theme ? g.theme[mode] : null) || EDITION_DEFAULT_THEME[mode];
+  const style = `--accent:${t.accent}; --accent-shine:${t.accentShine}; --accent-deep:${t.accentDeep}; --gold-glow:${t.glow};`;
+  const m = g.material;
+  if(!m) return { cls:"", style };
+  let cls;
+  if(m.bg === "dual-dp") cls = mode==="light" ? "mat-bg-pearl mat-shape-perl" : "mat-bg-facet mat-shape-diamant";
+  else if(m.bg === "dual-sm") cls = mode==="light" ? "mat-bg-sun mat-shape-perl" : "mat-bg-moon mat-shape-perl";
+  else if(m.bg.indexOf("mono") === 0){
+    const crack = m.bg === "mono-craquele" ? " crack" : "";
+    cls = (mode==="light" ? "mat-bg-mono-light" : "mat-bg-mono-dark") + crack + " mat-shape-mono";
+  } else {
+    cls = `mat-bg-${m.bg} mat-shape-${m.shape}`;
+    if(m.bg === "lacquer") cls += " mat-fx-lacquer";
+    if(m.bg === "facet-aura") cls += " mat-fx-aura";
+    if(m.bg === "plastic-patina") cls += " mat-fx-patina";
+  }
+  return { cls, style };
+}
 
 /* Geschlechtsabhängiger Rivale (z.B. Kalos: Calem/Serena - der Rivale ist automatisch die
    jeweils andere Figur, gleicher Kampfverlauf, nur Name/Sprite wechseln). Boss-Einträge nutzen
@@ -3400,7 +3459,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.15";
+const APP_VERSION = "1.9.16";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -6485,6 +6544,12 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="log">
 
     <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.16</span><span class="tag tag-feat">Feature</span></div>
+      <h3>Werkstoff-Design auch auf der Editionswahl, Namen ohne "Edition"</h3>
+      <p>Direkter Folgeschritt zu v1.9.15: Beim Anlegen eines neuen Spielstands zeigt "Neuer Spielstand" jetzt ebenfalls die Werkstoff-Textur & Button-Form jeder Edition, nicht mehr nur graue Einheitskarten - genau dieselben Rezepte wie auf den primären Buttons, nur diesmal alle 22 gleichzeitig sichtbar statt nur der aktuell aktiven Edition. Da hier anders als bei <code>.btn-primary</code> nicht die gerade aktive Edition, sondern alle 22 auf einmal dargestellt werden, konnte die bestehende <code>[data-edition]</code>-Selektor-Kaskade nicht direkt wiederverwendet werden: neue editionsunabhängige <code>.mat-bg-*</code>/<code>.mat-shape-*</code>-Hilfsklassen, denen jede Karte ihre eigenen Farbwerte per Inline-Style mitgibt, bekommen so pro Karte ihre korrekte Farbe unabhängig von der aktuell aktiven Edition. Zusätzlich auf Wunsch die Editionsnamen entschlackt: aus "Rote / Blaue Edition", "Schwarze Edition" &amp; Co. wird schlicht "Rot / Blau", "Schwarz" usw. - passend zum bereits kürzeren Diamant/Perl-, Gold/Silber- und FeuerRot/BlattGrün-Stil, den es für diese 14 Editionen vorher noch nicht gab.</p>
+    </div>
+
+    <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.15</span><span class="tag tag-feat">Feature</span></div>
       <h3>Werkstoff-Design: jede Edition mit eigener Textur &amp; Button-Form</h3>
       <p>Zusätzlich zur bestehenden Akzentfarbe bekommt jede der 22 Editionen jetzt einen eigenen "Werkstoff" auf den primären Buttons (Fangen, Bestätigen, Weiter, ...): Diamant/Rubin/Saphir/Smaragd/Kristall & Co. facettierter Kristallschliff mit feinen Glanzpunkten, Rot/Blau/FeuerRot/BlattGrün glänzendes Kassetten-Plastik, Gelb mattes Gummi, Gold/Silber/Platin/Schwert gebürsteter Stahl, Schild gehämmerte Bronze, HG/SS glänzendes Emaille-Medaillon, Schwarz/Weiß/Schwarz2-Weiß2 eine reine Schwarz/Weiß-Achse (Button immer im Gegenteil zum Hell/Dunkel-Modus), X/Y Lack mit Blattgold-Rahmen. Bei Diamant/Perl und Sonne/Mond/Ultrasonne/Ultramond wechselt beim Hell/Dunkel-Umschalten sogar die Technik selbst (Perlmutt/Facettenschliff bzw. Sonnenstrahlen/Sternenhimmel), nicht nur die Farbe - genau wie die App bei diesen kombinierten Versionspaaren schon länger hell/dunkel für die beiden Namenshälften nutzt. Jede Form/Textur läuft rein über zusätzliche <code>background-image</code>-Ebenen auf <code>.btn-primary</code> (keine der ~60 Verwendungsstellen im Code musste angefasst werden) und wiederverwendet die ohnehin vorhandenen Farbvariablen - kein neuer Umschalter, kein neues Bild-Asset. Zuerst als Musterbuch-Artefakt mit dem Nutzer durchgesprochen und mehrfach verfeinert (Button-Formen, feinere Bürstung, Schwarz/Weiß-Kontrastumkehr), bevor es hier ins echte Layout übernommen wurde.</p>
@@ -7465,7 +7530,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.15.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.16.</footer>
 
 </div>`;
 
@@ -8417,6 +8482,7 @@ function openSavesSheet(){
 }
 
 function openNewSaveSheet(){
+  const mode = effectiveTheme();
   const byGen = new Map();
   Object.values(GAMES).forEach(g=>{
     const gen = g.generation || 0;
@@ -8425,9 +8491,10 @@ function openNewSaveSheet(){
   });
   const groupsHtml = [...byGen.keys()].sort((a,b)=>a-b).map(gen=>{
     const label = GENERATION_LABELS[gen] || `Generation ${gen}`;
-    const opts = byGen.get(gen).sort((a,b)=>(a.releaseOrder||0)-(b.releaseOrder||0)).map(g=>
-      `<button class="sheet-option" data-act="pick-new-save-edition" data-id="${g.id}">${escapeHtml(g.label)}</button>`
-    ).join("");
+    const opts = byGen.get(gen).sort((a,b)=>(a.releaseOrder||0)-(b.releaseOrder||0)).map(g=>{
+      const {cls, style} = editionMaterialAttrs(g, mode);
+      return `<button class="sheet-option${cls?" "+cls:""}" style="${style}" data-act="pick-new-save-edition" data-id="${g.id}">${escapeHtml(g.label)}</button>`;
+    }).join("");
     return `<div class="sheet-group-header">${escapeHtml(label)}</div>${opts}`;
   }).join("");
   openSheet(`
