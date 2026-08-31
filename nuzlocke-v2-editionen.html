@@ -2003,7 +2003,8 @@ const EINALL_BW_LOCATIONS = [
     {name:"Himmelspfeilbrücke", note:"Keine wilden Pokémon.", noCatch:true},
     {name:"Stratos City", note:"Keine wilden Pokémon.", noCatch:true},
     "Route 4",
-    {name:"Wüstenresort", note:"Inkl. Alter Palast - einmalige Fossilienwahl."},
+    "Wüstenresort",
+    {name:"Alter Palast", note:"Nebendungeon im Wüstenresort mit eigenen Wildpokémon (u.a. Yamask, Krokorok) - vollständig erst nach der Ligashow begehbar. Unterste Etage: einmalige Fossilienwahl sowie ein besonderer Volcarona-Fang im Postgame."},
     {name:"Rayono City", note:"Keine wilden Pokémon.", noCatch:true},
     "Route 5",
     {name:"Marea-Zugbrücke", note:"Keine wilden Pokémon.", noCatch:true},
@@ -2598,7 +2599,8 @@ const EINALL_B2W2_LOCATIONS = [
     {name:"Vapydro City", note:"Arena 2: Mica. Keine wilden Pokémon.", noCatch:true},
     {name:"Stratos City", note:"Dritter Kampf gegen Matisse (Doppelkampf mit Team Plasma in der Kanalisation) + Arena 3: Artie. Keine wilden Pokémon.", noCatch:true},
     "Route 4",
-    {name:"Wüstenresort", note:"Inkl. Alter Palast - einmalige Fossilienwahl."},
+    "Wüstenresort",
+    {name:"Alter Palast", note:"Nebendungeon im Wüstenresort mit eigenen Wildpokémon (u.a. Yamask, Krokorok) - anfangs nur die ersten beiden Etagen begehbar, der Rest folgt später. Unterste Etage: einmalige Fossilienwahl sowie ein besonderer Volcarona-Fang."},
     {name:"Pokémon World Tournament", note:"Vierter Kampf gegen Matisse (3er-Regeln) + Achromas. Keine wilden Pokémon.", noCatch:true},
     {name:"Plasma-Fregatte", note:"Erste Erkundung: fünfter Kampf gegen Matisse (Doppelkampf). Keine wilden Pokémon.", noCatch:true},
     {name:"Rayono City", note:"Arena 4: Kamilla. Keine wilden Pokémon.", noCatch:true},
@@ -3470,7 +3472,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.17";
+const APP_VERSION = "1.9.18";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -6555,6 +6557,12 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="log">
 
     <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.18</span><span class="tag tag-fix">Fix</span></div>
+      <h3>Fehlender Standort ergänzt: Alter Palast (Schwarz/Weiß/Schwarz2-Weiß2)</h3>
+      <p>Nutzerbestätigt: der Alte Palast (Relic Castle), ein separater Nebendungeon mitten im Wüstenresort, fehlte bisher als eigener Standort - er stand nur als beiläufige Erwähnung in der Notiz des Wüstenresorts, obwohl er laut Recherche eine komplett eigene Wildpokémon-Auswahl hat (u.&nbsp;a. Yamask, Krokorok, Cofagrigus statt der Wüsten-eigenen Sandile/Darumaka/Maractus/Scraggy/Dwebble/Sigilyph) und denselben Nebenareal-Charakter wie z.&nbsp;B. die Panaero-Höhle hat, die bereits als eigene Kachel geführt wird. Jetzt als eigener Standort ergänzt, inklusive der einmaligen Fossilienwahl (Kanto-/Flug-Fossil) und des besonderen Volcarona-Fangs auf der untersten Etage. In Schwarz/Weiß ist der Palast laut Recherche erst nach der Ligashow vollständig begehbar, in Schwarz2/Weiß2 dagegen von Anfang an - nur eben zunächst mit nur zwei zugänglichen Etagen - jeweils passend in der Standort-Notiz vermerkt.</p>
+    </div>
+
+    <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.17</span><span class="tag tag-fix">Fix</span></div>
       <h3>Editionswahl-Farben griffen nicht, wenn die App als eigenständiges Artefakt veröffentlicht ist</h3>
       <p>Nutzerbestätigt per Screenshot: in der als eigene Seite veröffentlichten App-Kopie zeigten die neuen Editionswahl-Karten aus v1.9.16 keine Werkstoff-Textur, Schwarz und Weiß blieben ungefärbt - im normalen PWA-/ZIP-Betrieb dagegen unauffällig korrekt. Ursache: eine Artefakt-Veröffentlichung bettet die App (selbst ein vollständiges <code>&lt;html&gt;&lt;head&gt;…&lt;/head&gt;&lt;body&gt;…</code>-Dokument) in ein zweites, äußeres HTML-Grundgerüst - der Browser verwirft dabei die verschachtelte, zweite <code>&lt;head&gt;</code>-Öffnung als Fehler und hängt den App-eigenen <code>&lt;style&gt;</code>-Block stattdessen an <code>&lt;body&gt;</code>, das im Dokumentbaum immer NACH <code>&lt;head&gt;</code> steht - und damit nach den zur Laufzeit per JavaScript in <code>&lt;head&gt;</code> injizierten Werkstoff-Regeln. Bei gleicher Selektor-Spezifität (je eine Klasse) gewann dadurch die spätere, unstylte Basisregel. Die Editionswahl-Regeln nutzen nach diesem Fix denselben Verbund-Selektor-Kniff wie <code>.btn-primary</code> (zwei Klassen statt einer) und sind damit unabhängig von dieser Dokumentreihenfolge.</p>
@@ -7547,7 +7555,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.17.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.18.</footer>
 
 </div>`;
 
