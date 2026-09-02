@@ -570,7 +570,7 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
   font-weight:700; font-size:.92rem; margin-bottom:12px;
 }
 .orden-count{ font-size:.8rem; font-weight:600; color:var(--ink-soft); font-variant-numeric:tabular-nums; }
-.orden-strip{ display:flex; flex-wrap:wrap; gap:10px; }
+.orden-strip{ display:grid; grid-template-columns:repeat(4,1fr); justify-items:center; gap:10px; }
 .orden-chip{
   width:56px; height:56px; border-radius:50%; background:var(--surface-alt);
   border:2px solid var(--line); display:flex; align-items:center; justify-content:center;
@@ -3667,7 +3667,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.26";
+const APP_VERSION = "1.9.27";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -6885,6 +6885,12 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="log">
 
     <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.27</span><span class="tag tag-fix">Fix</span></div>
+      <h3>Orden-Schatulle: auch die geöffnete Übersicht im strikten Vierer-Raster</h3>
+      <p>Nutzerfeedback: in der aufgeklappten Orden-Schatulle im Team-Tab wickelten sich die Orden per Flexbox-Umbruch je nach verfügbarer Breite ungleichmäßig (z.&nbsp;B. 5 oben, 3 unten). Analog zur bereits in v1.9.25 gefixten Header-Anzeige jetzt auf ein festes 4-Spalten-Raster umgestellt, das unabhängig von der Kartenbreite immer exakt vier Orden pro Reihe zeigt.</p>
+    </div>
+
+    <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.26</span><span class="tag tag-feat">Feature</span></div>
       <h3>Orden-Schatulle im Team-Tab statt platzraubender Dauerkarte</h3>
       <p>Nutzerfeedback: die volle, immer ausgeklappte Orden-Karte im Team-Tab nahm deutlich zu viel Platz ein. Ersetzt durch eine kompakte, klickbare Schatulle direkt neben der Levelcap-Karte (die dafür etwas schmaler geworden ist) - zeigt geschlossen nur den Fortschritt als Zahl (z.&nbsp;B. "5/8"). Antippen öffnet die Schatulle mit einer kleinen eigenen Öffnen-Geste (der gezeichnete Deckel klappt sichtbar auf) und klappt darunter die vollständige, jetzt sogar größer und schöner gestaltete Orden-Übersicht auf (56px statt 44px große Orden, dezentes Leuchten bei erhaltenen) - erneutes Antippen klappt wieder ein. Nutzt dieselbe, bereits an anderer Stelle bewährte Auf-/Zuklapp-Animation wie die Einstellungs-Gruppen. Editionen ohne Orden (Sonne/Mond, Ultrasonne/Ultramond) zeigen weiterhin konsequent keine Schatulle.</p>
@@ -7944,7 +7950,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.26.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.27.</footer>
 
 </div>`;
 
