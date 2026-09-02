@@ -3705,7 +3705,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.30";
+const APP_VERSION = "1.9.31";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -4693,32 +4693,42 @@ function spawnOrdenFirework(cx, cy){
   }
 }
 /* Feierliche Orden-Animation: taucht groß in der Bildschirmmitte auf, bleibt dort knapp 2,5s gut
-   sichtbar stehen (mit drei kräftigen Feuerwerk-Funkenausbrüchen währenddessen) und schwebt danach nach oben
-   weg, während sie ausblendet - landet bewusst NICHT mehr exakt im Header-Tray (zu schnell/unruhig
-   für einen Moment, der gefeiert werden soll). Der echte Chip an seinem Platz im Header existiert
-   dank render() vor diesem Aufruf bereits - er bleibt für die komplette Animationsdauer unsichtbar
-   und wird erst beim Verblassen des großen Ordens wieder eingeblendet, damit kein doppeltes Icon
-   aufblitzt und der Header trotzdem synchron mit der Feier aktualisiert wirkt. */
+   sichtbar stehen (mit drei kräftigen Feuerwerk-Funkenausbrüchen währenddessen) und fliegt danach
+   zu seinem echten Platz im Header-Tray, während er sich dabei auf dessen tatsächliche Chip-Größe
+   verkleinert (FLIP-artig: Zielposition/-größe per getBoundingClientRect() vom bereits durch
+   render() aktualisierten, aber unsichtbaren echten Chip abgelesen) - erst ganz am Ende ein
+   kurzes Überblenden, statt einfach nur nach oben wegzudriften. Der echte Chip an seinem Platz im
+   Header existiert dank render() vor diesem Aufruf bereits - er bleibt für die komplette
+   Animationsdauer unsichtbar und wird erst beim Eintreffen des großen Ordens wieder eingeblendet,
+   damit kein doppeltes Icon aufblitzt und der Header trotzdem synchron mit der Feier aktualisiert
+   wirkt. */
 function celebrateOrden(badgeName){
   const target = document.querySelector(`#headerOrdenTray .header-orden-chip[data-badge="${cssEscape(badgeName)}"]`);
   if(!target) return;
   if(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   const src = BADGE_SPRITES[badgeName] || "";
+  const targetRect = target.getBoundingClientRect();
   target.style.visibility = "hidden";
   const fly = document.createElement("div");
   fly.className = "orden-fly-badge";
   fly.innerHTML = `<img src="${src}" alt="" />`;
   document.body.appendChild(fly);
   const cx = window.innerWidth/2, cy = window.innerHeight/2;
+  const flySize = fly.getBoundingClientRect().width || 120;
+  const deltaX = (targetRect.left + targetRect.width/2) - cx;
+  const deltaY = (targetRect.top + targetRect.height/2) - cy;
+  const finalScale = Math.max(targetRect.width / flySize, 0.05);
   const POP_IN = 350, HOLD = 2500, EXIT = 500;
   const total = POP_IN + HOLD + EXIT;
   const popInFrac = POP_IN/total, holdEndFrac = (POP_IN+HOLD)/total;
+  const fadeStartFrac = holdEndFrac + (1-holdEndFrac)*0.85;
   const anim = fly.animate([
-    { transform:"translate(-50%,-50%) scale(.3)", opacity:0, offset:0 },
-    { transform:"translate(-50%,-50%) scale(1.08)", opacity:1, offset:popInFrac*0.7 },
-    { transform:"translate(-50%,-50%) scale(1)", opacity:1, offset:popInFrac },
-    { transform:"translate(-50%,-50%) scale(1)", opacity:1, offset:holdEndFrac },
-    { transform:"translate(-50%,-160%) scale(.8)", opacity:0, offset:1 }
+    { transform:"translate(-50%,-50%) translate(0,0) scale(.3)", opacity:0, offset:0 },
+    { transform:"translate(-50%,-50%) translate(0,0) scale(1.08)", opacity:1, offset:popInFrac*0.7 },
+    { transform:"translate(-50%,-50%) translate(0,0) scale(1)", opacity:1, offset:popInFrac },
+    { transform:"translate(-50%,-50%) translate(0,0) scale(1)", opacity:1, offset:holdEndFrac },
+    { transform:`translate(-50%,-50%) translate(${deltaX}px, ${deltaY}px) scale(${finalScale})`, opacity:1, offset:fadeStartFrac },
+    { transform:`translate(-50%,-50%) translate(${deltaX}px, ${deltaY}px) scale(${finalScale})`, opacity:0, offset:1 }
   ], { duration:total, easing:"ease-out", fill:"forwards" });
   setTimeout(()=>spawnOrdenFirework(cx, cy), POP_IN + 150);
   setTimeout(()=>spawnOrdenFirework(cx, cy), POP_IN + HOLD*0.42);
@@ -6942,6 +6952,12 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="log">
 
     <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.31</span><span class="tag tag-fix">Fix</span></div>
+      <h3>Orden-Feier: fliegt jetzt wirklich zu seinem Platz im Header statt nur nach oben zu verschwinden</h3>
+      <p>Nutzerfeedback: nach der Stehzeit mit Feuerwerk schwebte der Orden bisher einfach geradeaus nach oben weg und verblasste dort - der eigentliche Chip tauchte danach unabhängig davon einfach an seinem Platz im Header auf, ohne sichtbaren Zusammenhang. Der Orden verkleinert und bewegt sich jetzt stattdessen sichtbar zu genau der Stelle im Header-Tray, an der er landet (Zielposition/-größe wird vom bereits im Hintergrund gerenderten, aber noch unsichtbaren echten Chip abgelesen) - erst kurz vor dem Eintreffen blendet er sanft in den echten Chip über. Pop-in und die knapp 2,5 Sekunden Stehzeit mit den drei Feuerwerk-Ausbrüchen aus v1.9.29/v1.9.30 bleiben unverändert.</p>
+    </div>
+
+    <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.30</span><span class="tag tag-fix">Fix</span></div>
       <h3>Orden-Feuerwerk in den Farben der jeweiligen Edition</h3>
       <p>Nutzerwunsch: das Feuerwerk bei Orden-Erhalt (v1.9.29) nutzte eine fixe, editionsunabhängige Regenbogenpalette statt zum jeweiligen Farbschema zu passen. Funken und Blitz greifen jetzt auf dieselbe editionsgekoppelte Farbpalette zurück, die auch das bestehende Konfetti beim Rivalenduell/Champion-Sieg seit v1.8.40 nutzt (Akzent- und Goldton der aktiven Edition in mehreren Abstufungen) - reine CSS-Variablen-Referenzen statt fixer Hex-Werte, dadurch automatisch stimmig mit jeder der 23 Editionen inklusive Hell/Dunkel-Umschaltung.</p>
@@ -8025,7 +8041,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.30.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.31.</footer>
 
 </div>`;
 
