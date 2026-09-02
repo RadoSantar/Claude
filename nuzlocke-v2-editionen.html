@@ -564,21 +564,49 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 }
 .boss-orden-badge img{ width:100%; height:100%; object-fit:contain; }
 
-.orden-card{ padding:14px 16px; }
+.orden-card{ padding:16px; }
 .orden-card-head{
   display:flex; align-items:baseline; justify-content:space-between;
-  font-weight:700; font-size:.92rem; margin-bottom:10px;
+  font-weight:700; font-size:.92rem; margin-bottom:12px;
 }
 .orden-count{ font-size:.8rem; font-weight:600; color:var(--ink-soft); font-variant-numeric:tabular-nums; }
-.orden-strip{ display:flex; flex-wrap:wrap; gap:8px; }
+.orden-strip{ display:flex; flex-wrap:wrap; gap:10px; }
 .orden-chip{
-  width:44px; height:44px; border-radius:50%; background:var(--surface-alt);
+  width:56px; height:56px; border-radius:50%; background:var(--surface-alt);
   border:2px solid var(--line); display:flex; align-items:center; justify-content:center;
-  padding:6px; flex:none;
+  padding:8px; flex:none;
 }
 .orden-chip img{ width:100%; height:100%; object-fit:contain; filter:grayscale(1) opacity(.45); }
-.orden-chip.earned{ border-color:var(--gold); background:var(--gold-soft); box-shadow:0 0 0 1px var(--gold) inset; }
+.orden-chip.earned{
+  border-color:var(--gold); background:var(--gold-soft);
+  box-shadow:0 0 0 1px var(--gold) inset, 0 3px 10px rgba(var(--gold-glow,169,118,46),.25);
+}
 .orden-chip.earned img{ filter:none; }
+
+/* Orden-Schatulle: kompakte, klickbare Kachel neben dem Levelcap statt der vollen, immer
+   ausgeklappten Orden-Karte (nahm zu viel vertikale Fläche im Team-Tab ein) - öffnet per Klick
+   die vollen, größeren Orden per bestehender Auf-/Zuklapp-Animation (.collapsible-body,
+   grid-template-rows 0fr<->1fr, s.o.) darunter. Der Deckel-Pfad der Schatulle selbst dreht sich
+   dabei per eigener Transition auf, als kleine zusätzliche Öffnungs-Geste am Auslöser-Element. */
+.team-top-row{ display:flex; gap:10px; align-items:stretch; margin-bottom:10px; }
+.team-top-row > .card{ margin-bottom:0; }
+.team-top-row > .card:not(.orden-case-btn){ flex:1; min-width:0; }
+.orden-case-btn{
+  flex:none; width:72px; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:4px; cursor:pointer; font:inherit; color:inherit; appearance:none; -webkit-appearance:none;
+  border:none; padding:10px 6px; -webkit-tap-highlight-color:transparent;
+  transition:transform .3s cubic-bezier(.34,1.4,.4,1);
+}
+.orden-case-btn:active{ transform:scale(.94); }
+.orden-case-btn.open{ transform:scale(1.07); box-shadow:0 0 0 2px var(--gold), var(--shadow); }
+.orden-case-icon{ width:32px; height:32px; overflow:visible; fill:none; stroke-width:1.7; stroke:var(--gold); }
+.orden-case-icon .chest-base{ fill:var(--gold-soft); }
+.orden-case-icon .chest-lid{
+  fill:var(--gold-soft); transform-origin:5px 11px; transition:transform .45s cubic-bezier(.34,1.2,.4,1);
+}
+.orden-case-btn.open .orden-case-icon .chest-lid{ transform:rotate(-58deg) translateY(-1px); }
+.orden-case-count{ font-size:.72rem; font-weight:700; color:var(--ink-soft); font-variant-numeric:tabular-nums; }
+.orden-case-body{ margin-bottom:10px; }
 
 .final-rival-card{
   position:relative; border-left-color:var(--gold);
@@ -3517,6 +3545,7 @@ let lastFightWasWin = false;
 let lastFightBossId = null;
 let expandedRegions = new Set(); // welche Regionen ihre abgeschlossene Historie ausgeklappt haben - bewusst nicht persistiert, jeder Reload startet eingeklappt
 let expandedSettingsGroups = new Set(); // welche Einstellungs-Gruppen aufgeklappt sind - ebenfalls nicht persistiert, "Fortschritt" bleibt immer sichtbar
+let ordenCaseOpen = false; // ob die Orden-Schatulle im Team-Tab gerade geöffnet ist - nicht persistiert, startet immer zu
 let boxSearchQuery = ""; // Box-Suche - nicht persistiert, jeder Tab-Wechsel startet leer
 let boxSortMode = "default"; // "default" (Routen-Reihenfolge) | "name" | "caught"
 
@@ -3638,7 +3667,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.25";
+const APP_VERSION = "1.9.26";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -5169,9 +5198,24 @@ function ordenList(){
   });
   return [...seen.entries()].map(([badge,earned])=>({badge,earned}));
 }
-function ordenStripHtml(){
-  const orden = ordenList();
-  if(!orden.length) return "";
+const ORDEN_CHEST_ICON_SVG = `<svg class="orden-case-icon" viewBox="0 0 24 24" aria-hidden="true">
+  <path class="chest-base" d="M3 11h18v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7z"/>
+  <path class="chest-lid" d="M3 11c0-5 4-7 9-7s9 2 9 7"/>
+  <circle cx="12" cy="12.5" r="1.4" fill="var(--gold)" stroke="none"/>
+</svg>`;
+/* Orden-Schatulle statt einer immer ausgeklappten, viel Platz fressenden Orden-Karte: eine
+   kompakte Kachel neben dem Levelcap zeigt nur den Fortschritt (X/Y), Antippen klappt die
+   eigentliche, größer und schöner gestaltete Orden-Übersicht darunter per bestehender
+   Auf-/Zuklapp-Animation auf (siehe .collapsible-body). ordenCaseOpen ist bewusst nicht
+   persistiert (wie expandedSettingsGroups) - die Schatulle startet bei jedem Öffnen der App zu. */
+function ordenCaseButtonHtml(orden){
+  const earnedCount = orden.filter(o=>o.earned).length;
+  return `<button class="card orden-case-btn${ordenCaseOpen?" open":""}" type="button" data-act="toggle-orden-case" aria-expanded="${ordenCaseOpen}" title="Orden-Sammlung ${ordenCaseOpen?"schließen":"öffnen"}">
+    ${ORDEN_CHEST_ICON_SVG}
+    <span class="orden-case-count">${earnedCount}/${orden.length}</span>
+  </button>`;
+}
+function ordenCaseBodyHtml(orden){
   const earnedCount = orden.filter(o=>o.earned).length;
   const chips = orden.map(o=>{
     const src = BADGE_SPRITES[o.badge] || "";
@@ -5179,17 +5223,25 @@ function ordenStripHtml(){
       <img src="${src}" alt="${escapeHtml(o.badge)}" />
     </div>`;
   }).join("");
-  return `<div class="card orden-card">
+  const inner = `<div class="card orden-card">
     <div class="orden-card-head">
       <span>Orden</span>
       <span class="orden-count">${earnedCount} / ${orden.length}</span>
     </div>
     <div class="orden-strip">${chips}</div>
   </div>`;
+  return `<div class="collapsible-body orden-case-body${ordenCaseOpen?" expanded":""}" data-orden-case-body${ordenCaseOpen?"":" inert"}><div class="collapsible-body-inner">${inner}</div></div>`;
 }
 function renderTeam(){
   const teamLocs = orderedTeamLocs();
-  let html = levelCapCardHtml() + ordenStripHtml();
+  const orden = ordenList();
+  const levelCap = levelCapCardHtml();
+  let html;
+  if(orden.length){
+    html = `<div class="team-top-row">${levelCap}${ordenCaseButtonHtml(orden)}</div>${ordenCaseBodyHtml(orden)}`;
+  } else {
+    html = levelCap;
+  }
   if(teamLocs.length){
     html += `<div class="card-actions" style="margin-bottom:14px;">
       <button class="btn btn-secondary btn-block" data-act="open-type-coverage">Typabdeckung anzeigen</button>
@@ -6833,6 +6885,12 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="log">
 
     <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.26</span><span class="tag tag-feat">Feature</span></div>
+      <h3>Orden-Schatulle im Team-Tab statt platzraubender Dauerkarte</h3>
+      <p>Nutzerfeedback: die volle, immer ausgeklappte Orden-Karte im Team-Tab nahm deutlich zu viel Platz ein. Ersetzt durch eine kompakte, klickbare Schatulle direkt neben der Levelcap-Karte (die dafür etwas schmaler geworden ist) - zeigt geschlossen nur den Fortschritt als Zahl (z.&nbsp;B. "5/8"). Antippen öffnet die Schatulle mit einer kleinen eigenen Öffnen-Geste (der gezeichnete Deckel klappt sichtbar auf) und klappt darunter die vollständige, jetzt sogar größer und schöner gestaltete Orden-Übersicht auf (56px statt 44px große Orden, dezentes Leuchten bei erhaltenen) - erneutes Antippen klappt wieder ein. Nutzt dieselbe, bereits an anderer Stelle bewährte Auf-/Zuklapp-Animation wie die Einstellungs-Gruppen. Editionen ohne Orden (Sonne/Mond, Ultrasonne/Ultramond) zeigen weiterhin konsequent keine Schatulle.</p>
+    </div>
+
+    <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.25</span><span class="tag tag-fix">Fix</span></div>
       <h3>Orden-Feier: länger sichtbar, mit Feuerwerk, striktes Vierer-Raster</h3>
       <p>Nutzerfeedback zur neuen Orden-Feier aus v1.9.24: der frisch erhaltene Orden verschwand viel zu schnell wieder. Bleibt jetzt knapp 2,5 Sekunden groß und gut sichtbar in der Bildschirmmitte stehen (inklusive kurzem Einblend-Bounce), begleitet von zwei kleinen Feuerwerk-Funkenausbrüchen, bevor er nach oben wegschwebt und ausblendet - landet dabei bewusst nicht mehr exakt im Header-Tray (zu hektisch für einen Feier-Moment), der zugehörige Header-Chip blendet stattdessen erst am Ende sauber ein. Zusätzlich: das Orden-Raster im Header nutzte bisher flexibles Zeilenumbruch-Verhalten und passte bei 8 Orden ungleichmäßig 5+3 statt 4+4 hinein - jetzt ein festes Vierer-Raster (CSS Grid statt Flexbox), garantiert bei jeder Ordenanzahl exakt vier pro Reihe.</p>
@@ -7886,7 +7944,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.25.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.26.</footer>
 
 </div>`;
 
@@ -9347,6 +9405,13 @@ document.addEventListener("click", e=>{
     if(bodyEl){ bodyEl.classList.toggle("expanded", willExpand); bodyEl.toggleAttribute("inert", !willExpand); }
     const chevron = t.querySelector(".collapse-chevron");
     if(chevron) chevron.classList.toggle("open", willExpand);
+  }
+  else if(act==="toggle-orden-case"){
+    ordenCaseOpen = !ordenCaseOpen;
+    const bodyEl = document.querySelector(`[data-orden-case-body]`);
+    if(bodyEl){ bodyEl.classList.toggle("expanded", ordenCaseOpen); bodyEl.toggleAttribute("inert", !ordenCaseOpen); }
+    t.classList.toggle("open", ordenCaseOpen);
+    t.setAttribute("aria-expanded", String(ordenCaseOpen));
   }
   else if(act==="jump-to-current-loc"){
     const id = t.dataset.target;
