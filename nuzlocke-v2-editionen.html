@@ -188,14 +188,31 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 }
 .mini-progress-row .progress-pct{ font-size:.86rem; }
 .mini-progress-sticky .progress-track{ margin-top:0; }
-.header-team-row{ display:flex; gap:6px; margin-top:12px; }
+.header-team-row{ display:flex; align-items:center; gap:8px; margin-top:12px; }
+.header-team-slots{ display:flex; gap:6px; flex:none; }
 .header-team-slot{
-  flex:1; aspect-ratio:1; max-width:44px; border-radius:10px; background:var(--surface-alt);
+  flex:none; width:44px; aspect-ratio:1; border-radius:10px; background:var(--surface-alt);
   border:1.5px dashed var(--line); display:flex; align-items:center; justify-content:center; overflow:hidden;
 }
 .header-team-slot.filled{ border-style:solid; border-color:var(--good); background:var(--surface); padding:2px; }
 .header-team-slot img{ width:100%; height:100%; object-fit:contain; }
 .header-team-slot img.sprite-legacy{ image-rendering:pixelated; }
+.header-orden-tray{
+  flex:1; min-width:0; display:flex; flex-wrap:wrap; align-content:center; justify-content:flex-end;
+  gap:2px;
+}
+.header-orden-chip{
+  flex:none; width:13px; height:13px; border-radius:50%; background:var(--surface);
+  border:1px solid var(--gold); box-shadow:0 0 0 1px var(--gold-soft) inset; padding:1.5px; overflow:hidden;
+  display:flex; align-items:center; justify-content:center;
+}
+.header-orden-chip img{ width:100%; height:100%; object-fit:contain; }
+.orden-fly-badge{
+  position:fixed; z-index:9999; border-radius:50%; background:var(--surface); border:3px solid var(--gold);
+  box-shadow:0 0 0 6px var(--gold-soft), 0 8px 30px rgba(0,0,0,.35); display:flex; align-items:center;
+  justify-content:center; padding:14px; pointer-events:none; will-change:top,left,width,height,transform;
+}
+.orden-fly-badge img{ width:100%; height:100%; object-fit:contain; }
 
 /* Content */
 .content-wrap{ flex:1; min-height:0; position:relative; }
@@ -1028,7 +1045,10 @@ datalist{}
         <svg id="themeIcon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>
       </button>
     </div>
-    <div class="header-team-row" id="headerTeamRow"></div>
+    <div class="header-team-row" id="headerTeamRow">
+      <div class="header-team-slots" id="headerTeamSlots"></div>
+      <div class="header-orden-tray" id="headerOrdenTray"></div>
+    </div>
   </div>
 
   <div class="content-wrap">
@@ -3609,7 +3629,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.23";
+const APP_VERSION = "1.9.24";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -4532,7 +4552,8 @@ function statsCardHtml(){
 
 function renderHeaderTeam(){
   const row = document.getElementById("headerTeamRow");
-  if(activeTab==="team" || activeTab==="settings"){ row.style.display = "none"; row.innerHTML = ""; return; }
+  const slots = document.getElementById("headerTeamSlots");
+  if(activeTab==="team" || activeTab==="settings"){ row.style.display = "none"; slots.innerHTML = ""; return; }
   row.style.display = "flex";
   const teamLocs = state.locations.filter(l=>l.mon && l.mon.inTeam && !l.mon.dead && !l.mon.given);
   let html = "";
@@ -4546,7 +4567,54 @@ function renderHeaderTeam(){
       html += `<div class="header-team-slot"></div>`;
     }
   }
-  row.innerHTML = html;
+  slots.innerHTML = html;
+}
+
+/* Erhaltene Orden rechts neben den Team-Slots im Header - zeigt bewusst nur bereits erhaltene
+   Orden (kein leerer Platzhalter für unerhaltene), damit die Reihe bei Editionen mit vielen Orden
+   (z.B. HGSS/GSC mit 16 statt 8, Johto+Kanto zusammen) einfach über mehrere Zeilen mitwächst statt
+   eine feste Kachelzahl reservieren zu müssen. */
+function renderHeaderOrden(){
+  const tray = document.getElementById("headerOrdenTray");
+  if(!tray) return;
+  if(activeTab==="team" || activeTab==="settings"){ tray.innerHTML = ""; return; }
+  const earned = ordenList().filter(o=>o.earned);
+  tray.innerHTML = earned.map(o=>{
+    const src = BADGE_SPRITES[o.badge] || "";
+    return `<div class="header-orden-chip" data-badge="${escapeHtml(o.badge)}" title="${escapeHtml(o.badge)}"><img src="${src}" alt="${escapeHtml(o.badge)}" /></div>`;
+  }).join("");
+}
+
+/* Feierliche Orden-Animation: taucht groß in der Bildschirmmitte auf und fliegt/schrumpft dann zu
+   seinem Platz im Header-Tray (klassische FLIP-Technik: Ziel-Position zuerst per getBoundingClientRect
+   ermitteln, dann von dort rückwärts animieren). Der echte Chip an der Zielposition existiert dank
+   render() vor diesem Aufruf bereits - er wird für die Dauer der Animation unsichtbar geschaltet und
+   erst beim Landen wieder eingeblendet, damit kein doppeltes Icon aufblitzt. */
+function celebrateOrden(badgeName){
+  const target = document.querySelector(`#headerOrdenTray .header-orden-chip[data-badge="${cssEscape(badgeName)}"]`);
+  if(!target) return;
+  if(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const src = BADGE_SPRITES[badgeName] || "";
+  const rect = target.getBoundingClientRect();
+  target.style.visibility = "hidden";
+  const fly = document.createElement("div");
+  fly.className = "orden-fly-badge";
+  fly.innerHTML = `<img src="${src}" alt="" />`;
+  document.body.appendChild(fly);
+  const vw = window.innerWidth, vh = window.innerHeight;
+  const startSize = Math.min(120, vw*0.32);
+  const anim = fly.animate([
+    { top:`${vh/2}px`, left:`${vw/2}px`, width:`${startSize}px`, height:`${startSize}px`, transform:"translate(-50%,-50%) scale(.3)", opacity:0, offset:0 },
+    { top:`${vh/2}px`, left:`${vw/2}px`, width:`${startSize}px`, height:`${startSize}px`, transform:"translate(-50%,-50%) scale(1)", opacity:1, offset:.28 },
+    { top:`${vh/2}px`, left:`${vw/2}px`, width:`${startSize}px`, height:`${startSize}px`, transform:"translate(-50%,-50%) scale(1)", opacity:1, offset:.5 },
+    { top:`${rect.top+rect.height/2}px`, left:`${rect.left+rect.width/2}px`, width:`${rect.width}px`, height:`${rect.height}px`, transform:"translate(-50%,-50%) scale(1)", opacity:1, offset:1 }
+  ], { duration:1000, easing:"cubic-bezier(.22,.85,.3,1)", fill:"forwards" });
+  anim.onfinish = () => { fly.remove(); target.style.visibility = ""; };
+}
+/* Kleine Escape-Hilfe für CSS-Attributselektoren (Orden-Namen können z.B. Umlaute/Bindestriche
+   enthalten) - nutzt die native CSS.escape() falls vorhanden, sonst ein einfacher Fallback. */
+function cssEscape(s){
+  return (window.CSS && CSS.escape) ? CSS.escape(s) : String(s).replace(/["\\]/g, "\\$&");
 }
 
 /* Standorte ohne Fangmöglichkeit galten früher automatisch als "erledigt", sobald sie gerendert
@@ -6733,6 +6801,12 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="log">
 
     <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.24</span><span class="tag tag-feat">Feature</span></div>
+      <h3>Orden-Sammlung im Header + Feier-Animation beim Erhalt</h3>
+      <p>Der freie Platz rechts neben den Team-Slots im Header zeigt jetzt die bereits erhaltenen Orden der aktuellen Edition als kleine goldgeränderte Chips - startet leer und füllt sich nach und nach, wächst bei Editionen mit vielen Orden (z.&nbsp;B. HeartGold/SoulSilver oder Gold/Silber/Kristall mit 16 statt den üblichen 8, da Johto und Kanto zusammen zählen) automatisch über mehrere Vierer-Reihen. Beim Sieg gegen eine Arenaleiterin/einen Arenaleiter taucht der frisch erhaltene Orden jetzt zusätzlich groß und golden umrandet in der Bildschirmmitte auf, bevor er sich verkleinert und zu seinem Platz im Header fliegt - ohne dass dabei irgendetwas anderes im Layout verschoben wird. Editionen ohne klassische Arenen (Sonne/Mond, Ultrasonne/Ultramond) zeigen weiterhin konsequent keine Orden-Reihe an.</p>
+    </div>
+
+    <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.23</span><span class="tag tag-fix">Fix</span></div>
       <h3>Generationsübergreifender Rechercheaudit: erste bestätigte Funde behoben</h3>
       <p>Erste Fixrunde aus einem umfassenden Gen-1-9-Audit (Orte, Namen, Kämpfe, Level). <strong>Kanto (Rot/Blau/Gelb/Feuerrot/Blattgrün):</strong> Route 11-15, Digdas Höhle, Kraftwerk, Azuria-Höhle und die bislang komplett fehlende Pokémon-Villa (samt Geheimschlüssel fürs Zinnoberinsel-Orden) ergänzt, "Prismania-Villa" zu "Prismania-Apartments" korrigiert, Erikas Ass in Rot/Blau von Sarzenia zu Giflor berichtigt. <strong>Johto (HeartGold/SoulSilver):</strong> fehlender Proton-Kampf am Flegmon-Brunnen ergänzt, sechs bislang assfreie Team-Rocket-Vorstandskämpfe (Lance, Lambda, Athena, Atlas) mit ihren echten Assen befüllt. <strong>Johto (Gold/Silber/Kristall + HG/SS):</strong> der Sammelstandort "See des Zorns" bündelte bislang fälschlich den gesamten Team-Rocket-Handlungsbogen - Rundfunkturm und Team-Rocket-Versteck sind jetzt eigene Kacheln mit den jeweils richtigen Kämpfen. <strong>Sinnoh (Diamant/Perl/Platin/BDSP):</strong> Speersäule als eigener Standort vom Kraterberg abgetrennt (inkl. Zyrus-Finalkampf und Platins Zerrwelt-Zugang). <strong>Hoenn (Rubin/Saphir/Smaragd/ORAS):</strong> Heikos erstes Ass korrekt als unentwickeltes Trasla statt Kirlia geführt, in Omega Rubin/Alpha Saphir zusätzlich Levelanpassung, Heikos Finalass zu Mega-Galagladi korrigiert, ein bislang fehlender zweiter Kalle/Kordula-Kampf auf dem Schlotberg ergänzt sowie das ORAS-exklusiv umbenannte Schiffswrack als "Seewoge Malvenfroh" geführt (Original-Editionen behalten "Schiffswrack"). <strong>Paldea:</strong> Shugis Level von 33 auf 32 korrigiert. Die restlichen Regionen des Audits (Einall, Kalos, Alola, Galar) folgen in weiteren Runden.</p>
@@ -7774,7 +7848,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.23.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.24.</footer>
 
 </div>`;
 
@@ -8280,6 +8354,7 @@ function applyEdition(){
 function render(){
   applyEdition();
   renderHeaderTeam();
+  renderHeaderOrden();
   renderActiveTitleBadge();
   document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active", t.dataset.tab===activeTab));
   if(activeTab==="routes") renderRoutes();
@@ -9102,6 +9177,7 @@ document.addEventListener("click", e=>{
     closeSheet(); render();
     lastDefeatedId = null;
     if(result==="win" && isChamp) showChampionCelebration(boss);
+    else if(result==="win" && boss.badge) celebrateOrden(boss.badge);
     if(deadNames.length) checkGameOver();
     if(deadLocIds.length && aliveCount()>0 && !(result==="win" && isChamp)) checkSoulLinkAfterDeath(deadLocIds);
   }
