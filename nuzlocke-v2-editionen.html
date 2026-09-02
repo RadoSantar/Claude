@@ -1082,6 +1082,7 @@ const BOSSES = [
   { id:"rival5", sprite:"Rival", name:"Silvester", cls:"Rivale", place:"Siegesstraße", ace:null, baseLevel:40, group:"Rivale", pvp:true },
   { id:"rival6", sprite:"Rival", name:"Silvester", cls:"Rivale", place:"Mondberg", ace:null, baseLevel:50, group:"Rivale" },
   { id:"falkner",badge:"Flügelorden", sprite:"Falkner", name:"Falk", cls:"Arenaleiter", place:"Viola City", ace:"Tauboga", baseLevel:13, group:"Johto-Arenen", pvp:true },
+  { id:"proton0", sprite:"Proton", name:"Lance", cls:"Vorstand", place:"Flegmon-Brunnen", ace:"Smogon", baseLevel:12, group:"Team Rocket" },
   { id:"bugsy",badge:"Insektorden", sprite:"Bugsy", name:"Kai", cls:"Arenaleiter", place:"Azalea City", ace:"Sichlor", baseLevel:17, group:"Johto-Arenen", pvp:true },
   { id:"whitney",badge:"Basisorden", sprite:"Whitney", name:"Bianka", cls:"Arenaleiterin", place:"Dukatia City", ace:"Miltank", baseLevel:19, group:"Johto-Arenen", pvp:true },
   { id:"morty",badge:"Phantomorden", sprite:"Morty", name:"Jens", cls:"Arenaleiter", place:"Teak City", ace:"Gengar", baseLevel:25, group:"Johto-Arenen", pvp:true },
@@ -1103,12 +1104,12 @@ const BOSSES = [
   { id:"sabrina",badge:"Sumpforden", sprite:"Sabrina", name:"Sabrina", cls:"Arenaleiterin", place:"Saffronia City", ace:"Simsala", baseLevel:55, group:"Kanto-Arenen", pvp:true },
   { id:"blaine",badge:"Vulkanorden", sprite:"Blaine", name:"Pyro", cls:"Arenaleiter", place:"Zinnoberinsel", ace:"Gallopa", baseLevel:59, group:"Kanto-Arenen", pvp:true },
   { id:"blue",badge:"Erdorden", sprite:"Blue", name:"Blau", cls:"Arenaleiter", place:"Vertania City", ace:"Tauboss", baseLevel:60, group:"Kanto-Arenen", pvp:true },
-  { id:"proton1", sprite:"Proton", name:"Lance", cls:"Vorstand", place:"Rundfunkturm, Dukatia City", ace:null, baseLevel:33, group:"Team Rocket" },
-  { id:"petrel1", sprite:"Petrel", name:"Lambda", cls:"Vorstand", place:"Rundfunkturm, Dukatia City", ace:null, baseLevel:32, group:"Team Rocket" },
-  { id:"ariana1", sprite:"Ariana", name:"Athena", cls:"Vorstand", place:"Rundfunkturm, Dukatia City", ace:null, baseLevel:32, group:"Team Rocket" },
-  { id:"archer1", sprite:"Archer", name:"Atlas", cls:"Vorstand", place:"Beobachtungsdeck, Dukatia City", ace:null, baseLevel:38, group:"Team Rocket" },
-  { id:"petrel2", sprite:"Petrel", name:"Lambda", cls:"Vorstand", place:"Team-Rocket-Versteck, Mahagonia City", ace:null, baseLevel:24, group:"Team Rocket" },
-  { id:"ariana2", sprite:"Ariana", name:"Athena", cls:"Vorstand", place:"Team-Rocket-Versteck, Mahagonia City", ace:null, baseLevel:27, group:"Team Rocket" },
+  { id:"proton1", sprite:"Proton", name:"Lance", cls:"Vorstand", place:"Rundfunkturm, Dukatia City", ace:"Smogmog", baseLevel:33, group:"Team Rocket" },
+  { id:"petrel1", sprite:"Petrel", name:"Lambda", cls:"Vorstand", place:"Rundfunkturm, Dukatia City", ace:"Smogmog", baseLevel:32, group:"Team Rocket" },
+  { id:"ariana1", sprite:"Ariana", name:"Athena", cls:"Vorstand", place:"Rundfunkturm, Dukatia City", ace:"Kramurx", baseLevel:32, group:"Team Rocket" },
+  { id:"archer1", sprite:"Archer", name:"Atlas", cls:"Vorstand", place:"Beobachtungsdeck, Dukatia City", ace:"Hundemon", baseLevel:38, group:"Team Rocket" },
+  { id:"petrel2", sprite:"Petrel", name:"Lambda", cls:"Vorstand", place:"Team-Rocket-Versteck, Mahagonia City", ace:"Rattikarl", baseLevel:24, group:"Team Rocket" },
+  { id:"ariana2", sprite:"Ariana", name:"Athena", cls:"Vorstand", place:"Team-Rocket-Versteck, Mahagonia City", ace:"Kramurx", baseLevel:27, group:"Team Rocket" },
   { id:"giovanni", sprite:"Giovanni", name:"Giovanni", cls:"Teamboss", place:"Tohjo-Fälle", ace:"Nidoqueen", baseLevel:46, group:"Sonstige Bosse" },
   { id:"red", sprite:"Red", name:"Rot", cls:"Champ", place:"Silberberg", ace:"Pikachu", baseLevel:88, group:"Sonstige Bosse" }
 ];
@@ -1131,6 +1132,7 @@ const LOCATIONS_DEFAULT = [
     {name:"Flegmon-Brunnen", note:"Flegmon fast garantiert per Surfen."},
     "Steineichenwald","Route 33",
     {name:"Dukatia City", note:"Keine wilden Pokémon in der Stadt selbst.", noCatch:true},
+    {name:"Rundfunkturm", note:"Keine wilden Pokémon - Team-Rocket-Übernahme mit mehreren Vorstandskämpfen (Lance, Lambda, Athena, Atlas).", noCatch:true},
     {name:"Dukatia-Passage", note:"Keine wilden Pokémon.", noCatch:true},
     "Route 34","Nationalpark","Route 35","Route 36","Route 37",
     {name:"Teak City", note:"Nur Kopfnuss-Bäume, Surfen, Angeln."},
@@ -1147,7 +1149,7 @@ const LOCATIONS_DEFAULT = [
     "Route 42",
     {name:"Kesselberg", note:"Geschenk: Tyrogol vom Großvater."},
     {name:"Mahagonia City", note:"Nur Surfen, Angeln."},
-    {name:"Team-Rocket-Versteck", note:"Einmalige Fänge im Fallenboden (B1F)."},
+    {name:"Team-Rocket-Versteck", note:"Einmalige Fänge im Fallenboden (B1F) + Vorstandskämpfe gegen Lambda und Athena."},
     "Route 43",
     {name:"See des Zorns", note:"Inkl. rotem Garados (Story-Event)."},
     "Route 44","Eispfad","Route 45",
@@ -1194,14 +1196,17 @@ const LOCATIONS_DEFAULT = [
 const BOSS_AFTER = {
   "Johto|Route 29": ["rival1"],
   "Johto|Route 31": ["falkner"],
+  "Johto|Flegmon-Brunnen": ["proton0"],
   "Johto|Azalea City": ["rival2","bugsy"],
   "Johto|Steineichenwald": ["whitney"],
   "Johto|Route 37": ["rival3","morty"],
   "Johto|Route 26": ["rival5","will","koga","bruno","karen","lance","duel-final"],
   "Johto|Strudelinseln": ["chuck"],
   "Johto|Anemonia City": ["jasmine"],
+  "Johto|Rundfunkturm": ["proton1","petrel1","ariana1","archer1"],
+  "Johto|Team-Rocket-Versteck": ["petrel2","ariana2"],
   "Johto|Mahagonia City": ["pryce"],
-  "Johto|See des Zorns": ["rival4","proton1","petrel1","ariana1","archer1","petrel2","ariana2"],
+  "Johto|See des Zorns": ["rival4"],
   "Johto|Route 45": ["clair"],
   "Johto|Route 27": ["giovanni"],
   "Johto|Silberberg": ["red"],
@@ -1222,7 +1227,7 @@ const SMARAGD_BOSSES = [
   { id:"sm-rival3", nameByGender:{male:"Brix",female:"Maike"}, spriteByGender:{male:"SmRivalM",female:"SmRival"}, cls:"Rivale", place:"Route 119", ace:null, baseLevel:28, group:"Rivale", pvp:true },
   { id:"sm-rival4", nameByGender:{male:"Brix",female:"Maike"}, spriteByGender:{male:"SmRivalM",female:"SmRival"}, cls:"Rivale", place:"Seegrasulb City", ace:null, baseLevel:32, group:"Rivale", pvp:true },
   { id:"sm-rival-rustboro", nameByGender:{male:"Brix",female:"Maike"}, spriteByGender:{male:"SmRivalM",female:"SmRival"}, cls:"Rivale", place:"Metarost City (optional, leicht zu verpassen)", ace:null, baseLevel:14, group:"Rivale", pvp:true },
-  { id:"sm-wally1", sprite:"SmWally", name:"Heiko", cls:"Herausforderer", place:"Malvenfroh City", ace:"Kirlia", baseLevel:16, group:"Sonstige Bosse" },
+  { id:"sm-wally1", sprite:"SmWally", name:"Heiko", cls:"Herausforderer", place:"Malvenfroh City", ace:"Trasla", baseLevel:16, group:"Sonstige Bosse" },
   { id:"sm-wally2", sprite:"SmWally", name:"Heiko", cls:"Herausforderer", place:"Pokémon-Liga", ace:"Guardevoir", baseLevel:45, group:"Sonstige Bosse", pvp:true },
   { id:"sm-roxanne",badge:"Steinorden", sprite:"SmRoxanne", name:"Felizia", cls:"Arenaleiterin", place:"Metarost City", ace:"Nasgnet", baseLevel:15, group:"Hoenn-Arenen", pvp:true },
   { id:"sm-brawly",badge:"Knöchelorden", sprite:"SmBrawly", name:"Kamillo", cls:"Arenaleiter", place:"Faustauhaven", ace:"Makuhita", baseLevel:19, group:"Hoenn-Arenen", pvp:true },
@@ -1358,7 +1363,7 @@ const SINNOH_BOSSES = [
   { id:"candice",badge:"Firnorden", sprite:"SnCandice", name:"Frida", cls:"Arenaleiterin", place:"Blizzach", ace:"Frosdedje", baseLevel:42, group:"Sinnoh-Arenen", pvp:true },
   { id:"cyrus1", sprite:"SnCyrus", name:"Zyrus", cls:"Teamboss", place:"Schleiede", ace:"Kramurx", baseLevel:43, group:"Team Galaktik" },
   { id:"volkner",badge:"Lichtorden", sprite:"SnVolkner", name:"Volkner", cls:"Arenaleiter", place:"Sonnewik", ace:"Elevoltek", baseLevel:49, group:"Sinnoh-Arenen", pvp:true },
-  { id:"cyrus2", sprite:"SnCyrus", name:"Zyrus", cls:"Teamboss", place:"Kraterberg", ace:"Snibunna", baseLevel:48, group:"Team Galaktik" },
+  { id:"cyrus2", sprite:"SnCyrus", name:"Zyrus", cls:"Teamboss", place:"Speersäule", ace:"Snibunna", baseLevel:48, group:"Team Galaktik" },
   { id:"rival5", sprite:"SnBarry", name:"Barry", cls:"Rivale", place:"Pokémon-Liga", ace:null, baseLevel:43, group:"Rivale", pvp:true },
   { id:"e4-herbaro", sprite:"SnAaron", name:"Herbaro", cls:"Top Vier", place:"Pokémon-Liga", ace:"Piondragi", baseLevel:57, group:"Top Vier & Champion" },
   { id:"e4-teresa", sprite:"SnBertha", name:"Teresa", cls:"Top Vier", place:"Pokémon-Liga", ace:"Hippoterus", baseLevel:59, group:"Top Vier & Champion" },
@@ -1427,7 +1432,8 @@ const SINNOH_LOCATIONS = [
     {name:"Vollmond-Insel", note:"Keine wilden Pokémon (Cresselia hier nicht fangbar).", noCatch:true},
     {name:"Neumond-Insel", note:"Nur Darkrai (Event: Mitgliedskarte nötig)."},
     "Route 219","Route 220","Route 221",
-    {name:"Kraterberg", note:"Inkl. Dialga oder Palkia (Story-Event, Speersäule) + zufällige Fänge auf bestimmten Wasserfeldern."},
+    {name:"Kraterberg", note:"Zufällige Fänge auf bestimmten Wasserfeldern."},
+    {name:"Speersäule", note:"Inkl. Dialga oder Palkia (Story-Event, nach Zyrus-Kampf).", noCatch:true},
     "Route 222",
     {name:"Sonnewik", note:"Keine wilden Pokémon.", noCatch:true},
     "Route 223","Siegesstraße",
@@ -1446,7 +1452,7 @@ const SINNOH_LOCATIONS = [
   ]]
 ];
 
-/* Platin-exklusiv: Zerrwelt (Zugang nach dem Kraterberg-Story-Kampf) und die Eisenruinen
+/* Platin-exklusiv: Zerrwelt (Zugang nach dem Speersäule-Story-Kampf) und die Eisenruinen
    (Registeel-Schrein) existieren in Diamant/Perl nicht als begehbare Orte. */
 const PLATIN_LOCATIONS = [
   ["Sinnoh", (function(){
@@ -1455,7 +1461,7 @@ const PLATIN_LOCATIONS = [
     base.forEach(entry=>{
       withZerrwelt.push(entry);
       const name = typeof entry === "string" ? entry : entry.name;
-      if(name==="Kraterberg") withZerrwelt.push({name:"Zerrwelt", note:"Nur Static-Giratina (Herkunftsform)."});
+      if(name==="Speersäule") withZerrwelt.push({name:"Zerrwelt", note:"Nur Static-Giratina (Herkunftsform)."});
       if(name==="Eiseninsel") withZerrwelt.push({name:"Eisenruinen", note:"Nur Static-Registeel (benötigt Regigigas im Team)."});
     });
     return withZerrwelt;
@@ -1477,7 +1483,7 @@ const SINNOH_BOSS_AFTER = {
   "Sinnoh|Blizzach": ["candice"],
   "Sinnoh|Schleiede": ["cyrus1"],
   "Sinnoh|Route 222": ["volkner"],
-  "Sinnoh|Kraterberg": ["cyrus2"],
+  "Sinnoh|Speersäule": ["cyrus2"],
   "Sinnoh|Pokémon-Liga": ["rival5","e4-herbaro","e4-teresa","e4-ignaz","e4-lucian","champion","duel-final"]
 };
 
@@ -1499,6 +1505,7 @@ const KANTO_RB_LOCATIONS = [
     "Route 2",
     {name:"Vertania-Wald", note:"Nur Gras/Wildfang, kein Surfen/Angeln möglich."},
     {name:"Marmoria City", note:"Keine wilden Pokémon.", noCatch:true},
+    "Digdas Höhle",
     "Route 3",
     {name:"Mondberg", note:"Fossilienwahl (Amonitas oder Kabuto, einmalig)."},
     "Route 4",
@@ -1508,25 +1515,30 @@ const KANTO_RB_LOCATIONS = [
     {name:"Unterführung", note:"Keine wilden Pokémon.", noCatch:true},
     "Route 6",
     {name:"Orania City", note:"Inkl. S.S. Anne (Geschenk: HM Zerschneider vom Kapitän)."},
+    "Route 11",
     "Route 9","Route 10",
+    {name:"Kraftwerk", note:"Inkl. Zapdos (Postgame)."},
     {name:"Felstunnel", note:"Nur Höhlen-Wildfang, kein Licht ohne Blitz/HM."},
     {name:"Lavandia", note:"Keine wilden Pokémon in der Stadt selbst - Nebulak/Alpollo/Tragosso stecken ausschließlich im Pokémon-Turm.", noCatch:true},
     {name:"Pokémon-Turm", note:"Eigene Wildpokémon (Nebulak, Alpollo, Tragosso). Rivale + Knogga-Geist-Auflösung, Mr. Fuji-Rettung, Poké-Flöte."},
     "Route 8",
     {name:"Saffronia City", note:"Inkl. Sabrina-Arena + Silph Co. (Rivale, danach Giovanni)."},
     "Route 7",
-    {name:"Prismania City", note:"Inkl. Rocket-Versteck unterm Rocket-Gamer-Paradies (Giovanni, Belohnung: Silph-Skop) + Geschenk: Evoli (Lv. 25, Prismania-Villa)."},
+    {name:"Prismania City", note:"Inkl. Rocket-Versteck unterm Rocket-Gamer-Paradies (Giovanni, Belohnung: Silph-Skop) + Geschenk: Evoli (Lv. 25, Prismania-Apartments)."},
+    "Route 12","Route 13","Route 14","Route 15",
     "Route 16","Route 17","Route 18",
     {name:"Fuchsania City", note:"Safari-Zone (eigene Bälle) + Arena."},
     "Route 19","Route 20",
     {name:"Seeschauminseln", note:"Nur Höhlen-Wildfang."},
     {name:"Zinnoberinsel", note:"Nur Angeln."},
+    {name:"Pokémon-Villa", note:"Eigene Wildpokémon (Rattfratz, Sleima, Magmar, Ditto u. a.) + Geheimschlüssel (nötig für die Zinnoberinsel-Arena)."},
     "Route 21",
     {name:"Vertania-Arena", note:"Vertania City erneut, jetzt mit allen 7 anderen Orden - Giovannis Arena (Erde, achter Orden)."},
     {name:"Route 22 (Rückweg)", note:"Route 22 erneut, auf dem Weg zur Pokémon-Liga nach Giovannis Arena - letzter Rivalenkampf vor der Top Vier."},
     "Route 23",
     {name:"Siegesstraße", note:"Nur Höhlen-Wildfang."},
-    {name:"Pokémon-Liga", note:"Keine wilden Pokémon (nur Top-Vier-Kämpfe).", noCatch:true}
+    {name:"Pokémon-Liga", note:"Keine wilden Pokémon (nur Top-Vier-Kämpfe).", noCatch:true},
+    {name:"Azuria-Höhle", note:"Inkl. Mewtu (Postgame, nach der Pokémon-Liga)."}
   ]]
 ];
 
@@ -1548,7 +1560,7 @@ const KANTO_RB_BOSSES = [
   { id:"sabrina",badge:"Sumpforden", sprite:"Sabrina", name:"Sabrina", cls:"Arenaleiterin", place:"Saffronia City", ace:"Simsala", baseLevel:43, group:"Kanto-Arenen", pvp:true },
   { id:"rival5", sprite:"Blue", name:"Blau", cls:"Rivale", place:"Saffronia City (Silph Co.)", ace:null, baseLevel:40, group:"Rivale" },
   { id:"giovanni2", sprite:"Giovanni", name:"Giovanni", cls:"Teamboss", place:"Silph Co., Saffronia City", ace:"Nidoqueen", baseLevel:41, group:"Team Rocket" },
-  { id:"erika",badge:"Farborden", sprite:"Erika", name:"Erika", cls:"Arenaleiterin", place:"Prismania City", ace:"Sarzenia", baseLevel:29, group:"Kanto-Arenen", pvp:true },
+  { id:"erika",badge:"Farborden", sprite:"Erika", name:"Erika", cls:"Arenaleiterin", place:"Prismania City", ace:"Giflor", baseLevel:29, group:"Kanto-Arenen", pvp:true },
   { id:"giovanni1", sprite:"Giovanni", name:"Giovanni", cls:"Teamboss", place:"Rocket-Versteck, Prismania City", ace:"Kangama", baseLevel:29, group:"Team Rocket" },
   { id:"koga",badge:"Seelenorden", sprite:"Koga", name:"Koga", cls:"Arenaleiter", place:"Fuchsania City", ace:"Smogmog", baseLevel:43, group:"Kanto-Arenen", pvp:true },
   { id:"blaine",badge:"Vulkanorden", sprite:"Blaine", name:"Pyro", cls:"Arenaleiter", place:"Zinnoberinsel", ace:"Arkani", baseLevel:47, group:"Kanto-Arenen", pvp:true },
@@ -1603,6 +1615,7 @@ const KANTO_YELLOW_LOCATIONS = [
     "Route 2",
     {name:"Vertania-Wald", note:"Nur Gras/Wildfang, kein Surfen/Angeln möglich."},
     {name:"Marmoria City", note:"Keine wilden Pokémon.", noCatch:true},
+    "Digdas Höhle",
     "Route 3",
     {name:"Mondberg", note:"Fossilienwahl (Amonitas oder Kabuto, einmalig) + Doppelkampf gegen Jessie & James."},
     "Route 4",
@@ -1613,25 +1626,30 @@ const KANTO_YELLOW_LOCATIONS = [
     {name:"Unterführung", note:"Keine wilden Pokémon.", noCatch:true},
     "Route 6",
     {name:"Orania City", note:"Inkl. S.S. Anne (Geschenk: HM Zerschneider vom Kapitän) + Geschenk: Schiggy (Lv. 10, erst nach dem Donner-Orden)."},
+    "Route 11",
     "Route 9","Route 10",
+    {name:"Kraftwerk", note:"Inkl. Zapdos (Postgame)."},
     {name:"Felstunnel", note:"Nur Höhlen-Wildfang, kein Licht ohne Blitz/HM."},
     {name:"Lavandia", note:"Keine wilden Pokémon in der Stadt selbst - Nebulak/Alpollo/Tragosso stecken ausschließlich im Pokémon-Turm.", noCatch:true},
     {name:"Pokémon-Turm", note:"Eigene Wildpokémon (Nebulak, Alpollo, Tragosso). Rivale + Knogga-Geist-Auflösung, Mr. Fuji-Rettung, Poké-Flöte, Doppelkampf gegen Jessie & James."},
     "Route 8",
     {name:"Saffronia City", note:"Inkl. Sabrina-Arena + Silph Co. (Doppelkampf gegen Jessie & James, dann Rivale, danach Giovanni)."},
     "Route 7",
-    {name:"Prismania City", note:"Inkl. Rocket-Versteck unterm Rocket-Gamer-Paradies (Doppelkampf gegen Jessie & James, dann Giovanni, Belohnung: Silph-Skop) + Geschenk: Evoli (Lv. 25, Prismania-Villa)."},
+    {name:"Prismania City", note:"Inkl. Rocket-Versteck unterm Rocket-Gamer-Paradies (Doppelkampf gegen Jessie & James, dann Giovanni, Belohnung: Silph-Skop) + Geschenk: Evoli (Lv. 25, Prismania-Apartments)."},
+    "Route 12","Route 13","Route 14","Route 15",
     "Route 16","Route 17","Route 18",
     {name:"Fuchsania City", note:"Safari-Zone (eigene Bälle) + Arena."},
     "Route 19","Route 20",
     {name:"Seeschauminseln", note:"Nur Höhlen-Wildfang."},
     {name:"Zinnoberinsel", note:"Nur Angeln."},
+    {name:"Pokémon-Villa", note:"Eigene Wildpokémon (Rattfratz, Sleima, Magmar, Ditto u. a.) + Geheimschlüssel (nötig für die Zinnoberinsel-Arena)."},
     "Route 21",
     {name:"Vertania-Arena", note:"Vertania City erneut, jetzt mit allen 7 anderen Orden - Giovannis Arena (Erde, achter Orden)."},
     {name:"Route 22 (Rückweg)", note:"Route 22 erneut, auf dem Weg zur Pokémon-Liga nach Giovannis Arena - letzter Rivalenkampf vor der Top Vier."},
     "Route 23",
     {name:"Siegesstraße", note:"Nur Höhlen-Wildfang."},
-    {name:"Pokémon-Liga", note:"Keine wilden Pokémon (nur Top-Vier-Kämpfe).", noCatch:true}
+    {name:"Pokémon-Liga", note:"Keine wilden Pokémon (nur Top-Vier-Kämpfe).", noCatch:true},
+    {name:"Azuria-Höhle", note:"Inkl. Mewtu (Postgame, nach der Pokémon-Liga)."}
   ]]
 ];
 
@@ -1716,6 +1734,7 @@ const GSC_LOCATIONS = [
     {name:"Flegmon-Brunnen", note:"Flegmon fast garantiert per Surfen."},
     "Steineichenwald","Route 33",
     {name:"Dukatia City", note:"Keine wilden Pokémon in der Stadt selbst.", noCatch:true},
+    {name:"Rundfunkturm", note:"Keine wilden Pokémon - Team-Rocket-Übernahme mit mehreren Vorstandskämpfen (Lance, Lambda als \"Radiodirektor\" getarnt, Athena, Atlas).", noCatch:true},
     {name:"Dukatia-Passage", note:"Keine wilden Pokémon.", noCatch:true},
     "Route 34","Nationalpark","Route 35","Route 36","Route 37",
     {name:"Teak City", note:"Nur Kopfnuss-Bäume, Surfen, Angeln."},
@@ -1731,9 +1750,9 @@ const GSC_LOCATIONS = [
     "Route 42",
     {name:"Kesselberg", note:"Geschenk: Tyrogol vom Großvater."},
     {name:"Mahagonia City", note:"Nur Surfen, Angeln."},
-    {name:"Team-Rocket-Versteck", note:"Einmalige Fänge im Fallenboden. Hier + im Rundfunkturm von Dukatia City der gesamte restliche Team-Rocket-Handlungsbogen (siehe Standort See des Zorns)."},
+    {name:"Team-Rocket-Versteck", note:"Einmalige Fänge im Fallenboden + Vorstandskämpfe gegen Athena und Lambda."},
     "Route 43",
-    {name:"See des Zorns", note:"Inkl. rotem Garados (Story-Event) - bündelt hier auch den gesamten weiteren Team-Rocket-Handlungsbogen (Versteck + Rundfunkturm), da diese Orte im Spielverlauf mehrfach hin und her besucht werden."},
+    {name:"See des Zorns", note:"Inkl. rotem Garados (Story-Event)."},
     "Route 44","Eispfad","Route 45",
     {name:"Ebenholz City", note:"Nur Surfen, Angeln."},
     "Dunkelhöhle (Ebenholz-Seite)",
@@ -1828,8 +1847,10 @@ const GSC_BOSS_AFTER = {
   "Johto|Route 37": ["rival3","morty"],
   "Johto|Strudelinseln": ["chuck"],
   "Johto|Anemonia City": ["jasmine"],
+  "Johto|Team-Rocket-Versteck": ["ariana1","petrel1"],
+  "Johto|Rundfunkturm": ["proton1","petrel2","ariana2","archer1"],
   "Johto|Mahagonia City": ["pryce"],
-  "Johto|See des Zorns": ["rival4","ariana1","petrel1","proton1","petrel2","ariana2","archer1"],
+  "Johto|See des Zorns": ["rival4"],
   "Johto|Route 45": ["clair"],
   "Johto|Route 26": ["rival5","will","koga","bruno","karen","lance","duel-final"],
   "Johto|Silberberg": ["red"],
@@ -1867,7 +1888,7 @@ const HOENN_RS_BOSSES = [
   { id:"rival1", nameByGender:{male:"Brix",female:"Maike"}, spriteByGender:{male:"SmRivalM",female:"SmRival"}, cls:"Rivale", place:"Route 103", ace:null, baseLevel:5, group:"Rivale" },
   { id:"roxanne",badge:"Steinorden", sprite:"SmRoxanne", name:"Felizia", cls:"Arenaleiterin", place:"Metarost City", ace:"Nasgnet", baseLevel:15, group:"Hoenn-Arenen", pvp:true },
   { id:"brawly",badge:"Knöchelorden", sprite:"SmBrawly", name:"Kamillo", cls:"Arenaleiter", place:"Faustauhaven", ace:"Makuhita", baseLevel:18, group:"Hoenn-Arenen", pvp:true },
-  { id:"wally1", sprite:"SmWally", name:"Heiko", cls:"Herausforderer", place:"Malvenfroh City", ace:"Kirlia", baseLevel:16, group:"Sonstige Bosse" },
+  { id:"wally1", sprite:"SmWally", name:"Heiko", cls:"Herausforderer", place:"Malvenfroh City", ace:"Trasla", baseLevel:16, group:"Sonstige Bosse" },
   { id:"villain-admin1", sprite:"SmTabitha", name:"Kalle", cls:"Vorstand", place:"Schlotberg", ace:"Camaub", baseLevel:20, group:"Team Magma" },
   { id:"villain-boss1", sprite:"SmMaxie", name:"Marc", cls:"Teamboss", place:"Schlotberg", ace:"Camerupt", baseLevel:25, group:"Team Magma" },
   { id:"rival2", nameByGender:{male:"Brix",female:"Maike"}, spriteByGender:{male:"SmRivalM",female:"SmRival"}, cls:"Rivale", place:"Route 110", ace:null, baseLevel:20, group:"Rivale" },
@@ -2251,7 +2272,11 @@ const KALOS_BOSS_AFTER = {"Kalos|Turm der Erkenntnis": ["rival1"], "Kalos|Nouvar
    geteilten SMARAGD_LOCATIONS - erweitert dieselbe Hoenn-Liste nur um zwei zusätzliche Einträge
    ganz am Ende, betrifft rubin/saphir/smaragd nicht. */
 const ORAS_LOCATIONS = [
-  ["Hoenn", [...SMARAGD_LOCATIONS[0][1],
+  ["Hoenn", [...SMARAGD_LOCATIONS[0][1].map(entry=>{
+    const name = typeof entry === "string" ? entry : entry.name;
+    if(name==="Schiffswrack") return {name:"Seewoge Malvenfroh", note:"ORAS-exklusiv umbenannt (ersetzt das Schiffswrack der Original-Editionen): Bergungsplattform mit Ho-Oh (Omega Rubin) bzw. Lugia (Alpha Saphir) + exklusiver Fundort für Kryppuk."};
+    return entry;
+  }),
     {name:"Route 103 (Postgame)", note:"Delta-Episode/Postgame: Rivalen-Rückkampf nach dem Champion-Sieg (Mega-entwickelter Starter), keine wilden Pokémon.", noCatch:true},
     {name:"Blütenburg City (Delta-Episode)", note:"Delta-Episode/Postgame: erneuter Kampf gegen Team Magma/Aqua, keine wilden Pokémon.", noCatch:true}
   ]]
@@ -2260,10 +2285,11 @@ const ORAS_BOSSES = [
   { id:"rival1", nameByGender:{male:"Brix",female:"Maike"}, spriteByGender:{male:"OrBrendan",female:"OrMay"}, cls:"Rivale", place:"Route 103", ace:null, baseLevel:5, group:"Rivale" },
   { id:"roxanne",badge:"Steinorden", sprite:"OrRoxanne", name:"Felizia", cls:"Arenaleiterin", place:"Metarost City", ace:"Nasgnet", baseLevel:14, group:"Hoenn-Arenen", pvp:true },
   { id:"brawly",badge:"Knöchelorden", sprite:"OrBrawly", name:"Kamillo", cls:"Arenaleiter", place:"Faustauhaven", ace:"Makuhita", baseLevel:16, group:"Hoenn-Arenen", pvp:true },
-  { id:"wally1", sprite:"OrWally", name:"Heiko", cls:"Herausforderer", place:"Malvenfroh City", ace:"Kirlia", baseLevel:16, group:"Sonstige Bosse" },
+  { id:"wally1", sprite:"OrWally", name:"Heiko", cls:"Herausforderer", place:"Malvenfroh City", ace:"Trasla", baseLevel:17, group:"Sonstige Bosse" },
   { id:"rival2", nameByGender:{male:"Brix",female:"Maike"}, spriteByGender:{male:"OrBrendan",female:"OrMay"}, cls:"Rivale", place:"Route 110", ace:null, baseLevel:20, group:"Rivale" },
   { id:"wattson",badge:"Dynamo-Orden", sprite:"OrWattson", name:"Walter", cls:"Arenaleiter", place:"Malvenfroh City", ace:"Magneton", baseLevel:21, group:"Hoenn-Arenen", pvp:true },
   { id:"tabitha1", sprite:"OrTabitha", name:"Kalle", cls:"Vorstand", place:"Meteorfälle", ace:"Camaub", baseLevel:23, group:"Team Magma" },
+  { id:"tabitha1b", sprite:"OrTabitha", name:"Kalle", cls:"Vorstand", place:"Schlotberg", ace:"Smogon", baseLevel:24, group:"Team Magma" },
   { id:"maxie1", sprite:"OrMaxie", name:"Marc", cls:"Teamboss", place:"Schlotberg", ace:"Camerupt", baseLevel:27, group:"Team Magma" },
   { id:"tabitha2", sprite:"OrTabitha", name:"Kalle", cls:"Vorstand", place:"Klima-Institut", ace:"Camerupt", baseLevel:32, group:"Team Magma" },
   { id:"flannery",badge:"Hitzeorden", sprite:"OrFlannery", name:"Flavia", cls:"Arenaleiterin", place:"Bad Lavastadt", ace:"Qurtel", baseLevel:28, group:"Hoenn-Arenen", pvp:true },
@@ -2275,7 +2301,7 @@ const ORAS_BOSSES = [
   { id:"rival4", nameByGender:{male:"Brix",female:"Maike"}, spriteByGender:{male:"OrBrendan",female:"OrMay"}, cls:"Rivale", place:"Seegrasulb City", ace:null, baseLevel:39, group:"Rivale", pvp:true },
   { id:"tateliza",badge:"Mentalorden", sprite:"OrTateLiza", name:"Ben & Svenja", cls:"Arenaleiter-Duo", place:"Moosbach City", ace:"Sonnfel", baseLevel:45, group:"Hoenn-Arenen", pvp:true },
   { id:"wallace",badge:"Schauerorden", sprite:"OrWallace", name:"Wassili", cls:"Arenaleiter", place:"Xeneroville", ace:"Milotic", baseLevel:46, group:"Hoenn-Arenen", pvp:true },
-  { id:"wally2", sprite:"OrWally", name:"Heiko", cls:"Herausforderer", place:"Pokémon-Liga", ace:"Guardevoir", baseLevel:45, group:"Sonstige Bosse", pvp:true },
+  { id:"wally2", sprite:"OrWally", name:"Heiko", cls:"Herausforderer", place:"Pokémon-Liga", ace:"Mega-Galagladi", baseLevel:48, group:"Sonstige Bosse", pvp:true },
   { id:"e4-ulrich", sprite:"OrSidney", name:"Ulrich", cls:"Top Vier", place:"Pokémon-Liga", ace:"Absol", baseLevel:52, group:"Top Vier & Champion" },
   { id:"e4-antonia", sprite:"OrPhoebe", name:"Antonia", cls:"Top Vier", place:"Pokémon-Liga", ace:"Zwirrklop", baseLevel:53, group:"Top Vier & Champion" },
   { id:"e4-frosina", sprite:"OrGlacia", name:"Frosina", cls:"Top Vier", place:"Pokémon-Liga", ace:"Walraisa", baseLevel:54, group:"Top Vier & Champion" },
@@ -2291,7 +2317,7 @@ const ORAS_BOSS_AFTER = {
   "Hoenn|Metarost City": ["roxanne"],
   "Hoenn|Faustauhaven": ["brawly"],
   "Hoenn|Meteorfälle": ["tabitha1"],
-  "Hoenn|Schlotberg": ["maxie1"],
+  "Hoenn|Schlotberg": ["tabitha1b","maxie1"],
   "Hoenn|Route 110": ["rival2","wally1"],
   "Hoenn|Malvenfroh City": ["wattson"],
   "Hoenn|Route 119": ["tabitha2","rival3"],
@@ -2316,6 +2342,7 @@ const ORAS_BOSS_AFTER = {
    (bestätigt), Matt übernimmt Courtneys Rolle (nicht einzeln verifiziert, Ausschlussverfahren). */
 const ORAS_TEAM_AQUA_OVERRIDES = {
   "tabitha1": { sprite:"OrShelly", name:"Kordula", ace:"Kanivanha" },
+  "tabitha1b": { sprite:"OrShelly", name:"Kordula", ace:"Sleima" },
   "maxie1": { sprite:"OrArchie", name:"Adrian", ace:"Tohaido" },
   "tabitha2": { sprite:"OrShelly", name:"Kordula", ace:"Tohaido" },
   "courtney1": { sprite:"OrMatt", name:"Wolfgang", ace:"Magnayen" },
@@ -2829,7 +2856,7 @@ const PALDEA_BOSSES = [
   {id:"titan5",sprite:"PdNigiragi",name:"Herrscher der Drachentäuschung",cls:"Herrscher-Pokémon",place:"Caldero-See",ace:"Nigiragi",baseLevel:57,group:"Pfad der Legenden"},
   {id:"pinio",sprite:"PdGiacomo",name:"Pinio",cls:"Team-Star-Boss",place:"Westliche Zone 1 (Team Star)",ace:"Knattatox",baseLevel:20,group:"Straße der Sterne"},
   {id:"irsa",sprite:"PdMela",name:"Irsa",cls:"Team-Star-Boss",place:"Östliche Zone 1",ace:"Knattatox",baseLevel:26,group:"Straße der Sterne"},
-  {id:"shugi",sprite:"PdAtticus",name:"Shugi",cls:"Team-Star-Boss",place:"Schmierhain",ace:"Knattatox",baseLevel:33,group:"Straße der Sterne"},
+  {id:"shugi",sprite:"PdAtticus",name:"Shugi",cls:"Team-Star-Boss",place:"Schmierhain",ace:"Knattatox",baseLevel:32,group:"Straße der Sterne"},
   {id:"otis",sprite:"PdOrtega",name:"Otis",cls:"Team-Star-Boss",place:"Nördliche Zone 3",ace:"Knattatox",baseLevel:50,group:"Straße der Sterne"},
   {id:"rioba",sprite:"PdEri",name:"Rioba",cls:"Team-Star-Boss",place:"Nördliche Zone 2",ace:"Knattatox",baseLevel:56,group:"Straße der Sterne"},
   {id:"cosima",sprite:"PdPenny",name:"Cosima",cls:"Team-Star-Anführerin",place:"Sportplatz",ace:"Feelinara",baseLevel:63,group:"Straße der Sterne"}
@@ -3582,7 +3609,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.22";
+const APP_VERSION = "1.9.23";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -6706,6 +6733,12 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="log">
 
     <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.23</span><span class="tag tag-fix">Fix</span></div>
+      <h3>Generationsübergreifender Rechercheaudit: erste bestätigte Funde behoben</h3>
+      <p>Erste Fixrunde aus einem umfassenden Gen-1-9-Audit (Orte, Namen, Kämpfe, Level). <strong>Kanto (Rot/Blau/Gelb/Feuerrot/Blattgrün):</strong> Route 11-15, Digdas Höhle, Kraftwerk, Azuria-Höhle und die bislang komplett fehlende Pokémon-Villa (samt Geheimschlüssel fürs Zinnoberinsel-Orden) ergänzt, "Prismania-Villa" zu "Prismania-Apartments" korrigiert, Erikas Ass in Rot/Blau von Sarzenia zu Giflor berichtigt. <strong>Johto (HeartGold/SoulSilver):</strong> fehlender Proton-Kampf am Flegmon-Brunnen ergänzt, sechs bislang assfreie Team-Rocket-Vorstandskämpfe (Lance, Lambda, Athena, Atlas) mit ihren echten Assen befüllt. <strong>Johto (Gold/Silber/Kristall + HG/SS):</strong> der Sammelstandort "See des Zorns" bündelte bislang fälschlich den gesamten Team-Rocket-Handlungsbogen - Rundfunkturm und Team-Rocket-Versteck sind jetzt eigene Kacheln mit den jeweils richtigen Kämpfen. <strong>Sinnoh (Diamant/Perl/Platin/BDSP):</strong> Speersäule als eigener Standort vom Kraterberg abgetrennt (inkl. Zyrus-Finalkampf und Platins Zerrwelt-Zugang). <strong>Hoenn (Rubin/Saphir/Smaragd/ORAS):</strong> Heikos erstes Ass korrekt als unentwickeltes Trasla statt Kirlia geführt, in Omega Rubin/Alpha Saphir zusätzlich Levelanpassung, Heikos Finalass zu Mega-Galagladi korrigiert, ein bislang fehlender zweiter Kalle/Kordula-Kampf auf dem Schlotberg ergänzt sowie das ORAS-exklusiv umbenannte Schiffswrack als "Seewoge Malvenfroh" geführt (Original-Editionen behalten "Schiffswrack"). <strong>Paldea:</strong> Shugis Level von 33 auf 32 korrigiert. Die restlichen Regionen des Audits (Einall, Kalos, Alola, Galar) folgen in weiteren Runden.</p>
+    </div>
+
+    <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.22</span><span class="tag tag-feat">Feature</span></div>
       <h3>Orden: Arenaleiter besiegen und ihren Orden erhalten</h3>
       <p>Auf Wunsch: jede besiegte Arenaleiterin/jeder besiegte Arenaleiter hinterlässt jetzt ihren/seinen echten Orden auf der Bosskarte (kleines Icon oben links, analog zum bestehenden Sieg-Haken oben rechts) - alle 68 Orden-Icons stammen von Bulbagarden Archives, mit den tatsächlich in der jeweiligen deutschen Lokalisierung verwendeten Namen (u.&nbsp;a. Felsorden/Quellorden/Donnerorden für Kanto, Flügelorden/Insektorden für Johto, bis zu den neuen Arenaorden aus Paldea). Neu im Team-Tab: eine "Orden"-Karte zeigt alle Orden der aktuellen Edition als Sammlung - erhaltene farbig mit goldenem Rand, offene grau. Berücksichtigt dabei automatisch Sonderfälle wie das Orion-City-Trio (drei mögliche Gegner, aber ein gemeinsamer Orden) und die Schwert/Schild-Versionswechsel (Nio vergibt den Geister-Orden, Mac in Schwert dagegen den Kampf-Orden - je nach Version der richtige). Editionen ohne klassische Arenen (Sonne/Mond, Ultrasonne/Ultramond - Inselprüfungen statt Orden) zeigen die neue Karte konsequent gar nicht erst an.</p>
@@ -7731,7 +7764,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.22.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.23.</footer>
 
 </div>`;
 
