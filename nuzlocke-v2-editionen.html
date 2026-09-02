@@ -215,12 +215,23 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 }
 .orden-fly-badge img{ width:100%; height:100%; object-fit:contain; }
 .orden-firework-particle{
-  position:fixed; z-index:9998; width:7px; height:7px; border-radius:50%;
-  pointer-events:none; animation:orden-firework-burst .9s ease-out forwards;
+  position:fixed; z-index:9998; width:9px; height:9px; border-radius:50%;
+  pointer-events:none; animation:orden-firework-burst 1.15s cubic-bezier(.15,.6,.35,1) forwards;
 }
 @keyframes orden-firework-burst{
   0%{ transform:translate(-50%,-50%) translate(0,0) scale(1); opacity:1; }
-  100%{ transform:translate(-50%,-50%) translate(var(--dx),var(--dy)) scale(.3); opacity:0; }
+  70%{ opacity:1; }
+  100%{ transform:translate(-50%,-50%) translate(var(--dx),var(--dy)) scale(.25); opacity:0; }
+}
+.orden-firework-flash{
+  position:fixed; z-index:9997; width:10px; height:10px; border-radius:50%;
+  pointer-events:none; transform:translate(-50%,-50%);
+  background:radial-gradient(circle, rgba(255,255,255,.95) 0%, rgba(255,215,0,.55) 40%, rgba(255,215,0,0) 72%);
+  animation:orden-firework-flash .55s ease-out forwards;
+}
+@keyframes orden-firework-flash{
+  0%{ width:10px; height:10px; opacity:1; }
+  100%{ width:260px; height:260px; opacity:0; }
 }
 
 /* Content */
@@ -3694,7 +3705,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.28";
+const APP_VERSION = "1.9.29";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -4650,25 +4661,37 @@ function renderHeaderOrden(){
   }).join("");
 }
 
-/* Kleiner Feuerwerk-Funken-Ausbruch an einer festen Bildschirmposition - mehrere Partikel fliegen
-   radial nach außen und verblassen, per reinem CSS-Keyframe (siehe .orden-firework-particle). */
+/* Kräftiger Feuerwerk-Funken-Ausbruch an einer festen Bildschirmposition - ein kurzer heller
+   Blitz (.orden-firework-flash) markiert die "Explosion", danach fliegen viele große, bunt
+   leuchtende Partikel (mit Glow per box-shadow) radial und über zwei Distanz-Ringe gestaffelt
+   nach außen und verblassen, per reinem CSS-Keyframe (siehe .orden-firework-particle). */
 function spawnOrdenFirework(cx, cy){
-  const colors = ["var(--gold)", "#FFE9A8", "#FFFFFF", "var(--accent)"];
-  for(let i=0;i<14;i++){
+  const colors = ["#FFD700", "#FFFFFF", "#FF5A5A", "#4DD9FF", "#7CFF6B", "#FF6BE8", "#FFA94D", "#B98CFF"];
+  const flash = document.createElement("div");
+  flash.className = "orden-firework-flash";
+  flash.style.left = cx+"px"; flash.style.top = cy+"px";
+  document.body.appendChild(flash);
+  setTimeout(()=>flash.remove(), 600);
+  const count = 26;
+  for(let i=0;i<count;i++){
     const p = document.createElement("div");
     p.className = "orden-firework-particle";
-    const angle = (Math.PI*2*i/14) + (Math.random()*0.35-0.175);
-    const dist = 55 + Math.random()*55;
+    const angle = (Math.PI*2*i/count) + (Math.random()*0.3-0.15);
+    const dist = 85 + Math.random()*100;
+    const size = 6 + Math.random()*7;
+    const color = colors[Math.floor(Math.random()*colors.length)];
     p.style.left = cx+"px"; p.style.top = cy+"px";
+    p.style.width = size+"px"; p.style.height = size+"px";
     p.style.setProperty("--dx", (Math.cos(angle)*dist)+"px");
     p.style.setProperty("--dy", (Math.sin(angle)*dist)+"px");
-    p.style.background = colors[Math.floor(Math.random()*colors.length)];
+    p.style.background = color;
+    p.style.boxShadow = `0 0 10px 2px ${color}`;
     document.body.appendChild(p);
-    setTimeout(()=>p.remove(), 950);
+    setTimeout(()=>p.remove(), 1200);
   }
 }
 /* Feierliche Orden-Animation: taucht groß in der Bildschirmmitte auf, bleibt dort knapp 2,5s gut
-   sichtbar stehen (mit zwei Feuerwerk-Funkenausbrüchen währenddessen) und schwebt danach nach oben
+   sichtbar stehen (mit drei kräftigen Feuerwerk-Funkenausbrüchen währenddessen) und schwebt danach nach oben
    weg, während sie ausblendet - landet bewusst NICHT mehr exakt im Header-Tray (zu schnell/unruhig
    für einen Moment, der gefeiert werden soll). Der echte Chip an seinem Platz im Header existiert
    dank render() vor diesem Aufruf bereits - er bleibt für die komplette Animationsdauer unsichtbar
@@ -4695,8 +4718,9 @@ function celebrateOrden(badgeName){
     { transform:"translate(-50%,-50%) scale(1)", opacity:1, offset:holdEndFrac },
     { transform:"translate(-50%,-160%) scale(.8)", opacity:0, offset:1 }
   ], { duration:total, easing:"ease-out", fill:"forwards" });
-  setTimeout(()=>spawnOrdenFirework(cx, cy), POP_IN + 200);
-  setTimeout(()=>spawnOrdenFirework(cx, cy), POP_IN + HOLD*0.6);
+  setTimeout(()=>spawnOrdenFirework(cx, cy), POP_IN + 150);
+  setTimeout(()=>spawnOrdenFirework(cx, cy), POP_IN + HOLD*0.42);
+  setTimeout(()=>spawnOrdenFirework(cx, cy), POP_IN + HOLD*0.74);
   anim.onfinish = () => { fly.remove(); target.style.visibility = ""; };
 }
 /* Kleine Escape-Hilfe für CSS-Attributselektoren (Orden-Namen können z.B. Umlaute/Bindestriche
@@ -6916,6 +6940,12 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="log">
 
     <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.29</span><span class="tag tag-fix">Fix</span></div>
+      <h3>Orden-Feier: kräftigeres, deutlich auffälligeres Feuerwerk</h3>
+      <p>Nutzerfeedback: das Feuerwerk bei Orden-Erhalt wirkte zu dezent. Pro Ausbruch jetzt fast doppelt so viele, größere und stärker leuchtende Funken (mit echtem Glow statt reiner Füllfarbe) in einer breiteren, bunteren Farbpalette statt nur Gold/Weiß/Akzentfarbe, dazu ein kurzer heller Blitz im Zentrum, der jeden Ausbruch wie eine echte Explosion markiert. Außerdem ein dritter Ausbruch ergänzt (statt zwei), über die gesamte Stehzeit des Ordens verteilt.</p>
+    </div>
+
+    <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.28</span><span class="tag tag-feat">Feature</span></div>
       <h3>Typabdeckung als kompakte Symbol-Kachel statt Vollbreite-Button</h3>
       <p>Nutzerfeedback: der Button „Typabdeckung anzeigen" unter der Levelcap-Karte im Team-Tab nahm ebenfalls unnötig viel Platz ein. Ersetzt durch eine kompakte Kachel direkt in derselben Reihe wie Levelcap und Orden-Schatulle - mit einem an die Regenbogen-Energie aus dem Pokémon-Sammelkartenspiel angelehnten Symbol (Ring aus allen Typfarben um einen silbrigen Kern), da diese Karte für „deckt alle Typen ab" bereits ein etabliertes, sofort erkennbares Bild liefert. Die Levelcap-Karte wurde dafür nochmals kompakter gestaltet (kleinere Schrift, weniger Innenabstand), damit für bis zu drei Kacheln nebeneinander genug Platz bleibt. Funktional unverändert - ein Antippen öffnet weiterhin dieselbe Typabdeckungs-Übersicht.</p>
@@ -7987,7 +8017,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.28.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.29.</footer>
 
 </div>`;
 
