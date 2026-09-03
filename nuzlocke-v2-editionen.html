@@ -884,7 +884,7 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 
 .undo-toast{
   position:fixed; left:50%; bottom:calc(160px + env(safe-area-inset-bottom)); transform:translateX(-50%);
-  z-index:80; max-width:360px; width:calc(100% - 32px);
+  z-index:80; max-width:360px; width:calc(100% - 32px); touch-action:pan-y;
   background:var(--surface); border-radius:14px; padding:12px 8px 12px 16px;
   display:flex; align-items:center; gap:10px; justify-content:space-between;
   box-shadow:0 12px 32px rgba(0,0,0,.28), inset 0 0 0 1px var(--line);
@@ -3705,7 +3705,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.32";
+const APP_VERSION = "1.9.33";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -6904,6 +6904,7 @@ function showUndoToast(label){
   });
   document.body.appendChild(toast);
   toast._timer = setTimeout(()=>dismissUndoToast(toast), 6000);
+  attachToastSwipeDismiss(toast);
 }
 function dismissUndoToast(toast){
   if(!toast || toast._dismissing) return;
@@ -6911,6 +6912,51 @@ function dismissUndoToast(toast){
   clearTimeout(toast._timer);
   toast.classList.add("out");
   setTimeout(()=>toast.remove(), 220);
+}
+/* Wischen zum Wegwischen: wer den Rückgängig-Hinweis nicht braucht, muss nicht die volle Stehzeit
+   abwarten - seitliches Wischen (in beide Richtungen) schiebt den Toast sofort in Wischrichtung
+   weg, ohne die Rückgängig-Aktion auszulösen (entspricht dem normalen Auto-Verschwinden, nur
+   selbst ausgelöst). Folgt demselben Ziehen-1:1-dann-Entscheiden-Muster wie das bestehende
+   Herunterziehen am Sheet-Griff (siehe dort) - während des Wischens läuft keine Transition (folgt
+   dem Finger direkt), erst beim Loslassen greift wieder eine Transition, entweder fürs
+   Zurückschnappen oder fürs Rausschieben. Per Event-Delegation auf dem Toast selbst statt nur auf
+   dem Button, damit die ganze Fläche wischbar ist; da nie preventDefault() aufgerufen wird, bleibt
+   ein normaler Tap auf den Rückgängig-/OK-Button unangetastet. */
+function attachToastSwipeDismiss(toast){
+  const DISMISS_DISTANCE = 80, DISMISS_VELOCITY = 0.5;
+  let dragging=false, startX=0, startTime=0, curDx=0;
+  toast.addEventListener("touchstart", e=>{
+    if(e.touches.length!==1) return;
+    dragging = true; curDx = 0;
+    startX = e.touches[0].clientX;
+    startTime = Date.now();
+    toast.style.transition = "none";
+  }, {passive:true});
+  toast.addEventListener("touchmove", e=>{
+    if(!dragging) return;
+    curDx = e.touches[0].clientX - startX;
+    toast.style.transform = `translateX(calc(-50% + ${curDx}px))`;
+    toast.style.opacity = String(Math.max(0.1, 1 - Math.abs(curDx)/220));
+  }, {passive:true});
+  function release(){
+    if(!dragging) return;
+    dragging = false;
+    const elapsed = Math.max(1, Date.now()-startTime);
+    const velocity = Math.abs(curDx)/elapsed;
+    if(Math.abs(curDx) > DISMISS_DISTANCE || velocity > DISMISS_VELOCITY){
+      const dir = curDx < 0 ? -1 : 1;
+      toast.style.transition = "transform .2s ease, opacity .2s ease";
+      toast.style.transform = `translateX(calc(-50% + ${dir*420}px))`;
+      toast.style.opacity = "0";
+      dismissUndoToast(toast);
+    } else {
+      toast.style.transition = "transform .2s ease, opacity .2s ease";
+      toast.style.transform = "";
+      toast.style.opacity = "";
+    }
+  }
+  toast.addEventListener("touchend", release);
+  toast.addEventListener("touchcancel", release);
 }
 /* Gleiche Optik wie der Rückgängig-Toast, aber ohne Undo-Aktion - reine Warnung, dass das
    Speichern gerade fehlschlägt (siehe warnOnSaveFailure()). Bleibt bewusst länger stehen als der
@@ -6926,6 +6972,7 @@ function showStorageWarnToast(){
   toast.querySelector(".undo-toast-btn").addEventListener("click", ()=>dismissUndoToast(toast));
   document.body.appendChild(toast);
   toast._timer = setTimeout(()=>dismissUndoToast(toast), 10000);
+  attachToastSwipeDismiss(toast);
 }
 
 function renderActiveTitleBadge(){
@@ -6950,6 +6997,12 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.33</span><span class="tag tag-feat">Feature</span></div>
+      <h3>Rückgängig-Hinweis wegwischen statt Stehzeit abwarten zu müssen</h3>
+      <p>Nutzerwunsch: der Rückgängig-Toast (seit v1.8.53) ließ sich bisher nur per Antippen des Buttons oder durch Abwarten der automatischen Stehzeit (6s, bei der Speicher-Warnung 10s) wieder loswerden. Seitliches Wischen in beide Richtungen schiebt ihn jetzt sofort in Wischrichtung weg, ohne die Rückgängig-Aktion auszulösen - entspricht dem normalen Auto-Verschwinden, nur selbst ausgelöst. Folgt demselben Ziehen-1:1-dann-Entscheiden-Muster wie das bestehende Herunterziehen am Sheet-Griff (seit v1.8.10): während des Wischens läuft keine Transition, sondern folgt direkt dem Finger, erst beim Loslassen entscheidet Strecke/Geschwindigkeit über Zurückschnappen oder Wegschieben. Ein normaler Tap auf „Rückgängig"/„OK" bleibt unverändert möglich.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.32</span><span class="tag tag-fix">Fix</span></div>
@@ -8047,7 +8100,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.32.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.33.</footer>
 
 </div>`;
 
