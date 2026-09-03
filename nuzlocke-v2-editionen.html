@@ -869,6 +869,31 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 .tour-demo-badge.tone-red{ background:var(--red); }
 .tour-demo-badge.tone-neutral{ background:var(--accent); }
 
+/* Kleine "Zyklen"-Tour (siehe TOUR_CYCLES weiter unten): Experimenteller zweiter Tour-Stil neben
+   der bestehenden großen Erste-Schritte-Tour - Nutzerfeedback zur großen Karte war, dass sie zu
+   viel abdeckt und die Hervorhebung dahinter kaum noch wirkt, außerdem wirkten die Übergänge
+   zwischen Stationen zu schnell. .tour-tip ist deshalb bewusst klein (kurzer Ein-Satz-Text statt
+   Titel+Absatz+Fortschrittspunkte+zwei Buttons) und sitzt dicht neben statt über dem
+   hervorgehobenen Element, damit die eigentliche Hervorhebung (.tour-spotlight, unverändert
+   wiederverwendet) klar sichtbar bleibt. Die Übergänge zwischen Stationen nutzen bewusst deutlich
+   längere Zeiten als die große Tour (siehe renderCycleStep()) und ein "smooth" statt "instant"
+   Scrollen, damit man dem Sprung zur nächsten Station als Mensch tatsächlich folgen kann. */
+.tour-tip{
+  position:fixed; z-index:77; max-width:220px; width:calc(100% - 56px);
+  background:var(--surface); border-radius:14px; padding:12px 14px 10px;
+  box-shadow:0 14px 36px rgba(0,0,0,.32), inset 0 0 0 1px var(--line);
+  transition:top .3s ease, left .3s ease, opacity .3s ease;
+}
+.tour-tip.tour-fade-out{ opacity:0; }
+.tour-tip-text{ font-size:.82rem; line-height:1.45; color:var(--ink); margin-bottom:10px; }
+.tour-tip-foot{ display:flex; align-items:center; justify-content:space-between; gap:6px; }
+.tour-tip-dots{ display:flex; gap:4px; }
+.tour-tip-dot{ width:5px; height:5px; border-radius:50%; background:var(--line); flex:none; }
+.tour-tip-dot.active{ background:var(--accent); width:12px; border-radius:3px; }
+.tour-tip-actions{ display:flex; align-items:center; gap:2px; }
+.tour-tip-skip{ background:none; border:none; font-size:.7rem; color:var(--ink-faint); padding:6px 6px; cursor:pointer; }
+.tour-tip-next{ background:none; border:none; font-size:.8rem; font-weight:800; color:var(--accent); padding:6px 8px; cursor:pointer; }
+
 .achievement-toast{
   position:fixed; top:calc(14px + env(safe-area-inset-top)); left:50%; transform:translateX(-50%);
   z-index:80; max-width:320px; width:calc(100% - 32px);
@@ -3705,7 +3730,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.33";
+const APP_VERSION = "1.9.34";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -6037,7 +6062,7 @@ function openOnboardingTour(){
   renderOnboardingOverlay();
 }
 function clearOnboardingDom(){
-  document.querySelectorAll(".tour-block, .tour-spotlight, .tour-card, .tour-demo-ripple, .tour-demo-badge").forEach(el=>el.remove());
+  document.querySelectorAll(".tour-block, .tour-spotlight, .tour-card, .tour-tip, .tour-demo-ripple, .tour-demo-badge").forEach(el=>el.remove());
 }
 function onboardingProgressHtml(){
   const TOUR_TAB_ICONS = {
@@ -6183,6 +6208,105 @@ function closeOnboardingTour(){
   clearOnboardingDom();
   tourBusy = false;
   try{ localStorage.setItem("nuzlocke-onboarding-seen","1"); }catch(e){}
+}
+
+/* Experimentelle "Zyklen"-Tour (Vorschau, siehe .tour-tip-Kommentar oben): statt einer einzigen
+   großen Station pro Themenbereich (wie in ONBOARDING_STEPS) läuft hier jedes Thema als kleine
+   Kette mehrerer Stationen ab, die jeweils nur EINEN Gedanken zeigen - hier exemplarisch "der Weg
+   eines Fangs": erst der Fangen-Button selbst, dann wo der Fang danach auftaucht (Team), dann die
+   Ausweich-Stelle bei vollem Team (Box), zuletzt wohin er im Todesfall wandert (Friedhof). Jede
+   Station bekommt eigenen Text statt eines gemeinsamen Absatzes für mehrere Themen auf einmal.
+   Weitere Zyklen (Bosskämpfe/Levelcap, Orden, Erfolge, ...) können nach demselben Muster als
+   weitere Einträge in TOUR_CYCLES ergänzt werden, sobald sich der Stil bewährt hat. */
+const TOUR_CYCLES = {
+  catching: [
+    { tab:"routes", target:'#content .card[data-loc]', text:"Hier trägst du ein, wenn du an diesem Standort ein Pokémon gefangen hast." },
+    { tab:"team", target:'#teamGrid .slot', text:"Ist im Team noch ein Platz frei, landet dein Fang automatisch hier." },
+    { tab:"box", target:'.tab[data-tab="box"]', text:"War das Team schon voll, findest du ihn stattdessen hier in der Box." },
+    { tab:"grave", target:'.tab[data-tab="grave"]', text:"Stirbt er später, wandert er von hier aus in den Friedhof - jederzeit nachvollziehbar." }
+  ]
+};
+let activeCycleId = null, cycleStep = 0;
+function startTourCycle(cycleId){
+  if(!TOUR_CYCLES[cycleId]) return;
+  activeCycleId = cycleId;
+  cycleStep = 0;
+  renderCycleStep();
+}
+function closeTourCycle(){
+  clearOnboardingDom();
+  tourBusy = false;
+  activeCycleId = null;
+}
+/* Deutlich längere, klarer nachvollziehbare Übergänge als die große Tour: Blitz-Ausblenden (0ms)
+   wirkte im Nutzertest "zu schnell" - hier erst sanftes Ausblenden (300ms), dann "smooth" statt
+   "instant" scrollIntoView (man SIEHT die Seite zur nächsten Station wandern) mit anschließender
+   Wartezeit, bevor die neue Station einblendet. */
+function renderCycleStep(){
+  if(tourBusy || !activeCycleId) return;
+  const cycle = TOUR_CYCLES[activeCycleId];
+  const step = cycle[cycleStep];
+  const existing = document.querySelector(".tour-tip");
+  const proceed = ()=>{
+    clearOnboardingDom();
+    if(step.tab){ activeTab = step.tab; render(); }
+    setTimeout(()=>{
+      const targetEl = step.target ? document.querySelector(step.target) : null;
+      if(targetEl) targetEl.scrollIntoView({ behavior:"smooth", block:"center" });
+      setTimeout(()=>placeCycleTip(step, targetEl), targetEl ? 450 : 0);
+    }, step.tab ? 150 : 0);
+  };
+  if(existing){
+    tourBusy = true;
+    document.querySelectorAll(".tour-spotlight, .tour-tip").forEach(el=>el.classList.add("tour-fade-out"));
+    setTimeout(()=>{ tourBusy = false; proceed(); }, 320);
+  } else {
+    proceed();
+  }
+}
+function placeCycleTip(step, targetEl){
+  clearOnboardingDom();
+  if(!targetEl || !activeCycleId) return;
+  const block = document.createElement("div");
+  block.className = "tour-block";
+  document.body.appendChild(block);
+
+  const rect = targetEl.getBoundingClientRect();
+  const pad = 8;
+  const spot = document.createElement("div");
+  spot.className = "tour-spotlight";
+  spot.style.opacity = "0";
+  spot.style.top = (rect.top-pad)+"px";
+  spot.style.left = (rect.left-pad)+"px";
+  spot.style.width = (rect.width+pad*2)+"px";
+  spot.style.height = (rect.height+pad*2)+"px";
+  document.body.appendChild(spot);
+
+  const cycle = TOUR_CYCLES[activeCycleId];
+  const isLast = cycleStep === cycle.length-1;
+  const tip = document.createElement("div");
+  tip.style.opacity = "0";
+  tip.innerHTML = `
+    <div class="tour-tip-text">${escapeHtml(step.text)}</div>
+    <div class="tour-tip-foot">
+      <div class="tour-tip-dots">${cycle.map((_,i)=>`<span class="tour-tip-dot${i===cycleStep?" active":""}"></span>`).join("")}</div>
+      <div class="tour-tip-actions">
+        <button class="tour-tip-skip" type="button" data-act="cycle-close">Beenden</button>
+        <button class="tour-tip-next" type="button" data-act="${isLast?"cycle-close":"cycle-next"}">${isLast?"Fertig":"Weiter ›"}</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(tip);
+  tip.className = "tour-tip";
+  const tipH = tip.offsetHeight, tipW = tip.offsetWidth;
+  const spaceBelow = window.innerHeight - rect.bottom;
+  const placeBelow = spaceBelow > tipH+24 || spaceBelow > rect.top;
+  tip.style.top = (placeBelow
+    ? Math.min(rect.bottom+pad+10, window.innerHeight-tipH-16)
+    : Math.max(16, rect.top-pad-10-tipH)) + "px";
+  const left = Math.max(16, Math.min(rect.left+rect.width/2-tipW/2, window.innerWidth-tipW-16));
+  tip.style.left = left+"px";
+  requestAnimationFrame(()=>{ spot.style.opacity = "1"; tip.style.opacity = "1"; });
 }
 
 function duelPartnerName(){ return (state.duelPartnerName||"").trim(); }
@@ -6997,6 +7121,12 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.34</span><span class="tag tag-note">Vorschau</span></div>
+      <h3>Tour-Idee zum Ausprobieren: "Der Weg eines Fangs" in Werkzeuge</h3>
+      <p>Nutzerfeedback zur bestehenden Erste-Schritte-Tour: die große Erklärkarte deckt die dahinterliegende Hervorhebung fast komplett ab, und der Sprung zur nächsten Station wirkt zu schnell, um als Mensch zu folgen. Statt einer großen Karte pro Themenbereich probiert diese neue, unter Einstellungen → Werkzeuge separat aufrufbare Vorschau einen anderen Stil aus: kleine, kurze Ein-Satz-Hinweise direkt neben (statt über) dem hervorgehobenen Element, dazu deutlich langsamere, mit sanftem Scrollen nachvollziehbare Übergänge zwischen den Stationen. Als konkretes Beispiel ein kompletter kleiner Ablauf statt eines einzelnen großen Schritts: "Hier fängst du" (Standort) → "hier landet der Fang" (Team) → "hier, falls das Team voll ist" (Box) → "hier, falls er später stirbt" (Friedhof). Bewusst als eigenständige, zusätzliche Vorschau neben der bestehenden Tour - noch keine Ablösung, sondern ein Entwurf zur Rückmeldung, bevor ggf. weitere Themen (Bosskämpfe, Orden, Erfolge, ...) im selben Stil folgen.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.33</span><span class="tag tag-feat">Feature</span></div>
@@ -8100,7 +8230,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.33.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.34.</footer>
 
 </div>`;
 
@@ -8546,6 +8676,11 @@ function renderSettings(){
     <div class="loc-name">Erste-Schritte-Tour</div>
     <div class="loc-sub">Kurze, aktive Einführung durch die echte Oberfläche erneut ansehen</div>
     <button class="btn btn-secondary btn-block" style="margin-top:12px;" data-act="open-onboarding-tour">Tour erneut starten</button>
+  </div>
+  <div class="card">
+    <div class="loc-name">🧪 Tour-Idee: Der Weg eines Fangs</div>
+    <div class="loc-sub">Experimentelle Vorschau als Antwort auf Feedback zur großen Tour-Karte: kleine Hinweise statt einer großen Textbox, mehrere kurze Stationen statt einer pro Thema, deutlich langsamere Übergänge.</div>
+    <button class="btn btn-secondary btn-block" style="margin-top:12px;" data-act="start-tour-cycle" data-id="catching">Vorschau starten</button>
   </div>
   <div class="card">
     <div class="loc-name">Ausführliche Tour</div>
@@ -9456,6 +9591,9 @@ document.addEventListener("click", e=>{
   else if(act==="onboarding-next"){ onboardingStep = Math.min(onboardingStep+1, ONBOARDING_STEPS.length-1); renderOnboardingOverlay(); }
   else if(act==="onboarding-prev"){ onboardingStep = Math.max(onboardingStep-1, 0); renderOnboardingOverlay(); }
   else if(act==="onboarding-close") closeOnboardingTour();
+  else if(act==="start-tour-cycle") startTourCycle(id);
+  else if(act==="cycle-next"){ cycleStep = Math.min(cycleStep+1, TOUR_CYCLES[activeCycleId].length-1); renderCycleStep(); }
+  else if(act==="cycle-close") closeTourCycle();
   else if(act==="open-final-rival"){
     openFinalRivalSheet(id);
   }
