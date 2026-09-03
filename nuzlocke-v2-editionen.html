@@ -3705,7 +3705,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.31";
+const APP_VERSION = "1.9.32";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -4694,12 +4694,14 @@ function spawnOrdenFirework(cx, cy){
 }
 /* Feierliche Orden-Animation: taucht groß in der Bildschirmmitte auf, bleibt dort knapp 2,5s gut
    sichtbar stehen (mit drei kräftigen Feuerwerk-Funkenausbrüchen währenddessen) und fliegt danach
-   zu seinem echten Platz im Header-Tray, während er sich dabei auf dessen tatsächliche Chip-Größe
-   verkleinert (FLIP-artig: Zielposition/-größe per getBoundingClientRect() vom bereits durch
-   render() aktualisierten, aber unsichtbaren echten Chip abgelesen) - erst ganz am Ende ein
-   kurzes Überblenden, statt einfach nur nach oben wegzudriften. Der echte Chip an seinem Platz im
-   Header existiert dank render() vor diesem Aufruf bereits - er bleibt für die komplette
-   Animationsdauer unsichtbar und wird erst beim Eintreffen des großen Ordens wieder eingeblendet,
+   OHNE auszublenden zu seinem echten Platz im Header-Tray, während er sich dabei auf dessen
+   tatsächliche Chip-Größe verkleinert (FLIP-artig: Zielposition/-größe per
+   getBoundingClientRect() vom bereits durch render() aktualisierten, aber unsichtbaren echten
+   Chip abgelesen) - bleibt bis zum letzten Frame voll deckend, damit es wirkt, als würde der
+   Orden direkt an seinem Platz "abgesetzt" statt wegzublenden und der echte Chip würde separat
+   davon einfach woanders auftauchen. Der echte Chip an seinem Platz im Header existiert dank
+   render() vor diesem Aufruf bereits - er bleibt für die komplette Animationsdauer unsichtbar und
+   wird erst im allerletzten Frame (deckungsgleich mit dem großen Orden) wieder eingeblendet,
    damit kein doppeltes Icon aufblitzt und der Header trotzdem synchron mit der Feier aktualisiert
    wirkt. */
 function celebrateOrden(badgeName){
@@ -4721,14 +4723,12 @@ function celebrateOrden(badgeName){
   const POP_IN = 350, HOLD = 2500, EXIT = 500;
   const total = POP_IN + HOLD + EXIT;
   const popInFrac = POP_IN/total, holdEndFrac = (POP_IN+HOLD)/total;
-  const fadeStartFrac = holdEndFrac + (1-holdEndFrac)*0.85;
   const anim = fly.animate([
     { transform:"translate(-50%,-50%) translate(0,0) scale(.3)", opacity:0, offset:0 },
     { transform:"translate(-50%,-50%) translate(0,0) scale(1.08)", opacity:1, offset:popInFrac*0.7 },
     { transform:"translate(-50%,-50%) translate(0,0) scale(1)", opacity:1, offset:popInFrac },
     { transform:"translate(-50%,-50%) translate(0,0) scale(1)", opacity:1, offset:holdEndFrac },
-    { transform:`translate(-50%,-50%) translate(${deltaX}px, ${deltaY}px) scale(${finalScale})`, opacity:1, offset:fadeStartFrac },
-    { transform:`translate(-50%,-50%) translate(${deltaX}px, ${deltaY}px) scale(${finalScale})`, opacity:0, offset:1 }
+    { transform:`translate(-50%,-50%) translate(${deltaX}px, ${deltaY}px) scale(${finalScale})`, opacity:1, offset:1 }
   ], { duration:total, easing:"ease-out", fill:"forwards" });
   setTimeout(()=>spawnOrdenFirework(cx, cy), POP_IN + 150);
   setTimeout(()=>spawnOrdenFirework(cx, cy), POP_IN + HOLD*0.42);
@@ -6952,6 +6952,12 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="log">
 
     <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.32</span><span class="tag tag-fix">Fix</span></div>
+      <h3>Orden-Feier: wird jetzt sichtbar "abgesetzt" statt vorher auszublenden</h3>
+      <p>Nutzerfeedback: der in v1.9.31 ergänzte Flug zum Header-Platz blendete kurz vor dem Eintreffen noch aus, bevor der echte Chip erschien - wirkte dadurch trotzdem wie zwei getrennte Momente statt einer durchgehenden Bewegung. Der fliegende Orden bleibt jetzt bis zum letzten Frame voll sichtbar und wird exakt deckungsgleich mit dem echten Chip ausgetauscht, sodass es aussieht, als würde er direkt an seinem Platz im Header abgesetzt.</p>
+    </div>
+
+    <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.31</span><span class="tag tag-fix">Fix</span></div>
       <h3>Orden-Feier: fliegt jetzt wirklich zu seinem Platz im Header statt nur nach oben zu verschwinden</h3>
       <p>Nutzerfeedback: nach der Stehzeit mit Feuerwerk schwebte der Orden bisher einfach geradeaus nach oben weg und verblasste dort - der eigentliche Chip tauchte danach unabhängig davon einfach an seinem Platz im Header auf, ohne sichtbaren Zusammenhang. Der Orden verkleinert und bewegt sich jetzt stattdessen sichtbar zu genau der Stelle im Header-Tray, an der er landet (Zielposition/-größe wird vom bereits im Hintergrund gerenderten, aber noch unsichtbaren echten Chip abgelesen) - erst kurz vor dem Eintreffen blendet er sanft in den echten Chip über. Pop-in und die knapp 2,5 Sekunden Stehzeit mit den drei Feuerwerk-Ausbrüchen aus v1.9.29/v1.9.30 bleiben unverändert.</p>
@@ -8041,7 +8047,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.31.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.32.</footer>
 
 </div>`;
 
