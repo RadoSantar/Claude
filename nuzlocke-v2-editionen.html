@@ -2184,8 +2184,9 @@ const EINALL_BW_LOCATIONS = [
     {name:"Alter Palast", note:"Nebendungeon im Wüstenresort mit eigenen Wildpokémon (u.a. Yamask, Krokorok) - vollständig erst nach der Ligashow begehbar. Unterste Etage: einmalige Fossilienwahl sowie ein besonderer Volcarona-Fang im Postgame."},
     {name:"Rayono City", note:"Keine wilden Pokémon.", noCatch:true},
     "Route 5",
-    {name:"Marea-Zugbrücke", note:"Keine wilden Pokémon.", noCatch:true},
+    {name:"Marea-Zugbrücke", note:"Passanten geben beim Ansprechen meist eine Feder, gelegentlich erscheint über die vorbeiziehenden Vogelschatten aber stattdessen ein wildes Piccolente (Lv. 22-25)."},
     {name:"Marea City", note:"Keine wilden Pokémon.", noCatch:true},
+    {name:"Tiefkühlcontainer", note:"Nebenareal südlich von Marea City, nur in Schwarz/Weiß (in Schwarz2/Weiß2 steht hier stattdessen das Pokémon World Tournament) - Eisboden-Rätsel, eigene Wildpokémon-Tabelle (u.a. Terribark, Praktibalk, Picochilla, Gelatini)."},
     "Route 6",
     {name:"Panaero-Höhle", note:"Nebenareal östlich von Route 6."},
     {name:"Elektrolithhöhle", note:"Magnetfeld-Rätsel; Magnetilo/Nasgnet entwickeln sich hier per Levelaufstieg."},
@@ -2220,7 +2221,9 @@ const EINALL_BW_LOCATIONS = [
     "Route 15",
     "Route 16",
     "Hain der Täuschung",
-    "Route 17","Route 18"
+    "Route 17",
+    {name:"P2-Labor", note:"Insel östlich von Route 17, nur per Surfer erreichbar - eigene Wildpokémon-Tabelle (u.a. Kukmarda/Terribark, Zurrokex/Klikk, im Wasser Quabbel/Mamolida/Apoquallyp). Bringt man ein Genesect mit bedeutsamer Begegnung mit, gibt es hier einen Bonuskampf gegen einen Wissenschaftler samt Techblaster-Modulen."},
+    "Route 18"
   ]]
 ];
 
@@ -2823,7 +2826,7 @@ const EINALL_B2W2_LOCATIONS = [
     "Route 16",
     "Hain der Täuschung",
     "Route 5",
-    {name:"Marea-Zugbrücke", note:"Keine wilden Pokémon.", noCatch:true},
+    {name:"Marea-Zugbrücke", note:"Passanten geben beim Ansprechen meist eine Feder, gelegentlich erscheint über die vorbeiziehenden Vogelschatten aber stattdessen ein wildes Piccolente (Lv. 23-26)."},
     {name:"Marea City", note:"Arena 5: Turner + Rubius (ehemaliger Weiser, schenkt ein Zorua). Keine wilden Pokémon.", noCatch:true},
     {name:"Alter Fluchtweg", note:"Verbindet die Stratos-Kanalisation mit dem Pokémon World Tournament."},
     "Route 6",
@@ -3765,7 +3768,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.35";
+const APP_VERSION = "1.9.36";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -7188,6 +7191,12 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="log">
 
     <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.36</span><span class="tag tag-fix">Fix</span></div>
+      <h3>Rechercheaudit Runde 2: Einall - drei von vier Funden behoben</h3>
+      <p>Zweiter Fix aus der zweiten Audit-Runde. <strong>P2-Labor</strong> (Schwarz/Weiß) als eigener Standort östlich von Route 17 ergänzt, mit eigener Wildpokémon-Tabelle (u.a. Kukmarda, Zurrokex, Quabbel) und der Genesect-Bonuskampf-Notiz. <strong>Tiefkühlcontainer</strong> (Schwarz/Weiß) südlich von Marea City ergänzt - stellt sich bei der Recherche als Original-exklusiv heraus: in Schwarz2/Weiß2 steht an derselben Stelle stattdessen das Pokémon World Tournament, deshalb dort bewusst nicht ergänzt. Die ursprüngliche Nutzervermutung, es handle sich um den Fundort von Delibird, war unzutreffend (Delibird kommt tatsächlich in der bereits vorhandenen Riesengrotte vor) - der Container selbst hat eine eigene, unabhängige Wildpokémon-Tabelle. <strong>Marea-Zugbrücke</strong> (beide Editionen) war fälschlich als "keine wilden Pokémon" markiert: Passanten geben zwar meist nur eine Feder, über die vorbeiziehenden Vogelschatten kann aber auch ein wildes Piccolente erscheinen - jetzt korrekt als fangbarer Standort geführt. Noch offen: das komplett fehlende Schwarz2/Weiß2-Postgame (Rückkehr in die ursprüngliche Unova-Kartenhälfte inkl. Schwarzes Hochhaus/Weiße Baumhöhle) - deutlich umfangreicher als ursprünglich vermutet (~15 zusätzliche Standorte), folgt als eigener Schritt.</p>
+    </div>
+
+    <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.35</span><span class="tag tag-fix">Fix</span></div>
       <h3>Rechercheaudit Runde 2: Sinnoh (Diamant/Perl/Platin/BDSP) behoben</h3>
       <p>Erste Fixrunde aus der zweiten Runde des Gen-1-9-Rechercheaudits. Barrys drei Rivalenkämpfe hingen an den falschen Orten (jeweils an der Route statt der Stadt danach: jetzt Herzhofen, Weideburg, Fleetburg) und sein Liga-Level war zu niedrig (43→53). Team Galaktik hing größtenteils an falschen Kacheln (Seen/Zentrale/Speersäule statt der Routen, an denen die Kämpfe tatsächlich stattfinden), dazu kam ein bislang komplett fehlender Mars-Kampf am Windkraftwerk hinzu. Vier falsche Ass-Spezies in der Diamant/Perl-Basis (Candice, Volkner, Ignaz, Lucian) wurden korrigiert - dabei zusätzlich ein bislang unentdeckter Fehler gefunden: Saturns erster Kampf am See der Kühnheit führte fälschlich Kramurx statt Toxiquak, wie in seinem zweiten Kampf. Platin bekommt jetzt eine eigene vollständige Bosse-Liste statt reiner Level-Overrides (analog zu Ultrasonne/Ultramond), da es nicht nur bei sechs Arenaleitern (Maylene/Fantina/Wake/Byron/Candice/Volkner) und mehreren Team-Galaktik-Kämpfen andere Level hat, sondern auch einen komplett zusätzlichen frühen Zyrus-Kampf in Elyses (Ass Kramurx) sowie einen anderen Austragungsort für Zyrus' Finalkampf (Zerrwelt statt Speersäule) - beides in Diamant/Perl nicht enthalten. BDSP erbt alle Korrekturen automatisch, da es intern direkt von den Diamant/Perl-Daten abgeleitet wird. Die restlichen Regionen der zweiten Runde (Einall, Kalos, Alola, Galar) folgen in weiteren Runden.</p>
@@ -8274,8 +8283,8 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
 
   <div class="followups">
     <h2>Offene Datenkorrekturen aus dem Gen-1-9-Rechercheaudit (Runde 2)</h2>
-    <p style="margin:0 0 12px; color:var(--ink-soft); font-size:14px;">Zweite Audit-Runde (Sinnoh, Einall, Kalos, Alola, Galar) - die erste Runde (Kanto, Johto, Hoenn, Paldea, generationsübergreifend) wurde bereits in v1.9.23 behoben, Sinnoh folgte in v1.9.35. Die übrigen Funde sind recherchiert und bestätigt, aber noch nicht umgesetzt (Umfang zu groß für eine einzelne Sitzung).</p>
-    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Offen</span><strong>Einall (Schwarz/Weiß, Schwarz2/Weiß2).</strong> P2-Labor fehlt komplett als eigener Ort (beide Editionen, eigene Wildpokémon-Tabelle); Schwarz2/Weiß2 fehlt das gesamte Postgame-Gebiet nach der Liga (Route 17/18 Fortsetzung, Wunderbrücke, P2-Labor, Schwarzes Hochhaus/Weiße Baumhöhle als B2W2-Pendant zu Schwarze Stadt/Weißer Wald). Voller Bericht: <code>audit_reports/gen5.md</code> (Hinweis: diese Datei existierte nur als Arbeitsdokument der ursprünglichen Recherche-Sitzung und ist inzwischen nicht mehr vorhanden - die bestätigten Funde stehen vollständig hier). Nutzerbestätigt zwei weitere Lücken, noch nicht recherchiert: ein Kühlhaus-Gebiet ("Gefrier-Container") mit eigenen fangbaren Pokémon fehlt komplett als Standort (genaue Lage/Artenliste offen); die bereits vorhandene Marea-Zugbrücke ist fälschlich als „keine wilden Pokémon" markiert - beim Ansprechen der Passanten gibt es dort meist Federn, gelegentlich aber auch ein fangbares Pokémon.</div>
+    <p style="margin:0 0 12px; color:var(--ink-soft); font-size:14px;">Zweite Audit-Runde (Sinnoh, Einall, Kalos, Alola, Galar) - die erste Runde (Kanto, Johto, Hoenn, Paldea, generationsübergreifend) wurde bereits in v1.9.23 behoben, Sinnoh folgte in v1.9.35, drei von vier Einall-Funden in v1.9.36. Die übrigen Funde sind recherchiert und bestätigt, aber noch nicht umgesetzt (Umfang zu groß für eine einzelne Sitzung).</p>
+    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Offen</span><strong>Einall (Schwarz2/Weiß2) - fehlendes Postgame.</strong> Nach der Liga fehlt das komplette Postgame-Gebiet: Rückkehr in die ursprüngliche Unova-Kartenhälfte (Avenitia, Route 1-3, Gavina, Orion City, Septerna City), dazu Wunderbrücke, P2-Labor, Route 17/18 und Schwarzes Hochhaus/Weiße Baumhöhle als B2W2-Pendant zu Schwarze Stadt/Weißer Wald - laut Nachrecherche deutlich umfangreicher als ursprünglich vermutet (~15 zusätzliche Standorte statt einer kurzen Fortsetzung), daher als eigener Schritt zurückgestellt. P2-Labor, Tiefkühlcontainer und die Marea-Zugbrücke-Fangmöglichkeit sind bereits in v1.9.36 behoben.</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Offen</span><strong>Kalos (X/Y).</strong> Omega-Höhle fehlt als Ort; komplettes Team-Flare-Wissenschaftler-Quartett (Aliana/Bryony/Celosia/Mable/Xerosic, je Erstkampf + Rückkampf im Labor von Flordelis) fehlt komplett; ein Rivalenkampf in Fluxia City fehlt; alle 4 vorhandenen Rivalenkämpfe haben ein um 1 zu niedriges Level; Connies Ass ist falsch (Lucario statt Resladero/Hawlucha - Lucario gehört zu einer separaten Zusatzbegegnung); erster Lysandre-Kampf hat falsches Level (36 statt 49); zweiter Flordelis-Kampf in der Geheimbasis ist nur als eine statt zwei Kampfstufen abgebildet. Voller Bericht: <code>audit_reports/gen6.md</code>.</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Offen</span><strong>Alola (Sonne/Mond, Ultrasonne/Ultramond).</strong> Ortslisten auf allen 4 Inseln stark unvollständig (u.&nbsp;a. Route 9, Tenkarat-Hügel, Poni Wilds/Plains, Kokowei-Eiland fehlen), sämtliche USUM-exklusiven Orte fehlen komplett; Team Rainbow Rocket (USUM-Postgame) an falschen Fantasieorten statt dem echten Rocket-Schloss/Aether-Paradies, dazu bei fast jedem Boss das falsche Ass (Groudon/Kyogre/Dialga-Palkia/Zekrom-Reshiram/Xerneas-Yveltal/Mega-Mewtu statt der aktuellen Platzhalter); Matsurika (USUM, fälschlich "Mina" genannt) hat falschen Ort und falsches Level; Chrys' USUM-Totem wurde unverändert von Sonne/Mond kopiert (sollte Togedemaru statt Donarion sein); Lolas Prüfungs-Ass wurde mit ihrem Top-Vier-Ass verwechselt (sollte Mimigma statt Colossand sein); Marlon (fälschlich der englische Name "Molayne") hat falschen Namen und falsches Ass; Faba und Plumeria fehlen komplett als Pflichtkämpfe. Voller Bericht: <code>audit_reports/gen7.md</code>.</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Offen</span><strong>Galar (Schwert/Schild, ohne DLC).</strong> Zwei falsche Ortsnamen ("Glitzerwald"→Wirrschein-Wald, "Schlummernder Hain"→Schlummerwald); mehrere Level-/Ass-Fehler (Nezz/Piers Ass+Level, Opal/Papella Level, Champion Delion Level, Schild-Override Mel Level); Rose und Oleana an falschem Ort (Score City statt Energiewerk/Rose Tower) mit teils falschem/fehlendem Ass und Level; Bede fehlen 2 von 5 Pflichtkämpfen (Galar-Mine 1+2 sowie der Postgame-Rückkampf als Arenaleiterin von Fairballey); Marnie fehlen 3 von 4 Pflichtkämpfen; der komplette Eternatus-Kampf (dt. Endynalos) fehlt; mehrere Orte fehlen in <code>GALAR_LOCATIONS</code> (Galar-Mine 1/2, Energiewerk, Rose Tower) - diese Liste hat zudem als einzige Region gar keine Notiztexte. Voller Bericht: <code>audit_reports/gen8.md</code>.</div>
@@ -8300,7 +8309,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.35.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.36.</footer>
 
 </div>`;
 
