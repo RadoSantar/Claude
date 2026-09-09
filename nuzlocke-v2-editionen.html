@@ -2184,9 +2184,9 @@ const EINALL_BW_LOCATIONS = [
     {name:"Alter Palast", note:"Nebendungeon im Wüstenresort mit eigenen Wildpokémon (u.a. Yamask, Krokorok) - vollständig erst nach der Ligashow begehbar. Unterste Etage: einmalige Fossilienwahl sowie ein besonderer Volcarona-Fang im Postgame."},
     {name:"Rayono City", note:"Keine wilden Pokémon.", noCatch:true},
     "Route 5",
-    {name:"Marea-Zugbrücke", note:"Passanten geben beim Ansprechen meist eine Feder, gelegentlich erscheint über die vorbeiziehenden Vogelschatten aber stattdessen ein wildes Piccolente (Lv. 22-25)."},
+    {name:"Marea-Zugbrücke", note:"Vorbeiziehende Vogelschatten geben beim Betreten meist eine Feder, gelegentlich greift stattdessen ein wildes Piccolente an."},
     {name:"Marea City", note:"Keine wilden Pokémon.", noCatch:true},
-    {name:"Tiefkühlcontainer", note:"Nebenareal südlich von Marea City, nur in Schwarz/Weiß (in Schwarz2/Weiß2 steht hier stattdessen das Pokémon World Tournament) - Eisboden-Rätsel, eigene Wildpokémon-Tabelle (u.a. Terribark, Praktibalk, Picochilla, Gelatini)."},
+    {name:"Tiefkühlcontainer", note:"Nebenareal südlich von Marea City mit Eisboden-Rätsel."},
     "Route 6",
     {name:"Panaero-Höhle", note:"Nebenareal östlich von Route 6."},
     {name:"Elektrolithhöhle", note:"Magnetfeld-Rätsel; Magnetilo/Nasgnet entwickeln sich hier per Levelaufstieg."},
@@ -2222,7 +2222,7 @@ const EINALL_BW_LOCATIONS = [
     "Route 16",
     "Hain der Täuschung",
     "Route 17",
-    {name:"P2-Labor", note:"Insel östlich von Route 17, nur per Surfer erreichbar - eigene Wildpokémon-Tabelle (u.a. Kukmarda/Terribark, Zurrokex/Klikk, im Wasser Quabbel/Mamolida/Apoquallyp). Bringt man ein Genesect mit bedeutsamer Begegnung mit, gibt es hier einen Bonuskampf gegen einen Wissenschaftler samt Techblaster-Modulen."},
+    {name:"P2-Labor", note:"Insel östlich von Route 17, nur per Surfer erreichbar. Bringt man ein Genesect mit bedeutsamer Begegnung mit, gibt es hier einen Bonuskampf gegen einen Wissenschaftler samt Techblaster-Modulen."},
     "Route 18"
   ]]
 ];
@@ -2826,7 +2826,7 @@ const EINALL_B2W2_LOCATIONS = [
     "Route 16",
     "Hain der Täuschung",
     "Route 5",
-    {name:"Marea-Zugbrücke", note:"Passanten geben beim Ansprechen meist eine Feder, gelegentlich erscheint über die vorbeiziehenden Vogelschatten aber stattdessen ein wildes Piccolente (Lv. 23-26)."},
+    {name:"Marea-Zugbrücke", note:"Vorbeiziehende Vogelschatten geben beim Betreten meist eine Feder, gelegentlich greift stattdessen ein wildes Piccolente an."},
     {name:"Marea City", note:"Arena 5: Turner + Rubius (ehemaliger Weiser, schenkt ein Zorua). Keine wilden Pokémon.", noCatch:true},
     {name:"Alter Fluchtweg", note:"Verbindet die Stratos-Kanalisation mit dem Pokémon World Tournament."},
     "Route 6",
@@ -3768,7 +3768,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.36";
+const APP_VERSION = "1.9.37";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -7191,6 +7191,12 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="log">
 
     <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.37</span><span class="tag tag-fix">Fix</span></div>
+      <h3>Einall-Notizen aus v1.9.36 präzisiert und gekürzt</h3>
+      <p>Nutzerfeedback: die neuen Standort-Notizen zu P2-Labor und Tiefkühlcontainer nannten konkrete Wildpokémon-Arten und -Level - unnötig, da bei einem Randomizer ohnehin andere Arten/Level auftauchen und ein etwaiger Unterschied zwischen Schwarz/Weiß und Schwarz2/Weiß2 schon daran erkennbar ist, in welcher Edition der Standort überhaupt auftaucht. Beide Notizen entsprechend gekürzt. Zusätzlich die Marea-Zugbrücke-Mechanik korrigiert: die Feder kommt von den vorbeiziehenden Vogelschatten selbst, nicht von angesprochenen Passanten - und statt einer Feder kann dabei auch ein wildes Pokémon angreifen, es erscheint nicht einfach nur.</p>
+    </div>
+
+    <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.36</span><span class="tag tag-fix">Fix</span></div>
       <h3>Rechercheaudit Runde 2: Einall - drei von vier Funden behoben</h3>
       <p>Zweiter Fix aus der zweiten Audit-Runde. <strong>P2-Labor</strong> (Schwarz/Weiß) als eigener Standort östlich von Route 17 ergänzt, mit eigener Wildpokémon-Tabelle (u.a. Kukmarda, Zurrokex, Quabbel) und der Genesect-Bonuskampf-Notiz. <strong>Tiefkühlcontainer</strong> (Schwarz/Weiß) südlich von Marea City ergänzt - stellt sich bei der Recherche als Original-exklusiv heraus: in Schwarz2/Weiß2 steht an derselben Stelle stattdessen das Pokémon World Tournament, deshalb dort bewusst nicht ergänzt. Die ursprüngliche Nutzervermutung, es handle sich um den Fundort von Delibird, war unzutreffend (Delibird kommt tatsächlich in der bereits vorhandenen Riesengrotte vor) - der Container selbst hat eine eigene, unabhängige Wildpokémon-Tabelle. <strong>Marea-Zugbrücke</strong> (beide Editionen) war fälschlich als "keine wilden Pokémon" markiert: Passanten geben zwar meist nur eine Feder, über die vorbeiziehenden Vogelschatten kann aber auch ein wildes Piccolente erscheinen - jetzt korrekt als fangbarer Standort geführt. Noch offen: das komplett fehlende Schwarz2/Weiß2-Postgame (Rückkehr in die ursprüngliche Unova-Kartenhälfte inkl. Schwarzes Hochhaus/Weiße Baumhöhle) - deutlich umfangreicher als ursprünglich vermutet (~15 zusätzliche Standorte), folgt als eigener Schritt.</p>
@@ -8309,7 +8315,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.36.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.37.</footer>
 
 </div>`;
 
