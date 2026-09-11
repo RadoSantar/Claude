@@ -49,8 +49,16 @@ let bare = content.slice(startIdx, endIdx);
 // diesen entfernen, nicht nur die äußeren doctype/html/head-open/body-close/html-close-Tags.
 bare = bare.replace(/\n<\/head>\n<body>\n/, "\n");
 
-if (/<!doctype|<html[ >]|<head[ >]|<\/head>|<body[ >]/i.test(bare)) {
-  console.error("Gestrippter Inhalt enthält noch doctype/html/head/body-Tags - Marker prüfen.");
+// Nur den Markup-Teil vor dem ersten <script>-Tag auf übrig gebliebene Wrapper-Tags prüfen, nicht
+// den gesamten restlichen Inhalt: der App-JS-Code enthält an mehreren Stellen Kommentare, die in
+// normaler Prosa über <html>/<head>/<body> sprechen (z.B. die Erklärung des v1.9.17-Fixes) - eine
+// Suche über die komplette Datei würde dort fälschlich anschlagen, obwohl das keine echten Tags
+// sind. Titel/Style/Markup vor <script> ist dagegen reines HTML ohne Freitext-Kommentare, ein Fund
+// dort bedeutet zuverlässig, dass die Marker-Ersetzung oben nicht gegriffen hat.
+const scriptIdx = bare.indexOf("<script>");
+const headCheckRegion = scriptIdx === -1 ? bare : bare.slice(0, scriptIdx);
+if (/<!doctype|<html[ >]|<head[ >]|<\/head>|<body[ >]/i.test(headCheckRegion)) {
+  console.error("Gestrippter Inhalt enthält noch doctype/html/head/body-Tags vor dem <script>-Block - Marker prüfen.");
   process.exit(1);
 }
 
