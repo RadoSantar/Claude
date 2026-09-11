@@ -56,6 +56,22 @@ So kommt man zu diesem Stand zurück:
    git checkout b99e113 -- nuzlocke-v2-editionen.html
    ```
 
+## Weiterer Wiederherstellungspunkt: v1.9.42 (Sprite-Konsistenz-Audit, Teil 1: Gen 5)
+
+`nuzlocke-v2-checkpoint-v1.9.42.html` ist ein weiterer eingefrorener Schnappschuss, direkt nach dem
+in `audit_reports/gen5-sprites.md` dokumentierten ersten Teil eines generationsübergreifenden
+Sprite-Konsistenz-Audits: 15 der 16 statischen Arenaleiter-/Top-Vier-/Champion-Sprites in Schwarz/Weiß
+auf die bereits animierte Schwarz2/Weiß2-Version derselben Bulbagarden-Archives-Quelle umgestellt.
+Ghetsis bewusst als einziger weiterhin statisch belassen (sein B2W2-Sprite zeigt ein story-vorgreifendes
+anderes Outfit). Diese Datei wird nicht mehr verändert.
+
+So kommt man zu diesem Stand zurück:
+1. Claude bitten: "stelle den v1.9.42-Checkpoint wieder her" — dann wird `nuzlocke-v2-checkpoint-v1.9.42.html` erneut als Artifact veröffentlicht, oder
+2. Den Commit direkt auschecken:
+   ```
+   git checkout f87b3e4 -- nuzlocke-v2-editionen.html
+   ```
+
 ### Als Offline-App installieren (Netlify)
 
 Der Ordner `pwa/` enthält alles, was zusätzlich zur `index.html` (Kopie von `nuzlocke-v2-editionen.html`)
