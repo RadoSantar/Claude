@@ -98,24 +98,46 @@ Wildpokémon-Fläche — auf Wunsch nachträglich ergänzbar, aber ein echter So
   bestätigt.
 - **Champion Lilia**: Maxax/Haxorus Lv.59 — bestätigt.
 
-### 2.2 Fund: Rivale Matisse — 3 von 11 Kämpfen fehlen komplett
+### 2.2 Fund: matisse3/matisse7 (und der bestehende matisse5) sind Verbündeten-Kämpfe, keine Rivalenkämpfe
 
-Laut Recherche (Bulbapedia Einzelkampf-Tabelle + Serebii-Gesamtübersicht, beide unabhängig
-bestätigt) hat Hugh/Matisse **11** Kämpfe im echten Spiel, die App bildet aktuell nur **8** ab
-(`matisse1`–`matisse8`). Es fehlen:
+Nutzerfrage aufgedeckt: Hugh/Matisse hat im echten Spiel **11** Begegnungen, aber nicht alle sind
+Kämpfe GEGEN ihn. Bei genauerer Prüfung (Bulbapedia-Einzelkampf-Tabelle) sind vier davon
+**Multi-Battle-Verbündeten-Kämpfe**, bei denen Matisse mit dir zusammen (2v2) gegen Team-Plasma-
+Rüpel kämpft, statt gegen dich anzutreten:
 
-1. **Riesengrotte-Verbündeten-Kampf** (zwischen dem aktuellen `matisse7` in Tessera und
-   `matisse8` auf der Siegesstraße): Ass-Level **50**, Doppelkampf als Verbündeter gegen Team
-   Plasma — analog zum bereits vorhandenen `matisse5`-Verbündetenkampf auf der Plasma-Fregatte.
-2. **Postgame-Rückkampf in Ondula** (Undella Town): Ass-Level **64**, vollständiges 6er-Team.
-3. **Postgame-Finalkampf in Marea City** (Driftveil City — der eigentlich allerletzte
+| App-Eintrag | Ort | Tatsächlicher Kampf-Typ |
+|---|---|---|
+| matisse1 | Eventura City | ✅ echter Kampf gegen Matisse |
+| matisse2 | Dausing-Hof | ✅ echter Kampf gegen Matisse |
+| **matisse3** | Stratos City (Kanalisation) | ⚠️ Verbündeten-Kampf mit Matisse vs. 2 Team-Plasma-Rüpel |
+| matisse4 | Pokémon World Tournament | ✅ echter Kampf gegen Matisse (Turnier) |
+| **matisse5** | Plasma-Fregatte | ⚠️ Verbündeten-Kampf mit Matisse vs. Team Plasma |
+| matisse6 | Ondula | ✅ echter Kampf gegen Matisse |
+| **matisse7** | Tessera | ⚠️ Verbündeten-Kampf mit Matisse vs. Team Plasma |
+| matisse8 | Siegesstraße | ✅ echter Kampf gegen Matisse |
+
+Drei der acht bereits vorhandenen `matisse`-Einträge (matisse3/5/7) sind damit fälschlich als
+„Rivale" geführt, obwohl man Matisse dort nie besiegt — das war schon vor dieser Recherche so in
+der App, nicht nur ein neuer Fund. Analog dazu wäre auch der neu recherchierte Riesengrotte-Kampf
+(Ass-Level 50, siehe 2.3) ein reiner Verbündeten-Kampf gewesen.
+
+**Entscheidung (Nutzer, gegengecheckt):** matisse3/5/7 komplett entfernen (keine Umwandlung in
+einen Team-Plasma-Eintrag); der Riesengrotte-Verbündeten-Kampf wird ebenfalls nicht ergänzt.
+
+### 2.3 Fund: Rivale Matisse — 2 echte Postgame-Rückkämpfe fehlen komplett
+
+Nach dem aktuellen `matisse8` (Siegesstraße, Lv.57 — der letzte Vorkampf) folgen im echten Spiel
+noch zwei waschechte Kämpfe GEGEN Matisse (kein Verbündeten-Format), die komplett fehlen:
+
+1. **Postgame-Rückkampf in Ondula** (Undella Town): Ass-Level **64**, vollständiges 6er-Team.
+2. **Postgame-Finalkampf in Marea City** (Driftveil City — der eigentlich allerletzte
    Matisse-Kampf im Spiel, danach zieht er sich zurück): Ass-Level **67**, vollständiges 6er-Team.
 
 Die genauen Nicht-Ass-Teammitglieder (Simisage/Simisear/Simipour, Unfezant, Bouffalant je nach
-Kampf) wurden recherchiert, aber noch nicht bis ins letzte Detail für jeden der drei fehlenden
-Kämpfe abgeglichen — beim Umsetzen zu vervollständigen.
+Kampf) wurden recherchiert, aber noch nicht bis ins letzte Detail für beide fehlenden Kämpfe
+abgeglichen — beim Umsetzen zu vervollständigen.
 
-### 2.3 Fund: Zinzolins 3. Kampf am falschen Standort + fehlender Standort „Strandgrotte"
+### 2.4 Fund: Zinzolins 3. Kampf am falschen Standort + fehlender Standort „Strandgrotte"
 
 Laut Recherche gibt es einen **dritten** Zinzolin-Kampf (Ass weiterhin Snibunna/Weavile, aber
 **Lv.50**, als Doppelkampf zusammen mit Matisse gegen Zinzolin+Häscher), der auf **Route 21** am
@@ -129,7 +151,7 @@ Vorschlag: `zinzolin3` von `"Einall|Plasma-Fregatte (Rückkehr)"` nach `"Einall|
 verschieben (Level korrigieren auf 50, bereits korrekt) und neuen Standort „Strandgrotte" nach
 Route 21 ergänzen.
 
-### 2.4 Fund: Fehlende Schattentrio-Kämpfe vor dem Ghetsis-Finale
+### 2.5 Fund: Fehlende Schattentrio-Kämpfe vor dem Ghetsis-Finale
 
 Vor dem eigentlichen Ghetsis-Kampf in der Riesengrotte gibt es laut Recherche **drei** zusätzliche
 Kämpfe gegen das Schattentrio (bestätigt per Serebii, jeweils 2× Pawniard + ein drittes,
@@ -142,13 +164,13 @@ wechselndes Pokémon):
 Diese fehlen komplett in `EINALL_B2W2_BOSSES`/`EINALL_B2W2_BOSS_AFTER` — aktuell hängt an
 „Riesengrotte" nur `ghetsis-final`.
 
-### 2.5 Fund: Fehlender Standort — Bucht von Ondula (auch in B2W2 vorhanden)
+### 2.6 Fund: Fehlender Standort — Bucht von Ondula (auch in B2W2 vorhanden)
 
 Wie in Teil 1.3 beschrieben, existiert die Bucht von Ondula laut Recherche unverändert auch in
 Schwarz2/Weiß2 (sie verbindet dort zusätzlich zur Strandgrotte) und fehlt ebenso in
 `EINALL_B2W2_LOCATIONS`.
 
-### 2.6 Bereits bekannt, hier nur bestätigt: fehlendes Postgame (Rückkehr nach West-Einall)
+### 2.7 Bereits bekannt, hier nur bestätigt: fehlendes Postgame (Rückkehr nach West-Einall)
 
 Die im Änderungsprotokoll bereits dokumentierte Lücke (nach der Liga zugängliche Original-
 Unova-Kartenhälfte: Avenitia, Route 1–3, Gavina, Orion City, Septerna City, dazu Wunderbrücke,
@@ -165,15 +187,16 @@ einen einzelnen Schritt, wie bereits im Changelog vermerkt.
 
 ## Zusammenfassung: was zu tun wäre (Vorschlag, noch nicht umgesetzt)
 
-| # | Fund | Umfang |
-|---|------|--------|
-| 1.2 | `cheren6` von Wendelberg nach Route 7 verschieben | Trivial (1 Zeile) |
-| 1.3 | Standort „Bucht von Ondula" in BW ergänzen | Klein (1 Standort + Wildpokémon-Tabelle) |
-| 2.2 | 3 fehlende Matisse-Kämpfe ergänzen (Riesengrotte Lv.50, 2× Postgame Lv.64/67) | Mittel |
-| 2.3 | `zinzolin3` nach Route 21 verschieben + Standort „Strandgrotte" ergänzen | Klein–Mittel |
-| 2.4 | 3 fehlende Schattentrio-Kämpfe vor Ghetsis ergänzen | Klein–Mittel |
-| 2.5 | Standort „Bucht von Ondula" in B2W2 ergänzen | Klein |
-| 2.6 | Komplettes B2W2-Postgame (West-Einall-Rückkehr) | Groß, eigener Schritt (unverändert wie Changelog) |
+| # | Fund | Umfang | Status |
+|---|------|--------|--------|
+| 1.2 | `cheren6` von Wendelberg nach Route 7 verschieben | Trivial (1 Zeile) | Freigabe ausstehend |
+| 1.3 | Standort „Bucht von Ondula" in BW ergänzen | Klein (1 Standort + Wildpokémon-Tabelle) | Freigabe ausstehend |
+| 2.2 | matisse3/5/7 (Verbündeten-Kämpfe) entfernen, Riesengrotte-Verbündetenkampf NICHT ergänzen | Klein (3 Einträge löschen) | ✅ Vom Nutzer entschieden |
+| 2.3 | 2 fehlende Matisse-Postgame-Rückkämpfe ergänzen (Lv.64/67) | Mittel | Freigabe ausstehend |
+| 2.4 | `zinzolin3` nach Route 21 verschieben + Standort „Strandgrotte" ergänzen | Klein–Mittel | Freigabe ausstehend |
+| 2.5 | 3 fehlende Schattentrio-Kämpfe vor Ghetsis ergänzen | Klein–Mittel | Freigabe ausstehend |
+| 2.6 | Standort „Bucht von Ondula" in B2W2 ergänzen | Klein | Freigabe ausstehend |
+| 2.7 | Komplettes B2W2-Postgame (West-Einall-Rückkehr) | Groß, eigener Schritt (unverändert wie Changelog) | Freigabe ausstehend |
 
-Nichts hiervon wurde bereits in `nuzlocke-v2-editionen.html` umgesetzt — Gegenchecken und
-Freigabe steht noch aus.
+Nur 2.2 ist bereits als Entscheidung festgehalten - alles andere wurde noch nicht in
+`nuzlocke-v2-editionen.html` umgesetzt und wartet auf Gegencheck/Freigabe.
