@@ -18,7 +18,8 @@ Schwert/Schild-DLC sowie einzelne, im Änderungsprotokoll dokumentierte Datenlü
 
 - **`nuzlocke-v2-editionen.html`** — die aktiv weiterentwickelte, "lebende" Version. Alle Änderungen
   passieren hier.
-- **`nuzlocke-v1-baseline.html`**, **`nuzlocke-v2-standard.html`**, **`nuzlocke-v2-checkpoint-v1.9.38.html`**
+- **`nuzlocke-v1-baseline.html`**, **`nuzlocke-v2-standard.html`**, **`nuzlocke-v2-checkpoint-v1.9.38.html`**,
+  **`nuzlocke-v2-checkpoint-v1.9.39.html`**
   — eingefrorene Wiederherstellungspunkte, werden nie mehr verändert. Siehe `README.md` für die
   jeweiligen Commits und Restore-Anleitungen. Bei größeren, riskanten Änderungsrunden (z.B. ein
   ganzer Recherche-Audit-Durchlauf) einen neuen solchen Checkpoint anlegen, statt nur auf Git-History
@@ -98,16 +99,20 @@ Versionsnummer aktualisieren. Offene Punkte/Backlog-Einträge unter `id="offene-
 halten (z.B. den Einall-Eintrag in "Offene Datenkorrekturen aus dem Gen-1-9-Rechercheaudit" nach
 Behebung anpassen statt stehen zu lassen).
 
-## Bekannter offener Rechercheaudit-Backlog (Stand v1.9.38)
+## Bekannter offener Rechercheaudit-Backlog (Stand v1.9.39)
 
-- **Kalos (X/Y), Alola (Sonne/Mond/USUM), Galar (Schwert/Schild)**: Funde nur noch als Kurzfassung
-  im Changelog dokumentiert, die Detailberichte (`gen6.md`–`gen8.md`) sind verloren — müsste komplett
-  neu recherchiert werden, diesmal mit sofortigem Commit.
+- **Alola (Sonne/Mond/USUM), Galar (Schwert/Schild)**: Funde nur noch als Kurzfassung im Changelog
+  dokumentiert, die Detailberichte (`gen7.md`/`gen8.md`) sind verloren — müsste komplett neu
+  recherchiert werden, diesmal mit sofortigem Commit (siehe `gen5.md`/`gen6.md` als Vorlage für den
+  Berichtsstil).
 - **Einall (Schwarz2/Weiß2) — komplettes Postgame**: Rückkehr nach West-Einall (~15 Standorte,
   Avenitia/Route 1-3/Gavina/Orion City/Septerna City/Wunderbrücke/P2-Labor/Route 17-18/Schwarzes
   Hochhaus-Weiße Baumhöhle) fehlt komplett, bewusst als eigener großer Schritt zurückgestellt.
-- Siehe `audit_reports/gen5.md` für den vollständigen, bereits abgehakten Einall-Bericht (Runde 2,
-  Wiederholung) als Vorlage für den Berichtsstil.
+- **Kalos (X/Y)**: erledigt in v1.9.39, siehe `audit_reports/gen6.md`. Dabei bestätigt: Vorstands-/
+  Admin-Mitglieder eines Bösewicht-Teams (z.B. Team Flares Wissenschaftler) gehören konsequent als
+  eigene `cls:"Vorstand"`-Bosskarten rein, nicht nur der Teamboss selbst - exakt dasselbe Muster wie
+  bereits bei Team Rocket/Galaktik/Magma/Aqua/Plasma etabliert. Bei künftigen Audits (Alola: Faba/
+  Plumeria: Galar: analog) diesem Präzedenzfall folgen, nicht extra nachfragen.
 
 ## Workflow-Hinweise für diese Codebase
 

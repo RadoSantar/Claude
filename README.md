@@ -40,6 +40,22 @@ So kommt man zu diesem Stand zurück:
    git checkout efabfe7 -- nuzlocke-v2-editionen.html
    ```
 
+## Weiterer Wiederherstellungspunkt: v1.9.39 (nach Kalos-Rechercheaudit Runde 2)
+
+`nuzlocke-v2-checkpoint-v1.9.39.html` ist ein weiterer eingefrorener Schnappschuss, direkt nach dem
+in `audit_reports/gen6.md` dokumentierten Rechercheaudit zu Kalos (X/Y): komplettes Team-Flare-
+Wissenschaftler-Quintett (Aliana/Bryony/Celosia/Mable/Xerosic, 9 Kämpfe) als Vorstand-Bosskarten
+ergänzt, Flordelis' (Lysandres) dritter Kampf ergänzt und Level korrigiert, ein fehlender fünfter
+Rivalenkampf ergänzt und alle Rivalen-Level korrigiert, Connies Ass korrigiert, Standorte
+„Omega-Höhle" und „Route 22" ergänzt. Diese Datei wird nicht mehr verändert.
+
+So kommt man zu diesem Stand zurück:
+1. Claude bitten: "stelle den v1.9.39-Checkpoint wieder her" — dann wird `nuzlocke-v2-checkpoint-v1.9.39.html` erneut als Artifact veröffentlicht, oder
+2. Den Commit direkt auschecken:
+   ```
+   git checkout b99e113 -- nuzlocke-v2-editionen.html
+   ```
+
 ### Als Offline-App installieren (Netlify)
 
 Der Ordner `pwa/` enthält alles, was zusätzlich zur `index.html` (Kopie von `nuzlocke-v2-editionen.html`)
