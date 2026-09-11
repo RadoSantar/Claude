@@ -2214,6 +2214,7 @@ const EINALL_BW_LOCATIONS = [
     "Tessera",
     "Route 13",
     {name:"Ondula", note:"Postgame + saisonal (nur Frühling/Sommer) - Cameo-Kampf gegen Cynthia in Kattleas Villa."},
+    {name:"Bucht von Ondula", note:"Nebenareal östlich von Ondula, nur per Surfer erreichbar (u.a. Wingull, Mantirps, Seemon-Familie im Winter, Wailmer/Wailross)."},
     "Riesengrotte",
     "Route 14",
     {name:"Schrein der Ernte", note:"Postgame, versionsabhängige umherziehende Fluchtsymbol-Pokémon."},
@@ -2259,7 +2260,7 @@ const EINALL_BW_BOSSES = [
   { id:"n4", sprite:"N", name:"N", cls:"Team Plasma", place:"Elektrolithhöhle", ace:"Klikk", baseLevel:28, group:"Team Plasma" },
   { id:"skyla",badge:"Jetorden", sprite:"Skyla", name:"Géraldine", cls:"Arenaleiterin", place:"Panaero City", ace:"Swaroness", baseLevel:35, group:"Einall-Arenen", pvp:true },
   { id:"brycen",badge:"Eiszapforden", sprite:"Brycen", name:"Sandro", cls:"Arenaleiter", place:"Nevaio City", ace:"Siberio", baseLevel:39, group:"Einall-Arenen", pvp:true },
-  { id:"cheren6", sprite:"Cheren", name:"Cheren", cls:"Rivale", place:"Wendelberg", ace:null, baseLevel:35, group:"Rivale" },
+  { id:"cheren6", sprite:"Cheren", name:"Cheren", cls:"Rivale", place:"Route 7", ace:null, baseLevel:35, group:"Rivale" },
   { id:"bianca5", sprite:"Bianca", name:"Bell", cls:"Rivale", place:"Route 8", ace:null, baseLevel:40, group:"Rivale" },
   { id:"opelucid-gym",badge:"Legendenorden", sprite:"Drayden", name:"Lysander", cls:"Arenaleiter", place:"Twindrake City", ace:"Maxax", baseLevel:43, group:"Einall-Arenen", pvp:true },
   { id:"cheren7", sprite:"Cheren", name:"Cheren", cls:"Rivale", place:"Route 10", ace:null, baseLevel:45, group:"Rivale" },
@@ -2291,7 +2292,7 @@ const EINALL_BW_BOSS_AFTER = {
   "Einall|Elektrolithhöhle": ["n4"],
   "Einall|Panaero City": ["skyla"],
   "Einall|Nevaio City": ["brycen"],
-  "Einall|Wendelberg": ["cheren6"],
+  "Einall|Route 7": ["cheren6"],
   "Einall|Route 8": ["bianca5"],
   "Einall|Twindrake City": ["opelucid-gym"],
   "Einall|Route 10": ["cheren7"],
@@ -2816,12 +2817,12 @@ const EINALL_B2W2_LOCATIONS = [
     "Route 20",
     {name:"Dausing-Hof", note:"Zweiter Kampf gegen Matisse. Zahme Voltilamm."},
     {name:"Vapydro City", note:"Arena 2: Mica. Keine wilden Pokémon.", noCatch:true},
-    {name:"Stratos City", note:"Dritter Kampf gegen Matisse (Doppelkampf mit Team Plasma in der Kanalisation) + Arena 3: Artie. Keine wilden Pokémon.", noCatch:true},
+    {name:"Stratos City", note:"Verbündeten-Doppelkampf mit Matisse gegen einen Team-Plasma-Rüpel in der Kanalisation (kein Kampf gegen Matisse selbst) + Arena 3: Artie. Keine wilden Pokémon.", noCatch:true},
     "Route 4",
     "Wüstenresort",
     {name:"Alter Palast", note:"Nebendungeon im Wüstenresort mit eigenen Wildpokémon (u.a. Yamask, Krokorok) - anfangs nur die ersten beiden Etagen begehbar, der Rest folgt später. Unterste Etage: einmalige Fossilienwahl sowie ein besonderer Volcarona-Fang."},
-    {name:"Pokémon World Tournament", note:"Vierter Kampf gegen Matisse (3er-Regeln) + Achromas. Keine wilden Pokémon.", noCatch:true},
-    {name:"Plasma-Fregatte", note:"Erste Erkundung: fünfter Kampf gegen Matisse (Doppelkampf). Keine wilden Pokémon.", noCatch:true},
+    {name:"Pokémon World Tournament", note:"Dritter Kampf gegen Matisse (3er-Regeln) + Achromas. Keine wilden Pokémon.", noCatch:true},
+    {name:"Plasma-Fregatte", note:"Erste Erkundung: Verbündeten-Doppelkampf mit Matisse gegen Team Plasma (kein Kampf gegen Matisse selbst). Keine wilden Pokémon.", noCatch:true},
     {name:"Rayono City", note:"Arena 4: Kamilla. Keine wilden Pokémon.", noCatch:true},
     "Route 16",
     "Hain der Täuschung",
@@ -2838,9 +2839,10 @@ const EINALL_B2W2_LOCATIONS = [
     {name:"Wendelberg", note:"Layout ändert sich saisonal."},
     {name:"Monsentiero", note:"Keine wilden Pokémon.", noCatch:true},
     "Janusberg",
-    {name:"Ondula", note:"Sechster Kampf gegen Matisse.", noCatch:true},
+    {name:"Ondula", note:"Vierter Kampf gegen Matisse.", noCatch:true},
+    {name:"Bucht von Ondula", note:"Nebenareal östlich von Ondula, nur per Surfer erreichbar (u.a. Wingull, Mantirps, Seemon-Familie im Winter, Wailmer/Wailross)."},
     "Route 13",
-    {name:"Tessera", note:"Siebter Kampf gegen Matisse + Violaceus (Doppelkampf).", noCatch:true},
+    {name:"Tessera", note:"Verbündeten-Doppelkampf mit Matisse gegen Violaceus - Matisse selbst wird hier nicht bekämpft.", noCatch:true},
     "Route 12",
     {name:"Dorfbrücke", note:"Keine wilden Pokémon.", noCatch:true},
     "Route 11",
@@ -2848,12 +2850,15 @@ const EINALL_B2W2_LOCATIONS = [
     "Unterseetunnel",
     {name:"Abidaya City", note:"Arena 8: Benson. Keine wilden Pokémon.", noCatch:true},
     "Route 22",
-    "Route 21",
-    {name:"Plasma-Fregatte (Rückkehr)", note:"Zweite Erkundung: echter Kampf gegen Achromas + Violaceus (letzter Kampf).", noCatch:true},
-    {name:"Riesengrotte", note:"Ghetsis' Kyurem-Zwischenfall (kein regulärer Bosskampf, siehe Kommentar oben), danach der echte Kampf gegen Ghetsis."},
+    {name:"Route 21", note:"Verbündeten-Doppelkampf mit Matisse gegen Violaceus (letzter Kampf gegen ihn) am Zugang zur Strandgrotte - Matisse selbst wird hier nicht bekämpft."},
+    {name:"Strandgrotte", note:"B2W2-exklusives Nebenareal an Route 21 mit eigener Wildpokémon-Tabelle (u.a. Golduck, Fleknoil, Sedimantur, diverse Wasser-Pokémon per Surfer/Angel)."},
+    {name:"Plasma-Fregatte (Rückkehr)", note:"Zweite Erkundung: echter Kampf gegen Achromas.", noCatch:true},
+    {name:"Riesengrotte", note:"Drei Kämpfe gegen das Schattentrio, danach Ghetsis' Kyurem-Zwischenfall (kein regulärer Bosskampf, siehe Kommentar oben) und schließlich der echte Kampf gegen Ghetsis."},
     "Route 23",
-    {name:"Siegesstraße", note:"Achter und letzter regulärer Kampf gegen Matisse."},
-    {name:"Pokémon-Liga", note:"Top Vier (beliebige Reihenfolge) + Champion Lilia.", noCatch:true}
+    {name:"Siegesstraße", note:"Fünfter und letzter Vorkampf gegen Matisse vor der Liga."},
+    {name:"Pokémon-Liga", note:"Top Vier (beliebige Reihenfolge) + Champion Lilia.", noCatch:true},
+    {name:"Ondula (Postgame)", note:"Postgame: sechster Kampf gegen Matisse, Rückkampf nach dem Champion-Sieg.", noCatch:true},
+    {name:"Marea City (Postgame)", note:"Postgame: siebter und letzter Kampf gegen Matisse im Spiel - danach zieht er sich zurück.", noCatch:true}
   ]]
 ];
 
@@ -2862,25 +2867,25 @@ const EINALL_B2W2_BOSSES = [
   { id:"cheren-gym",badge:"Grundorden", sprite:"B2Cheren", name:"Cheren", cls:"Arenaleiter", place:"Eventura City (Arena 1)", ace:"Yorkleff", baseLevel:13, group:"Einall-Arenen", pvp:true },
   { id:"mica-gym",badge:"Giftorden", sprite:"B2Mica", name:"Mica", cls:"Arenaleiterin", place:"Vapydro City (Arena 2)", ace:"Rollum", baseLevel:18, group:"Einall-Arenen", pvp:true },
   { id:"matisse2", sprite:"B2Matisse", name:"Matisse", cls:"Rivale", place:"Dausing-Hof", ace:null, baseLevel:8, group:"Rivale" },
-  { id:"matisse3", sprite:"B2Matisse", name:"Matisse", cls:"Rivale", place:"Stratos City (Kanalisation)", ace:null, baseLevel:20, group:"Rivale" },
   { id:"artie",badge:"Käferorden", sprite:"B2Artie", name:"Artie", cls:"Arenaleiter", place:"Stratos City (Arena 3)", ace:"Matrifol", baseLevel:24, group:"Einall-Arenen", pvp:true },
   { id:"colress1", sprite:"B2Achromas", name:"Achromas", cls:"Team Plasma", place:"Route 4", ace:"Klikk", baseLevel:23, group:"Team Plasma" },
   { id:"matisse4", sprite:"B2Matisse", name:"Matisse", cls:"Rivale", place:"Pokémon World Tournament", ace:null, baseLevel:25, group:"Rivale" },
   { id:"colress-pwt", sprite:"B2Achromas", name:"Achromas", cls:"Team Plasma", place:"Pokémon World Tournament", ace:"Klikk", baseLevel:25, group:"Team Plasma" },
-  { id:"matisse5", sprite:"B2Matisse", name:"Matisse", cls:"Rivale", place:"Plasma-Fregatte", ace:null, baseLevel:33, group:"Rivale" },
   { id:"kamilla",badge:"Voltorden", sprite:"B2Kamilla", name:"Kamilla", cls:"Arenaleiterin", place:"Rayono City (Arena 4)", ace:"Zebritz", baseLevel:30, group:"Einall-Arenen", pvp:true },
   { id:"turner",badge:"Seismo-Orden", sprite:"B2Turner", name:"Turner", cls:"Arenaleiter", place:"Marea City (Arena 5)", ace:"Stalobor", baseLevel:33, group:"Einall-Arenen", pvp:true },
   { id:"rubius", sprite:"B2Rubius", name:"Rubius", cls:"Team Plasma", place:"Marea City", ace:"Fletiamo", baseLevel:27, group:"Team Plasma" },
   { id:"geraldine",badge:"Jetorden", sprite:"B2Geraldine", name:"Géraldine", cls:"Arenaleiterin", place:"Panaero City (Arena 6)", ace:"Swaroness", baseLevel:39, group:"Einall-Arenen", pvp:true },
   { id:"matisse6", sprite:"B2Matisse", name:"Matisse", cls:"Rivale", place:"Ondula", ace:null, baseLevel:41, group:"Rivale" },
-  { id:"matisse7", sprite:"B2Matisse", name:"Matisse", cls:"Rivale", place:"Tessera", ace:null, baseLevel:43, group:"Rivale" },
   { id:"zinzolin1", sprite:"B2Violaceus", name:"Violaceus", cls:"Team Plasma", place:"Tessera", ace:"Sniebel", baseLevel:44, group:"Team Plasma" },
   { id:"lysander",badge:"Legendenorden", sprite:"B2Lysander", name:"Lysander", cls:"Arenaleiter", place:"Twindrake City (Arena 7)", ace:"Maxax", baseLevel:48, group:"Einall-Arenen", pvp:true },
   { id:"zinzolin2", sprite:"B2Violaceus", name:"Violaceus", cls:"Team Plasma", place:"Twindrake City", ace:"Snibunna", baseLevel:48, group:"Team Plasma" },
   { id:"finstrio", sprite:"B2Finstrio", name:"Finstrio", cls:"Team Plasma", place:"Twindrake City", ace:"Absol", baseLevel:48, group:"Team Plasma" },
   { id:"benson",badge:"Wellenorden", sprite:"B2Benson", name:"Benson", cls:"Arenaleiter", place:"Abidaya City (Arena 8)", ace:"Apoquallyp", baseLevel:51, group:"Einall-Arenen", pvp:true },
+  { id:"zinzolin3", sprite:"B2Violaceus", name:"Violaceus", cls:"Team Plasma", place:"Route 21", ace:"Snibunna", baseLevel:50, group:"Team Plasma" },
   { id:"colress-frigate", sprite:"B2Achromas", name:"Achromas", cls:"Team Plasma", place:"Plasma-Fregatte (Rückkehr)", ace:"Klikdiklak", baseLevel:52, group:"Team Plasma" },
-  { id:"zinzolin3", sprite:"B2Violaceus", name:"Violaceus", cls:"Team Plasma", place:"Plasma-Fregatte (Rückkehr)", ace:"Snibunna", baseLevel:50, group:"Team Plasma" },
+  { id:"finstrio-chasm1", sprite:"B2Finstrio", name:"Finstrio", cls:"Team Plasma", place:"Riesengrotte", ace:"Absol", baseLevel:51, group:"Team Plasma" },
+  { id:"finstrio-chasm2", sprite:"B2Finstrio", name:"Finstrio", cls:"Team Plasma", place:"Riesengrotte", ace:"Hydragil", baseLevel:51, group:"Team Plasma" },
+  { id:"finstrio-chasm3", sprite:"B2Finstrio", name:"Finstrio", cls:"Team Plasma", place:"Riesengrotte", ace:"Banette", baseLevel:51, group:"Team Plasma" },
   { id:"ghetsis-final", sprite:"B2Ghetsis", name:"G-Cis", cls:"Teamboss", place:"Riesengrotte", ace:"Trikephalo", baseLevel:52, group:"Team Plasma" },
   { id:"matisse8", sprite:"B2Matisse", name:"Matisse", cls:"Rivale", place:"Siegesstraße", ace:null, baseLevel:57, group:"Rivale" },
   { id:"e4-anissa", sprite:"B2Anissa", name:"Anissa", cls:"Top Vier", place:"Pokémon-Liga", ace:"Skelabra", baseLevel:58, group:"Top Vier & Champion" },
@@ -2888,28 +2893,32 @@ const EINALL_B2W2_BOSSES = [
   { id:"e4-astor", sprite:"B2Astor", name:"Astor", cls:"Top Vier", place:"Pokémon-Liga", ace:"Caesurio", baseLevel:58, group:"Top Vier & Champion" },
   { id:"e4-kattlea", sprite:"B2Kattlea", name:"Kattlea", cls:"Top Vier", place:"Pokémon-Liga", ace:"Morbitesse", baseLevel:58, group:"Top Vier & Champion" },
   { id:"champion", sprite:"B2Lilia", name:"Lilia", cls:"Champ", place:"Pokémon-Liga", ace:"Maxax", baseLevel:59, group:"Top Vier & Champion" },
-  { id:"duel-final", cls:"Finale", place:"Pokémon-Liga", group:"Duell", final:true }
+  { id:"duel-final", cls:"Finale", place:"Pokémon-Liga", group:"Duell", final:true },
+  { id:"matisse-rematch1", sprite:"B2Matisse", name:"Matisse", cls:"Rivale", place:"Ondula (Postgame)", ace:null, baseLevel:64, group:"Rivale" },
+  { id:"matisse-rematch2", sprite:"B2Matisse", name:"Matisse", cls:"Rivale", place:"Marea City (Postgame)", ace:null, baseLevel:67, group:"Rivale" }
 ];
 
 const EINALL_B2W2_BOSS_AFTER = {
   "Einall|Eventura City": ["matisse1","cheren-gym"],
   "Einall|Dausing-Hof": ["matisse2"],
   "Einall|Vapydro City": ["mica-gym"],
-  "Einall|Stratos City": ["matisse3","artie"],
+  "Einall|Stratos City": ["artie"],
   "Einall|Route 4": ["colress1"],
   "Einall|Pokémon World Tournament": ["matisse4","colress-pwt"],
-  "Einall|Plasma-Fregatte": ["matisse5"],
   "Einall|Rayono City": ["kamilla"],
   "Einall|Marea City": ["turner","rubius"],
   "Einall|Panaero City": ["geraldine"],
   "Einall|Ondula": ["matisse6"],
-  "Einall|Tessera": ["matisse7","zinzolin1"],
+  "Einall|Tessera": ["zinzolin1"],
   "Einall|Twindrake City": ["lysander","zinzolin2","finstrio"],
   "Einall|Abidaya City": ["benson"],
-  "Einall|Plasma-Fregatte (Rückkehr)": ["colress-frigate","zinzolin3"],
-  "Einall|Riesengrotte": ["ghetsis-final"],
+  "Einall|Route 21": ["zinzolin3"],
+  "Einall|Plasma-Fregatte (Rückkehr)": ["colress-frigate"],
+  "Einall|Riesengrotte": ["finstrio-chasm1","finstrio-chasm2","finstrio-chasm3","ghetsis-final"],
   "Einall|Siegesstraße": ["matisse8"],
-  "Einall|Pokémon-Liga": ["e4-anissa","e4-eugen","e4-astor","e4-kattlea","champion","duel-final"]
+  "Einall|Pokémon-Liga": ["e4-anissa","e4-eugen","e4-astor","e4-kattlea","champion","duel-final"],
+  "Einall|Ondula (Postgame)": ["matisse-rematch1"],
+  "Einall|Marea City (Postgame)": ["matisse-rematch2"]
 };
 
 GAMES["schwarz2-weiss2"] = { id:"schwarz2-weiss2", label:"Schwarz 2 / Weiß 2", shortLabel:"Schwarz2/Weiß2",
@@ -3768,7 +3777,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.37";
+const APP_VERSION = "1.9.38";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -7179,7 +7188,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="stats">
     <div class="stat"><div class="n">23</div><div class="l">Editionen</div></div>
     <div class="stat"><div class="n">1075</div><div class="l">Pokémon-Arten</div></div>
-    <div class="stat"><div class="n">40</div><div class="l">Versions&shy;stände</div></div>
+    <div class="stat"><div class="n">41</div><div class="l">Versions&shy;stände</div></div>
     <div class="stat"><div class="n">Gen 1–9</div><div class="l">Abgedeckt</div></div>
   </div>
 
@@ -7189,6 +7198,12 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.38</span><span class="tag tag-fix">Fix</span></div>
+      <h3>Rechercheaudit Runde 2 (Wiederholung): Einall vollständig neu geprüft, 6 Funde behoben</h3>
+      <p>Die alten Detailberichte zu Kalos/Alola/Galar (<code>audit_reports/gen6.md</code>-<code>gen8.md</code>) gingen mit einer abgestürzten Sitzung verloren, ohne je committet worden zu sein. Als Absicherung dagegen wurde die Einall-Recherche (Schwarz/Weiß, Schwarz2/Weiß2) komplett neu durchgeführt und diesmal von Anfang an dauerhaft im Repo abgelegt (<code>audit_reports/gen5.md</code>). Ergebnis: <strong>Cheren6</strong> (Schwarz/Weiß) hing am falschen Standort (Wendelberg statt Route 7, wo der Kampf laut Recherche tatsächlich stattfindet - noch vor dem Bergaufstieg). Neuer Standort <strong>Bucht von Ondula</strong> in beiden Editionen ergänzt (eigene Wildpokémon-Tabelle u.&nbsp;a. Wingull, Mantirps, Seemon-Familie, Wailmer/Wailross - keine Item-Voraussetzung). Bei Schwarz2/Weiß2 stellte eine Nutzerfrage klar, dass drei bereits bestehende Matisse-Einträge (Stratos-Kanalisation, Plasma-Fregatte, Tessera) in Wahrheit Verbündeten-Doppelkämpfe MIT Matisse gegen Team-Plasma-Rüpel sind, keine Kämpfe gegen ihn - alle drei entfernt. Dafür zwei echte, bisher komplett fehlende Matisse-Postgame-Rückkämpfe ergänzt (Ondula Lv.&nbsp;64, danach der wirklich allerletzte Kampf gegen ihn in Marea City Lv.&nbsp;67). Zinzolins dritter Kampf hing am falschen Ort (Plasma-Fregatte Rückkehr statt Route 21, wo er laut Recherche tatsächlich am Zugang zur neu ergänzten <strong>Strandgrotte</strong> stattfindet). Dazu drei bisher komplett fehlende Schattentrio-Kämpfe direkt vor dem Ghetsis-Finale in der Riesengrotte ergänzt (Absol/Hydragil/Banette, je Lv.&nbsp;51). Die übrigen Regionen der zweiten Audit-Runde (Kalos, Alola, Galar) sowie das komplette Schwarz2/Weiß2-Postgame bleiben als eigene, größere Schritte offen.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.37</span><span class="tag tag-fix">Fix</span></div>
@@ -8289,8 +8304,8 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
 
   <div class="followups">
     <h2>Offene Datenkorrekturen aus dem Gen-1-9-Rechercheaudit (Runde 2)</h2>
-    <p style="margin:0 0 12px; color:var(--ink-soft); font-size:14px;">Zweite Audit-Runde (Sinnoh, Einall, Kalos, Alola, Galar) - die erste Runde (Kanto, Johto, Hoenn, Paldea, generationsübergreifend) wurde bereits in v1.9.23 behoben, Sinnoh folgte in v1.9.35, drei von vier Einall-Funden in v1.9.36. Die übrigen Funde sind recherchiert und bestätigt, aber noch nicht umgesetzt (Umfang zu groß für eine einzelne Sitzung).</p>
-    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Offen</span><strong>Einall (Schwarz2/Weiß2) - fehlendes Postgame.</strong> Nach der Liga fehlt das komplette Postgame-Gebiet: Rückkehr in die ursprüngliche Unova-Kartenhälfte (Avenitia, Route 1-3, Gavina, Orion City, Septerna City), dazu Wunderbrücke, P2-Labor, Route 17/18 und Schwarzes Hochhaus/Weiße Baumhöhle als B2W2-Pendant zu Schwarze Stadt/Weißer Wald - laut Nachrecherche deutlich umfangreicher als ursprünglich vermutet (~15 zusätzliche Standorte statt einer kurzen Fortsetzung), daher als eigener Schritt zurückgestellt. P2-Labor, Tiefkühlcontainer und die Marea-Zugbrücke-Fangmöglichkeit sind bereits in v1.9.36 behoben.</div>
+    <p style="margin:0 0 12px; color:var(--ink-soft); font-size:14px;">Zweite Audit-Runde (Sinnoh, Einall, Kalos, Alola, Galar) - die erste Runde (Kanto, Johto, Hoenn, Paldea, generationsübergreifend) wurde bereits in v1.9.23 behoben, Sinnoh folgte in v1.9.35, Einall (bis auf das große Postgame-Thema) in v1.9.36/v1.9.38. Die übrigen Funde sind recherchiert und bestätigt, aber noch nicht umgesetzt (Umfang zu groß für eine einzelne Sitzung).</p>
+    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Offen</span><strong>Einall (Schwarz2/Weiß2) - fehlendes Postgame.</strong> Nach der Liga fehlt das komplette Postgame-Gebiet: Rückkehr in die ursprüngliche Unova-Kartenhälfte (Avenitia, Route 1-3, Gavina, Orion City, Septerna City), dazu Wunderbrücke, P2-Labor, Route 17/18 und Schwarzes Hochhaus/Weiße Baumhöhle als B2W2-Pendant zu Schwarze Stadt/Weißer Wald - laut Nachrecherche deutlich umfangreicher als ursprünglich vermutet (~15 zusätzliche Standorte statt einer kurzen Fortsetzung), daher als eigener Schritt zurückgestellt. Voller (diesmal dauerhaft abgelegter) Bericht inkl. aller bereits behobenen Einall-Funde: <code>audit_reports/gen5.md</code>.</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Offen</span><strong>Kalos (X/Y).</strong> Omega-Höhle fehlt als Ort; komplettes Team-Flare-Wissenschaftler-Quartett (Aliana/Bryony/Celosia/Mable/Xerosic, je Erstkampf + Rückkampf im Labor von Flordelis) fehlt komplett; ein Rivalenkampf in Fluxia City fehlt; alle 4 vorhandenen Rivalenkämpfe haben ein um 1 zu niedriges Level; Connies Ass ist falsch (Lucario statt Resladero/Hawlucha - Lucario gehört zu einer separaten Zusatzbegegnung); erster Lysandre-Kampf hat falsches Level (36 statt 49); zweiter Flordelis-Kampf in der Geheimbasis ist nur als eine statt zwei Kampfstufen abgebildet. Voller Bericht: <code>audit_reports/gen6.md</code>.</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Offen</span><strong>Alola (Sonne/Mond, Ultrasonne/Ultramond).</strong> Ortslisten auf allen 4 Inseln stark unvollständig (u.&nbsp;a. Route 9, Tenkarat-Hügel, Poni Wilds/Plains, Kokowei-Eiland fehlen), sämtliche USUM-exklusiven Orte fehlen komplett; Team Rainbow Rocket (USUM-Postgame) an falschen Fantasieorten statt dem echten Rocket-Schloss/Aether-Paradies, dazu bei fast jedem Boss das falsche Ass (Groudon/Kyogre/Dialga-Palkia/Zekrom-Reshiram/Xerneas-Yveltal/Mega-Mewtu statt der aktuellen Platzhalter); Matsurika (USUM, fälschlich "Mina" genannt) hat falschen Ort und falsches Level; Chrys' USUM-Totem wurde unverändert von Sonne/Mond kopiert (sollte Togedemaru statt Donarion sein); Lolas Prüfungs-Ass wurde mit ihrem Top-Vier-Ass verwechselt (sollte Mimigma statt Colossand sein); Marlon (fälschlich der englische Name "Molayne") hat falschen Namen und falsches Ass; Faba und Plumeria fehlen komplett als Pflichtkämpfe. Voller Bericht: <code>audit_reports/gen7.md</code>.</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Offen</span><strong>Galar (Schwert/Schild, ohne DLC).</strong> Zwei falsche Ortsnamen ("Glitzerwald"→Wirrschein-Wald, "Schlummernder Hain"→Schlummerwald); mehrere Level-/Ass-Fehler (Nezz/Piers Ass+Level, Opal/Papella Level, Champion Delion Level, Schild-Override Mel Level); Rose und Oleana an falschem Ort (Score City statt Energiewerk/Rose Tower) mit teils falschem/fehlendem Ass und Level; Bede fehlen 2 von 5 Pflichtkämpfen (Galar-Mine 1+2 sowie der Postgame-Rückkampf als Arenaleiterin von Fairballey); Marnie fehlen 3 von 4 Pflichtkämpfen; der komplette Eternatus-Kampf (dt. Endynalos) fehlt; mehrere Orte fehlen in <code>GALAR_LOCATIONS</code> (Galar-Mine 1/2, Energiewerk, Rose Tower) - diese Liste hat zudem als einzige Region gar keine Notiztexte. Voller Bericht: <code>audit_reports/gen8.md</code>.</div>
@@ -8315,7 +8330,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.37.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.38.</footer>
 
 </div>`;
 
