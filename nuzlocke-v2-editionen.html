@@ -3787,7 +3787,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.39";
+const APP_VERSION = "1.9.40";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -6314,10 +6314,33 @@ const TOUR_CYCLES = {
   ]
 };
 let activeCycleId = null, cycleStep = 0;
+/* Entfernt zwischen zwei Zyklen-Stationen NUR Spotlight/Tip, NIE .tour-block - anders als
+   clearOnboardingDom() (siehe dort), das für die große Tour zwischen jeder Station kurz komplett
+   räumt. Grund: die Zyklen-Tour braucht wegen der bewusst langsameren Übergänge (Fade-out + Tab-
+   Wechsel + smooth Scroll + Wartezeit, siehe renderCycleStep()) mehrere hundert ms bis zur
+   nächsten Station - würde .tour-block in dieser Zeit mitentfernt, ist die echte Oberfläche
+   darunter für diese ganze Zeit ungeschützt antippbar (auf einem echten Gerät mit Tipp-Verzögerung
+   leicht auszulösen). Ein Tipp währenddessen kann ein Sheet öffnen oder den Tab wechseln; setzt
+   die Tour danach ihren Overlay wieder darüber, bleibt der Bildschirm dunkel und blockiert stehen,
+   ohne dass noch etwas Sinnvolles sichtbar ist - genau das gemeldete "App wird dunkel, nichts
+   angezeigt, nur Neustart hilft". Ein durchgehend stehendes .tour-block schließt diese Lücke. */
+function clearCycleStepDom(){
+  document.querySelectorAll(".tour-spotlight, .tour-tip").forEach(el=>el.remove());
+}
+function ensureTourBlock(){
+  let block = document.querySelector(".tour-block");
+  if(!block){
+    block = document.createElement("div");
+    block.className = "tour-block";
+    document.body.appendChild(block);
+  }
+  return block;
+}
 function startTourCycle(cycleId){
   if(!TOUR_CYCLES[cycleId]) return;
   activeCycleId = cycleId;
   cycleStep = 0;
+  ensureTourBlock();
   renderCycleStep();
 }
 function closeTourCycle(){
@@ -6335,7 +6358,7 @@ function renderCycleStep(){
   const step = cycle[cycleStep];
   const existing = document.querySelector(".tour-tip");
   const proceed = ()=>{
-    clearOnboardingDom();
+    clearCycleStepDom();
     if(step.tab){ activeTab = step.tab; render(); }
     setTimeout(()=>{
       const targetEl = step.target ? document.querySelector(step.target) : null;
@@ -6352,11 +6375,13 @@ function renderCycleStep(){
   }
 }
 function placeCycleTip(step, targetEl){
-  clearOnboardingDom();
-  if(!targetEl || !activeCycleId) return;
-  const block = document.createElement("div");
-  block.className = "tour-block";
-  document.body.appendChild(block);
+  clearCycleStepDom();
+  /* Ziel fehlt oder ist inzwischen aus dem DOM entfernt (z.B. weil ein Tipp in der oben
+     beschriebenen ungeschützten Lücke zwischenzeitlich einen kompletten Re-Render ausgelöst hat,
+     der die zuvor gemerkte Karte ersetzt hat) - sauber beenden statt einen kaputten, hängenden
+     Overlay ohne erkennbaren Inhalt stehen zu lassen. */
+  if(!targetEl || !document.body.contains(targetEl) || !activeCycleId){ closeTourCycle(); return; }
+  ensureTourBlock();
 
   const rect = targetEl.getBoundingClientRect();
   const pad = 8;
@@ -7198,7 +7223,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="stats">
     <div class="stat"><div class="n">23</div><div class="l">Editionen</div></div>
     <div class="stat"><div class="n">1075</div><div class="l">Pokémon-Arten</div></div>
-    <div class="stat"><div class="n">42</div><div class="l">Versions&shy;stände</div></div>
+    <div class="stat"><div class="n">43</div><div class="l">Versions&shy;stände</div></div>
     <div class="stat"><div class="n">Gen 1–9</div><div class="l">Abgedeckt</div></div>
   </div>
 
@@ -7208,6 +7233,12 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.40</span><span class="tag tag-fix">Fix</span></div>
+      <h3>Zyklen-Tour-Vorschau: hängender dunkler Bildschirm in der installierten App behoben</h3>
+      <p>Nutzerbestätigt: die in v1.9.34 unter Einstellungen → Werkzeuge ergänzte Zyklen-Tour-Vorschau ("Der Weg eines Fangs") konnte in der installierten App hängen bleiben - der Bildschirm wurde beim Antippen dunkel, ohne dass noch etwas zu sehen war, nur ein Neustart der App half weiter. Ursache: zwischen zwei Stationen entfernte der Übergang kurzzeitig den unsichtbaren, klickfesten Sperr-Layer vollständig, der eigentlich während der gesamten Tour jeden Tipp auf die echte Oberfläche darunter abfangen soll - durch die bewusst langsamen, gut nachvollziehbaren Übergänge (Fade-out, Tab-Wechsel, sanftes Scrollen, Wartezeit) blieb diese ungeschützte Lücke über eine Sekunde lang bestehen. Ein Tipp auf dem echten Gerät währenddessen (z.&nbsp;B. aus Ungeduld ein zweites Mal angetippt) konnte etwas an der Oberfläche darunter auslösen (z.&nbsp;B. ein Sheet öffnen); setzte die Tour danach ihren Overlay wieder darüber, blieb der Bildschirm dunkel und blockiert stehen. Der Sperr-Layer steht jetzt durchgehend für die komplette Tour, nicht mehr nur einzeln pro Station - zusätzlich bricht die Tour jetzt sauber ab, statt hängen zu bleiben, falls eine Zielkarte zwischenzeitlich doch einmal aus der Oberfläche verschwunden sein sollte.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.39</span><span class="tag tag-fix">Fix</span></div>
@@ -8345,7 +8376,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.39.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.40.</footer>
 
 </div>`;
 
