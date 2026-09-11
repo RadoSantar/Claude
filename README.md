@@ -50,10 +50,18 @@ für eine echte installierbare, offline-fähige PWA gebraucht wird:
   sollte, damit Nutzer:innen die neue Version bekommen statt der alten aus dem Cache)
 - `icon-192.png`, `icon-512.png`, `icon-maskable-*.png` – App-Icons (Pokéball, wiederverwendet aus V1.0)
 
-Zum Deployen alle sieben Dateien (die `index.html` aus dem Repo-Root umbenannt/kopiert plus die vier Dateien
-aus `pwa/`) gemeinsam als ZIP oder Ordner per Drag & Drop auf [app.netlify.com/drop](https://app.netlify.com/drop)
-ziehen — **nicht nur die `index.html` allein**, sonst fehlen Service Worker und Icons und die Installation
-verhält sich nur wie ein Lesezeichen statt wie eine echte Offline-App.
+**Wichtig:** alle sieben Dateien müssen im ZIP/Ordner auf derselben Ebene liegen, nicht mit `pwa/`
+als Unterordner — `index.html` verweist mit reinen Dateinamen ohne Pfad auf `manifest.json`/`sw.js`,
+und `manifest.json` genauso auf seine Icons. Landet `pwa/` als eigener Unterordner im Archiv (z.B.
+durch ein simples `zip -r deploy.zip index.html pwa`), findet der Browser Manifest/Service
+Worker/Icons nicht mehr — die Seite lädt zwar noch, aber "Zum Home-Bildschirm hinzufügen" verhält
+sich dann nur wie ein Lesezeichen statt wie eine echte installierbare Offline-App (genau dieser
+Fehler ist schon einmal passiert).
+
+Deshalb: `node tools/build-netlify-zip.js` ausführen — baut automatisch ein korrekt flaches
+`nuzlocke-netlify-deploy.zip` im Repo-Root (Kopie von `nuzlocke-v2-editionen.html` als `index.html`
+plus alle vier `pwa/`-Dateien, ohne Unterordner). Dieses ZIP komplett per Drag & Drop auf
+[app.netlify.com/drop](https://app.netlify.com/drop) ziehen — **nicht nur die `index.html` allein**.
 
 Auf dem iPhone danach über Safari die Netlify-URL öffnen und über "Teilen" → "Zum Home-Bildschirm" hinzufügen.
 

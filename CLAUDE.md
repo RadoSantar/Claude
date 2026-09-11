@@ -35,6 +35,12 @@ Schwert/Schild-DLC sowie einzelne, im Änderungsprotokoll dokumentierte Datenlü
 - **`tools/make-artifact-bare.js`** — strippt doctype/html/head/body vor dem `Artifact()`-Publish
   (sonst verschachtelte Kopf-Struktur, Editions-Farbschema bricht). **Immer** die gestrippte Kopie
   publizieren, nie `nuzlocke-v2-editionen.html` direkt.
+- **`tools/build-netlify-zip.js`** — baut das Netlify-Deploy-ZIP korrekt FLACH (index.html +
+  alle vier `pwa/`-Dateien ohne Unterordner). Nie manuell `zip -r deploy.zip index.html pwa`
+  o.ä. bauen — das verschachtelt `pwa/` als Unterordner im Archiv, wodurch `index.html`s
+  pfadlose Verweise auf `manifest.json`/`sw.js` (und dessen Verweise auf die Icons) ins Leere
+  laufen und die Installierbarkeit auf Netlify kaputtgeht (ist bereits einmal passiert). Immer
+  `node tools/build-netlify-zip.js` benutzen.
 - **`audit_reports/gen{N}.md`** — Rechercheaudit-Berichte pro Generation (z.B. `gen5.md` = Einall).
   **Sofort nach dem Schreiben committen und pushen**, nicht erst am Ende einer Sitzung sammeln —
   genau das Versäumnis, das `gen6.md`–`gen8.md` (Kalos/Alola/Galar) verloren gehen ließ. Diese drei
