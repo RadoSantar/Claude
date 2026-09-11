@@ -3787,7 +3787,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.40";
+const APP_VERSION = "1.9.41";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -3804,7 +3804,14 @@ function setGlobalUsername(v){
   try{ if(globalUsername) localStorage.setItem(USERNAME_KEY, globalUsername); else localStorage.removeItem(USERNAME_KEY); }catch(e){}
 }
 function effectiveRunTitle(t){
-  if(t && t.trim()) return t;
+  const trimmed = (t||"").trim();
+  /* Vor v1.8.57 bekam jeder neue Spielstand automatisch den Literal-Text "Nuzlocke" als eigenen
+     Titel gespeichert - bei solchen (weiterhin bestehenden) Altspielständen blockierte dieser
+     nie bewusst gewählte Platzhaltertext seither dauerhaft den globalen Anzeigenamen-Fallback
+     unten, obwohl der Spielstand eigentlich gar keinen eigenen Titel gesetzt hat. Wird hier wie
+     ein leeres Feld behandelt, damit z.B. ein in Cloud-Sync eingetragener Anzeigename ("Andi")
+     auch bei solchen Altspielständen tatsächlich im Header ankommt. */
+  if(trimmed && trimmed!=="Nuzlocke") return t;
   if(globalUsername) return globalUsername;
   return "Nuzlocke";
 }
@@ -7215,7 +7222,7 @@ function renderActiveTitleBadge(){
   const el = document.getElementById("activeTitleBadge");
   if(!el) return;
   const a = state.activeTitle ? ACHIEVEMENTS.find(x=>x.id===state.activeTitle) : null;
-  if(a && state.achievements[a.id]){ el.textContent = `★ ${a.title}`; el.style.display = "inline-block"; }
+  if(a && state.achievements[a.id]){ el.textContent = `${a.icon} ${a.title}`; el.style.display = "inline-block"; }
   else { el.textContent = ""; el.style.display = "none"; }
 }
 const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einfachen Routen-/Team-Trackers für einen einzelnen Johto-Run über dessen zwei eingefrorene Zwischenstände (als Prototyp- und Vorgängerprojekt weiter unten dokumentiert) bis zum aktuellen Tracker mit <strong>23 Editionen über Generation 1–9</strong> — jede mit eigens recherchierten Original-Leveln, Bossen und deutschen Namen statt wiederverwendeter Remake-Daten, dazu Mehrfach-Speicherstände, Ruhmeshalle, Box-Suche und Offline-Installation als PWA.</p>
@@ -7223,7 +7230,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="stats">
     <div class="stat"><div class="n">23</div><div class="l">Editionen</div></div>
     <div class="stat"><div class="n">1075</div><div class="l">Pokémon-Arten</div></div>
-    <div class="stat"><div class="n">43</div><div class="l">Versions&shy;stände</div></div>
+    <div class="stat"><div class="n">44</div><div class="l">Versions&shy;stände</div></div>
     <div class="stat"><div class="n">Gen 1–9</div><div class="l">Abgedeckt</div></div>
   </div>
 
@@ -7233,6 +7240,13 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.41</span><span class="tag tag-fix">Fix</span></div>
+      <h3>Zwei Nutzerfunde: Anzeigename bei Altspielständen wirkungslos, Titel-Badge zeigt jetzt das echte Erfolgs-Icon</h3>
+      <p><strong>Cloud-Sync-Anzeigename bei Altspielständen ohne Wirkung:</strong> ein in der Cloud-Sync-Karte eingetragener Anzeigename (z.&nbsp;B. „Andi") sollte laut v1.8.57 „Nuzlocke" im Header ersetzen, solange der jeweilige Spielstand keinen eigenen Titel gesetzt hat - blieb aber bei älteren Spielständen wirkungslos. Ursache: vor v1.8.57 bekam jeder neue Spielstand automatisch den Literal-Text „Nuzlocke" als eigenen, aber nie bewusst gewählten Titel gespeichert - genau dieser alte Platzhaltertext blockierte seither dauerhaft den globalen Anzeigenamen-Fallback, weil er identisch zum eigentlichen App-Namen aussah, aber technisch als „echter eigener Titel" galt. Wird jetzt wie ein leerer Titel behandelt, damit der Anzeigename auch bei länger laufenden Spielständen tatsächlich ankommt - ein bewusst selbst eingetragener Titel bleibt davon unberührt (nur die exakte Zeichenkette „Nuzlocke" zählt als Alt-Platzhalter, jeder andere Text weiterhin als echter eigener Titel).</p>
+      <p><strong>Titel-Badge im Header zeigt jetzt das echte Erfolgs-Icon statt eines festen Sterns:</strong> der aktive Titel neben dem Run-Titel zeigte bisher immer ein „★" vor dem Titeltext, unabhängig vom gewählten Erfolg - jetzt genau das Emoji-Icon, das auch in der Erfolge-&amp;-Titel-Übersicht bei der Auswahl neben diesem Erfolg steht (z.&nbsp;B. 🐾 bei „Frischling" statt eines generischen Sterns).</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.40</span><span class="tag tag-fix">Fix</span></div>
@@ -8348,6 +8362,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><span class="tag tag-fix" style="margin-right:8px;">Verworfen</span><strong>Auferstanden-Erfolg.</strong> Nach einem Game-Over direkt einen neuen Run gestartet statt aufzugeben (Cross-Save-Erfolg). <em>→ verworfen: auf Wunsch bewusst keine editionsübergreifenden Erfolge, stattdessen Fokus auf Erfolge pro einzelnem Run/Edition.</em></div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Regenbogen-Team-Erfolg.</strong> 6 verschiedene Typen gleichzeitig im Team. → umgesetzt in v1.8.62 (nutzt die seit v1.8.54 vorhandene Arten→Typ-Referenztabelle)</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Offen</span><strong>Weitere Zyklen-Tour-Themen nach dem "Der Weg eines Fangs"-Muster (seit v1.9.34, Hänger in v1.9.40 behoben).</strong> Beim Entwurf der Vorschau bereits mitgesammelte, aber noch nicht umgesetzte Themenideen im selben Stil (kurze Ein-Satz-Stationen statt großer Karte): <strong>Bosskampf gewinnen</strong> (Bosskarte antippen → Sieg eintragen → Levelcap-Karte aktualisiert sich → bei Niederlage stattdessen die Rivalenduell-Karte), <strong>Orden sammeln</strong> (Arenaleiter besiegen → Feier mit Feuerwerk → Chip im Header → Orden-Schatulle im Team-Tab), <strong>Team voll, neuer Fang</strong> (Fangen bei vollem Team → Tausch-Sheet → Verdrängter landet in der Box → Team-Reihenfolge per Ziehpunkt sortieren), <strong>Erfolge & Titel</strong> (Aktion löst Erfolg aus → Toast → Erfolge-Liste → Titel auswählen → Badge im Kopfbereich), <strong>Rückgängig machen</strong> (riskante Aktion → Toast → antippen zum Rückgängigmachen oder wegwischen zum Verwerfen), <strong>Verlauf & Run-Rückblick</strong> (Aktionen sammeln sich im Verlauf → Run-Rückblick mit Zusammenfassung am Ende), <strong>Mehrere Spielstände & Cloud-Sync</strong> (neuen Spielstand anlegen → Sync-Code erzeugen → auf zweitem Gerät eingeben) sowie <strong>Regeln & Levelcap-Boost</strong> (Hausregel-Schalter umlegen → Levelcap-Karte reagiert sichtbar). Noch nicht umgesetzt, nur als Ideenliste festgehalten, damit sie nicht wie frühere Recherche-Ergebnisse nur im Chat-Kontext verloren geht.</div>
+    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Kein Bug, geprüft</span><strong>Schwarz/Weiß: Arenaleiter-/Top-Vier-Sprites bewegen sich nicht (Nutzerfrage in v1.9.41 geklärt).</strong> Technisch geprüft: die Johto-Bosstrainer-Sprites (Falkner bis Lance) sind echte, aus dem HeartGold/SoulSilver-Original erfasste animierte PNGs (APNG mit <code>acTL</code>-Chunk, 4-112&nbsp;KB groß) - die Schwarz/Weiß-Bosstrainer-Sprites (Cilan bis Alder) sind dagegen durchgehend einzelbildrige, statische PNGs ohne Animations-Chunk (1,4-4,4&nbsp;KB), unverändert seit ihrer Ergänzung. Kein CSS/App-Code hält hier irgendetwas an - die Schwarz/Weiß-Dateien selbst enthalten schlicht keine zweite Animationsphase, unabhängig von Sieg/Niederlage-Status. Um das zu ändern, müssten für alle Schwarz/Weiß-Bosstrainer neue, tatsächlich animierte Quell-Sprites recherchiert und eingebettet werden - ein Asset-Beschaffungsschritt wie bei den bereits geschärften Kalos-/ORAS-/Alola-Sprites (siehe v1.9.9/v1.9.10), kein Bugfix.</div>
   </div>
 
   <div class="followups">
@@ -8377,7 +8392,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.40.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.41.</footer>
 
 </div>`;
 
