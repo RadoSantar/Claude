@@ -21,6 +21,25 @@ So kommt man zu diesem Stand zurück:
    git checkout 8a0da5d -- nuzlocke-v2-standard.html
    ```
 
+## Weiterer Wiederherstellungspunkt: v1.9.38 (nach Einall-Rechercheaudit Runde 2)
+
+`nuzlocke-v2-checkpoint-v1.9.38.html` ist ein weiterer eingefrorener Schnappschuss, direkt nach dem
+zweiten, diesmal vollständig in `audit_reports/gen5.md` dokumentierten Rechercheaudit zu Schwarz/Weiß
+und Schwarz2/Weiß2 (Cheren6-Standort korrigiert, Bucht von Ondula ergänzt, drei fälschlich als
+Rivalenkampf geführte Matisse-Verbündetenkämpfe entfernt, zwei echte Matisse-Postgame-Rückkämpfe sowie
+drei Schattentrio-Kämpfe vor Ghetsis ergänzt, Zinzolins dritter Kampf korrekt verortet + Strandgrotte
+ergänzt). Diese Datei wird nicht mehr verändert - Grund für diesen zusätzlichen Punkt (zusätzlich zur
+"aktuellen Standardversion" oben): eine frühere Sitzung ist abgestürzt und mehrere darin recherchierte,
+aber nie committete Erkenntnisse gingen verloren - dieser Checkpoint sichert den Stand direkt nach der
+Wiederholung dieser Recherche.
+
+So kommt man zu diesem Stand zurück:
+1. Claude bitten: "stelle den v1.9.38-Checkpoint wieder her" — dann wird `nuzlocke-v2-checkpoint-v1.9.38.html` erneut als Artifact veröffentlicht, oder
+2. Den Commit direkt auschecken:
+   ```
+   git checkout efabfe7 -- nuzlocke-v2-editionen.html
+   ```
+
 ### Als Offline-App installieren (Netlify)
 
 Der Ordner `pwa/` enthält alles, was zusätzlich zur `index.html` (Kopie von `nuzlocke-v2-editionen.html`)
