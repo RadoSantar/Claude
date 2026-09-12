@@ -3787,7 +3787,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.44";
+const APP_VERSION = "1.9.45";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -7230,7 +7230,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="stats">
     <div class="stat"><div class="n">23</div><div class="l">Editionen</div></div>
     <div class="stat"><div class="n">1075</div><div class="l">Pokémon-Arten</div></div>
-    <div class="stat"><div class="n">47</div><div class="l">Versions&shy;stände</div></div>
+    <div class="stat"><div class="n">48</div><div class="l">Versions&shy;stände</div></div>
     <div class="stat"><div class="n">Gen 1–9</div><div class="l">Abgedeckt</div></div>
   </div>
 
@@ -7240,6 +7240,22 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.45</span><span class="tag tag-note">Vorschau</span></div>
+      <h3>Sprite-Konsistenz-Audit abgeschlossen: Kanto/Johto geprüft, keine weiteren Ersetzungen möglich</h3>
+      <p>Letzter Teil des mit Schwarz/Weiß begonnenen Audits (siehe <code>audit_reports/gen1-2-sprites.md</code>).
+      Nutzerbestätigt: animierte Sprites existieren in dieser App bislang nur in Generation 1-5, ab Kalos/Gen&nbsp;6
+      greift ohnehin der komplett andere moderne Pokémon-Masters-EX-Chibi-Stil, für den sich die Animationsfrage
+      nicht stellt. Die verbliebenen 7 statischen Kanto/Johto-Sprites (Lorelei, Agathe, Proton, Petrel, Ariana,
+      Archer, JessieJames) haben keine im selben Pixel-Stil animierte Bulbagarden-Quelle - selbst die
+      HeartGold/SoulSilver-Version der vier Team-Rocket-Vorstände ist dort statisch, anders als bei den bereits
+      seit Langem animierten 16 Johto-Arenaleitern. Keine Code-/Datenänderung in dieser Version, nur Recherche-
+      Abschluss. <strong>Gesamtbilanz des Audits (v1.9.42-v1.9.45):</strong> 23 von 44 geprüften statischen Sprites
+      auf animierte Quellen umgestellt (15 Schwarz/Weiß, 1 Sinnoh, 7 Hoenn), 14 bleiben mangels Quelle oder wegen
+      Outfit-Konflikts bewusst statisch, 3 weitere (Juan, Tate&amp;Liza in zwei Editionen) zurückgestellt, da eine
+      Code-Änderung statt eines reinen Datentauschs nötig wäre.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.44</span><span class="tag tag-feat">Feature</span></div>
@@ -8416,7 +8432,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><span class="tag tag-fix" style="margin-right:8px;">Verworfen</span><strong>Auferstanden-Erfolg.</strong> Nach einem Game-Over direkt einen neuen Run gestartet statt aufzugeben (Cross-Save-Erfolg). <em>→ verworfen: auf Wunsch bewusst keine editionsübergreifenden Erfolge, stattdessen Fokus auf Erfolge pro einzelnem Run/Edition.</em></div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Regenbogen-Team-Erfolg.</strong> 6 verschiedene Typen gleichzeitig im Team. → umgesetzt in v1.8.62 (nutzt die seit v1.8.54 vorhandene Arten→Typ-Referenztabelle)</div>
     <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Offen</span><strong>Weitere Zyklen-Tour-Themen nach dem "Der Weg eines Fangs"-Muster (seit v1.9.34, Hänger in v1.9.40 behoben).</strong> Beim Entwurf der Vorschau bereits mitgesammelte, aber noch nicht umgesetzte Themenideen im selben Stil (kurze Ein-Satz-Stationen statt großer Karte): <strong>Bosskampf gewinnen</strong> (Bosskarte antippen → Sieg eintragen → Levelcap-Karte aktualisiert sich → bei Niederlage stattdessen die Rivalenduell-Karte), <strong>Orden sammeln</strong> (Arenaleiter besiegen → Feier mit Feuerwerk → Chip im Header → Orden-Schatulle im Team-Tab), <strong>Team voll, neuer Fang</strong> (Fangen bei vollem Team → Tausch-Sheet → Verdrängter landet in der Box → Team-Reihenfolge per Ziehpunkt sortieren), <strong>Erfolge & Titel</strong> (Aktion löst Erfolg aus → Toast → Erfolge-Liste → Titel auswählen → Badge im Kopfbereich), <strong>Rückgängig machen</strong> (riskante Aktion → Toast → antippen zum Rückgängigmachen oder wegwischen zum Verwerfen), <strong>Verlauf & Run-Rückblick</strong> (Aktionen sammeln sich im Verlauf → Run-Rückblick mit Zusammenfassung am Ende), <strong>Mehrere Spielstände & Cloud-Sync</strong> (neuen Spielstand anlegen → Sync-Code erzeugen → auf zweitem Gerät eingeben) sowie <strong>Regeln & Levelcap-Boost</strong> (Hausregel-Schalter umlegen → Levelcap-Karte reagiert sichtbar). Noch nicht umgesetzt, nur als Ideenliste festgehalten, damit sie nicht wie frühere Recherche-Ergebnisse nur im Chat-Kontext verloren geht.</div>
-    <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Schwarz/Weiß: eingefrorene Arenaleiter-/Top-Vier-Sprites (Nutzerfrage in v1.9.41 geklärt).</strong> Root Cause per Byte-Inspektion gefunden: die statischen Sprites stammten von der Schwarz/Weiß-(BW1)-Version auf Bulbagarden Archives, die bereits animierten (Cheren, Bell, N, Cynthia-Cameo) von der Schwarz2/Weiß2-(B2W2)-Version derselben Quelle, die dort durchgehend animiert vorliegt - reine Zufallsmischung der Quelle, keine Editions- oder Rollen-Regel. → 15 von 16 in v1.9.42 auf die animierte B2W2-Version umgestellt (Bericht: <code>audit_reports/gen5-sprites.md</code>); Ghetsis bewusst als einziger weiterhin statisch, da sein B2W2-Sprite ein anderes, story-vorgreifendes Outfit zeigt. <strong>Weitere Generationen zeigen dasselbe Muster</strong> (z.&nbsp;B. Sinnoh: Rivale Barry und Team-Galaktik-Mars statisch, Arenaleiter Veit/Silvana bereits animiert) - generationsübergreifender Sprite-Konsistenz-Audit als Fortsetzung geplant.</div>
+    <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Schwarz/Weiß: eingefrorene Arenaleiter-/Top-Vier-Sprites (Nutzerfrage in v1.9.41 geklärt).</strong> Root Cause per Byte-Inspektion gefunden: die statischen Sprites stammten von der Schwarz/Weiß-(BW1)-Version auf Bulbagarden Archives, die bereits animierten (Cheren, Bell, N, Cynthia-Cameo) von der Schwarz2/Weiß2-(B2W2)-Version derselben Quelle, die dort durchgehend animiert vorliegt - reine Zufallsmischung der Quelle, keine Editions- oder Rollen-Regel. → 15 von 16 in v1.9.42 auf die animierte B2W2-Version umgestellt (Bericht: <code>audit_reports/gen5-sprites.md</code>); Ghetsis bewusst als einziger weiterhin statisch, da sein B2W2-Sprite ein anderes, story-vorgreifendes Outfit zeigt. → Audit fortgesetzt und mit v1.9.45 abgeschlossen: 1 von 4 Sinnoh-Sprites (v1.9.43) und 7 von 26 Hoenn-Sprites (v1.9.44) zusätzlich umgestellt, Kanto/Johto geprüft ohne weitere Funde (v1.9.45) - Details siehe <code>audit_reports/gen3-sprites.md</code>, <code>gen4-sprites.md</code> und <code>gen1-2-sprites.md</code>.</div>
   </div>
 
   <div class="followups">
@@ -8446,7 +8462,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.44.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.45.</footer>
 
 </div>`;
 
