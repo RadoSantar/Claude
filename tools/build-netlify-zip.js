@@ -2,7 +2,10 @@
 /*
  * Baut das Netlify-Deploy-ZIP korrekt FLACH zusammen: index.html (Kopie von
  * nuzlocke-v2-editionen.html) und alle vier pwa/-Dateien liegen im ZIP-Root nebeneinander, nicht
- * in einem verschachtelten "pwa"-Unterordner.
+ * in einem verschachtelten "pwa"-Unterordner. Der sprites/-Ordner (seit der Sprite-Auslagerung aus
+ * nuzlocke-v2-editionen.html, siehe tools/extract-sprites.js) wird als Unterordner mit übernommen -
+ * anders als bei den pwa/-Dateien ist das hier unproblematisch, da index.html konsequent relative
+ * Pfade wie "sprites/modern/25.webp" nutzt, die unabhängig von einer Unterordner-Ebene auflösen.
  *
  * Grund für dieses Skript: index.html verweist mit reinen Dateinamen ohne Ordnerpfad auf sein
  * Manifest/seinen Service Worker (<link rel="manifest" href="manifest.json">,
@@ -24,6 +27,7 @@ const { execFileSync } = require("child_process");
 const ROOT = path.join(__dirname, "..");
 const SOURCE_HTML = path.join(ROOT, "nuzlocke-v2-editionen.html");
 const PWA_DIR = path.join(ROOT, "pwa");
+const SPRITES_DIR = path.join(ROOT, "sprites");
 const target = process.argv[2] || path.join(ROOT, "nuzlocke-netlify-deploy.zip");
 
 if (!fs.existsSync(SOURCE_HTML)) {
@@ -32,6 +36,10 @@ if (!fs.existsSync(SOURCE_HTML)) {
 }
 if (!fs.existsSync(PWA_DIR)) {
   console.error(`pwa/-Ordner nicht gefunden: ${PWA_DIR}`);
+  process.exit(1);
+}
+if (!fs.existsSync(SPRITES_DIR)) {
+  console.error(`sprites/-Ordner nicht gefunden: ${SPRITES_DIR} - wurde tools/extract-sprites.js schon einmal ausgeführt?`);
   process.exit(1);
 }
 
@@ -48,7 +56,12 @@ pwaFiles.forEach(name => {
   fs.copyFileSync(path.join(PWA_DIR, name), path.join(stagingDir, name));
 });
 
-const expected = ["index.html", "manifest.json", "sw.js", "icon-192.png", "icon-512.png", "icon-maskable-192.png", "icon-maskable-512.png"];
+fs.cpSync(SPRITES_DIR, path.join(stagingDir, "sprites"), { recursive: true });
+const spriteFileCount = fs.readdirSync(SPRITES_DIR).reduce(
+  (sum, sub) => sum + fs.readdirSync(path.join(SPRITES_DIR, sub)).length, 0
+);
+
+const expected = ["index.html", "manifest.json", "sw.js", "icon-192.png", "icon-512.png", "icon-maskable-192.png", "icon-maskable-512.png", "sprites"];
 const staged = fs.readdirSync(stagingDir).sort();
 const missing = expected.filter(f => !staged.includes(f));
 if (missing.length) {
@@ -60,11 +73,12 @@ if (fs.existsSync(target)) fs.unlinkSync(target);
 
 // -j (junk paths) waere hier unnoetig, da bereits alles flach in stagingDir liegt - cwd auf
 // stagingDir setzen und "." zippen, damit im ZIP selbst keine Ordnerebene (weder "pwa/" noch der
-// zufaellige stagingDir-Name) landet, sondern die sieben Dateien direkt im Root des Archivs.
+// zufaellige stagingDir-Name) landet, sondern die sieben Dateien+sprites/ direkt im Root des
+// Archivs (sprites/ selbst bleibt als Unterordner erhalten, siehe Kommentar oben).
 execFileSync("zip", ["-r", target, "."], { cwd: stagingDir, stdio: "inherit" });
 
 fs.rmSync(stagingDir, { recursive: true, force: true });
 
 console.log(`\nGeschrieben: ${target}`);
-console.log(`Enthält flach (kein Unterordner): ${staged.join(", ")}`);
+console.log(`Enthält flach (kein Unterordner): ${staged.filter(f => f !== "sprites").join(", ")}, sowie sprites/ (${spriteFileCount} Dateien).`);
 console.log(`Dieses ZIP komplett (nicht nur index.html) auf app.netlify.com/drop ziehen.`);

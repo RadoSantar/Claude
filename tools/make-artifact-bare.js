@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 /*
- * Strippt die Standalone-Dokumentstruktur (<!doctype>, <html>, <head>, <body>-Tags) aus
- * nuzlocke-v2-editionen.html, damit die verbleibende "nackte" HTML für den Artifact()-Publish
- * genutzt werden kann.
+ * Bettet zuerst die ausgelagerten Sprite-Dateien wieder als Base64 ein (siehe inline-sprites.js -
+ * nötig, weil Artifacts pro Veröffentlichung nur 255 zusätzliche Dateien erlauben, die App aber
+ * über 2000 einzelne Sprite-Dateien hat), und strippt danach die Standalone-Dokumentstruktur
+ * (<!doctype>, <html>, <head>, <body>-Tags), damit die verbleibende "nackte" HTML für den
+ * Artifact()-Publish genutzt werden kann.
  *
  * Grund: das Artifact-Tool wrappt veröffentlichten Inhalt selbst in ein
  * <!doctype html>…<head>…</head><body>-Gerüst - eigene doctype/html/head/body-Tags im
@@ -22,11 +24,14 @@
 const fs = require("fs");
 const path = require("path");
 const os = require("os");
+const { inlineSprites } = require("./inline-sprites");
 
 const SOURCE = path.join(__dirname, "..", "nuzlocke-v2-editionen.html");
 const target = process.argv[2] || path.join(os.tmpdir(), "nuzlocke-artifact-bare.html");
 
-const content = fs.readFileSync(SOURCE, "utf8");
+const inlinedTmp = path.join(os.tmpdir(), "nuzlocke-inlined-for-artifact.html");
+inlineSprites(SOURCE, inlinedTmp);
+const content = fs.readFileSync(inlinedTmp, "utf8");
 
 const startMarker = "<title>Nuzlocke</title>";
 const startIdx = content.indexOf(startMarker);
