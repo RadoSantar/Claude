@@ -72,6 +72,24 @@ So kommt man zu diesem Stand zurück:
    git checkout f87b3e4 -- nuzlocke-v2-editionen.html
    ```
 
+## Weiterer Wiederherstellungspunkt: v1.9.47 (vor der Sprite-Auslagerung)
+
+`nuzlocke-v2-checkpoint-v1.9.47.html` ist der letzte Schnappschuss VOR einem größeren internen Umbau:
+die App war auf 15,88 MB angewachsen (94,8% davon reine Sprite-Bilddaten als Base64 in vier riesigen
+JS-Zeilen eingebettet), was auf Mobilgeräten - v.&nbsp;a. in der installierten PWA - zu Abstürzen schon
+beim Laden führte. Ab v1.9.48 liegen alle 2027 Sprite-Bilder als echte Dateien unter `sprites/` statt
+eingebettet (siehe `tools/extract-sprites.js`); `nuzlocke-v2-editionen.html` selbst schrumpfte dadurch
+auf 865 KB. Diese Checkpoint-Datei ist bewusst noch die alte, vollständig in sich geschlossene Version
+(kein `sprites/`-Ordner nötig) - falls der Umbau je zurückgerollt werden müsste.
+
+So kommt man zu diesem Stand zurück:
+1. Claude bitten: "stelle den v1.9.47-Checkpoint wieder her" — dann wird `nuzlocke-v2-checkpoint-v1.9.47.html` erneut als Artifact veröffentlicht (funktioniert eigenständig, ohne `sprites/`-Ordner), oder
+2. Den Commit direkt auschecken:
+   ```
+   git checkout 9e3680d -- nuzlocke-v2-checkpoint-v1.9.47.html
+   cp nuzlocke-v2-checkpoint-v1.9.47.html nuzlocke-v2-editionen.html
+   ```
+
 ### Als Offline-App installieren (Netlify)
 
 Der Ordner `pwa/` enthält alles, was zusätzlich zur `index.html` (Kopie von `nuzlocke-v2-editionen.html`)
@@ -82,18 +100,27 @@ für eine echte installierbare, offline-fähige PWA gebraucht wird:
   sollte, damit Nutzer:innen die neue Version bekommen statt der alten aus dem Cache)
 - `icon-192.png`, `icon-512.png`, `icon-maskable-*.png` – App-Icons (Pokéball, wiederverwendet aus V1.0)
 
-**Wichtig:** alle sieben Dateien müssen im ZIP/Ordner auf derselben Ebene liegen, nicht mit `pwa/`
-als Unterordner — `index.html` verweist mit reinen Dateinamen ohne Pfad auf `manifest.json`/`sw.js`,
-und `manifest.json` genauso auf seine Icons. Landet `pwa/` als eigener Unterordner im Archiv (z.B.
-durch ein simples `zip -r deploy.zip index.html pwa`), findet der Browser Manifest/Service
-Worker/Icons nicht mehr — die Seite lädt zwar noch, aber "Zum Home-Bildschirm hinzufügen" verhält
-sich dann nur wie ein Lesezeichen statt wie eine echte installierbare Offline-App (genau dieser
-Fehler ist schon einmal passiert).
+Dazu der Ordner `sprites/` (seit v1.9.48, siehe `tools/extract-sprites.js`): alle Sprite-Bilder liegen
+dort als echte Dateien statt als Base64 in `nuzlocke-v2-editionen.html` eingebettet — hält die
+Hauptdatei klein (865 KB statt vormals 15,88 MB) und lässt den Browser Sprites über seine normale,
+speicherschonende Bild-Pipeline nachladen/cachen, statt eine riesige JS-Konstante am Stück parsen zu
+müssen (Root Cause für Abstürze beim Laden auf Mobilgeräten, siehe Checkpoint v1.9.47 oben).
+
+**Wichtig:** alle sieben `pwa/`+`index.html`-Dateien müssen im ZIP/Ordner auf derselben Ebene liegen,
+nicht mit `pwa/` als Unterordner — `index.html` verweist mit reinen Dateinamen ohne Pfad auf
+`manifest.json`/`sw.js`, und `manifest.json` genauso auf seine Icons. Landet `pwa/` als eigener
+Unterordner im Archiv (z.B. durch ein simples `zip -r deploy.zip index.html pwa`), findet der Browser
+Manifest/Service Worker/Icons nicht mehr — die Seite lädt zwar noch, aber "Zum Home-Bildschirm
+hinzufügen" verhält sich dann nur wie ein Lesezeichen statt wie eine echte installierbare Offline-App
+(genau dieser Fehler ist schon einmal passiert). `sprites/` selbst darf dagegen als Unterordner bleiben
+— `index.html` verweist darauf immer mit dem vollen relativen Pfad (`sprites/modern/25.webp`), der
+unabhängig von einer Unterordner-Ebene auflöst.
 
 Deshalb: `node tools/build-netlify-zip.js` ausführen — baut automatisch ein korrekt flaches
-`nuzlocke-netlify-deploy.zip` im Repo-Root (Kopie von `nuzlocke-v2-editionen.html` als `index.html`
-plus alle vier `pwa/`-Dateien, ohne Unterordner). Dieses ZIP komplett per Drag & Drop auf
-[app.netlify.com/drop](https://app.netlify.com/drop) ziehen — **nicht nur die `index.html` allein**.
+`nuzlocke-netlify-deploy.zip` im Repo-Root (Kopie von `nuzlocke-v2-editionen.html` als `index.html`,
+alle vier `pwa/`-Dateien ohne Unterordner, sowie der komplette `sprites/`-Ordner). Dieses ZIP komplett
+per Drag & Drop auf [app.netlify.com/drop](https://app.netlify.com/drop) ziehen — **nicht nur die
+`index.html` allein**.
 
 Auf dem iPhone danach über Safari die Netlify-URL öffnen und über "Teilen" → "Zum Home-Bildschirm" hinzufügen.
 
