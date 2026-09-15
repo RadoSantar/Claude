@@ -128,18 +128,23 @@ blind aus dem Gedächtnis übernehmen, sondern gegenprüfen:
 
 ## Changelog-Pflege
 
-Es gibt **zwei Stellen**, die immer synchron gehalten werden müssen:
-1. `CHANGELOG_HTML`-Konstante in `nuzlocke-v2-editionen.html` (wird als Sheet in der App selbst
-   angezeigt).
-2. Die separat veröffentlichte Artifact-Seite **"Nuzlocke Änderungsprotokoll"**
-   (`https://claude.ai/code/artifact/6ee2fb0a-8e1f-4052-aab1-f197cb326aeb`) — laut Kommentar in der
-   App "1:1" identisch zu Punkt 1.
+Nur noch **eine** Stelle pflegen: die `CHANGELOG_HTML`-Konstante in `nuzlocke-v2-editionen.html`
+(wird als Sheet in der App selbst angezeigt; taucht dadurch automatisch auch im Live-App-Artifact
+auf, sobald dieses republished wird).
 
 Bei jeder Version: neuen `<div class="entry">`-Block ganz oben in `<div class="log">` einfügen,
 Versionsnummer (`APP_VERSION`-Konstante) hochzählen, Stat-Kachel "Versionsstände" hochzählen, Footer-
 Versionsnummer aktualisieren. Offene Punkte/Backlog-Einträge unter `id="offene-punkte"` aktuell
 halten (z.B. den Einall-Eintrag in "Offene Datenkorrekturen aus dem Gen-1-9-Rechercheaudit" nach
 Behebung anpassen statt stehen zu lassen).
+
+**Das separate Artifact "Nuzlocke Änderungsprotokoll"
+(`https://claude.ai/code/artifact/6ee2fb0a-8e1f-4052-aab1-f197cb326aeb`) wird seit v1.9.48 bewusst
+NICHT mehr aktualisiert/publiziert** — es duplizierte nur den ohnehin in der App sichtbaren
+Changelog und kostete pro Version einen kompletten Lese-vor-Publish-Durchlauf (>1500 Zeilen) plus
+einen zusätzlichen Edit- und Publish-Schritt, ohne eigenen Mehrwert. Es bleibt online als
+eingefrorener Schnappschuss bis v1.9.47, aber NICHT weiter anfassen, außer der Nutzer bittet
+explizit wieder darum.
 
 ## Bekannter offener Rechercheaudit-Backlog (Stand v1.9.39)
 
