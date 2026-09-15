@@ -19,12 +19,28 @@ Schwert/Schild-DLC sowie einzelne, im Änderungsprotokoll dokumentierte Datenlü
 - **`nuzlocke-v2-editionen.html`** — die aktiv weiterentwickelte, "lebende" Version. Alle Änderungen
   passieren hier.
 - **`nuzlocke-v1-baseline.html`**, **`nuzlocke-v2-standard.html`**, **`nuzlocke-v2-checkpoint-v1.9.38.html`**,
-  **`nuzlocke-v2-checkpoint-v1.9.39.html`**
+  **`nuzlocke-v2-checkpoint-v1.9.39.html`**, **`nuzlocke-v2-checkpoint-v1.9.42.html`**,
+  **`nuzlocke-v2-checkpoint-v1.9.47.html`**
   — eingefrorene Wiederherstellungspunkte, werden nie mehr verändert. Siehe `README.md` für die
   jeweiligen Commits und Restore-Anleitungen. Bei größeren, riskanten Änderungsrunden (z.B. ein
   ganzer Recherche-Audit-Durchlauf) einen neuen solchen Checkpoint anlegen, statt nur auf Git-History
   zu vertrauen — der Nutzer will jederzeit einen benannten, verlässlichen Rückkehrpunkt haben.
+  Wichtig: `v1.9.47` ist bewusst noch die alte, vollständig in sich geschlossene Version VOR der
+  Sprite-Auslagerung (kein `sprites/`-Ordner nötig) — Rückkehrpunkt falls dieser Umbau je zurück-
+  gerollt werden müsste.
 - **`pwa/`** — `manifest.json`, `sw.js`, Icons für den Offline-Installations-Build (siehe README).
+- **`sprites/`** (seit v1.9.48) — 2027 Sprite-Bilddateien (`legacy/{dex}.png`, `modern/{dex}.webp`,
+  `boss/{key}.{png|webp}`, `badges/{key}.webp`), ausgelagert aus vier vormals riesigen Base64-JS-
+  Konstanten in `nuzlocke-v2-editionen.html` (`SPRITES`, `SPRITES_MODERN`, `BOSS_SPRITES`,
+  `BADGE_SPRITES` enthalten seither nur noch kurze relative Pfad-Strings als Werte, gleiche
+  Array-/Objekt-Form wie vorher — kein Code, der diese Konstanten konsumiert, musste sich ändern).
+  Grund: die Datei war auf 15,88 MB angewachsen (94,8% davon reine Sprite-Bilddaten als Base64 in
+  vier mehrere Megabyte langen JS-Zeilen), was auf Mobilgeräten (v.&nbsp;a. installierte PWA) zu
+  Abstürzen schon beim Laden führte, bevor irgendetwas bearbeitet werden konnte. Nach der Auslagerung
+  nur noch ~865 KB. **Zwei Auslieferungswege, zwei Strategien**, weil die Artifact-Publish-Grenze bei
+  255 Dateien liegt (weit unter 2027 Sprites): PWA/Netlify bekommt die 2027 Sprites als echte Dateien
+  neben `index.html`; der Artifact-Publish-Build bettet sie über `tools/inline-sprites.js` wieder als
+  Base64 in EINE Datei ein (bleibt dort weiterhin nötig, siehe Eintrag unten).
 - **`tools/validate-editions.js`** — **einziges** vorhandenes Validierungsskript. Prüft pro Edition:
   doppelte Boss-/Standort-IDs, verwaiste Bosse, `bossAfter`-Verweise auf unbekannte Standorte/Bosse,
   unbekannte `ace`-Spezies. **Vor jedem Publish/Commit mit Datenänderungen ausführen:**
@@ -33,15 +49,33 @@ Schwert/Schild-DLC sowie einzelne, im Änderungsprotokoll dokumentierte Datenlü
   Skript. Falls weitere Prüfungen gewünscht sind, sollten sie als eigene committete Skripte in
   `tools/` angelegt werden, nicht nur ad-hoc in einer Sitzung laufen, sonst gehen sie beim nächsten
   Absturz genauso verloren.
-- **`tools/make-artifact-bare.js`** — strippt doctype/html/head/body vor dem `Artifact()`-Publish
-  (sonst verschachtelte Kopf-Struktur, Editions-Farbschema bricht). **Immer** die gestrippte Kopie
-  publizieren, nie `nuzlocke-v2-editionen.html` direkt.
+- **`tools/extract-sprites.js`** (seit v1.9.48) — extrahiert die Base64-Werte der vier Sprite-
+  Konstanten in echte Dateien unter `sprites/{legacy,modern,boss,badges}/` und ersetzt die Werte in
+  `nuzlocke-v2-editionen.html` durch kurze Pfad-Strings. Idempotent (überspringt Werte, die schon mit
+  `"sprites/"` beginnen) — kann also gefahrlos erneut laufen, falls ein künftiger Sprite-Audit neue
+  Bilder wieder als Base64 einfügt.
+- **`tools/inline-sprites.js`** (seit v1.9.48) — Gegenstück zu `extract-sprites.js`, NUR für den
+  Artifact-Publish-Build gebraucht: bettet die referenzierten `sprites/...`-Dateien wieder als
+  Base64-Data-URIs ein, damit die dort veröffentlichte Kopie weiterhin eine einzige, in sich
+  geschlossene Datei ist (Artifact-Publish erlaubt max. 255 Dateien pro Veröffentlichung, weit unter
+  den 2027 Sprites). Wird von `tools/make-artifact-bare.js` automatisch vorgeschaltet aufgerufen.
+- **`tools/make-artifact-bare.js`** — ruft zuerst `inline-sprites.js` auf (s.o.), dann strippt
+  doctype/html/head/body vor dem `Artifact()`-Publish (sonst verschachtelte Kopf-Struktur, Editions-
+  Farbschema bricht). **Immer** die gestrippte Kopie publizieren, nie `nuzlocke-v2-editionen.html`
+  direkt.
 - **`tools/build-netlify-zip.js`** — baut das Netlify-Deploy-ZIP korrekt FLACH (index.html +
-  alle vier `pwa/`-Dateien ohne Unterordner). Nie manuell `zip -r deploy.zip index.html pwa`
-  o.ä. bauen — das verschachtelt `pwa/` als Unterordner im Archiv, wodurch `index.html`s
-  pfadlose Verweise auf `manifest.json`/`sw.js` (und dessen Verweise auf die Icons) ins Leere
-  laufen und die Installierbarkeit auf Netlify kaputtgeht (ist bereits einmal passiert). Immer
-  `node tools/build-netlify-zip.js` benutzen.
+  alle vier `pwa/`-Dateien ohne Unterordner) plus den kompletten `sprites/`-Ordner (der darf als
+  Unterordner bleiben, da `index.html` ihn immer über den vollen relativen Pfad referenziert). Nie
+  manuell `zip -r deploy.zip index.html pwa sprites` o.ä. bauen — das verschachtelt `pwa/` als
+  Unterordner im Archiv, wodurch `index.html`s pfadlose Verweise auf `manifest.json`/`sw.js` (und
+  dessen Verweise auf die Icons) ins Leere laufen und die Installierbarkeit auf Netlify kaputtgeht
+  (ist bereits einmal passiert). Immer `node tools/build-netlify-zip.js` benutzen.
+  **Wichtig, mehrfach übersehen:** Netlify hat KEIN Auto-Deploy aus diesem Repo verbunden — das ZIP
+  muss nach JEDER Änderung, die auf dem Handy ankommen soll, neu gebaut und manuell auf
+  [app.netlify.com/drop](https://app.netlify.com/drop) gezogen werden. Ein alter, im Repo liegender
+  `nuzlocke-netlify-deploy.zip`-Snapshot kann daher beliebig veraltet sein (ist selbst nicht Teil der
+  Versionshistorie/kein committetes Artefakt) — vor jeder Aussage "die Netlify-App ist aktuell" das
+  ZIP-Datum bzw. den Build-Zeitpunkt prüfen, nicht annehmen.
 - **`audit_reports/gen{N}.md`** — Rechercheaudit-Berichte pro Generation (z.B. `gen5.md` = Einall).
   **Sofort nach dem Schreiben committen und pushen**, nicht erst am Ende einer Sitzung sammeln —
   genau das Versäumnis, das `gen6.md`–`gen8.md` (Kalos/Alola/Galar) verloren gehen ließ. Diese drei
@@ -72,6 +106,14 @@ Schwert/Schild-DLC sowie einzelne, im Änderungsprotokoll dokumentierte Datenlü
   Avenitia, dem allerersten Standort).
 - Neue Edition ergänzen: ausführliche Schritt-für-Schritt-Anleitung als Kommentar direkt über
   `KALOS_LOCATIONS` in der Datei (`/* ---------- Editionen ---------- */`).
+- **Einklapp-Mechanik (seit v1.9.46–1.9.48):** zwei getrennte Sammel-Gruppen pro Region, farblich
+  unterschieden — grau/`collapseToggleHtml()`/`expandedRegions` für automatisch eingeklappte, bereits
+  ERLEDIGTE Standorte; gold/`stashCollapseToggleHtml()`/`expandedStashRegions` für manuell
+  eingeklappte, noch OFFENE Standorte (`state.manualCollapsedLocs`, z.B. "braucht eine noch nicht
+  vorhandene VM"). Bewusst jeweils GENAU EIN Sammel-Button pro Region und Kategorie, nicht ein Button
+  pro Standort. Das Auf-/Zuklappen selbst läuft über direkte DOM-Klassenumschaltung (nicht per
+  Voll-Render), damit die `.collapsible-body`-Grid-Animation (`grid-template-rows`, absichtlich
+  langsam/weich, s. CSS) sichtbar bleibt statt durch einen Re-Render übersprungen zu werden.
 
 ## Deutsche Namen — bekannte Stolperfallen
 
