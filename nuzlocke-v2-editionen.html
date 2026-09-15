@@ -295,16 +295,22 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 .settings-group-header:active{ opacity:.7; transform:scale(.99); }
 .settings-group-header .collapse-chevron{ flex:none; stroke:var(--ink-soft); }
 /* Wiederverwendete Auf-/Zuklapp-Animation für alles Einklappbare (Einstellungs-Gruppen, erledigte
-   Standort-Blöcke im Routen-Tab, ...): Inhalt bleibt immer im DOM, grid-template-rows animiert
-   zwischen 0fr und 1fr - braucht keine bekannte/gemessene Höhe, funktioniert also unabhängig von
-   variabel langem Karteninhalt. */
+   Standort-Blöcke im Routen-Tab, die "später fangbar"-Sammelgruppe, ...): Inhalt bleibt immer im
+   DOM, grid-template-rows animiert zwischen 0fr und 1fr - braucht keine bekannte/gemessene Höhe,
+   funktioniert also unabhängig von variabel langem Karteninhalt. Nutzerfeedback: wirkte bei .32s zu
+   abrupt/überraschend - bewusst verlangsamt (.6s) und der Inhalt blendet zusätzlich sanft mit ein/aus
+   statt hart an der Höhenkante abgeschnitten zu wirken. */
 .collapsible-body{
-  display:grid; grid-template-rows:0fr; transition:grid-template-rows .32s cubic-bezier(.4,0,.2,1);
+  display:grid; grid-template-rows:0fr; transition:grid-template-rows .6s cubic-bezier(.4,0,.2,1);
 }
 .collapsible-body.expanded{ grid-template-rows:1fr; }
-.collapsible-body-inner{ overflow:hidden; min-height:0; }
+.collapsible-body-inner{
+  overflow:hidden; min-height:0; opacity:0; transition:opacity .35s ease;
+}
+.collapsible-body.expanded .collapsible-body-inner{ opacity:1; transition-delay:.2s; }
 @media (prefers-reduced-motion: reduce){
   .collapsible-body{ transition:none; }
+  .collapsible-body-inner{ transition:none; }
 }
 .card{
   background:var(--surface); border-radius:var(--radius); box-shadow:var(--shadow);
@@ -958,8 +964,14 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
   transition:transform .15s ease, opacity .15s ease, background .15s ease;
 }
 .collapse-toggle:active{ opacity:.85; transform:scale(.98); background:var(--surface); }
-.collapse-chevron{ width:16px; height:16px; stroke:var(--ink-soft); fill:none; stroke-width:2.2; flex:none; transition:transform .2s ease; }
+.collapse-chevron{ width:16px; height:16px; stroke:var(--ink-soft); fill:none; stroke-width:2.2; flex:none; transition:transform .35s cubic-bezier(.4,0,.2,1); }
 .collapse-chevron.open{ transform:rotate(90deg); }
+/* "später fangbar"-Sammelgruppe (manuell zurückgestellte, noch offene Standorte, siehe
+   stashCollapseToggleHtml): bewusst in Gold statt Neutralgrau, damit sie sich auf den ersten Blick
+   von den grauen "erledigt"-Gruppen unterscheidet - hier ist nichts abgehakt, nur beiseitegelegt. */
+.collapse-toggle.stash{ background:var(--gold-soft); color:var(--gold); }
+.collapse-toggle.stash:active{ background:var(--surface); }
+.collapse-toggle.stash .collapse-chevron{ stroke:var(--gold); }
 
 /* Team grid */
 .content:has(.team-grid){ display:flex; flex-direction:column; overflow:hidden; padding-bottom:14px; }
@@ -3669,6 +3681,7 @@ let lastFightDeaths = 0;
 let lastFightWasWin = false;
 let lastFightBossId = null;
 let expandedRegions = new Set(); // welche Regionen ihre abgeschlossene Historie ausgeklappt haben - bewusst nicht persistiert, jeder Reload startet eingeklappt
+let expandedStashRegions = new Set(); // dito für die "später fangbar"-Sammelgruppe manuell zurückgestellter Standorte
 let expandedSettingsGroups = new Set(); // welche Einstellungs-Gruppen aufgeklappt sind - ebenfalls nicht persistiert, "Fortschritt" bleibt immer sichtbar
 let ordenCaseOpen = false; // ob die Orden-Schatulle im Team-Tab gerade geöffnet ist - nicht persistiert, startet immer zu
 let boxSearchQuery = ""; // Box-Suche - nicht persistiert, jeder Tab-Wechsel startet leer
@@ -3793,7 +3806,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.46";
+const APP_VERSION = "1.9.47";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -4897,22 +4910,28 @@ function locationTiles(loc, region, game, currentId){
   return tiles;
 }
 
-/* Manuelles Einklappen einzelner, NOCH NICHT abgeschlossener Standort-Kacheln (state.manualCollapsedLocs)
-   - unabhängig vom automatischen Einklappen bereits erledigter Kacheln oben. Für Standorte gedacht, an
-   denen zwar ein Fang möglich wäre, aber erst später im Run (z.B. fehlende Angel/VM) - bleiben so nicht
-   dauerhaft im Weg, ohne dass man sie erst "erledigen" müsste. Nutzt bewusst dieselbe .collapse-toggle-
-   Optik wie die automatischen Einklapp-Blöcke, damit beide klar als tappbar erkennbar sind. */
-function manualCollapseRowHtml(id, name){
-  return `<button class="collapse-toggle loc-collapse-toggle" data-act="toggle-loc-manual-collapse" data-id="${id}">
-    <svg class="collapse-chevron" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
-    <span>${escapeHtml(name)} - später fangbar, antippen zum Einblenden</span>
-  </button>`;
-}
-
 function collapseToggleHtml(segKey, count, expanded, bodyHtml){
   const toggle = `<button class="collapse-toggle" data-act="toggle-region-collapse" data-region="${segKey}" data-count="${count}">
     <svg class="collapse-chevron${expanded?" open":""}" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
     <span>${count} ${count===1?"erledigte Kachel":"erledigte Kacheln"} ${expanded?"ausblenden":"anzeigen"}</span>
+  </button>`;
+  const body = `<div class="collapsible-body${expanded?" expanded":""}" data-collapse-body="${segKey}"${expanded?"":" inert"}><div class="collapsible-body-inner">${bodyHtml}</div></div>`;
+  return toggle + body;
+}
+
+/* Manuelles Einklappen NOCH NICHT abgeschlossener Standort-Kacheln (state.manualCollapsedLocs) - für
+   Standorte gedacht, an denen zwar ein Fang möglich wäre, aber erst später im Run (z.B. fehlende
+   Angel/VM). Anders als das automatische Einklappen erledigter Kacheln (collapseToggleHtml) sammelt
+   dies bewusst ALLE so markierten, noch offenen Kacheln eines Abschnitts in EINER gemeinsamen Gruppe
+   mit genau einem Auf-/Zuklapp-Button, statt für jede einzeln einen eigenen Button zu zeigen (auch
+   wenn sie an verschiedenen, nicht benachbarten Stellen der Liste liegen) - sonst würde die Liste bei
+   mehreren zurückgestellten Orten mit mehreren, kaum unterscheidbaren Buttons überladen. Optisch
+   bewusst abgesetzt (Gold-Ton statt Neutral) von den grau gehaltenen "erledigt"-Gruppen, damit auf
+   einen Blick klar ist: das hier ist Zurückgestelltes, kein abgehakter Fortschritt. */
+function stashCollapseToggleHtml(segKey, count, expanded, bodyHtml){
+  const toggle = `<button class="collapse-toggle stash" data-act="toggle-loc-stash-collapse" data-region="${segKey}" data-count="${count}">
+    <svg class="collapse-chevron${expanded?" open":""}" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
+    <span>${count} später fangbare ${count===1?"Standort":"Standorte"} ${expanded?"ausblenden":"anzeigen"}</span>
   </button>`;
   const body = `<div class="collapsible-body${expanded?" expanded":""}" data-collapse-body="${segKey}"${expanded?"":" inert"}><div class="collapsible-body-inner">${bodyHtml}</div></div>`;
   return toggle + body;
@@ -5046,13 +5065,16 @@ function renderRoutes(){
     const tiles = [];
     locs.forEach(loc=>{ tiles.push(...locationTiles(loc, region, game, currentId)); });
 
+    const stashedTiles = [];
     let i = 0;
     while(i<tiles.length){
       if(!tiles[i].resolved){
         const tile = tiles[i];
-        html += (tile.kind==="loc" && (state.manualCollapsedLocs||[]).includes(tile.id))
-          ? manualCollapseRowHtml(tile.id, tile.name)
-          : tile.html;
+        if(tile.kind==="loc" && (state.manualCollapsedLocs||[]).includes(tile.id)){
+          stashedTiles.push(tile);
+        } else {
+          html += tile.html;
+        }
         i++;
         continue;
       }
@@ -5065,15 +5087,29 @@ function renderRoutes(){
       html += collapseToggleHtml(segKey, j-i, expanded, collapsedBody);
       i = j;
     }
+    if(stashedTiles.length){
+      const stashKey = `${regionKey}-stash`;
+      const stashExpanded = expandedStashRegions.has(stashKey);
+      let stashBody = "";
+      stashedTiles.forEach(t=>{ stashBody += t.html; });
+      html += stashCollapseToggleHtml(stashKey, stashedTiles.length, stashExpanded, stashBody);
+    }
   });
   const customs = state.locations.filter(l=>l.custom);
   if(customs.length){
     html += `<div class="region-header">Eigene Fundorte</div>`;
+    const stashedCustoms = [];
     customs.forEach(loc=>{
-      html += (!isLocResolved(loc) && (state.manualCollapsedLocs||[]).includes(loc.id))
-        ? manualCollapseRowHtml(loc.id, loc.name)
-        : routeCard(loc, loc.id===currentId);
+      if(!isLocResolved(loc) && (state.manualCollapsedLocs||[]).includes(loc.id)) stashedCustoms.push(loc);
+      else html += routeCard(loc, loc.id===currentId);
     });
+    if(stashedCustoms.length){
+      const stashKey = "eigene-fundorte-stash";
+      const stashExpanded = expandedStashRegions.has(stashKey);
+      let stashBody = "";
+      stashedCustoms.forEach(loc=>{ stashBody += routeCard(loc, loc.id===currentId); });
+      html += stashCollapseToggleHtml(stashKey, stashedCustoms.length, stashExpanded, stashBody);
+    }
   }
   document.getElementById("content").innerHTML = html || emptyState("Keine Standorte","Füge über + einen eigenen Fundort hinzu.");
   updateJumpButton();
@@ -5086,7 +5122,7 @@ function routeCard(loc, isCurrent){
   const noteBtn = iconBtn(hasNote?"tone-gold":"tone-neutral","open-location-note",loc.id,hasNote?ICON_NOTE_FILLED:ICON_NOTE,hasNote?"Notiz bearbeiten":"Notiz hinzufügen",false,true);
   const noteHtml = hasNote ? `<div class="loc-note">${escapeHtml(loc.customNote)}</div>` : "";
   /* Manuelles Einklappen ist nur für noch offene (unresolved) Standorte sinnvoll - siehe
-     manualCollapseRowHtml/renderRoutes. Erledigte Standorte werden ohnehin schon automatisch als
+     stashCollapseToggleHtml/renderRoutes. Erledigte Standorte werden ohnehin schon automatisch als
      Block eingeklappt. */
   if(loc.noCatch){
     const visited = !!loc.visited;
@@ -7263,7 +7299,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="stats">
     <div class="stat"><div class="n">23</div><div class="l">Editionen</div></div>
     <div class="stat"><div class="n">1075</div><div class="l">Pokémon-Arten</div></div>
-    <div class="stat"><div class="n">49</div><div class="l">Versions&shy;stände</div></div>
+    <div class="stat"><div class="n">50</div><div class="l">Versions&shy;stände</div></div>
     <div class="stat"><div class="n">Gen 1–9</div><div class="l">Abgedeckt</div></div>
   </div>
 
@@ -7273,6 +7309,25 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.47</span><span class="tag tag-fix">Fix</span></div>
+      <h3>Einklapp-Feinschliff: eine Sammelgruppe statt vieler Buttons, optisch abgesetzt, sanftere Animation</h3>
+      <p>Direktes Nutzerfeedback zum manuellen Einklappen aus v1.9.46, drei Punkte:</p>
+      <p><strong>1. Nur noch ein Sammel-Button statt vieler Einzel-Buttons:</strong> bisher bekam jeder manuell
+      eingeklappte, noch offene Standort seine eigene Zeile mit eigenem Button - bei mehreren zurückgestellten
+      Orten wirkte das schnell unübersichtlich. Alle so markierten Standorte einer Region landen jetzt in EINER
+      gemeinsamen Gruppe mit genau einem Auf-/Zuklapp-Button („2 später fangbare Standorte anzeigen"), auch wenn
+      sie an unterschiedlichen, nicht benachbarten Stellen der eigentlichen Liste liegen - dasselbe Prinzip wie
+      beim bereits bestehenden automatischen Einklappen erledigter Kacheln.</p>
+      <p><strong>2. Optisch klar unterscheidbar von „erledigt":</strong> die neue Sammelgruppe nutzt einen
+      Gold-Ton statt des neutralen Grau der „erledigt"-Gruppen - auf einen Blick erkennbar, dass es sich um
+      bewusst Zurückgestelltes handelt, nicht um abgehakten Fortschritt.</p>
+      <p><strong>3. Langsamere, sanftere Auf-/Zuklapp-Animation:</strong> die wiederverwendete Einklapp-Animation
+      (auch für erledigte Standorte und Einstellungs-Gruppen) lief bisher in 0,32s - fühlte sich laut Feedback
+      zu abrupt/überraschend an. Jetzt 0,6s, zusätzlich blendet der Inhalt beim Auf-/Zuklappen sanft ein/aus
+      statt hart an der Höhenkante abgeschnitten zu wirken.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.46</span><span class="tag tag-feat">Feature</span></div>
@@ -8523,7 +8578,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.46.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.47.</footer>
 
 </div>`;
 
@@ -9691,6 +9746,23 @@ document.addEventListener("click", e=>{
     const idx = list.indexOf(id);
     if(idx===-1) list.push(id); else list.splice(idx,1);
     saveState(); render();
+  }
+  else if(act==="toggle-loc-stash-collapse"){
+    const key = t.dataset.region;
+    const willExpand = !expandedStashRegions.has(key);
+    if(willExpand) expandedStashRegions.add(key); else expandedStashRegions.delete(key);
+    const bodyEl = document.querySelector(`[data-collapse-body="${key}"]`);
+    if(bodyEl){
+      bodyEl.classList.toggle("expanded", willExpand);
+      bodyEl.toggleAttribute("inert", !willExpand);
+      updateJumpButtonVisibility();
+      bodyEl.addEventListener("transitionend", updateJumpButtonVisibility, {once:true});
+    }
+    const chevron = t.querySelector(".collapse-chevron");
+    if(chevron) chevron.classList.toggle("open", willExpand);
+    const label = t.querySelector("span");
+    const count = Number(t.dataset.count);
+    if(label) label.textContent = `${count} später fangbare ${count===1?"Standort":"Standorte"} ${willExpand?"ausblenden":"anzeigen"}`;
   }
   else if(act==="close-sheet") closeSheet();
   else if(act==="save-catch"){
