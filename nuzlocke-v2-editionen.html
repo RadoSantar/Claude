@@ -947,12 +947,17 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 .jump-fab.point-up svg{ transform:rotate(180deg); }
 .jump-fab:active{ transform:scale(.95); }
 
+/* Vorher reiner Text+Icon ohne Kontur/Hintergrund - auf Touchscreens nicht als eigenständig
+   tappbares Element erkennbar (Nutzerfeedback). Jetzt mit Kartenoptik (Hintergrund, Rand, Radius,
+   Schatten) wie alle anderen tappbaren Flächen der App, damit die Zeile klar als Button lesbar ist. */
 .collapse-toggle{
-  display:flex; align-items:center; gap:8px; width:100%; border:none; background:none;
-  color:var(--ink-soft); font-size:.82rem; font-weight:700; padding:10px 2px; text-align:left;
-  transition:transform .15s ease, opacity .15s ease;
+  display:flex; align-items:center; gap:8px; width:100%;
+  border:1px solid var(--line); background:var(--surface-alt); border-radius:var(--radius);
+  box-shadow:var(--shadow); color:var(--ink-soft); font-size:.82rem; font-weight:700;
+  padding:12px 14px; margin-bottom:10px; text-align:left;
+  transition:transform .15s ease, opacity .15s ease, background .15s ease;
 }
-.collapse-toggle:active{ opacity:.7; transform:scale(.98); }
+.collapse-toggle:active{ opacity:.85; transform:scale(.98); background:var(--surface); }
 .collapse-chevron{ width:16px; height:16px; stroke:var(--ink-soft); fill:none; stroke-width:2.2; flex:none; transition:transform .2s ease; }
 .collapse-chevron.open{ transform:rotate(90deg); }
 
@@ -3745,6 +3750,7 @@ const ICON_FLAG_FILLED = '<svg viewBox="0 0 24 24"><path d="M6 21V4" stroke-line
 const ICON_NOTE = '<svg viewBox="0 0 24 24"><path d="M6 3h9l5 5v12a1 1 0 01-1 1H6a1 1 0 01-1-1V4a1 1 0 011-1z"/><path d="M14.5 3v5.5H20"/><path d="M8 13h8M8 17h5"/></svg>';
 const ICON_DICE = '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8" cy="8" r="1.3" fill="currentColor" stroke="none"/><circle cx="16" cy="8" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="8" cy="16" r="1.3" fill="currentColor" stroke="none"/><circle cx="16" cy="16" r="1.3" fill="currentColor" stroke="none"/></svg>';
 const ICON_ARCHIVE = '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="4.5" rx="1.2"/><path d="M5 8.5V19a1 1 0 001 1h12a1 1 0 001-1V8.5"/><path d="M10 13h4"/></svg>';
+const ICON_COLLAPSE = '<svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>';
 /* Zufalls-Spitznamen-Generator: bewusst spezies-unabhängige, generische Namen statt z.B. aus dem
    Typ oder der Art abgeleiteter Vorschläge - einfacher zu pflegen und passt trotzdem auf jedes
    Pokémon, ohne eine komplette Arten-Datenbank für Wortspiele zu brauchen. */
@@ -3787,7 +3793,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.45";
+const APP_VERSION = "1.9.46";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -3845,7 +3851,7 @@ function freshState(editionId, soloMode){
     names.forEach(entry=>{ locations.push(parseLocationEntry(region, entry)); });
   });
   const gameStarters = GAMES[edition].starters || { grass:"", fire:"", water:"" };
-  return { edition, runTitle:"", soloMode:!!soloMode, locations, bossBoosts:{}, bossDefeated:{}, rivalNickname:"", duelPartnerName:"", dupesWarning:true, lastExportAt:null, evolutionCount:0, lossCount:0, nicknameRequired:false, pvp:{}, hallOfFame:{ rivalTeam:[], playerTeam:[], defeatedAt:null, result:null }, starterNames:{ ...gameStarters }, starterChoice:null, playerGender:null, currentLocId:null, eventLog:[], hiddenRegions:[], achievements:{}, activeTitle:null, dupesIgnoredCount:0, bossLossIds:{}, cleanBossWins:{}, bossNotes:{}, randomizerSeed:"", vibrationEnabled:true, bossWinTeams:{}, hidePostgame:false, trackBossTeams:false, bossOpponentTeams:{}, trackDeathCause:false, colorBlindSafeMode:false, teamOrder:[], syncCode:null, lastSyncedAt:null, keyItemsChecked:{}, houseRules:{ setMode:true, speciesClause:true, noItems:true, levelCap:true }, duoCode:null, soulLinkMode:false };
+  return { edition, runTitle:"", soloMode:!!soloMode, locations, bossBoosts:{}, bossDefeated:{}, rivalNickname:"", duelPartnerName:"", dupesWarning:true, lastExportAt:null, evolutionCount:0, lossCount:0, nicknameRequired:false, pvp:{}, hallOfFame:{ rivalTeam:[], playerTeam:[], defeatedAt:null, result:null }, starterNames:{ ...gameStarters }, starterChoice:null, playerGender:null, currentLocId:null, eventLog:[], hiddenRegions:[], achievements:{}, activeTitle:null, dupesIgnoredCount:0, bossLossIds:{}, cleanBossWins:{}, bossNotes:{}, randomizerSeed:"", vibrationEnabled:true, bossWinTeams:{}, hidePostgame:false, trackBossTeams:false, bossOpponentTeams:{}, trackDeathCause:false, colorBlindSafeMode:false, teamOrder:[], syncCode:null, lastSyncedAt:null, keyItemsChecked:{}, houseRules:{ setMode:true, speciesClause:true, noItems:true, levelCap:true }, duoCode:null, soulLinkMode:false, manualCollapsedLocs:[] };
 }
 
 /* Ergänzt neu hinzugekommene Standorte (z.B. nachträglich eingefügte Städte) in einen bereits
@@ -3938,6 +3944,7 @@ function normalizeState(parsed){
   if(!parsed.houseRules) parsed.houseRules = { setMode:true, speciesClause:true, noItems:true, levelCap:true };
   if(typeof parsed.duoCode !== "string") parsed.duoCode = null;
   if(typeof parsed.soulLinkMode !== "boolean") parsed.soulLinkMode = false;
+  if(!Array.isArray(parsed.manualCollapsedLocs)) parsed.manualCollapsedLocs = [];
   migrateLegacyPlatinBossIds(parsed);
   syncLocations(parsed);
   return parsed;
@@ -4873,7 +4880,7 @@ function isLocResolved(loc){ return loc.noCatch ? !!loc.visited : loc.status!=="
    hängender, bereits abgeschlossener Bosskampf muss so nicht mehr warten, bis auch der Standort
    selbst fangbar ist (z.B. weil dafür erst noch eine Angel fehlt), und umgekehrt. */
 function locationTiles(loc, region, game, currentId){
-  const tiles = [{ html: routeCard(loc, loc.id===currentId), resolved: isLocResolved(loc) }];
+  const tiles = [{ html: routeCard(loc, loc.id===currentId), resolved: isLocResolved(loc), kind:"loc", id: loc.id, name: loc.name }];
   const bossIds = game.bossAfter[region+"|"+loc.name];
   if(bossIds) bossIds.forEach(id=>{
     const boss=bossById(id); if(!boss) return;
@@ -4882,12 +4889,24 @@ function locationTiles(loc, region, game, currentId){
        Duellpartner nach dem Champion - im Einzelspieler-Modus gibt es niemanden dafür, die Kachel
        entfällt komplett (siehe isBossSettled: dort wird sie transparent als "erledigt" behandelt,
        damit sie die umgebenden Kacheln nicht dauerhaft am Einklappen hindert). */
-    if(boss.final){ if(!state.soloMode) tiles.push({ html: finalRivalCardHtml(boss, boss.id===currentId), resolved: isBossSettled(boss) }); return; }
+    if(boss.final){ if(!state.soloMode) tiles.push({ html: finalRivalCardHtml(boss, boss.id===currentId), resolved: isBossSettled(boss), kind:"boss" }); return; }
     let h = bossCardHtml(boss, boss.id===currentId);
     if(boss.pvp && !state.soloMode) h += pvpCardHtml(boss);
-    tiles.push({ html: h, resolved: isBossSettled(boss) });
+    tiles.push({ html: h, resolved: isBossSettled(boss), kind:"boss" });
   });
   return tiles;
+}
+
+/* Manuelles Einklappen einzelner, NOCH NICHT abgeschlossener Standort-Kacheln (state.manualCollapsedLocs)
+   - unabhängig vom automatischen Einklappen bereits erledigter Kacheln oben. Für Standorte gedacht, an
+   denen zwar ein Fang möglich wäre, aber erst später im Run (z.B. fehlende Angel/VM) - bleiben so nicht
+   dauerhaft im Weg, ohne dass man sie erst "erledigen" müsste. Nutzt bewusst dieselbe .collapse-toggle-
+   Optik wie die automatischen Einklapp-Blöcke, damit beide klar als tappbar erkennbar sind. */
+function manualCollapseRowHtml(id, name){
+  return `<button class="collapse-toggle loc-collapse-toggle" data-act="toggle-loc-manual-collapse" data-id="${id}">
+    <svg class="collapse-chevron" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
+    <span>${escapeHtml(name)} - später fangbar, antippen zum Einblenden</span>
+  </button>`;
 }
 
 function collapseToggleHtml(segKey, count, expanded, bodyHtml){
@@ -5030,7 +5049,10 @@ function renderRoutes(){
     let i = 0;
     while(i<tiles.length){
       if(!tiles[i].resolved){
-        html += tiles[i].html;
+        const tile = tiles[i];
+        html += (tile.kind==="loc" && (state.manualCollapsedLocs||[]).includes(tile.id))
+          ? manualCollapseRowHtml(tile.id, tile.name)
+          : tile.html;
         i++;
         continue;
       }
@@ -5047,7 +5069,11 @@ function renderRoutes(){
   const customs = state.locations.filter(l=>l.custom);
   if(customs.length){
     html += `<div class="region-header">Eigene Fundorte</div>`;
-    customs.forEach(loc=>{ html += routeCard(loc, loc.id===currentId); });
+    customs.forEach(loc=>{
+      html += (!isLocResolved(loc) && (state.manualCollapsedLocs||[]).includes(loc.id))
+        ? manualCollapseRowHtml(loc.id, loc.name)
+        : routeCard(loc, loc.id===currentId);
+    });
   }
   document.getElementById("content").innerHTML = html || emptyState("Keine Standorte","Füge über + einen eigenen Fundort hinzu.");
   updateJumpButton();
@@ -5059,8 +5085,12 @@ function routeCard(loc, isCurrent){
   const hasNote = !!(loc.customNote||"").trim();
   const noteBtn = iconBtn(hasNote?"tone-gold":"tone-neutral","open-location-note",loc.id,hasNote?ICON_NOTE_FILLED:ICON_NOTE,hasNote?"Notiz bearbeiten":"Notiz hinzufügen",false,true);
   const noteHtml = hasNote ? `<div class="loc-note">${escapeHtml(loc.customNote)}</div>` : "";
+  /* Manuelles Einklappen ist nur für noch offene (unresolved) Standorte sinnvoll - siehe
+     manualCollapseRowHtml/renderRoutes. Erledigte Standorte werden ohnehin schon automatisch als
+     Block eingeklappt. */
   if(loc.noCatch){
     const visited = !!loc.visited;
+    const collapseBtn = visited ? "" : iconBtn("tone-neutral","toggle-loc-manual-collapse",loc.id,ICON_COLLAPSE,"Später erledigen - Kachel einklappen",false,true);
     return `<div class="card st-nocatch${visited?" st-nocatch-done":""}" data-loc="${loc.id}"${currentAttr}>
       <div class="card-top">
         <div><div class="loc-name">${escapeHtml(loc.name)}</div></div>
@@ -5068,6 +5098,7 @@ function routeCard(loc, isCurrent){
           <span class="chip ${visited?"gold":"silver"}">${visited?"Erledigt":"Kein Wildfang"}</span>
           ${noteBtn}
           ${flagBtn}
+          ${collapseBtn}
         </div>
       </div>
       <div class="loc-sub">${escapeHtml(loc.note || "Keine wilden Pokémon hier.")}</div>
@@ -5101,6 +5132,7 @@ function routeCard(loc, isCurrent){
     </div>
     ${monActionsHtml(loc)}`;
   }
+  const collapseBtn = loc.status==="pending" ? iconBtn("tone-neutral","toggle-loc-manual-collapse",loc.id,ICON_COLLAPSE,"Später fangbar - Kachel einklappen",false,true) : "";
   return `<div class="card ${cardClass(loc)}" data-loc="${loc.id}"${currentAttr}>
     <div class="card-top">
       <div>
@@ -5111,6 +5143,7 @@ function routeCard(loc, isCurrent){
         ${chipFor(loc)}
         ${noteBtn}
         ${flagBtn}
+        ${collapseBtn}
         ${loc.custom ? iconBtn("tone-red","delete-location",loc.id,ICON_TRASH,"Fundort löschen",false,true) : ""}
       </div>
     </div>
@@ -7230,7 +7263,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="stats">
     <div class="stat"><div class="n">23</div><div class="l">Editionen</div></div>
     <div class="stat"><div class="n">1075</div><div class="l">Pokémon-Arten</div></div>
-    <div class="stat"><div class="n">48</div><div class="l">Versions&shy;stände</div></div>
+    <div class="stat"><div class="n">49</div><div class="l">Versions&shy;stände</div></div>
     <div class="stat"><div class="n">Gen 1–9</div><div class="l">Abgedeckt</div></div>
   </div>
 
@@ -7240,6 +7273,31 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.46</span><span class="tag tag-feat">Feature</span></div>
+      <h3>Touch-Bedienbarkeit: Einklapp-Button jetzt als echter Button erkennbar, offene Standorte manuell einklappbar</h3>
+      <p>Nutzerfeedback: die App ist für Touchscreens ausgelegt, einige Bedienelemente sahen aber nicht danach aus.
+      Zwei Punkte direkt behoben:</p>
+      <p><strong>1. Der Einklapp-Button für erledigte Standort-Blöcke</strong> (z.&nbsp;B. „3 erledigte Kacheln
+      anzeigen") hatte weder Hintergrund noch Rahmen noch Schatten - er sah wie eine reine Beschriftungszeile
+      aus, nicht wie ein tappbares Element. Jetzt mit derselben Kartenoptik (Hintergrund, Rand, Radius, Schatten)
+      wie der Rest der App.</p>
+      <p><strong>2. Standorte manuell einklappbar, auch wenn dort noch kein Fang eingetragen ist</strong> - für
+      die häufige Situation, dass an einem Standort zwar grundsätzlich gefangen werden könnte, aber erst später
+      im Run (z.&nbsp;B. fehlende Angel oder ein anderes Schlüsselitem). Neuer Chevron-Button auf jeder noch
+      offenen Standort-Kachel klappt sie zu einer schmalen, klar beschrifteten Zeile zusammen („Route X - später
+      fangbar, antippen zum Einblenden") - ein Antippen stellt die volle Kachel wieder her. Bewusst unabhängig
+      vom bestehenden automatischen Einklappen erledigter Standorte, da hier der Standort ja gerade noch NICHT
+      erledigt ist. Der aktuelle Zustand wird pro Standort gespeichert (<code>state.manualCollapsedLocs</code>)
+      und übersteht damit Neuladen/App-Neustart.</p>
+      <p>Bewusst zurückgestellt (siehe „Offene Punkte" weiter unten): eine vollautomatische Variante, die
+      anhand einer strukturierten Item-Voraussetzung pro Standort selbst erkennt, wann ein Ort wieder
+      freigeschaltet ist - bräuchte neue, pro Standort recherchierte Daten statt eines reinen UI-Fixes.
+      Ebenfalls zurückgestellt: ein Architektur-Bug beim „Postgame-Inhalte ausblenden"-Schalter (u.&nbsp;a.
+      Bells und Cherens Rückkämpfe in Schwarz/Weiß werden davon nicht erfasst) sowie eine Liste allgemeiner
+      Touchscreen-Bedienbarkeits-Ideen.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.45</span><span class="tag tag-note">Vorschau</span></div>
@@ -8379,6 +8437,9 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
 
   <div class="followups" id="offene-punkte">
     <h2>Offene Punkte, Ideen &amp; Optimierungen</h2>
+    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Offen</span><strong>Postgame-Ausblenden erfasst nicht alle Postgame-Inhalte (Nutzerfeedback v1.9.46).</strong> Der Schalter „Postgame-Inhalte ausblenden" filtert nur ganze Standort-Kacheln anhand des <code>note</code>-Texts nach dem Wort „Postgame" - hängt ein Bosskampf per <code>bossAfter</code> an einem Standort, der selbst nicht als Postgame erkannt wird (z.&nbsp;B. weil er bewusst an einen bestehenden, auch nicht-Postgame-Standort gehängt wurde), bleibt der Bosskampf trotz aktiviertem Schalter sichtbar. Bestätigte Fälle: Bells und Cherens Rückkämpfe in Schwarz/Weiß (hängen an Avenitia/Siegesstraße, deren Notiztext das Wort „Postgame" nicht enthält), Rot am Silberberg in Gold/Silber/Kristall/HG/SS, Blaus Rückkampf nach den Sevii-Inseln in Feuerrot/Blattgrün sowie strukturell die komplette Region Galar (deren Standortliste als einzige gar keine <code>note</code>-Felder hat, siehe „Offene Datenkorrekturen" unten). Sauberer Fix bräuchte eine Postgame-Markierung direkt am Bosseintrag statt nur eine Texterkennung am Standort, damit einzelne Bosskacheln unabhängig vom Rest des Standorts ausgeblendet werden können.</div>
+    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Offen</span><strong>Standorte automatisch einklappen, bis ihre Fang-Voraussetzung erfüllt ist.</strong> Seit v1.9.46 lassen sich noch offene Standorte manuell einklappen (siehe Eintrag oben) - das setzt aber eigenes Wissen voraus, welche Orte betroffen sind. Eine automatische Variante würde pro Standort strukturiert hinterlegen, welches Schlüsselitem/welche VM nötig ist (statt wie bisher nur als Fließtext in der Notiz), und mit der bereits bestehenden VM-Checkliste (<code>state.keyItemsChecked</code>) abgleichen: Standort automatisch eingeklappt, bis das Item angehakt ist, dann automatisch wieder sichtbar. Bräuchte eine eigene Recherche-/Dateneingaberunde über alle 23 Editionen hinweg, kein reiner Code-Fix.</div>
+    <div class="followup-item"><span class="tag tag-note" style="margin-right:8px;">Offen</span><strong>Weitere Touchscreen-Bedienbarkeits-Ideen (Nutzerfeedback v1.9.46).</strong> Sammlung noch nicht umgesetzter Ideen aus derselben Rückmeldungsrunde wie die beiden Punkte oben: Mindest-Tapfläche von 44×44px auf allen Icon-Buttons durchsetzen (einige, z.&nbsp;B. das Kontextmenü-Icon in Team/Box, sind aktuell kleiner); sichtbare Tap-Zustände (Farb-/Schattenänderung, nicht nur Transform/Opacity) konsequent auf alle klickbaren Flächen ausweiten; Long-Press-Bestätigung für destruktive Aktionen dort ergänzen, wo sie noch fehlt (analog zu „Sieg zurücknehmen" seit v1.8.53); ein sichtbarer Erstnutzer-Hinweis auf die Swipe-Navigation zwischen Tabs, da Swipe-Only-Gesten sonst leicht unentdeckt bleiben.</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Plattformübergreifendes Speichersystem.</strong> Spielstände liegen bisher rein lokal (<code>localStorage</code>) im jeweiligen Browser/Gerät — der einzige Weg zwischen Geräten zu wechseln ist der manuelle JSON-Export/Import. Ein echter Sync (z.B. Konto-basiert oder über einen eigenen Cloud-Speicher) würde Spielstände automatisch zwischen Handy, Tablet und Desktop aktuell halten. → umgesetzt in v1.8.56–1.8.59 als Cloud-Sync über Supabase (Sync-Code statt Konto/Login)</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Achievement-System mit verliehenen Titeln.</strong> Für bestimmte Situationen/Meilensteine im Run Achievements freischalten, die einen Titel verleihen — z.&nbsp;B. „Legenden-Trainer" bei 3 Legendären gleichzeitig im Team, „Champ" nach Championsieg. Weitere Ideen für Auslöser/Titel noch offen. → umgesetzt in v1.8.34 mit 10 Erfolgen/Titeln als erste Runde (u.&nbsp;a. Teamvoll, Ironman, fehlerfreier Champion-Sieg, Solo-Modus, Dupes-Regelbruch) - weitere Erfolge (z.&nbsp;B. Legenden-Trainer, editionsübergreifende) können jederzeit ergänzt werden.</div>
     <div class="followup-item"><span class="tag tag-feat" style="margin-right:8px;">Umgesetzt</span><strong>Run-Rückblick ausbauen: erzählte Zusammenfassung + kleine Analyse.</strong> Statt nur Kennzahlen eine spannend geschriebene Zusammenfassung des Abenteuers anhand von Kennzahlen/Verlauf generieren, dazu kleine Analyse-Einsichten (z.&nbsp;B. „hauptsächlich Wasser-Pokémon im Team", auffällige Typverteilung, Fang-/Todesserien o.&nbsp;Ä.). → umgesetzt in v1.8.51 (Fließtext-Zusammenfassung + Analyse-Punkte zu Fangserie, härtestem Gegner, Erfolgen und ignorierten Dupes-Warnungen; Typverteilung bewusst ausgelassen, da dafür eine komplette Arten→Typ-Referenztabelle fehlt - siehe „Typabdeckungs-Analyse fürs Team" weiter unten)</div>
@@ -8462,7 +8523,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.45.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.46.</footer>
 
 </div>`;
 
@@ -9623,6 +9684,12 @@ document.addEventListener("click", e=>{
     const loc = findLoc(id);
     if(!loc) return;
     loc.visited = !loc.visited;
+    saveState(); render();
+  }
+  else if(act==="toggle-loc-manual-collapse"){
+    const list = state.manualCollapsedLocs || (state.manualCollapsedLocs=[]);
+    const idx = list.indexOf(id);
+    if(idx===-1) list.push(id); else list.splice(idx,1);
     saveState(); render();
   }
   else if(act==="close-sheet") closeSheet();
