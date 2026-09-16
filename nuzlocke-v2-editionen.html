@@ -1259,19 +1259,17 @@ const LOCATIONS_DEFAULT = [
     {name:"Neuborkia", note:"Nur Kopfnuss-Bäume, Surfen, Angeln (kein Gras in der Stadt)."},
     "Route 29",
     {name:"Rosalia City", note:"Nur Kopfnuss-Bäume, Surfen, Angeln."},
-    "Route 46","Route 30","Route 31",
+    "Route 30","Route 31",
     {name:"Viola City", note:"Nur Kopfnuss-Bäume, Surfen, Angeln + Geschenk: Togepi-Ei (nach Falkner-Sieg)."},
     {name:"Knofensa-Turm", note:"Nur im Turm: Rattfratz (tags), Nebulak (nachts)."},
-    "Dunkelhöhle (Viola-Seite)","Einheitstunnel","Route 32",
+    "Dunkelhöhle (Viola-Seite)","Route 32","Einheitstunnel",
     {name:"Alph-Ruinen", note:"Inkl. Icognito-Rätselkammern."},
-    {name:"Sinjoh-Ruinen", note:"Keine regulären Fänge – nur per Geheimgeschehen-Arceus-Event erreichbar.", noCatch:true},
+    "Route 33",
     {name:"Azalea City", note:"Nur Kopfnuss-Bäume."},
     {name:"Flegmon-Brunnen", note:"Flegmon fast garantiert per Surfen."},
-    "Steineichenwald","Route 33",
+    "Steineichenwald","Route 34",
     {name:"Dukatia City", note:"Keine wilden Pokémon in der Stadt selbst.", noCatch:true},
-    {name:"Rundfunkturm", note:"Keine wilden Pokémon - Team-Rocket-Übernahme mit mehreren Vorstandskämpfen (Lance, Lambda, Athena, Atlas).", noCatch:true},
-    {name:"Dukatia-Passage", note:"Keine wilden Pokémon.", noCatch:true},
-    "Route 34","Nationalpark","Route 35","Route 36","Route 37",
+    "Route 35","Nationalpark","Route 36","Route 37",
     {name:"Teak City", note:"Nur Kopfnuss-Bäume, Surfen, Angeln."},
     {name:"Turmruine", note:"Inkl. Suicune (Postgame-Story-Event)."},
     {name:"Glockenklangpfad", note:"Keine wilden Pokémon.", noCatch:true},
@@ -1286,16 +1284,20 @@ const LOCATIONS_DEFAULT = [
     "Route 42",
     {name:"Kesselberg", note:"Geschenk: Tyrogol vom Großvater."},
     {name:"Mahagonia City", note:"Nur Surfen, Angeln."},
-    {name:"Team-Rocket-Versteck", note:"Einmalige Fänge im Fallenboden (B1F) + Vorstandskämpfe gegen Lambda und Athena."},
     "Route 43",
     {name:"See des Zorns", note:"Inkl. rotem Garados (Story-Event)."},
-    "Route 44","Eispfad","Route 45",
+    {name:"Team-Rocket-Versteck", note:"Einmalige Fänge im Fallenboden (B1F) + Vorstandskämpfe gegen Lambda und Athena."},
+    {name:"Rundfunkturm", note:"Keine wilden Pokémon - Team-Rocket-Übernahme mit mehreren Vorstandskämpfen (Lance, Lambda, Athena, Atlas).", noCatch:true},
+    {name:"Dukatia-Passage", note:"Keine wilden Pokémon.", noCatch:true},
+    "Route 44","Eispfad",
     {name:"Ebenholz City", note:"Nur Surfen, Angeln."},
     "Dunkelhöhle (Ebenholz-Seite)",
     {name:"Drachenhöhle", note:"Inkl. Geschenk-Dratini nach Quiz."},
+    "Route 45","Route 46",
     "Route 26","Route 27","Tohjo-Fälle","Route 28",
     {name:"Silberberg", note:"Nur Pokémon-Center, keine wilden Pokémon.", noCatch:true},
-    "Silberberghöhle"
+    "Silberberghöhle",
+    {name:"Sinjoh-Ruinen", note:"Keine regulären Fänge – nur per Geheimgeschehen-Arceus-Event erreichbar.", noCatch:true}
   ]],
   ["Kanto",[
     {name:"Alabastia", note:"Nur Surfen, Angeln + Geschenk: Kanto-Starter von Prof. Eich (nach Nationaldex)."},
@@ -1400,9 +1402,7 @@ const SMARAGD_LOCATIONS = [
     {name:"Blütenburg City", note:"Nur Surfen, Angeln."},
     "Blütenburgwald",
     {name:"Metarost City", note:"Keine wilden Pokémon. Optionaler, leicht zu verpassender Rivalenkampf (nur Smaragd).", noCatch:true},
-    "Route 104","Metaflurtunnel",
-    {name:"Wiesenflur", note:"Keine wilden Pokémon.", noCatch:true},
-    "Route 116","Route 105",
+    "Route 104","Route 105",
     {name:"Inselhöhle", note:"Nur Static-Fang: Regice (einmalig)."},
     "Route 106",
     {name:"Faustauhaven", note:"Nur Surfen, Angeln."},
@@ -1415,14 +1415,17 @@ const SMARAGD_LOCATIONS = [
     {name:"Malvenfroh City", note:"Keine wilden Pokémon.", noCatch:true},
     {name:"Neu Malvenfroh", note:"Höhle/Untergrund (Voltorb, Magnetilo)."},
     {name:"Rätselhaus", note:"Keine wilden Pokémon (nur Rätselräume).", noCatch:true},
+    "Route 117",
+    {name:"Wiesenflur", note:"Keine wilden Pokémon.", noCatch:true},
+    "Metaflurtunnel","Route 116",
     "Route 111",
-    {name:"Wunderturm", note:"Sand-/Höhlenbegegnungen."},
-    {name:"Wüstenruine", note:"Nur Static-Fang: Regirock (einmalig)."},
     "Feuriger Pfad","Route 112","Route 113",
     {name:"Laubwechselfeld", note:"Keine wilden Pokémon.", noCatch:true},
     "Route 114","Meteorfälle","Schlotberg","Steilpass",
     {name:"Bad Lavastadt", note:"Geschenk: Isso-Ei."},
-    "Route 115","Route 117","Route 118","Route 119",
+    {name:"Wunderturm", note:"Sand-/Höhlenbegegnungen."},
+    {name:"Wüstenruine", note:"Nur Static-Fang: Regirock (einmalig)."},
+    "Route 115","Route 118","Route 119",
     {name:"Baumhausen City", note:"Keine wilden Pokémon (nur Tausch).", noCatch:true},
     "Route 120",
     {name:"Grabmal", note:"Nur Static-Fang: Registeel (einmalig)."},
@@ -1644,7 +1647,6 @@ const KANTO_RB_LOCATIONS = [
     "Route 2",
     {name:"Vertania-Wald", note:"Nur Gras/Wildfang, kein Surfen/Angeln möglich."},
     {name:"Marmoria City", note:"Keine wilden Pokémon.", noCatch:true},
-    "Digdas Höhle",
     "Route 3",
     {name:"Mondberg", note:"Fossilienwahl (Amonitas oder Kabuto, einmalig)."},
     "Route 4",
@@ -1655,16 +1657,16 @@ const KANTO_RB_LOCATIONS = [
     "Route 6",
     {name:"Orania City", note:"Inkl. S.S. Anne (Geschenk: HM Zerschneider vom Kapitän)."},
     "Route 11",
+    "Digdas Höhle",
     "Route 9","Route 10",
-    {name:"Kraftwerk", note:"Inkl. Zapdos (Postgame)."},
     {name:"Felstunnel", note:"Nur Höhlen-Wildfang, kein Licht ohne Blitz/HM."},
     {name:"Lavandia", note:"Keine wilden Pokémon in der Stadt selbst - Nebulak/Alpollo/Tragosso stecken ausschließlich im Pokémon-Turm.", noCatch:true},
     {name:"Pokémon-Turm", note:"Eigene Wildpokémon (Nebulak, Alpollo, Tragosso). Rivale + Knogga-Geist-Auflösung, Mr. Fuji-Rettung, Poké-Flöte."},
+    "Route 12","Route 13","Route 14","Route 15",
     "Route 8",
-    {name:"Saffronia City", note:"Inkl. Sabrina-Arena + Silph Co. (Rivale, danach Giovanni)."},
     "Route 7",
     {name:"Prismania City", note:"Inkl. Rocket-Versteck unterm Rocket-Gamer-Paradies (Giovanni, Belohnung: Silph-Skop) + Geschenk: Evoli (Lv. 25, Prismania-Apartments)."},
-    "Route 12","Route 13","Route 14","Route 15",
+    {name:"Saffronia City", note:"Inkl. Sabrina-Arena + Silph Co. (Rivale, danach Giovanni)."},
     "Route 16","Route 17","Route 18",
     {name:"Fuchsania City", note:"Safari-Zone (eigene Bälle) + Arena."},
     "Route 19","Route 20",
@@ -1672,6 +1674,7 @@ const KANTO_RB_LOCATIONS = [
     {name:"Zinnoberinsel", note:"Nur Angeln."},
     {name:"Pokémon-Villa", note:"Eigene Wildpokémon (Rattfratz, Sleima, Magmar, Ditto u. a.) + Geheimschlüssel (nötig für die Zinnoberinsel-Arena)."},
     "Route 21",
+    {name:"Kraftwerk", note:"Inkl. Zapdos (Postgame)."},
     {name:"Vertania-Arena", note:"Vertania City erneut, jetzt mit allen 7 anderen Orden - Giovannis Arena (Erde, achter Orden)."},
     {name:"Route 22 (Rückweg)", note:"Route 22 erneut, auf dem Weg zur Pokémon-Liga nach Giovannis Arena - letzter Rivalenkampf vor der Top Vier."},
     "Route 23",
@@ -1754,7 +1757,6 @@ const KANTO_YELLOW_LOCATIONS = [
     "Route 2",
     {name:"Vertania-Wald", note:"Nur Gras/Wildfang, kein Surfen/Angeln möglich."},
     {name:"Marmoria City", note:"Keine wilden Pokémon.", noCatch:true},
-    "Digdas Höhle",
     "Route 3",
     {name:"Mondberg", note:"Fossilienwahl (Amonitas oder Kabuto, einmalig) + Doppelkampf gegen Jessie & James."},
     "Route 4",
@@ -1766,16 +1768,16 @@ const KANTO_YELLOW_LOCATIONS = [
     "Route 6",
     {name:"Orania City", note:"Inkl. S.S. Anne (Geschenk: HM Zerschneider vom Kapitän) + Geschenk: Schiggy (Lv. 10, erst nach dem Donner-Orden)."},
     "Route 11",
+    "Digdas Höhle",
     "Route 9","Route 10",
-    {name:"Kraftwerk", note:"Inkl. Zapdos (Postgame)."},
     {name:"Felstunnel", note:"Nur Höhlen-Wildfang, kein Licht ohne Blitz/HM."},
     {name:"Lavandia", note:"Keine wilden Pokémon in der Stadt selbst - Nebulak/Alpollo/Tragosso stecken ausschließlich im Pokémon-Turm.", noCatch:true},
     {name:"Pokémon-Turm", note:"Eigene Wildpokémon (Nebulak, Alpollo, Tragosso). Rivale + Knogga-Geist-Auflösung, Mr. Fuji-Rettung, Poké-Flöte, Doppelkampf gegen Jessie & James."},
+    "Route 12","Route 13","Route 14","Route 15",
     "Route 8",
-    {name:"Saffronia City", note:"Inkl. Sabrina-Arena + Silph Co. (Doppelkampf gegen Jessie & James, dann Rivale, danach Giovanni)."},
     "Route 7",
     {name:"Prismania City", note:"Inkl. Rocket-Versteck unterm Rocket-Gamer-Paradies (Doppelkampf gegen Jessie & James, dann Giovanni, Belohnung: Silph-Skop) + Geschenk: Evoli (Lv. 25, Prismania-Apartments)."},
-    "Route 12","Route 13","Route 14","Route 15",
+    {name:"Saffronia City", note:"Inkl. Sabrina-Arena + Silph Co. (Doppelkampf gegen Jessie & James, dann Rivale, danach Giovanni)."},
     "Route 16","Route 17","Route 18",
     {name:"Fuchsania City", note:"Safari-Zone (eigene Bälle) + Arena."},
     "Route 19","Route 20",
@@ -1783,6 +1785,7 @@ const KANTO_YELLOW_LOCATIONS = [
     {name:"Zinnoberinsel", note:"Nur Angeln."},
     {name:"Pokémon-Villa", note:"Eigene Wildpokémon (Rattfratz, Sleima, Magmar, Ditto u. a.) + Geheimschlüssel (nötig für die Zinnoberinsel-Arena)."},
     "Route 21",
+    {name:"Kraftwerk", note:"Inkl. Zapdos (Postgame)."},
     {name:"Vertania-Arena", note:"Vertania City erneut, jetzt mit allen 7 anderen Orden - Giovannis Arena (Erde, achter Orden)."},
     {name:"Route 22 (Rückweg)", note:"Route 22 erneut, auf dem Weg zur Pokémon-Liga nach Giovannis Arena - letzter Rivalenkampf vor der Top Vier."},
     "Route 23",
@@ -1864,18 +1867,17 @@ const GSC_LOCATIONS = [
     {name:"Neuborkia", note:"Nur Kopfnuss-Bäume, Surfen, Angeln (kein Gras in der Stadt)."},
     "Route 29",
     {name:"Rosalia City", note:"Nur Kopfnuss-Bäume, Surfen, Angeln."},
-    "Route 46","Route 30","Route 31",
+    "Route 30","Route 31",
     {name:"Viola City", note:"Nur Kopfnuss-Bäume, Surfen, Angeln + Geschenk: Togepi-Ei (nach Falkner-Sieg)."},
     {name:"Knofensa-Turm", note:"Nur im Turm: Rattfratz (tags), Nebulak (nachts)."},
-    "Dunkelhöhle (Viola-Seite)","Einheitstunnel","Route 32",
+    "Dunkelhöhle (Viola-Seite)","Route 32","Einheitstunnel",
     {name:"Alph-Ruinen", note:"Inkl. Icognito-Rätselkammern."},
+    "Route 33",
     {name:"Azalea City", note:"Nur Kopfnuss-Bäume + Doppelkampf gegen einen Team-Rocket-Rüpel."},
     {name:"Flegmon-Brunnen", note:"Flegmon fast garantiert per Surfen."},
-    "Steineichenwald","Route 33",
+    "Steineichenwald","Route 34",
     {name:"Dukatia City", note:"Keine wilden Pokémon in der Stadt selbst.", noCatch:true},
-    {name:"Rundfunkturm", note:"Keine wilden Pokémon - Team-Rocket-Übernahme mit mehreren Vorstandskämpfen (Lance, Lambda als \"Radiodirektor\" getarnt, Athena, Atlas).", noCatch:true},
-    {name:"Dukatia-Passage", note:"Keine wilden Pokémon.", noCatch:true},
-    "Route 34","Nationalpark","Route 35","Route 36","Route 37",
+    "Route 35","Nationalpark","Route 36","Route 37",
     {name:"Teak City", note:"Nur Kopfnuss-Bäume, Surfen, Angeln."},
     {name:"Turmruine", note:"Inkl. Suicune (Postgame-Story-Event)."},
     {name:"Glockenklangpfad", note:"Keine wilden Pokémon.", noCatch:true},
@@ -1889,13 +1891,16 @@ const GSC_LOCATIONS = [
     "Route 42",
     {name:"Kesselberg", note:"Geschenk: Tyrogol vom Großvater."},
     {name:"Mahagonia City", note:"Nur Surfen, Angeln."},
-    {name:"Team-Rocket-Versteck", note:"Einmalige Fänge im Fallenboden + Vorstandskämpfe gegen Athena und Lambda."},
     "Route 43",
     {name:"See des Zorns", note:"Inkl. rotem Garados (Story-Event)."},
-    "Route 44","Eispfad","Route 45",
+    {name:"Team-Rocket-Versteck", note:"Einmalige Fänge im Fallenboden + Vorstandskämpfe gegen Athena und Lambda."},
+    {name:"Rundfunkturm", note:"Keine wilden Pokémon - Team-Rocket-Übernahme mit mehreren Vorstandskämpfen (Lance, Lambda als \"Radiodirektor\" getarnt, Athena, Atlas).", noCatch:true},
+    {name:"Dukatia-Passage", note:"Keine wilden Pokémon.", noCatch:true},
+    "Route 44","Eispfad",
     {name:"Ebenholz City", note:"Nur Surfen, Angeln."},
     "Dunkelhöhle (Ebenholz-Seite)",
     {name:"Drachenhöhle", note:"Inkl. Geschenk-Dratini nach Quiz."},
+    "Route 45","Route 46",
     "Route 26","Route 27","Tohjo-Fälle","Route 28",
     {name:"Silberberg", note:"Nur Pokémon-Center, keine wilden Pokémon.", noCatch:true},
     "Silberberghöhle"
@@ -3806,7 +3811,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.49";
+const APP_VERSION = "1.9.50";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -7299,7 +7304,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="stats">
     <div class="stat"><div class="n">23</div><div class="l">Editionen</div></div>
     <div class="stat"><div class="n">1075</div><div class="l">Pokémon-Arten</div></div>
-    <div class="stat"><div class="n">52</div><div class="l">Versions&shy;stände</div></div>
+    <div class="stat"><div class="n">53</div><div class="l">Versions&shy;stände</div></div>
     <div class="stat"><div class="n">Gen 1–9</div><div class="l">Abgedeckt</div></div>
   </div>
 
@@ -7309,6 +7314,52 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.50</span><span class="tag tag-fix">Fix</span></div>
+      <h3>Rechercheaudit Gen 1-3: 15 Standort-Reihenfolge-Korrekturen in Kanto, Johto und Hoenn</h3>
+      <p>Auf Nutzerfrage hin erstmals gezielt geprüft, ob die Standort-<strong>Reihenfolge</strong>
+      (Story-Progressions-Sequenz, unabhängig von Namen/Level/Bossen) mit dem echten Spielablauf
+      übereinstimmt - bisher war nur bei Kalos (v1.9.39) je eine Reihenfolge explizit gegen eine Quelle
+      verifiziert worden. Methode: jede Route/jeder Standort einzeln über die Bulbapedia-"Connecting
+      areas"-Angabe (welche zwei Orte eine Route direkt verbindet) statt nur über eine
+      Walkthrough-Fließtext-Zusammenfassung geprüft - das deckte mehrere Fälle auf, in denen ein
+      Standort neben Nachbarn stand, zu denen er gar keine Verbindung hat, weil sein echter Anschluss
+      an einer ganz anderen Stelle der Liste liegt.</p>
+      <p><strong>Kanto (Rot/Blau, Gelb, FeuerRot/BlattGrün):</strong> Digdas Höhle (war vor dem
+      Kaskadenorden erreichbar, obwohl sie erst mit Zerschneiden nach Azuria City zugänglich ist) und
+      Kraftwerk (war lange vor Erhalt des Surfers platziert) an ihre tatsächlichen Freischalt-Punkte
+      verschoben; Saffronia und Prismania City vertauscht (Prismania/Erika kommt vor Saffronia/Sabrina,
+      bestätigt durch die App-eigenen Boss-Level: Lv.&nbsp;29 vs. Lv.&nbsp;40/41); Route 12-15 standen
+      isoliert zwischen Prismania City und Route 16 ohne jede Verbindung dorthin - jetzt bei ihrem
+      echten Anschlusspunkt (Pokémon-Turm) einsortiert.</p>
+      <p><strong>Johto (Gold/Silber/Kristall, HeartGold/SoulSilver):</strong> Rundfunkturm/
+      Dukatia-Passage (Team-Rocket-Übernahme passiert erst nach dem kompletten Mahagonia-Bogen, nicht
+      beim ersten Dukatia-Besuch) und Team-Rocket-Versteck (erst nach dem Roten-Garados-Ereignis am See
+      des Zorns zugänglich) neu einsortiert; Route 46 (gehört zur Ebenholz/Blackthorn-Gegend, stand
+      aber ganz am Anfang direkt nach Rosalia City) und Route 45 (nur ab Ebenholz City betretbar, stand
+      aber davor) korrigiert; Einheitstunnel und Route 32 vertauscht (Route 32 führt erst zum Tunnel,
+      nicht umgekehrt); Route 33 und Route 34 waren beide eine Station zu spät mit dem jeweils falschen
+      Nachbarort verbunden. Nur HG/SS: Sinjoh-Ruinen (reines Arceus-Event, kein regulärer Spielfortschritt)
+      ans Ende der Johto-Liste verschoben statt direkt neben den Alph-Ruinen.</p>
+      <p><strong>Hoenn (Rubin/Saphir/Smaragd, Omega Rubin/Alpha Saphir):</strong> Metaflurtunnel/
+      Wiesenflur standen direkt nach Metarost City, obwohl der Tunnel beim ersten Besuch gesperrt ist
+      und Wiesenflur reguldär über Malvenfroh City/Route 117 erreicht wird - dabei fiel auf, dass Route
+      117 selbst an ihrer eigentlichen, viel früheren Anschlussstelle komplett fehlte (stand
+      stattdessen gebündelt mit Route 115/118/119 nach dem gesamten Lavastadt-Bogen); Wüstenruine/
+      Wunderturm lagen mitten in der Route-111-Wüste, die ohne die erst nach Bad Lavastadt erhaltene
+      Go-Goggles (Item, kein etablierter deutscher Name recherchiert) gar nicht durchquerbar ist -
+      beide jetzt dorthin verschoben.</p>
+      <p>Bewusst NICHT angefasst: Route 115 (Hoenn) und die Reihenfolge zwischen den beiden parallelen
+      Fuchsania-Zugängen in Kanto (Route 12-15 vs. 16-18) - für beide ließ sich kein erzwingendes
+      Freischalt-Gate finden, das eine eindeutige Position vorschreibt. Ebenfalls nicht Teil dieser
+      Korrektur: zwei bei der Recherche entdeckte, aber andersartige Probleme - Route 47/48 (Johto)
+      existieren laut Bulbapedia nur in HG/SS, tauchen aber auch in der für Original-Gold/Silber/
+      Kristall geteilten Standortliste auf (Existenz-, kein Reihenfolgefehler); der Boss "chuck"
+      (Kampforden) ist im Code an "Strudelinseln" gebunden statt an eine Cianwood-Stadt (Boss-
+      Zuordnungsfehler, keine Reihenfolgefrage). Beide brauchen einen eigenen, separaten Audit. Voller
+      Bericht mit allen Quellenbelegen: <code>audit_reports/order-gen1-3.md</code>.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.49</span><span class="tag tag-fix">Fix</span></div>
@@ -8624,7 +8675,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.49.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.50.</footer>
 
 </div>`;
 

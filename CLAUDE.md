@@ -177,24 +177,39 @@ explizit wieder darum.
   eigene `cls:"Vorstand"`-Bosskarten rein, nicht nur der Teamboss selbst - exakt dasselbe Muster wie
   bereits bei Team Rocket/Galaktik/Magma/Aqua/Plasma etabliert. Bei künftigen Audits (Alola: Faba/
   Plumeria: Galar: analog) diesem Präzedenzfall folgen, nicht extra nachfragen.
-- **Reihenfolge-Verifikation (neu erkannt, Stand v1.9.49, noch bei KEINER Edition umgesetzt außer
-  Kalos):** bisherige Rechercheaudits prüften Namen/Level/Bosse/Vollständigkeit, aber so gut wie nie
-  explizit die REIHENFOLGE der Standorte (Story-Progressions-Sequenz). Einzige Ausnahme: Kalos, siehe
-  `gen6.md` Zeile 21 ("Namen und Reihenfolge stimmen", gegen die volle Bulbapedia-Ortsliste geprüft).
-  Alle anderen 22 Editionen (auch die inhaltlich bereits auditierten wie Kanto/Johto/Hoenn/Sinnoh/
-  Einall) haben nie eine gezielte Reihenfolge-Prüfung bekommen. Relevanz: Reihenfolge ist rein
-  Array-Index-basiert, kein eigenes Feld (Kommentar in `nuzlocke-v2-editionen.html` bei
-  `ORAS_LOCATIONS`: "Routen-Reihenfolge folgt der Position in der regions-Liste, nicht dem
-  Spielfortschritt") - und steuert über `bossAfter` auch, wann ein Bosskampf freigeschaltet
-  erscheint. Eine falsche Position wäre also potenziell mehr als kosmetisch. `tools/
-  validate-editions.js` prüft NUR referenzielle Integrität (doppelte IDs, verwaiste Bosse,
-  `bossAfter`-Referenzen, `ace`-Spezies) - keinerlei automatisierte Reihenfolge-Prüfung, das lässt
-  sich auch nicht sinnvoll automatisieren (bräuchte externes Spielwissen). Empfehlung fürs weitere
-  Vorgehen: beim ohnehin fälligen Alola/Galar-Rechercheaudit (neue `gen7.md`/`gen8.md`) die
-  Reihenfolge gleich mitprüfen, kein Mehraufwand, da dieselbe Bulbapedia-Ortsliste für Namen/
-  Vollständigkeit sowieso gebraucht wird. Die 20 bereits "erledigten" Editionen sind eine eigene,
-  separate Prüfrunde wert - bewusst nicht in dieser (langen) Sitzung begonnen, siehe
-  Chat-Kontinuitäts-Hinweis oben; voraussichtlich erst im nächsten Chat ab Version 2.0.
+- **Reihenfolge-Verifikation:** Kalos (`gen6.md`) und jetzt auch **Gen 1-3 (Kanto/Johto/Hoenn) sind
+  erledigt**, siehe `audit_reports/order-gen1-3.md` (Stand v1.9.50) - 15 Standorte in Kanto (Rot/Blau/
+  Gelb/FeuerRot/BlattGrün), Johto (Gold/Silber/Kristall/HG-SS) und Hoenn (Rubin/Saphir/Smaragd/Omega
+  Rubin/Alpha Saphir) korrigiert. Methode, die sich bewährt hat und für künftige Editionen empfohlen
+  wird: nicht nur eine Bulbapedia-Walkthrough-Fließtext-Zusammenfassung lesen, sondern JEDEN Standort
+  einzeln über die "Connecting areas"-Angabe seiner eigenen Bulbapedia-Ortsseite prüfen - die
+  Fließtext-Methode allein hatte mehrere Fälle übersehen (z.B. Hoenns Route 117, Johtos Route 46/45/
+  Route 33/34), bei denen ein Standort neben Nachbarn stand, zu denen er gar keine Verbindung hat.
+  **Noch offen:** Sinnoh, Einall, sowie die generationsübergreifende Frage, ob ähnliche
+  "Connecting-areas"-Nachrecherchen auch bei den bereits per Fließtext-Methode geprüften Abschnitten
+  von Sinnoh/Einall neue Funde brächten (analog zur Kanto/Johto/Hoenn-Erfahrung) - noch nicht
+  begonnen, voraussichtlich erst im nächsten Chat ab Version 2.0. Alola/Galar (komplette Neu-
+  recherche nötig, siehe eigener Backlog-Punkt oben) sollten die Reihenfolge gleich mitprüfen.
+  **Bewusst NICHT korrigiert** (siehe `order-gen1-3.md` für Details): Hoenns Route 115 und die
+  Reihenfolge zwischen Kantos zwei parallelen Fuchsania-Zugängen (Route 12-15 vs. 16-18) - kein
+  hartes Freischalt-Gate gefunden, das eine eindeutige Position erzwingt.
+- **Zwei Nebenfunde aus der Gen-1-3-Reihenfolge-Recherche, beide KEINE Reihenfolgefragen, eigener
+  Audit nötig:**
+  1. **Route 47/Route 48 (Johto) existieren laut Bulbapedia nur in HeartGold/SoulSilver**, tauchen im
+     Code aber auch in `GSC_LOCATIONS` auf (die 1:1 auch für Original-Gold/Silber/Kristall gilt, wo es
+     diese Routen/die dortige Safari Zone laut Bulbapedia gar nicht gibt). Existenz-, kein
+     Reihenfolgefehler - unangetastet gelassen.
+  2. **Boss "chuck" (Kampforden) ist in `BOSS_AFTER`/`GSC_BOSS_AFTER` an "Strudelinseln" (Whirl
+     Islands) gebunden**, nicht an eine Cianwood-Stadt wie im echten Spiel. Fiel auf, weil der
+     Rechercheagent fälschlich annahm, chuck hänge an "Oliviana City" (stimmt laut Code nicht) - beim
+     Gegenchecken der tatsächlichen `bossAfter`-Keys kam die eigentliche Diskrepanz ans Licht. Bewusst
+     NICHT korrigiert, da unklar ist, welche Stadt tatsächlich Cianwood ist (siehe Punkt 3) - erst
+     klären, dann `chuck`s `bossAfter`-Bindung korrigieren, nicht umgekehrt.
+  3. **Mögliche Namensverwechslung "Anemonia City"/"Oliviana City"** (Johto): laut PokéWiki ist
+     "Anemonia City" die deutsche Bezeichnung für Cianwood City und "Oliviana City" für Olivine City -
+     die App bindet Jasmine (Stahlorden) aktuell an "Anemonia City" und lässt "Oliviana City"
+     ordensfrei, was genau umgekehrt zum PokéWiki-Befund wäre. Ursprung: `order-gen1-3.md` Abschnitt
+     4.3. Eigener Namens-/Bossaudit nötig, bevor Punkt 2 oben angegangen wird.
 
 ## Workflow-Hinweise für diese Codebase
 
