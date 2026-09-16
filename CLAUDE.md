@@ -14,6 +14,14 @@ zusätzlich als installierbare Offline-PWA über Netlify. Ziel-Meilenstein **"Ve
 erreicht, sobald **alle Editionen vollständig vorhanden sind** — aktuell fehlt dafür noch das
 Schwert/Schild-DLC sowie einzelne, im Änderungsprotokoll dokumentierte Datenlücken (siehe unten).
 
+**Wichtig für Sitzungs-/Chat-Kontinuität (Stand v1.9.49):** der Nutzer hatte während dieser laufenden
+Sitzung mehrfach Abstürze der Claude-App selbst beim Laden dieses (sehr langen) Chats auf dem Handy —
+vermutlich weil die Konversation inzwischen sehr viel schweren Tool-Output angesammelt hat (große
+Datei-Reads, lange Bash-Ausgaben), nicht wegen eines Fehlers im Nuzlocke-Projekt selbst. Der Nutzer
+hat entschieden: **sobald Version 2.0 erreicht ist, wird ein neuer Chat eröffnet**, statt in diesem
+weiterzuarbeiten. Falls dieser Chat vorher abstürzt/unbrauchbar wird: der komplette Projektstand ist
+jederzeit hier in `CLAUDE.md` + Git-Historie rekonstruierbar, siehe Rest dieser Datei.
+
 ## Dateien im Repo
 
 - **`nuzlocke-v2-editionen.html`** — die aktiv weiterentwickelte, "lebende" Version. Alle Änderungen
