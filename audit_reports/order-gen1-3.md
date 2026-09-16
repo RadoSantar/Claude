@@ -393,3 +393,180 @@ unadressiert und müsste bei Bedarf in einem eigenen Namens-/Reihenfolge-Audit g
 Wie im Rest dieses Audits gilt: **nichts hiervon wurde in `nuzlocke-v2-editionen.html` umgesetzt** —
 Gegenchecken und Freigabe durch den Nutzer stehen aus, bevor die betroffenen Standort-Arrays
 verschoben werden.
+
+---
+
+## 9. Nachrecherche: Kanto/Johto Nebenrouten (Connecting-Areas-Methode)
+
+Methode wie beim Hoenn-Nachaudit (Abschnitt 8): jede geprüfte Route/jeder Ort einzeln per WebFetch von
+ihrer/seiner eigenen Bulbapedia-Seite, Abschnitt „Connecting areas"/„Connecting locations" ausgelesen
+(strukturierte Angabe, welche zwei/mehr Orte eine Route tatsächlich verbindet), statt nur der
+Walkthrough-Fließtext-Zusammenfassung zu vertrauen, die Abschnitt 1-5 zugrunde lag. Geprüft wurden
+gezielt die zwei vom Auftrag genannten Verdachtsmomente (Route 46, Route 47/48) sowie systematisch
+weitere Nebenrouten in beiden Regionen.
+
+### 9.1 Johto — Fund: „Route 46" ganz am Anfang ist falsch (Nutzer-Verdacht bestätigt)
+
+Bulbapedia „Route 46" (Connecting areas): **Ost = Route 29**, **Nord = Dark Cave** (Ebenholz/
+Blackthorn-seitiger Eingang), **Süd = Route 45** („one-way", südlich von Blackthorn City). Zitat:
+„Early in the game, players can only access the southern part of the route, below the ledges that can
+be jumped over. The northern part of the route can be accessed via Dark Cave, or the one-way Route 45
+south of Blackthorn City."
+
+Route 46 hängt also geografisch direkt an der Blackthorn/Dunkelhöhle-Gegend, nicht an Rosalia City. Der
+kleine südliche Zipfel (Anschluss an Route 29) ist zwar technisch von Spielbeginn an begehbar, aber
+durch Randstufen/Ledges blockiert — der eigentliche Inhalt der Route (Zugang zu Dark Cave, Anschluss an
+Route 45) ist erst mit mehreren Orden bzw. (Gen II) Zerschlagen nach dem Sudowoodo-Ereignis auf Route
+36 erreichbar. Exaktes Gegenstück zum bereits bestätigten Digdas-Höhle-Fund (1.1): technisch früh
+berührbar, inhaltlich aber ein Spätspiel-Ort.
+
+**Korrekte Position:** zwischen „Ebenholz City"/„Dunkelhöhle (Ebenholz-Seite)" und „Route 45" (nicht
+ganz am Anfang der Liste, direkt nach Rosalia City).
+
+### 9.2 Johto — neuer Fund: „Route 45" steht vor statt nach „Ebenholz City"
+
+Bulbapedia „Ice Path": „A cave that connects Route 44 to Blackthorn City" — Eispfad führt **direkt**
+nach Ebenholz City (Blackthorn), ohne Route 45 dazwischen. Bulbapedia „Route 45" (Connecting areas):
+**Nord = Blackthorn City**, **Süd/West = Route 46 und Dark Cave**, mit explizitem Einwegs-Hinweis: „The
+route can only be entered from the northern terminus and can only be traveled from north to south…
+with no return path northward." Route 45 ist also ausschließlich AB Blackthorn City betretbar, nicht
+davor.
+
+Die aktuelle Reihenfolge „…, Route 44, Eispfad, Route 45, Ebenholz City, …" verlangt aber, Route 45 zu
+durchqueren, BEVOR man Ebenholz City überhaupt erreicht hat — unmöglich, da der einzige Zugang zu
+Route 45 aus Blackthorn selbst kommt.
+
+**Korrekte Position:** „Route 45" gehört NACH „Ebenholz City" (und nach der Dunkelhöhle-Ebenholz-Seite/
+Drachenhöhle), nicht davor: „…, Eispfad, Ebenholz City, Dunkelhöhle (Ebenholz-Seite), Drachenhöhle,
+Route 45, Route 46, …" (im Anschluss direkt Route 46, siehe 9.1).
+
+### 9.3 Johto — Verdacht „Route 47"/„Route 48" bestätigt NICHT als Positionsfehler, aber wichtiger Nebenfund: beide sind HGSS-exklusiv
+
+Bulbapedia „Route 47" (Connecting areas): **Nord = Route 48** (über Cliff Cave), **Ost = Cliff Edge
+Gate**. Zugang explizit story-gated: „Only accessible after the SecretPotion has been given to Jasmine
+in the Olivine Lighthouse." Bulbapedia „Route 48": **Nord = Safari Zone Gate**, **Süd = Route 47**.
+
+Cliff Edge Gate liegt auf der Cianwood-Seite (in der App vermutlich „Oliviana City", siehe Randnotiz zu
+4.3 — diese Namensfrage bleibt hier bewusst außen vor). Route 48 endet als Sackgasse am Safari-Zone-Tor
+und hat KEINE Verbindung zu Route 42/Kesselberg/Mahagonia. Die aktuelle Position („…, Oliviana City,
+Route 47, Route 48, Route 42, Kesselberg, Mahagonia City, …") ist damit als Abzweig/Seitenausflug direkt
+an dem Punkt, wo die Cianwood/Olivine-Schleife endet und es Richtung Mahagonia weitergeht, geografisch
+plausibel — **kein Positionsfehler im engeren Sinn**, die Grundverdacht-Prüfung ergibt hier also KEINEN
+Fund (anders als bei Route 46).
+
+**Wichtiger Nebenfund, der die Prüfung dieser beiden Standorte erst notwendig machte:** Beide Bulbapedia-
+Seiten markieren Route 47/48 explizit als **ausschließlich in HeartGold/SoulSilver existent**: „Route 48
+… only appears in Pokémon HeartGold and SoulSilver" — im Original Gold/Silver/Crystal gibt es diese
+Routen und die dortige Safari Zone gar nicht (die GSC-Safari-Zone liegt in Kanto/Fuchsania, nicht in
+Johto). Das ist ein **Existenz-, kein Positionsfehler** und damit streng genommen außerhalb des
+Reihenfolge-Auftrags — aber da `GSC_LOCATIONS` laut Datei-Kommentar 1:1 auch für Original-Gold/Silber/
+Kristall gilt, tauchen „Route 47"/„Route 48" dort fälschlich überhaupt auf. Sollte in einem eigenen
+Vollständigkeits-/Existenzaudit behandelt werden, nicht hier korrigiert.
+
+### 9.4 Johto — neuer Fund: „Einheitstunnel" (Union Cave) steht vor statt nach „Route 32"
+
+Bulbapedia „Route 32" (Connecting areas): **Nord = Viola City**, **Süd = Union Cave**, **West = Alph-
+Ruinen** (Nebenzweig am Nordende). Bulbapedia „Union Cave": „The main cave divides Route 32 from Route
+33", mit zwei weiteren Ausgängen zu den Alph-Ruinen im Untergeschoss.
+
+Reale Kette: Viola City → Route 32 → Einheitstunnel → Route 33 → Azalea City. Die aktuelle Liste hat
+„…, Dunkelhöhle (Viola-Seite), Einheitstunnel, Route 32, Alph-Ruinen, Azalea City, …" — Einheitstunnel
+steht VOR Route 32, obwohl man Route 32 erst durchqueren muss, um den Einheitstunnel überhaupt zu
+erreichen.
+
+**Korrekte Position:** „Route 32" vor „Einheitstunnel" (Reihenfolge tauschen).
+
+### 9.5 Johto — neuer Fund: „Route 33" und „Route 34" vertauscht/falsch platziert (analog Route-117-Muster)
+
+Bulbapedia „Route 33" (Connecting areas): **Nord = Union Cave**, **West = Azalea Town** — Zitat: „having
+already passed through Union Cave before reaching this short clearing that leads westward to Azalea
+Town." Bulbapedia „Ilex Forest": „connecting Azalea Town and Route 34." Bulbapedia „Route 34"
+(Connecting areas): **Nord = Goldenrod City**, **Süd = Ilex Forest**.
+
+Reale Kette also: Einheitstunnel → **Route 33** → Azalea City → Flegmon-Brunnen → Steineichenwald
+(Ilex Forest) → **Route 34** → Dukatia City.
+
+Die aktuelle Liste hat aber: „…, Einheitstunnel, Route 32, Alph-Ruinen, Azalea City, Flegmon-Brunnen,
+Steineichenwald, **Route 33**, Dukatia City, Rundfunkturm, Dukatia-Passage, **Route 34**, Nationalpark,
+…" — „Route 33" steht NACH Steineichenwald/VOR Dukatia City (wo eigentlich Route 34 hingehört), und
+„Route 34" steht NACH Dukatia-Passage/VOR Nationalpark (wo es gar keine Verbindung gibt — weder
+Dukatia-Passage noch Nationalpark grenzen an Route 34). Beide Routen sind mit ihren Nachbarorten exakt
+eine Station zu spät vertauscht — dasselbe Fehlermuster wie beim ursprünglichen Hoenn-Route-117-Fund,
+das diesen ganzen Nachaudit ausgelöst hat.
+
+**Korrekte Position:** „Route 33" zwischen „Einheitstunnel" und „Azalea City" (nicht zwischen
+Steineichenwald und Dukatia City). „Route 34" zwischen „Steineichenwald" und „Dukatia City" (nicht
+zwischen Dukatia-Passage und Nationalpark). Nach Umsetzung von Fund 4.1 (Rundfunkturm/Dukatia-Passage
+verschieben) und dieser Korrektur ergibt sich eine durchgängig verbundene Kette: Einheitstunnel →
+Route 33 → Azalea City → Flegmon-Brunnen → Steineichenwald → Route 34 → Dukatia City → Route 35 →
+Nationalpark → Route 36 → Route 37 → Teak City.
+
+### 9.6 Johto — Route 35/36/37/Nationalpark/Teak City: bestätigt korrekt
+
+Bulbapedia „Route 35": **Süd = Goldenrod City**, **Nord = National Park und Route 36** (zusätzlich ein
+Cut-Abkürzungszugang direkt zu Route 36, optional). Bulbapedia „Route 36": **West = National Park**,
+**Nord = Route 37**, **Ost = Route 35/Alph-Ruinen**, **Süd = Viola City** (alternative Rückverbindung,
+nicht der Hauptpfad). Bulbapedia „Route 37": **Nord = Teak City**, **Süd = Route 36**. Die aktuelle
+Reihenfolge „Nationalpark, Route 35, Route 36, Route 37, Teak City" stimmt mit dieser Kette überein
+(Route 35 selbst gehört unmittelbar vor Nationalpark, was durch Fund 9.5 jetzt auch tatsächlich mit
+Dukatia City verbunden ist). Kein Fund.
+
+### 9.7 Johto — Route 42: bestätigt korrekt
+
+Bulbapedia „Route 42" (Connecting areas): **West = Ecruteak City**, **Ost = Mahogany Town**, **Nord =
+Mt. Mortar**. Stimmt exakt mit der aktuellen Position „…, Route 42, Kesselberg, Mahagonia City, …"
+(nach dem Teak-City/Anemonia-Oliviana-Bogen) überein. Kein Fund.
+
+### 9.8 Kanto — neuer Fund (mit Einschränkung): „Route 12"–„Route 15" geografisch isoliert zwischen Prismania City und Route 16 platziert
+
+Bulbapedia-Kette per Connecting areas: „Kanto Route 12" **Nord = Lavender Town**, **Süd = Route 13**,
+zusätzlich **West = Route 11**. „Kanto Route 13": **Ost = Route 12**, **West = Route 14**. „Kanto Route
+14": **Nord = Route 13**, **Süd = Route 15**. „Kanto Route 15": **Ost = Route 14**, **West = Fuchsia
+City**. Diese vier Routen bilden also eine durchgängige, in sich geschlossene Kette **Lavandia ↔
+Route 12 ↔ 13 ↔ 14 ↔ 15 ↔ Fuchsania City** — mit keinerlei Verbindung zu Prismania City oder Route 16.
+
+Zum Vergleich die zweite, komplett unabhängige Route nach Fuchsania: „Kanto Route 16" **Ost = Prismania
+City (Celadon)**, **Süd = Route 17**; „Kanto Route 18" **West = Route 17**, **Ost = Fuchsania City**.
+Beide Ketten (12-13-14-15 und 16-17-18) sind eigenständige, parallele Pfade, die beide unabhängig
+voneinander in Fuchsania City münden — sie berühren sich nirgends.
+
+Die aktuelle Liste reiht sie aber so, als wären sie EIN durchgehender Pfad: „…, Route 7, Prismania
+City, **Route 12, Route 13, Route 14, Route 15**, Route 16, Route 17, Route 18, Fuchsania City" — exakt
+dasselbe Fehlermuster wie beim ursprünglichen Hoenn-Route-117-Fund (eine Route steht neben Nachbarn, zu
+denen sie gar keine Verbindung hat, weil ihre echte Verbindung an einer ganz anderen, bereits
+länger zuvor besuchten Stelle der Liste liegt — hier: Lavandia/Pokémon-Turm).
+
+**Einschränkung, ehrlich benannt:** anders als bei den bisherigen Funden gibt es hier **kein hartes
+Freischalt-Gate, das eine eindeutige Reihenfolge zwischen den beiden Fuchsania-Zugängen erzwingt** —
+beide Ketten sind laut bekanntem Spielwissen durch dieselbe Voraussetzung (Poké-Flöte aus dem Lavandia-
+Pokémon-Turm-Ereignis, die das schlafende Relaxo sowohl auf Route 12 als auch auf Route 16 wegräumt)
+gleichzeitig freigeschaltet — ein Spieler kann faktisch in beliebiger Reihenfolge zuerst Route 12-15
+oder zuerst Prismania→Route 16-18 nehmen. Es lässt sich also NICHT eindeutig sagen, ob Route 12-15 vor
+oder nach Prismania City/Route 7 in der Liste stehen sollte. Eindeutig ist nur: die aktuelle Platzierung
+**zwischen** Prismania City und Route 16 gibt eine Verbindung vor, die es nicht gibt.
+
+**Empfohlene Korrektur (Konnektivität statt Geschmacksfrage):** „Route 12", „Route 13", „Route 14",
+„Route 15" direkt nach „Pokémon-Turm" und vor „Route 8" einsortieren (ihre reale Nordanbindung), da dort
+auch die Poké-Flöte erhalten wird, die den Weg freischaltet. Das lässt zwei mögliche Wege zu Fuchsania
+in der Liste stehen (12-15 früh, 16-18 später über Prismania) — beide enden an derselben Stadt, was für
+eine Location-Liste unproblematisch ist (die Stadt selbst erscheint weiterhin nur einmal), stellt aber
+sicher, dass keine Route neben einem Nachbarn steht, zu dem sie keine Verbindung hat.
+
+### Zusammenfassung Abschnitt 9
+
+| Ort/Route | Status | Korrekte Position |
+|---|---|---|
+| Route 46 (Johto) | **Fund** (Nutzer-Verdacht bestätigt) | zwischen „Drachenhöhle" und „Route 45"/direkt nach Route 45, nahe Ebenholz City |
+| Route 45 (Johto) | **Neuer Fund** | nach „Ebenholz City"/„Dunkelhöhle (Ebenholz-Seite)"/„Drachenhöhle" (nicht davor) |
+| Route 47/48 (Johto) | **kein Positionsfund** (Verdacht nicht bestätigt) | aktuelle Position bereits plausibel |
+| Route 47/48 (Johto) | **Nebenfund** | existieren nicht in Original-GSC, nur in HGSS — Existenzfrage, eigenes Audit nötig |
+| Einheitstunnel/Route 32 (Johto) | **Neuer Fund** | Route 32 vor Einheitstunnel (tauschen) |
+| Route 33 (Johto) | **Neuer Fund** | zwischen „Einheitstunnel" und „Azalea City" |
+| Route 34 (Johto) | **Neuer Fund** | zwischen „Steineichenwald" und „Dukatia City" |
+| Route 35/36/37/Nationalpark (Johto) | bestätigt korrekt | unverändert |
+| Route 42 (Johto) | bestätigt korrekt | unverändert |
+| Route 12-15 (Kanto) | **Fund, aber Reihenfolge zw. den zwei Fuchsania-Zugängen nicht eindeutig** | direkt nach „Pokémon-Turm", vor „Route 8" (empfohlen, nicht zwingend) |
+
+Wie im Rest dieses Audits gilt: **nichts hiervon wurde in `nuzlocke-v2-editionen.html` umgesetzt** —
+Gegenchecken und Freigabe durch den Nutzer stehen aus, bevor die betroffenen Standort-Arrays
+verschoben werden.
