@@ -119,7 +119,10 @@ jederzeit hier in `CLAUDE.md` + Git-Historie rekonstruierbar, siehe Rest dieser 
   schon ganz am Anfang oder ganz am Ende der Liste steht (Präzedenzfall: Bells Postgame-Rückkampf an
   Avenitia, dem allerersten Standort).
 - Neue Edition ergänzen: ausführliche Schritt-für-Schritt-Anleitung als Kommentar direkt über
-  `KALOS_LOCATIONS` in der Datei (`/* ---------- Editionen ---------- */`).
+  `KALOS_LOCATIONS` in der Datei (`/* ---------- Editionen ---------- */`). Dabei die Reihenfolge der
+  Standorte aktiv gegen eine Quelle (z.B. die vollständige Bulbapedia-Ortsliste) verifizieren, nicht
+  nur Namen/Vollständigkeit — siehe "Reihenfolge-Verifikation" im Rechercheaudit-Backlog unten, warum
+  das bisher zu kurz kam.
 - **Einklapp-Mechanik (seit v1.9.46–1.9.48):** zwei getrennte Sammel-Gruppen pro Region, farblich
   unterschieden — grau/`collapseToggleHtml()`/`expandedRegions` für automatisch eingeklappte, bereits
   ERLEDIGTE Standorte; gold/`stashCollapseToggleHtml()`/`expandedStashRegions` für manuell
@@ -174,6 +177,24 @@ explizit wieder darum.
   eigene `cls:"Vorstand"`-Bosskarten rein, nicht nur der Teamboss selbst - exakt dasselbe Muster wie
   bereits bei Team Rocket/Galaktik/Magma/Aqua/Plasma etabliert. Bei künftigen Audits (Alola: Faba/
   Plumeria: Galar: analog) diesem Präzedenzfall folgen, nicht extra nachfragen.
+- **Reihenfolge-Verifikation (neu erkannt, Stand v1.9.49, noch bei KEINER Edition umgesetzt außer
+  Kalos):** bisherige Rechercheaudits prüften Namen/Level/Bosse/Vollständigkeit, aber so gut wie nie
+  explizit die REIHENFOLGE der Standorte (Story-Progressions-Sequenz). Einzige Ausnahme: Kalos, siehe
+  `gen6.md` Zeile 21 ("Namen und Reihenfolge stimmen", gegen die volle Bulbapedia-Ortsliste geprüft).
+  Alle anderen 22 Editionen (auch die inhaltlich bereits auditierten wie Kanto/Johto/Hoenn/Sinnoh/
+  Einall) haben nie eine gezielte Reihenfolge-Prüfung bekommen. Relevanz: Reihenfolge ist rein
+  Array-Index-basiert, kein eigenes Feld (Kommentar in `nuzlocke-v2-editionen.html` bei
+  `ORAS_LOCATIONS`: "Routen-Reihenfolge folgt der Position in der regions-Liste, nicht dem
+  Spielfortschritt") - und steuert über `bossAfter` auch, wann ein Bosskampf freigeschaltet
+  erscheint. Eine falsche Position wäre also potenziell mehr als kosmetisch. `tools/
+  validate-editions.js` prüft NUR referenzielle Integrität (doppelte IDs, verwaiste Bosse,
+  `bossAfter`-Referenzen, `ace`-Spezies) - keinerlei automatisierte Reihenfolge-Prüfung, das lässt
+  sich auch nicht sinnvoll automatisieren (bräuchte externes Spielwissen). Empfehlung fürs weitere
+  Vorgehen: beim ohnehin fälligen Alola/Galar-Rechercheaudit (neue `gen7.md`/`gen8.md`) die
+  Reihenfolge gleich mitprüfen, kein Mehraufwand, da dieselbe Bulbapedia-Ortsliste für Namen/
+  Vollständigkeit sowieso gebraucht wird. Die 20 bereits "erledigten" Editionen sind eine eigene,
+  separate Prüfrunde wert - bewusst nicht in dieser (langen) Sitzung begonnen, siehe
+  Chat-Kontinuitäts-Hinweis oben; voraussichtlich erst im nächsten Chat ab Version 2.0.
 
 ## Workflow-Hinweise für diese Codebase
 
