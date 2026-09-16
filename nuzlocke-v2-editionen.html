@@ -3806,7 +3806,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.48";
+const APP_VERSION = "1.9.49";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -7299,7 +7299,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="stats">
     <div class="stat"><div class="n">23</div><div class="l">Editionen</div></div>
     <div class="stat"><div class="n">1075</div><div class="l">Pokémon-Arten</div></div>
-    <div class="stat"><div class="n">51</div><div class="l">Versions&shy;stände</div></div>
+    <div class="stat"><div class="n">52</div><div class="l">Versions&shy;stände</div></div>
     <div class="stat"><div class="n">Gen 1–9</div><div class="l">Abgedeckt</div></div>
   </div>
 
@@ -7309,6 +7309,26 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.49</span><span class="tag tag-fix">Fix</span></div>
+      <h3>Zwei weitere Stabilitäts-Lücken geschlossen: ungeschützte Theme-Speicherung, Sprite-Cache überlebt jetzt App-Updates</h3>
+      <p>Auf Nutzerfrage hin gezielt nach weiteren Absturz-/Instabilitäts-Quellen gesucht, über die
+      bereits behobene Sprite-Auslagerung (v1.9.48) hinaus. Zwei Funde:</p>
+      <p><strong>1. Ungeschützte <code>localStorage</code>-Schreibzugriffe beim Theme-Umschalten:</strong>
+      seit v1.8.15 fangen die beiden zentralen Speicher-Schreibfunktionen (Fang-/Spielstand) Fehler von
+      <code>localStorage.setItem</code> ab (voller/gesperrter Speicher, z.B. iOS-Privatmodus), damit die
+      App dabei nicht mit einer unbehandelten Exception mitten im Ablauf abstürzt - die beiden Theme-
+      Umschalter (Hell/Dunkel-Button, Einstellungen-Auswahl) waren dabei übersehen worden und riefen
+      <code>localStorage.setItem</code> ungeschützt auf. Jetzt nach demselben Muster abgesichert.</p>
+      <p><strong>2. Service-Worker-Cache verwarf Sprites bei jedem Update:</strong> der Cache-Name
+      (inklusive aller bereits heruntergeladenen Sprites) wurde bisher bei jedem einzelnen Versions-Update
+      komplett gelöscht und musste danach erst wieder neu aufgebaut werden - offline oder bei schlechter
+      Verbindung direkt nach einem Update konnten dadurch Sprites fehlschlagen, die vorher schon einmal
+      geladen waren. Sprites liegen jetzt in einem eigenen, von der App-Version unabhängigen Cache, der
+      Updates übersteht; nur der restliche App-Shell-Cache (HTML/Manifest/Icons) wird wie gewohnt bei
+      jedem Update ersetzt.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.48</span><span class="tag tag-fix">Fix</span></div>
@@ -8604,7 +8624,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.48.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.49.</footer>
 
 </div>`;
 
@@ -10250,7 +10270,7 @@ document.addEventListener("click", e=>{
     saveState(); render();
   }
   else if(act==="set-theme"){
-    localStorage.setItem("hgss-theme-mode", id);
+    try{ localStorage.setItem("hgss-theme-mode", id); }catch(e){}
     applyTheme(); render();
   }
   else if(act==="set-box-sort"){ boxSortMode = id; render(); }
@@ -10489,7 +10509,7 @@ function applyTheme(){
 }
 document.getElementById("themeBtn").addEventListener("click", ()=>{
   const next = effectiveTheme()==="light" ? "dark" : "light";
-  localStorage.setItem("hgss-theme-mode", next);
+  try{ localStorage.setItem("hgss-theme-mode", next); }catch(e){}
   applyTheme();
 });
 applyTheme();
