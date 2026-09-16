@@ -209,3 +209,187 @@ ans Ende angehängte Postgame-Standorte. Damit gilt:
 
 Nichts hiervon wurde in `nuzlocke-v2-editionen.html` umgesetzt — Gegenchecken und Freigabe durch den
 Nutzer steht laut Workflow noch aus, bevor Standort-Arrays verschoben werden.
+
+---
+
+## 8. Nachrecherche: Hoenn-Nebenrouten (Rustboro-Mauville-Lavaridge-Fortree-Bereich)
+
+Vertiefung von Abschnitt 6 (`SMARAGD_LOCATIONS`), Auftrag: klären, ob es innerhalb des Abschnitts
+zwischen „Route 111" und „Baumhausen City" (Fortree) weitere, bisher nicht gemeldete
+Reihenfolge-Fehler gibt — insbesondere ein konkreter Verdacht zu „Route 117". Quellen: Bulbapedia-
+Ortsartikel „Hoenn Route 111"–„Hoenn Route 119" (Abschnitt „Connecting areas") **einzeln per WebFetch**,
+ergänzend `Walkthrough:Pokémon Emerald/Part 5` bis `/Part 10` (exakte Schrittfolge), sowie „Mirage
+Tower", „Desert Ruins", „Fiery Path", „Trick House" und „Verdanturf Town" für Freischalt-Bedingungen.
+Deutsche Namen zusätzlich gegen PokéWiki geprüft (Wunderturm, Sonnengrotte, Grabmal, Wüstenruine,
+Wundereiland).
+
+### 8.1 Bestätigt: Route-117-Verdacht war berechtigt
+
+Bulbapedia „Hoenn Route 117", Connecting areas: **West = Verdanturf Town (Wiesenflur), Ost =
+Mauville City (Malvenfroh City)** — Route 117 verbindet die beiden also tatsächlich direkt, wie
+vermutet. `Walkthrough:Pokémon Emerald/Part 5` bestätigt zusätzlich die zeitliche Einordnung, Schritt
+für Schritt: „Mauville City (Dynamo-Orden + Mopped-Rad) → … → Route 117 (Optional path leading
+westward from Mauville City) → Verdanturf Town → Rusturf Tunnel (von der Wiesenflur-Seite aus, mit
+Zerschlagen freigeräumt, HM04 Sturmangriff/Strength erhalten) → Route 116 → Route 118 (nur der
+Mauville-nahe Stub, optional)". Bulbapedia „Verdanturf Town" bestätigt es explizit noch einmal:
+„players reach Verdanturf via Route 117 from Mauville City first. The Rusturf Tunnel connection
+becomes available only after progressing further" (Zerschlagen kommt erst nach dem Dynamo-Orden aus
+Malvenfroh).
+
+Das erweitert Fund 6.1 des Vorgänger-Audits: nicht nur „Wiesenflur"/„Metaflurtunnel" stehen zu früh
+(bereits gemeldet und bestätigt), sondern **„Route 117" selbst — die Route, über die man Wiesenflur
+überhaupt zum ersten Mal erreicht — fehlt an genau dieser Einfügestelle** und steht stattdessen, wie
+vom Nutzer vermutet, weit später, gebündelt mit Route 115/118/119 nach dem kompletten
+Team-Magma/Lavastadt-Bogen.
+
+**Korrekte Position:** „Route 117" gehört zwischen „Rätselhaus" und „Wiesenflur" (ergänzt/vervoll-
+ständigt Fund 6.1 aus Abschnitt 6 — dort fehlte nur die Erwähnung von Route 117 selbst). Empfohlene
+Reihenfolge für den betroffenen Block: … Rätselhaus → **Route 117** → Wiesenflur → Metaflurtunnel →
+(Route 116, s. Randnotiz unten) → Route 111 → …
+
+**Randnotiz zu Route 116** (laut Auftrag bereits an anderer Stelle geklärt, hier nicht neu bewertet):
+Bulbapedia „Hoenn Route 116" listet die Connecting areas als **West = Metarost City (Rustboro), Ost =
+Rusturf Tunnel** — Route 116 hängt also strukturell an derselben Baustelle wie Metaflurtunnel/
+Wiesenflur/Route 117 und wird laut `Walkthrough Part 5` ebenfalls erst NACH dem Dynamo-Orden „von der
+Rustboro-Seite aus" vollständig erkundet (Tunnelers' Rest House erst nach dem Zerschlagen-Ereignis
+zugänglich). Falls die Position von Route 116 tatsächlich noch nicht anderswo korrigiert wurde, gehört
+sie in denselben Einfügeblock wie Route 117/Wiesenflur/Metaflurtunnel — das wird hier nur als Hinweis
+festgehalten, nicht als eigener Fund gewertet, da laut Auftrag bereits vorher geklärt.
+
+### 8.2 Neuer Fund: „Wüstenruine" + „Wunderturm" sitzen zu früh — dasselbe Muster wie Fund 6.1, nur einen Bogen weiter
+
+Bulbapedia „Hoenn Route 111" (Connecting areas + Beschreibung): „the desert in the center of Route
+111 cannot be traversed without the Go-Goggles" — beide Orte liegen mitten in dieser Wüste
+(„Mirage Tower": „situated in the desert on Route 111"; „Desert Ruins": „situated in the desert of
+Route 111", „in the south of the desert"). Die Go-Goggles selbst werden laut
+`Walkthrough:Pokémon Emerald/Part 7` erst **nach dem Sieg über Flannery in der Bad-Lavastadt-Arena**
+von May/Brendan überreicht. `Walkthrough Part 8` bestätigt die zeitliche Reihenfolge explizit als
+allerersten Abschnitt nach dem Lavastadt/Chimney-Bogen: „Route 111 (desert section) – accessible with
+Go-Goggles" → „Desert Ruins – sealed entrance, cannot enter yet" → „Mirage Tower – optional
+exploration".
+
+Aktuell stehen „Wunderturm" und „Wüstenruine" aber direkt nach „Route 111", **noch vor** „Feuriger
+Pfad", „Route 112", „Route 113", „Laubwechselfeld", „Route 114", „Meteorfälle", „Schlotberg",
+„Steilpass" und „Bad Lavastadt" — also vor genau dem Ort (Bad Lavastadt), der das einzige Gate für
+diese beiden Kacheln überhaupt erst freischaltet. Exakt das gleiche Fehlermuster wie beim bereits
+bestätigten Fund 6.1 (Metaflurtunnel/Wiesenflur vor ihrem eigenen Freischalt-Ereignis), nur einen
+Handlungsbogen weiter hinten.
+
+**Korrekte Position:** „Wüstenruine" und „Wunderturm" gehören NACH „Bad Lavastadt" (Go-Goggles-Erhalt),
+z. B. direkt danach, vor „Route 115"/„Route 117" (neue Position, s. 8.1)/„Route 118"/„Route 119".
+
+**Zusatzhinweis zu „Wüstenruine"** (App-Feld: „Nur Static-Fang: Regirock (einmalig)"): In Smaragd ist
+zum tatsächlichen FANG von Regirock zusätzlich das Lösen des Siegelkammer-Rätsels nötig (reines
+Smaragd-Feature; in Rubin/Saphir existiert dieses Zusatz-Gate nicht) — ein separates, deutlich
+späteres Gate (Zugang nur per Tauchen/Unterwasser, faktisch Postgame-nah). Da `SMARAGD_LOCATIONS` von
+allen drei Editionen gemeinsam genutzt wird und dieses Zusatz-Gate in Rubin/Saphir gar nicht existiert,
+ist „nach Bad Lavastadt" (Go-Goggles) der für alle drei Editionen gültige kleinste gemeinsame Nenner.
+Ob die Kachel für Smaragd spezifisch noch weiter nach hinten müsste, wäre eine gesonderte Entscheidung
+außerhalb dieses Auftragsumfangs.
+
+### 8.3 „Feuriger Pfad": Position im Kern bestätigt korrekt (kein eigener Fund)
+
+Bulbapedia „Fiery Path": „connects Route 112 to Route 113 and Fallarbor Town"; „serves as a shortcut
+to bypass Route 111's desert" für Spieler ohne Go-Goggles; „players can traverse Fiery Path without
+special items" (kein Freischalt-Gate). `Walkthrough Part 6` bestätigt die Schrittfolge: „Route 111
+(south) → Route 112 (south) → Fiery Path → Route 112 (north)/Route 111 (north) → Route 113 →
+Fallarbor Town → Route 114".
+
+Feuriger Pfad selbst braucht kein Gate und wird bereits VOR dem Chimney/Lavaridge-Bogen durchquert.
+Seine aktuelle Position (direkt nach „Route 111", vor „Route 112") ist damit im Kern richtig — der
+einzige Fehler in dieser Nachbarschaft war die falsche Position von „Wüstenruine"/„Wunderturm" davor
+(siehe 8.2). Werden diese beiden entfernt, ergibt sich „Route 111 → Feuriger Pfad → Route 112 →
+Route 113 → Laubwechselfeld → Route 114" — exakt die per Walkthrough belegte Reihenfolge.
+**Position bestätigt korrekt, Beleg: Walkthrough Part 6 + Fiery-Path-Ortsartikel.**
+
+### 8.4 Route 112, Route 113, Route 114: bestätigt korrekt
+
+- **Route 112** — Connecting areas: Norden Mt. Chimney/Steilpass, Westen Bad Lavastadt, Süden
+  Route 111. Walkthrough Part 6/7 bestätigt exakt diese Nachbarschaft (inkl. späterem
+  Cable-Car-Zugang zum Schlotberg, der laut Ortsartikel bis zum Sieg über den Team-Magma/Aqua-Trupp
+  bei Meteorfälle „blockiert" ist). **Position bestätigt korrekt.**
+- **Route 113** — Connecting areas: Westen Laubwechselfeld, Osten Route 111. Walkthrough Part 6:
+  „… Route 111 (Norden) → Route 113 → Fallarbor Town". Die App bildet dies über „Route 112 → Route 113
+  → Laubwechselfeld" ab — da es in der App nur eine einzige „Route 111"-Kachel gibt (kein Nord/Süd-
+  Split), ist die Nachbarschaft zu Route 112 die bestmögliche Abbildung derselben Sequenz.
+  **Position bestätigt korrekt.**
+- **Route 114** — Connecting areas: Westen Meteorfälle, Osten Laubwechselfeld. Walkthrough Part 6/7:
+  „Laubwechselfeld → Route 114" ist der letzte Schritt vor Meteorfälle. **Position bestätigt korrekt.**
+
+### 8.5 Route 115: keine eindeutige Position feststellbar — bestätigt die Einschätzung des Vorgänger-Audits
+
+Bulbapedia „Hoenn Route 115", Connecting areas: **Norden = Meteorfälle, Süden = Metarost City
+(Rustboro)**. Freischalt-Gate: „most of the route cannot be accessed" beim ersten Besuch; volle
+Erkundung braucht Surfer („Surf is required to access the northern section"). `Walkthrough Part 7`
+erwähnt Route 115 als „optional" auf dem Weg zum Schlotberg (Rückweg-Abstecher von Meteorfälle
+Richtung Rustboro) — aber das führt NICHT weiter Richtung Baumhausen/Fortree, sondern zurück zum
+Ausgangspunkt. `Walkthrough Part 8` listet Route 115 dagegen unter den optionalen Surfer-Gebieten,
+die klar NACH Erhalt des Surfer-HM (Wallys Haus, nach dem Norman-Arenakampf, der wiederum nach
+Bad Lavastadt liegt) erkundet werden.
+
+Route 115 ist damit eine Sackgassen-Schleife zurück nach Metarost City, keine Zwischenstation auf dem
+Weg nach Baumhausen. Ihr Freischalt-Gate (Surfer) liegt zeitlich zwar vor Route 117/118/119 (die
+keinen Surfer brauchen), aber es gibt keinen erzwungenen Zeitpunkt, WANN genau ein Spieler diesen
+Abstecher einbaut — er ist ebenso gut vor wie nach Route 117/118/119 möglich, je nachdem, wann der
+Umweg über Rustboro gemacht wird. **Kein eindeutiger Fehler feststellbar** — die aktuelle Position
+(nach Bad Lavastadt, vor Route 117/118/119, bzw. nach Einfügung von 8.1/8.2 dann nach
+Wüstenruine/Wunderturm) bleibt eine plausible, aber nicht zwingend einzige korrekte Wahl. Das bestätigt
+exakt die Ehrlichkeits-Einschätzung des Vorgänger-Audits aus Abschnitt 6 für diesen speziellen Fall.
+
+### 8.6 Route 118, Route 119: bestätigt korrekt
+
+- **Route 118** — Connecting areas: Westen Malvenfroh City, Norden Route 119, (Osten Route 123, nur
+  ORAS). Ein kleiner, isolierter Stub direkt bei Mauville ist laut `Walkthrough Part 5` zwar schon
+  früh optional begehbar, die vollständige Durchquerung Richtung Route 119/Fortree erfolgt laut
+  `Walkthrough Part 9` aber erst nach dem zweiten Wattson-Besuch/Höhlenatelier(Neu Malvenfroh)-Vorfall,
+  also NACH dem gesamten Lavastadt-Bogen. **Position bestätigt korrekt.**
+- **Route 119** — Connecting areas: Süden Route 118, Norden Baumhausen. Gate: „muddy slope" (Mopped-
+  Rad) sowie eine per Team-Magma/Aqua-Adminkampf im Wetterinstitut blockierte Brücke. `Walkthrough
+  Part 10`: „Route 118 → Route 119 → Wetterinstitut (Adminkampf) → Route 119 (Rückweg, Rivalenkampf,
+  HM Fliegen) → Baumhausen City". **Position bestätigt korrekt.**
+
+Beide Routen sind korrekt nach dem Lavastadt-Bogen und vor Baumhausen City positioniert — hier besteht
+kein Korrekturbedarf.
+
+### 8.7 Namenszuordnungs-Klärungen (Auftragspunkt 6)
+
+- **Wunderturm = Mirage Tower** (bestätigt) — liegt in der Wüste von Route 111, existiert nur in
+  Smaragd (in Rubin/Saphir wird die Fossilienwahl anders gelöst, kein Wunderturm). Kein eigener
+  Namensfund, aber siehe 8.2 zur Position.
+- **Sonnengrotte = Scorched Slab** (Heatran-Fundort), **nicht** „Cave of Origin" — liegt nördlich von
+  Route 120, also außerhalb des hier geprüften Bereichs. Position im Array (nach „Grabmal", vor
+  „Route 121") unverändert plausibel, nicht Teil dieses Nachrecherche-Auftrags, nur zur Klarstellung
+  dokumentiert.
+- **Grabmal = Ancient Tomb** (Registeel-Fundort, an Route 120) — Namensvermutung des Auftrags war
+  bereits korrekt.
+- **Wüstenruine = Desert Ruins** (Regirock-Fundort, in der Wüste von Route 111) — Namensvermutung des
+  Auftrags war bereits korrekt.
+- **Wundereiland** ist ein eigenständiger, benannter Ort östlich von Floßbrunn (Pacifidlog Town) —
+  **nicht** die Kampfzone/Battle Frontier, wie in der Auftrags-Platzhaltervermutung erwogen. Beide sind
+  unabhängig existierende, unterschiedliche Orte im Array; keine Umbenennung nötig.
+- **Rätselhaus = Trick House** (liegt an Route 110, Story-/Orden-gated pro Rätsel-Etage bis zum
+  Champion-Sieg für die letzte Etage) — Namensvermutung des Auftrags war bereits korrekt, keine
+  Positionsänderung nötig (bleibt weiterhin eine einzelne Sammel-Kachel für alle Etagen).
+
+**Nicht geprüft** (außerhalb des angefragten Bereichs Route 111–119): „Graphitport City"/„Schiffswrack"
+im Slateport-Umfeld vor Route 110 — die Unsicherheit in der Auftrags-Namenstabelle dort bleibt
+unadressiert und müsste bei Bedarf in einem eigenen Namens-/Reihenfolge-Audit geklärt werden.
+
+### Zusammenfassung Abschnitt 8
+
+| Ort/Route | Status | Korrekte Position |
+|---|---|---|
+| Route 117 | **Fund** (Nutzer-Verdacht bestätigt) | zwischen „Rätselhaus" und „Wiesenflur" (vervollständigt Fund 6.1) |
+| Wüstenruine | **Neuer Fund** | nach „Bad Lavastadt" (Go-Goggles-Gate) |
+| Wunderturm | **Neuer Fund** | nach „Bad Lavastadt" (Go-Goggles-Gate), zusammen mit Wüstenruine |
+| Feuriger Pfad | bestätigt korrekt | unverändert (direkt nach Route 111) |
+| Route 112 | bestätigt korrekt | unverändert |
+| Route 113 | bestätigt korrekt | unverändert |
+| Route 114 | bestätigt korrekt | unverändert |
+| Route 115 | keine eindeutige Position feststellbar | aktuelle Position plausibel, kein Fund |
+| Route 118 | bestätigt korrekt | unverändert |
+| Route 119 | bestätigt korrekt | unverändert |
+
+Wie im Rest dieses Audits gilt: **nichts hiervon wurde in `nuzlocke-v2-editionen.html` umgesetzt** —
+Gegenchecken und Freigabe durch den Nutzer stehen aus, bevor die betroffenen Standort-Arrays
+verschoben werden.
