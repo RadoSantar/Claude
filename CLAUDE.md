@@ -18,16 +18,22 @@ Schwert/Schild-DLC sowie einzelne, im Änderungsprotokoll dokumentierte Datenlü
 
 - **`nuzlocke-v2-editionen.html`** — die aktiv weiterentwickelte, "lebende" Version. Alle Änderungen
   passieren hier.
-- **`nuzlocke-v1-baseline.html`**, **`nuzlocke-v2-standard.html`**, **`nuzlocke-v2-checkpoint-v1.9.38.html`**,
-  **`nuzlocke-v2-checkpoint-v1.9.39.html`**, **`nuzlocke-v2-checkpoint-v1.9.42.html`**,
-  **`nuzlocke-v2-checkpoint-v1.9.47.html`**
-  — eingefrorene Wiederherstellungspunkte, werden nie mehr verändert. Siehe `README.md` für die
-  jeweiligen Commits und Restore-Anleitungen. Bei größeren, riskanten Änderungsrunden (z.B. ein
-  ganzer Recherche-Audit-Durchlauf) einen neuen solchen Checkpoint anlegen, statt nur auf Git-History
-  zu vertrauen — der Nutzer will jederzeit einen benannten, verlässlichen Rückkehrpunkt haben.
-  Wichtig: `v1.9.47` ist bewusst noch die alte, vollständig in sich geschlossene Version VOR der
-  Sprite-Auslagerung (kein `sprites/`-Ordner nötig) — Rückkehrpunkt falls dieser Umbau je zurück-
-  gerollt werden müsste.
+- **`nuzlocke-v1-baseline.html`**, **`nuzlocke-v2-standard.html`** — eingefrorene Wiederherstellungs-
+  punkte, werden nie mehr verändert, liegen noch als Dateien im Repo (klein, je ~1-1,4 MB).
+- **Checkpoints v1.9.38/v1.9.39/v1.9.42/v1.9.47** — dieselbe Rolle (benannte Wiederherstellungspunkte
+  nach größeren Änderungsrunden), aber **seit v1.9.49 NICHT mehr als Dateien im Arbeitsverzeichnis**,
+  auf Nutzerwunsch entfernt: vier Schnappschüsse à 15-16 MB summierten sich auf ~61 MB totes Gewicht,
+  obwohl nur im Notfall Zugriff nötig ist. Der Inhalt bleibt vollständig über Git-History abrufbar —
+  `git show <hash>:<dateiname> > <ziel>` (Hashes + genaue Befehle in `README.md`, je ein Abschnitt pro
+  Checkpoint). **Wichtig, nicht vergessen:** `git rm` einer Datei schrumpft NICHT das `.git`-Verzeichnis
+  selbst (168 MB, Stand v1.9.49) — alte Blobs bleiben in jedem historischen Commit erhalten, das würde
+  nur eine destruktive History-Rewrite (z.B. `git filter-repo`, danach Force-Push) beheben, die alle
+  Commit-Hashes ab dem betroffenen Punkt ändert und explizit vom Nutzer angefragt werden müsste, bevor
+  sie je ausgeführt wird — bisher NICHT gewünscht/angefragt.
+  Bei künftigen größeren, riskanten Änderungsrunden weiterhin einen benannten Checkpoint per Commit
+  anlegen (Commit-Message + Dateiname wie bisher), aber überlegen, ob die Datei danach gleich wieder
+  aus dem Arbeitsverzeichnis entfernt wird (analog zu den vieren oben), statt sie dauerhaft liegen zu
+  lassen — Präzedenzfall siehe hier.
 - **`pwa/`** — `manifest.json`, `sw.js`, Icons für den Offline-Installations-Build (siehe README).
 - **`sprites/`** (seit v1.9.48) — 2027 Sprite-Bilddateien (`legacy/{dex}.png`, `modern/{dex}.webp`,
   `boss/{key}.{png|webp}`, `badges/{key}.webp`), ausgelagert aus vier vormals riesigen Base64-JS-

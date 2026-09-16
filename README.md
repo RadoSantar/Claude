@@ -23,71 +23,96 @@ So kommt man zu diesem Stand zurück:
 
 ## Weiterer Wiederherstellungspunkt: v1.9.38 (nach Einall-Rechercheaudit Runde 2)
 
-`nuzlocke-v2-checkpoint-v1.9.38.html` ist ein weiterer eingefrorener Schnappschuss, direkt nach dem
-zweiten, diesmal vollständig in `audit_reports/gen5.md` dokumentierten Rechercheaudit zu Schwarz/Weiß
-und Schwarz2/Weiß2 (Cheren6-Standort korrigiert, Bucht von Ondula ergänzt, drei fälschlich als
-Rivalenkampf geführte Matisse-Verbündetenkämpfe entfernt, zwei echte Matisse-Postgame-Rückkämpfe sowie
-drei Schattentrio-Kämpfe vor Ghetsis ergänzt, Zinzolins dritter Kampf korrekt verortet + Strandgrotte
-ergänzt). Diese Datei wird nicht mehr verändert - Grund für diesen zusätzlichen Punkt (zusätzlich zur
-"aktuellen Standardversion" oben): eine frühere Sitzung ist abgestürzt und mehrere darin recherchierte,
-aber nie committete Erkenntnisse gingen verloren - dieser Checkpoint sichert den Stand direkt nach der
-Wiederholung dieser Recherche.
+Direkt nach dem zweiten, diesmal vollständig in `audit_reports/gen5.md` dokumentierten
+Rechercheaudit zu Schwarz/Weiß und Schwarz2/Weiß2 (Cheren6-Standort korrigiert, Bucht von Ondula
+ergänzt, drei fälschlich als Rivalenkampf geführte Matisse-Verbündetenkämpfe entfernt, zwei echte
+Matisse-Postgame-Rückkämpfe sowie drei Schattentrio-Kämpfe vor Ghetsis ergänzt, Zinzolins dritter
+Kampf korrekt verortet + Strandgrotte ergänzt) wurde dieser Stand als `nuzlocke-v2-checkpoint-v1.9.38.html`
+eingefroren. **Seit v1.9.49 liegt diese Datei nicht mehr im Arbeitsverzeichnis** (vier solcher
+15-16&nbsp;MB-Schnappschüsse summierten sich auf ~61&nbsp;MB toten Gewichts, obwohl sie nur im
+Notfall gebraucht werden) — der Inhalt bleibt aber vollständig über die Git-History abrufbar, siehe
+Restore-Optionen unten.
 
 So kommt man zu diesem Stand zurück:
-1. Claude bitten: "stelle den v1.9.38-Checkpoint wieder her" — dann wird `nuzlocke-v2-checkpoint-v1.9.38.html` erneut als Artifact veröffentlicht, oder
-2. Den Commit direkt auschecken:
+1. Claude bitten: "stelle den v1.9.38-Checkpoint wieder her" — Claude holt die Datei dann per
+   `git show 7e6c795:nuzlocke-v2-checkpoint-v1.9.38.html > /tmp/checkpoint.html` aus der Git-History
+   und veröffentlicht sie erneut als Artifact.
+2. Den Commit direkt auschecken (restauriert `nuzlocke-v2-editionen.html` selbst auf diesen Stand):
    ```
    git checkout efabfe7 -- nuzlocke-v2-editionen.html
+   ```
+3. Nur die eingefrorene Checkpoint-Datei selbst wiederherstellen, ohne die aktuelle Version anzurühren:
+   ```
+   git show 7e6c795:nuzlocke-v2-checkpoint-v1.9.38.html > nuzlocke-v2-checkpoint-v1.9.38.html
    ```
 
 ## Weiterer Wiederherstellungspunkt: v1.9.39 (nach Kalos-Rechercheaudit Runde 2)
 
-`nuzlocke-v2-checkpoint-v1.9.39.html` ist ein weiterer eingefrorener Schnappschuss, direkt nach dem
-in `audit_reports/gen6.md` dokumentierten Rechercheaudit zu Kalos (X/Y): komplettes Team-Flare-
-Wissenschaftler-Quintett (Aliana/Bryony/Celosia/Mable/Xerosic, 9 Kämpfe) als Vorstand-Bosskarten
-ergänzt, Flordelis' (Lysandres) dritter Kampf ergänzt und Level korrigiert, ein fehlender fünfter
-Rivalenkampf ergänzt und alle Rivalen-Level korrigiert, Connies Ass korrigiert, Standorte
-„Omega-Höhle" und „Route 22" ergänzt. Diese Datei wird nicht mehr verändert.
+Direkt nach dem in `audit_reports/gen6.md` dokumentierten Rechercheaudit zu Kalos (X/Y): komplettes
+Team-Flare-Wissenschaftler-Quintett (Aliana/Bryony/Celosia/Mable/Xerosic, 9 Kämpfe) als Vorstand-
+Bosskarten ergänzt, Flordelis' (Lysandres) dritter Kampf ergänzt und Level korrigiert, ein fehlender
+fünfter Rivalenkampf ergänzt und alle Rivalen-Level korrigiert, Connies Ass korrigiert, Standorte
+„Omega-Höhle" und „Route 22" ergänzt, wurde dieser Stand als `nuzlocke-v2-checkpoint-v1.9.39.html`
+eingefroren. **Seit v1.9.49 liegt diese Datei nicht mehr im Arbeitsverzeichnis** (siehe Begründung
+beim v1.9.38-Punkt oben) — der Inhalt bleibt vollständig über die Git-History abrufbar.
 
 So kommt man zu diesem Stand zurück:
-1. Claude bitten: "stelle den v1.9.39-Checkpoint wieder her" — dann wird `nuzlocke-v2-checkpoint-v1.9.39.html` erneut als Artifact veröffentlicht, oder
-2. Den Commit direkt auschecken:
+1. Claude bitten: "stelle den v1.9.39-Checkpoint wieder her" — Claude holt die Datei dann per
+   `git show e614834:nuzlocke-v2-checkpoint-v1.9.39.html > /tmp/checkpoint.html` aus der Git-History
+   und veröffentlicht sie erneut als Artifact.
+2. Den Commit direkt auschecken (restauriert `nuzlocke-v2-editionen.html` selbst auf diesen Stand):
    ```
    git checkout b99e113 -- nuzlocke-v2-editionen.html
+   ```
+3. Nur die eingefrorene Checkpoint-Datei selbst wiederherstellen, ohne die aktuelle Version anzurühren:
+   ```
+   git show e614834:nuzlocke-v2-checkpoint-v1.9.39.html > nuzlocke-v2-checkpoint-v1.9.39.html
    ```
 
 ## Weiterer Wiederherstellungspunkt: v1.9.42 (Sprite-Konsistenz-Audit, Teil 1: Gen 5)
 
-`nuzlocke-v2-checkpoint-v1.9.42.html` ist ein weiterer eingefrorener Schnappschuss, direkt nach dem
-in `audit_reports/gen5-sprites.md` dokumentierten ersten Teil eines generationsübergreifenden
-Sprite-Konsistenz-Audits: 15 der 16 statischen Arenaleiter-/Top-Vier-/Champion-Sprites in Schwarz/Weiß
-auf die bereits animierte Schwarz2/Weiß2-Version derselben Bulbagarden-Archives-Quelle umgestellt.
-Ghetsis bewusst als einziger weiterhin statisch belassen (sein B2W2-Sprite zeigt ein story-vorgreifendes
-anderes Outfit). Diese Datei wird nicht mehr verändert.
+Direkt nach dem in `audit_reports/gen5-sprites.md` dokumentierten ersten Teil eines
+generationsübergreifenden Sprite-Konsistenz-Audits: 15 der 16 statischen Arenaleiter-/Top-Vier-/
+Champion-Sprites in Schwarz/Weiß auf die bereits animierte Schwarz2/Weiß2-Version derselben
+Bulbagarden-Archives-Quelle umgestellt (Ghetsis bewusst als einziger weiterhin statisch belassen,
+sein B2W2-Sprite zeigt ein story-vorgreifendes anderes Outfit), wurde dieser Stand als
+`nuzlocke-v2-checkpoint-v1.9.42.html` eingefroren. **Seit v1.9.49 liegt diese Datei nicht mehr im
+Arbeitsverzeichnis** (siehe Begründung beim v1.9.38-Punkt oben) — der Inhalt bleibt vollständig über
+die Git-History abrufbar.
 
 So kommt man zu diesem Stand zurück:
-1. Claude bitten: "stelle den v1.9.42-Checkpoint wieder her" — dann wird `nuzlocke-v2-checkpoint-v1.9.42.html` erneut als Artifact veröffentlicht, oder
-2. Den Commit direkt auschecken:
+1. Claude bitten: "stelle den v1.9.42-Checkpoint wieder her" — Claude holt die Datei dann per
+   `git show c66ae65:nuzlocke-v2-checkpoint-v1.9.42.html > /tmp/checkpoint.html` aus der Git-History
+   und veröffentlicht sie erneut als Artifact.
+2. Den Commit direkt auschecken (restauriert `nuzlocke-v2-editionen.html` selbst auf diesen Stand):
    ```
    git checkout f87b3e4 -- nuzlocke-v2-editionen.html
+   ```
+3. Nur die eingefrorene Checkpoint-Datei selbst wiederherstellen, ohne die aktuelle Version anzurühren:
+   ```
+   git show c66ae65:nuzlocke-v2-checkpoint-v1.9.42.html > nuzlocke-v2-checkpoint-v1.9.42.html
    ```
 
 ## Weiterer Wiederherstellungspunkt: v1.9.47 (vor der Sprite-Auslagerung)
 
-`nuzlocke-v2-checkpoint-v1.9.47.html` ist der letzte Schnappschuss VOR einem größeren internen Umbau:
-die App war auf 15,88 MB angewachsen (94,8% davon reine Sprite-Bilddaten als Base64 in vier riesigen
-JS-Zeilen eingebettet), was auf Mobilgeräten - v.&nbsp;a. in der installierten PWA - zu Abstürzen schon
-beim Laden führte. Ab v1.9.48 liegen alle 2027 Sprite-Bilder als echte Dateien unter `sprites/` statt
-eingebettet (siehe `tools/extract-sprites.js`); `nuzlocke-v2-editionen.html` selbst schrumpfte dadurch
-auf 865 KB. Diese Checkpoint-Datei ist bewusst noch die alte, vollständig in sich geschlossene Version
-(kein `sprites/`-Ordner nötig) - falls der Umbau je zurückgerollt werden müsste.
+Letzter Schnappschuss VOR einem größeren internen Umbau: die App war auf 15,88 MB angewachsen
+(94,8% davon reine Sprite-Bilddaten als Base64 in vier riesigen JS-Zeilen eingebettet), was auf
+Mobilgeräten - v.&nbsp;a. in der installierten PWA - zu Abstürzen schon beim Laden führte. Ab v1.9.48
+liegen alle 2027 Sprite-Bilder als echte Dateien unter `sprites/` statt eingebettet (siehe
+`tools/extract-sprites.js`); `nuzlocke-v2-editionen.html` selbst schrumpfte dadurch auf 865 KB.
+Dieser Stand wurde als `nuzlocke-v2-checkpoint-v1.9.47.html` eingefroren — bewusst noch die alte,
+vollständig in sich geschlossene Version (kein `sprites/`-Ordner nötig), als Rückkehrpunkt falls
+dieser Umbau je zurückgerollt werden müsste. **Seit v1.9.49 liegt diese Datei nicht mehr im
+Arbeitsverzeichnis** (siehe Begründung beim v1.9.38-Punkt oben) — der Inhalt bleibt vollständig über
+die Git-History abrufbar.
 
 So kommt man zu diesem Stand zurück:
-1. Claude bitten: "stelle den v1.9.47-Checkpoint wieder her" — dann wird `nuzlocke-v2-checkpoint-v1.9.47.html` erneut als Artifact veröffentlicht (funktioniert eigenständig, ohne `sprites/`-Ordner), oder
-2. Den Commit direkt auschecken:
+1. Claude bitten: "stelle den v1.9.47-Checkpoint wieder her" — Claude holt die Datei dann per
+   `git show 9e3680d:nuzlocke-v2-checkpoint-v1.9.47.html > /tmp/checkpoint.html` aus der Git-History
+   und veröffentlicht sie erneut als Artifact (funktioniert eigenständig, ohne `sprites/`-Ordner).
+2. Den Commit direkt auschecken und auf die aktuelle Version übertragen:
    ```
-   git checkout 9e3680d -- nuzlocke-v2-checkpoint-v1.9.47.html
-   cp nuzlocke-v2-checkpoint-v1.9.47.html nuzlocke-v2-editionen.html
+   git show 9e3680d:nuzlocke-v2-checkpoint-v1.9.47.html > nuzlocke-v2-editionen.html
    ```
 
 ### Als Offline-App installieren (Netlify)
