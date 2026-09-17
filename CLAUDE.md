@@ -343,15 +343,13 @@ jederzeit hier in `CLAUDE.md` + Git-Historie rekonstruierbar, siehe Rest dieser 
   Geprüfte/verworfene Alternativen: die einzelnen `Hoenn <Ort> Town Map.png`-Dateien (alle ≤352×223,
   nur Einzelstandorte, kein Vollbild); keine gemalte Artwork-Alternative gezielt gesucht, da das
   Stil-Kriterium (Kacheln statt Gemälde) inzwischen als hartes Muss gilt (Kanto-Präzedenzfall).
-  **Wichtig, nicht wie bei Kanto verwechseln:** die 77 Klickpunkte sind (Stand v1.9.62) NOCH NICHT
-  kalibriert - anders als Kanto nur ein algorithmisch erzeugtes 10×8-Platzhalter-Raster (gleichmäßig
-  über 5-95% verteilt, siehe Commit), damit keine zwei Punkte exakt übereinanderliegen (Lektion aus
-  dem Kanto-Route-22-Vorfall, s.o.) und der Kalibrierungsmodus sofort nutzbar ist. Der Hinweistext im
-  Kartensheet wurde deshalb editionsneutral formuliert (nicht mehr "wurden von Hand gesetzt", das
-  stimmte nur für Kanto) - beschreibt jetzt nur noch den Mechanismus, ohne einen Kalibrierungsstand
-  zu behaupten. **Nächster Schritt, sobald gewünscht:** Nutzer über den Kalibrierungsmodus (s.u.)
-  durch alle 77 Hoenn-Standorte führen lassen, analog zu Kanto - deutlich mehr Tipparbeit als Kantos
-  49, dafür deckt eine Runde gleich drei Editionen ab.
+  Das anfängliche algorithmisch erzeugte 10×8-Platzhalter-Raster (gleichmäßig über 5-95% verteilt)
+  diente nur als Übergangslösung, damit der Kalibrierungsmodus sofort nutzbar war, ohne dass zwei
+  Punkte exakt übereinanderliegen (Lektion aus dem Kanto-Route-22-Vorfall, s.o.).
+  **Kalibriert in v1.9.63:** alle 77 Punkte durch vom Nutzer per Kalibrierungsmodus abgetippte
+  Koordinaten ersetzt, analog zu Kanto - die Punkte folgen jetzt sichtbar Küstenlinie/Straßen der
+  Kartengrafik statt eines Rasters. Da `REGION_MAPS.rubin`/`.saphir` per Objektreferenz auf
+  `REGION_MAPS.smaragd` zeigen, gilt die Kalibrierung automatisch für alle drei Editionen.
   Ausweitung auf weitere Editionen/Regionen darüber hinaus (Johto, ORAS, alles jenseits Kanto+Hoenn)
   bewusst weiterhin zurückgestellt.
   **Kalibrierungsmodus (seit v1.9.56):** Nutzerfeedback zu den v1.9.55-Koordinaten war "wirken kreuz
