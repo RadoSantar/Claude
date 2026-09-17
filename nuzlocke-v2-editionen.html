@@ -684,6 +684,17 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
   }
   .mon-sprite.evolve-flash{ animation:evolveFlash 1000ms ease-out; }
 
+  /* Hervorhebung der per Standort-Suche angesprungenen Kachel - nutzt bewusst dieselbe
+     "--evolve-glow"-Variable wie evolveFlash (nur als generischer Aufmerksamkeits-Farbton, kein
+     inhaltlicher Bezug zu Entwicklungen), damit kein zusätzlicher Theme-Token für hell/dunkel +
+     alle Editions-Akzentfarben gepflegt werden muss. */
+  @keyframes searchJumpFlash{
+    0%{ box-shadow:0 0 0 0 rgba(var(--evolve-glow),0); }
+    20%{ box-shadow:0 0 0 3px rgba(var(--evolve-glow),.85), 0 0 16px 5px rgba(var(--evolve-glow),.5); }
+    100%{ box-shadow:0 0 0 0 rgba(var(--evolve-glow),0); }
+  }
+  .card.search-highlight{ animation:searchJumpFlash 1300ms ease-out; }
+
   @keyframes bossDefeatBurst{
     0%{ box-shadow:0 0 0 0 rgba(var(--good-glow),0); transform:scale(1) rotate(0deg); }
     18%{ box-shadow:0 0 0 3px rgba(var(--good-glow),.9), 0 0 22px 8px rgba(var(--good-glow),.65); transform:scale(1.04) rotate(-1deg); }
@@ -953,6 +964,17 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 .jump-fab.point-up svg{ transform:rotate(180deg); }
 .jump-fab:active{ transform:scale(.95); }
 
+/* Eigener kleiner FAB statt Erweiterung von .fab (dem "+"-Button) - beide bleiben unabhängig
+   antippbar, ohne dass ein kombinierter Button zwei Aktionen verwechselbar macht. Direkt über dem
+   "+"-Button gestapelt (56px Höhe + 10px Abstand), da rechts unten sonst ungenutzt bliebe. */
+.search-fab{
+  position:absolute; right:18px; bottom:calc(154px + env(safe-area-inset-bottom)); z-index:15;
+  width:44px; height:44px; border-radius:50%; background:var(--surface); color:var(--ink);
+  border:none; box-shadow:var(--shadow); display:flex; align-items:center; justify-content:center;
+}
+.search-fab svg{ width:19px; height:19px; stroke:var(--ink); fill:none; stroke-width:2.2; }
+.search-fab:active{ transform:scale(.94); }
+
 /* Vorher reiner Text+Icon ohne Kontur/Hintergrund - auf Touchscreens nicht als eigenständig
    tappbares Element erkennbar (Nutzerfeedback). Jetzt mit Kartenoptik (Hintergrund, Rand, Radius,
    Schatten) wie alle anderen tappbaren Flächen der App, damit die Zeile klar als Button lesbar ist. */
@@ -1174,6 +1196,9 @@ datalist{}
   </div>
 
   <button class="fab" id="fabAdd" title="Standort hinzufügen" aria-label="Standort hinzufügen">+</button>
+  <button class="search-fab" id="searchFab" data-act="open-location-search" title="Standort suchen" aria-label="Standort suchen">
+    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+  </button>
   <button class="jump-fab" id="jumpFab" data-act="jump-to-current-loc" title="Zum aktuellen Standort">
     <svg viewBox="0 0 24 24"><path d="M12 4v14M6 12l6 6 6-6"/></svg>
     <span>Aktueller Standort</span>
@@ -3811,7 +3836,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.50";
+const APP_VERSION = "1.9.51";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -5041,6 +5066,74 @@ function scrollToCurrentLocation(){
   if(!targetId) return;
   const el = document.querySelector(`[data-loc="${targetId}"], [data-boss="${targetId}"]`);
   if(el) el.scrollIntoView({ block:"center" });
+}
+
+/* Standort-Suche: springt direkt zu einer Kachel per Namenssuche, statt lange Listen (bei manchen
+   Editionen 100+ Standorte) manuell durchzuscrollen. Durchsucht nur AKTUELL SICHTBARE Standorte
+   (respektiert ausgeblendete Regionen/Postgame-Filter) - ein Treffer, den man wegen dieser Filter gar
+   nicht anspringen könnte, wäre verwirrender als gar kein Treffer. */
+let locationSearchQuery = "";
+function locationSearchResultsHtml(query){
+  const q = query.trim().toLowerCase();
+  if(!q) return `<div class="loc-sub">Tippe einen Routen- oder Ortsnamen ein.</div>`;
+  const game = currentGame();
+  const visibleRegions = new Set(game.regions.map(([region])=>region).filter(region=>!(state.hiddenRegions||[]).includes(region)));
+  const matches = state.locations.filter(l=>
+    l.name.toLowerCase().includes(q) &&
+    (l.custom || visibleRegions.has(l.region)) &&
+    !(state.hidePostgame && /Postgame/.test(l.note||""))
+  );
+  if(!matches.length) return `<div class="loc-sub">Keine Treffer.</div>`;
+  return matches.slice(0,30).map(l=>
+    `<button class="sheet-option" data-act="jump-to-location-result" data-id="${l.id}">
+      <div>${escapeHtml(l.name)}</div>
+      <div class="loc-sub" style="margin:2px 0 0;">${escapeHtml(l.custom ? "Eigener Fundort" : l.region)}</div>
+    </button>`
+  ).join("");
+}
+function openLocationSearchSheet(){
+  locationSearchQuery = "";
+  openSheet(`
+    <h3>Standort suchen</h3>
+    <div class="field" style="margin-bottom:10px;">
+      <input type="search" id="locationSearchInput" class="box-search-input" style="margin-bottom:0;" placeholder="Route oder Ort suchen..." autocomplete="off" />
+    </div>
+    <div id="locationSearchResults">${locationSearchResultsHtml(locationSearchQuery)}</div>
+  `);
+  setTimeout(()=>document.getElementById("locationSearchInput")?.focus(), 50);
+}
+/* Klappt genau die Einklapp-Gruppe(n) auf, die die Ziel-Kachel gerade verstecken - dieselbe
+   Segmentierungslogik wie in renderRoutes() (erledigte Blöcke per Index-Chunk, manuell zurückgestellte
+   Standorte als ein gemeinsamer Stash pro Region), nur einmalig für die eine betroffene Region/den
+   einen Standort statt für die ganze Liste ausgeführt. */
+function expandCollapseGroupsForLocation(targetId){
+  const loc = state.locations.find(l=>l.id===targetId);
+  if(!loc) return;
+  if(loc.custom){
+    if(!isLocResolved(loc) && (state.manualCollapsedLocs||[]).includes(loc.id)) expandedStashRegions.add("eigene-fundorte-stash");
+    return;
+  }
+  const game = currentGame();
+  const region = loc.region;
+  const regionKey = slug(region);
+  const currentId = effectiveCurrentLocId();
+  const locs = state.locations.filter(l=>l.region===region && !(state.hidePostgame && /Postgame/.test(l.note||"")));
+  const tiles = [];
+  locs.forEach(l=>{ tiles.push(...locationTiles(l, region, game, currentId)); });
+  let i = 0;
+  while(i<tiles.length){
+    if(!tiles[i].resolved){
+      if(tiles[i].kind==="loc" && tiles[i].id===targetId && (state.manualCollapsedLocs||[]).includes(targetId)){
+        expandedStashRegions.add(`${regionKey}-stash`);
+      }
+      i++;
+      continue;
+    }
+    let j = i;
+    while(j<tiles.length && tiles[j].resolved) j++;
+    if(tiles.slice(i,j).some(t=>t.id===targetId)) expandedRegions.add(`${regionKey}-${i}`);
+    i = j;
+  }
 }
 
 /* Einklappen läuft pro einzelner Kachel (Standort- oder Bosskarte), nicht mehr pro Standort samt
@@ -7304,7 +7397,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="stats">
     <div class="stat"><div class="n">23</div><div class="l">Editionen</div></div>
     <div class="stat"><div class="n">1075</div><div class="l">Pokémon-Arten</div></div>
-    <div class="stat"><div class="n">53</div><div class="l">Versions&shy;stände</div></div>
+    <div class="stat"><div class="n">54</div><div class="l">Versions&shy;stände</div></div>
     <div class="stat"><div class="n">Gen 1–9</div><div class="l">Abgedeckt</div></div>
   </div>
 
@@ -7314,6 +7407,17 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.51</span><span class="tag tag-feat">Neu</span></div>
+      <h3>Standort-Suche im Routen-Tab</h3>
+      <p>Neuer Such-Button (Lupe, über dem "+"-Button) im Routen-Tab: Route oder Ort eintippen, aus
+      der Trefferliste antippen - die App scrollt direkt zur passenden Kachel und hebt sie kurz farbig
+      hervor. Klappt dabei automatisch die richtige Einklapp-Gruppe auf, falls die Kachel gerade als
+      "erledigt" oder manuell zurückgestellt versteckt ist, statt nur zu einer unsichtbaren, noch
+      eingeklappten Stelle zu scrollen. Praktisch bei Editionen mit 100+ Standorten (z. B. HG/SS),
+      wo das manuelle Durchscrollen bisher der einzige Weg war.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.50</span><span class="tag tag-fix">Fix</span></div>
@@ -8675,7 +8779,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.50.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.51.</footer>
 
 </div>`;
 
@@ -9196,6 +9300,7 @@ function render(){
   else if(activeTab==="settings") renderSettings();
   if(activeTab!=="routes") document.getElementById("jumpFab").classList.remove("visible");
   document.getElementById("fabAdd").style.display = activeTab==="routes" ? "flex" : "none";
+  document.getElementById("searchFab").style.display = activeTab==="routes" ? "flex" : "none";
   fitNames();
 }
 
@@ -10176,9 +10281,24 @@ document.addEventListener("click", e=>{
     t.setAttribute("aria-expanded", String(ordenCaseOpen));
   }
   else if(act==="jump-to-current-loc"){
-    const id = t.dataset.target;
-    const el = id && document.querySelector(`[data-loc="${id}"], [data-boss="${id}"]`);
+    const targetId = t.dataset.target;
+    const el = targetId && document.querySelector(`[data-loc="${targetId}"], [data-boss="${targetId}"]`);
     if(el) el.scrollIntoView({ behavior:"smooth", block:"center" });
+  }
+  else if(act==="open-location-search"){
+    openLocationSearchSheet();
+  }
+  else if(act==="jump-to-location-result"){
+    closeSheet();
+    expandCollapseGroupsForLocation(id);
+    render();
+    setTimeout(()=>{
+      const el = document.querySelector(`[data-loc="${id}"]`);
+      if(!el) return;
+      el.scrollIntoView({ behavior:"smooth", block:"center" });
+      el.classList.add("search-highlight");
+      setTimeout(()=>el.classList.remove("search-highlight"), 1300);
+    }, 60);
   }
   else if(act==="toggle-current-loc"){
     state.currentLocId = (state.currentLocId===id) ? null : id;
@@ -10532,6 +10652,11 @@ document.addEventListener("input", e=>{
     const boxLocs = state.locations.filter(l=>l.mon && !l.mon.inTeam && !l.mon.dead && !l.mon.given);
     const resultsEl = document.getElementById("boxResults");
     if(resultsEl) resultsEl.innerHTML = boxResultsHtml(boxLocs);
+  }
+  if(e.target && e.target.id==="locationSearchInput"){
+    locationSearchQuery = e.target.value;
+    const resultsEl = document.getElementById("locationSearchResults");
+    if(resultsEl) resultsEl.innerHTML = locationSearchResultsHtml(locationSearchQuery);
   }
   if(e.target && e.target.id==="featureIndexSearchInput"){
     featureIndexQuery = e.target.value;
