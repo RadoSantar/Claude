@@ -394,6 +394,36 @@ jederzeit hier in `CLAUDE.md` + Git-Historie rekonstruierbar, siehe Rest dieser 
   (Delta-Episode) - unabhängig antippbar und springen zur jeweils richtigen, unterschiedlichen
   Kachel). Ausweitung auf weitere Editionen/Regionen darüber hinaus (Johto, alles jenseits
   Kanto+Hoenn) bewusst weiterhin zurückgestellt.
+  **Vollbild-Vergrößerung per Tap (seit v1.9.68):** Nutzerfeedback nach Prüfung aller Karten: "cool
+  aber zu klein für Touchscreen." `toggleMapZoom(gameId)` (Muster wie `showGameOverOverlay()` - reine
+  DOM-Existenz statt eigener State-Variable entscheidet offen/geschlossen) erzeugt ein `.map-zoom-
+  overlay` über der gesamten Seite (z-index über dem Sheet), das dieselbe `artworkMapHtml(gameId,
+  true)`-Markup wiederverwendet, nur über eine deutlich größere feste Breite (`220vw`, gedeckelt auf
+  `max-width:1100px`). `artworkMapHtml()` bekam dafür einen zweiten `zoomed`-Parameter: im kleinen
+  Sheet-Preview trägt der `.artwork-map`-Container selbst `data-act="toggle-map-zoom"` (ein Tap
+  irgendwo außerhalb eines Pins öffnet die Vergrößerung - ein Pin-Tap gewinnt dank `closest()`-
+  Priorität weiterhin normal), in der Vollbild-Ansicht bewusst NICHT (ein Tap auf die Karte dort
+  bubbelt zum `data-act` des umschließenden Overlays durch und schließt es wieder - symmetrisches
+  Verhalten ohne zwei verschiedene Interaktionen lernen zu müssen). Kleines Lupen-Symbol
+  (`.map-zoom-hint`, `pointer-events:none`) unten rechts auf der kleinen Kartengrafik als visueller
+  Hinweis, dass sie tappbar ist. `closeSheet()` räumt ein offenes Zoom-Overlay vorsorglich mit auf
+  (falls der Nutzer z. B. per Android-Zurück-Geste das Sheet schließt, während die Vergrößerung noch
+  offen ist), sonst bliebe es als Deckel über einer bereits geschlossenen Oberfläche hängen.
+  **CSS-Falle beim Umsetzen, per Playwright entdeckt und behoben:** die naheliegende erste Fassung
+  von `.map-zoom-scroll` nutzte `display:flex; justify-content:center`, um die (oft schmalere als
+  220vw breite) Karte auf breiten Bildschirmen zu zentrieren. Bei einer Karte, die breiter als der
+  Container ist, steht sie dabei links UND rechts gleich weit über - `scrollLeft` kann aber nicht
+  unter 0 gehen, wodurch der linke Überstand (samt seinen Standort-Punkten, z. B. "Wurzelheim" bei
+  Hoenn) dauerhaft unerreichbar geworden wäre, ganz gleich wie weit gescrollt wird. Playwright-Test
+  bestätigte das direkt (`imgBox.x` negativ, `scrollLeft` blieb bei 0 hängen). Fix: kein Flexbox-
+  Centering, sondern normales Block-Layout mit `margin:0 auto` auf der Karte selbst - bei Überlauf
+  lösen Browser `auto`-Margins nach CSS2.1 10.3.3 auf 0 auf (bündig links, voll von 0 bis
+  `scrollWidth-clientWidth` scrollbar), bei genug Platz (z. B. Tablet) bleibt die Zentrierung
+  trotzdem erhalten. **Lehre für künftige scrollbare/zentrierte Container mit potenziell
+  überlaufendem Inhalt:** `justify-content:center`/`align-items:center` per Flex/Grid vermeiden,
+  `margin:auto` auf dem Kind in normalem Block-Fluss bevorzugen - sonst bei jeder neuen Karte (auch
+  bei künftigen Regionen) erneut prüfen, ob wirklich der komplette Inhalt erreichbar bleibt, nicht
+  nur die optische Zentrierung stimmt.
   **Kalibrierungsmodus (seit v1.9.56):** Nutzerfeedback zu den v1.9.55-Koordinaten war "wirken kreuz
   und quer" — eine gezielte Recherche nach einer beschrifteten Referenz für die Let's-Go-Kartenansicht
   (welcher der 18 sichtbaren Wegpunkte welcher Stadt entspricht) blieb ergebnislos, weder Bulbapedia

@@ -1039,6 +1039,40 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 }
 .map-pin.done{ background:var(--good); border-color:var(--good); }
 .map-pin.current{ background:var(--accent); border-color:var(--accent); width:19px; height:19px; margin:-9px 0 0 -9px; }
+.map-zoom-hint{
+  position:absolute; right:8px; bottom:8px; width:26px; height:26px; border-radius:8px;
+  background:rgba(20,16,10,.55); display:flex; align-items:center; justify-content:center;
+  pointer-events:none;
+}
+.map-zoom-hint svg{ width:15px; height:15px; fill:none; stroke:#fff; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+/* Vollbild-Vergrößerung der Kartengrafik (toggleMapZoom()) - eigenes Overlay statt einer größeren
+   Sheet-Variante, da Sheets auf max-height:80vh gedeckelt sind (siehe .sheet weiter oben) und damit
+   für eine deutlich breitere Karte ohnehin nicht genug Platz böten. .map-zoom-scroll übernimmt das
+   Scrollen/Pannen (natives Touch-Scrolling reicht, da die App kein user-scalable=no setzt und Pinch-
+   Zoom seitenweit ohnehin schon funktioniert) - die Karte selbst bleibt exakt dieselbe .artwork-map-
+   Markup wie im kleinen Preview, nur über eine deutlich größere feste Breite skaliert. */
+.map-zoom-overlay{
+  position:fixed; inset:0; z-index:85; background:rgba(10,8,4,.72);
+  backdrop-filter:blur(2px); -webkit-backdrop-filter:blur(2px);
+}
+/* BEWUSST kein display:flex + justify-content:center hier: eine Karte, die breiter als der
+   Container ist, würde dann links UND rechts gleich weit überstehen, aber scrollLeft kann nur bis
+   0 zurück - der überstehende linke Teil (samt seiner Pins) wäre dadurch unerreichbar. Mit
+   normalem Block-Layout + margin:0 auto auf dem Kind lösen Browser "auto"-Margins bei Überlauf
+   stattdessen auf 0 auf (CSS2.1 10.3.3) - die Karte startet dann bündig links, komplett von 0 bis
+   scrollWidth-clientWidth scrollbar, und bleibt trotzdem zentriert, wenn sie mal NICHT überläuft
+   (z.B. auf einem breiten Tablet). */
+.map-zoom-scroll{
+  position:absolute; inset:0; overflow:auto; -webkit-overflow-scrolling:touch;
+  padding:calc(60px + env(safe-area-inset-top)) 20px calc(20px + env(safe-area-inset-bottom));
+}
+.map-zoom-scroll .artwork-map{ width:220vw; max-width:1100px; margin:0 auto; }
+.map-zoom-close{
+  position:fixed; top:calc(14px + env(safe-area-inset-top)); right:16px; z-index:86;
+  width:40px; height:40px; border-radius:50%; border:none; background:var(--surface); color:var(--ink);
+  font-size:1.1rem; line-height:1; display:flex; align-items:center; justify-content:center;
+  box-shadow:0 4px 14px rgba(0,0,0,.35);
+}
 
 /* Vorher reiner Text+Icon ohne Kontur/Hintergrund - auf Touchscreens nicht als eigenständig
    tappbares Element erkennbar (Nutzerfeedback). Jetzt mit Kartenoptik (Hintergrund, Rand, Radius,
@@ -3920,7 +3954,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.67";
+const APP_VERSION = "1.9.68";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -7806,7 +7840,7 @@ function schemaMapHtml(region){
     </button>`).join("");
   return `<div class="schema-map">${nodes}</div>`;
 }
-function artworkMapHtml(gameId){
+function artworkMapHtml(gameId, zoomed){
   const map = REGION_MAPS[gameId];
   if(!map) return "";
   const nodes = regionMapNodes(map.region);
@@ -7814,7 +7848,36 @@ function artworkMapHtml(gameId){
     const [x,y] = map.points[n.name];
     return `<button class="map-pin${n.resolved?" done":""}${n.current?" current":""}" style="left:${x}%; top:${y}%;" data-act="jump-to-location-result" data-id="${n.id}" title="${escapeHtml(n.name)}"></button>`;
   }).join("");
-  return `<div class="artwork-map"><img src="${map.image}" alt="${escapeHtml(map.region)}-Karte" />${pins}</div>`;
+  /* Im kleinen Sheet-Preview bekommt der Container selbst toggle-map-zoom, damit ein Tap irgendwo
+     auf der Karte (außerhalb eines Pins - dessen eigenes data-act gewinnt dank closest()) die
+     Vollbild-Vergrößerung öffnet. In der Vollbild-Ansicht selbst (zoomed===true) bewusst KEIN
+     eigenes data-act auf dem Container: ein Tap auf die Karte dort soll stattdessen zum data-act
+     des umschließenden .map-zoom-overlay durchbubblen und die Vergrößerung wieder schließen (siehe
+     toggleMapZoom()) - symmetrisches Verhalten, ohne zwei verschiedene Klick-Ziele lernen zu müssen. */
+  const openAttr = zoomed ? "" : ` data-act="toggle-map-zoom" data-id="${gameId}"`;
+  const zoomHint = zoomed ? "" : `<div class="map-zoom-hint" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg></div>`;
+  return `<div class="artwork-map"${openAttr}><img src="${map.image}" alt="${escapeHtml(map.region)}-Karte" />${pins}${zoomHint}</div>`;
+}
+/* Vergrößerte Kartenansicht (Nutzerwunsch: "Karten sind cool aber zu klein für Touchscreen") - kein
+   echtes Pinch-Zoom (Pinch funktioniert dank fehlendem user-scalable=no im Viewport-Meta-Tag ohnehin
+   bereits seitenweit), sondern ein dediziertes Vollbild-Overlay mit deutlich breiterer Karte
+   (220vw statt der ~300-350px im Sheet), gescrollt statt gezoomt - dieselbe .artwork-map-Markup wird
+   wiederverwendet (per artworkMapHtml(gameId, true)), Pins bleiben dadurch exakt so tappbar wie in
+   der kleinen Ansicht, nur größer. Reine DOM-Existenz statt eigener State-Variable entscheidet über
+   offen/geschlossen (Muster wie showGameOverOverlay()) - ein zweiter Tap auf denselben Button (oder
+   ein Tap auf die Karte selbst, s. Kommentar bei artworkMapHtml) schließt wieder. */
+function toggleMapZoom(gameId){
+  const existing = document.querySelector(".map-zoom-overlay");
+  if(existing){ existing.remove(); return; }
+  const overlay = document.createElement("div");
+  overlay.className = "map-zoom-overlay";
+  overlay.dataset.act = "toggle-map-zoom";
+  overlay.dataset.id = gameId;
+  overlay.innerHTML = `
+    <button class="map-zoom-close" data-act="toggle-map-zoom" data-id="${gameId}" aria-label="Karte verkleinern">✕</button>
+    <div class="map-zoom-scroll">${artworkMapHtml(gameId, true)}</div>
+  `;
+  document.body.appendChild(overlay);
 }
 function regionMapSheetHtml(){
   const game = currentGame();
@@ -10106,7 +10169,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="stats">
     <div class="stat"><div class="n">23</div><div class="l">Editionen</div></div>
     <div class="stat"><div class="n">1075</div><div class="l">Pokémon-Arten</div></div>
-    <div class="stat"><div class="n">70</div><div class="l">Versions&shy;stände</div></div>
+    <div class="stat"><div class="n">71</div><div class="l">Versions&shy;stände</div></div>
     <div class="stat"><div class="n">Gen 1–9</div><div class="l">Abgedeckt</div></div>
   </div>
 
@@ -10116,6 +10179,23 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.68</span><span class="tag tag-feat">Neu</span></div>
+      <h3>Regionskarte per Tap vergrößerbar</h3>
+      <p>Nutzerfeedback: "die Karten sind cool aber zu klein für Touchscreen." Ein Tap auf die
+      Kartengrafik (außerhalb eines Standort-Punkts) öffnet jetzt ein Vollbild-Overlay mit
+      deutlich breiterer, scrollbarer Karte (<code>220vw</code> statt der ~350px im Sheet) - die
+      Standort-Punkte bleiben exakt gleich zugeordnet, nur größer und leichter zu treffen. Ein
+      kleines Lupen-Symbol unten rechts auf der Kartengrafik zeigt die Vergrößerbarkeit an. Schließen
+      per erneutem Tap auf die Karte, per <code>✕</code>-Button oder automatisch beim Antippen eines
+      Standort-Punkts (springt wie gewohnt zur Kachel). Beim Umsetzen eine klassische CSS-Falle
+      vermieden: eine zunächst per <code>flex</code> + <code>justify-content:center</code>
+      zentrierte, überbreite Karte hätte ihren linken Überstand (samt Standort-Punkten) unerreichbar
+      gemacht, da <code>scrollLeft</code> nicht unter 0 gehen kann - stattdessen normales
+      Block-Layout mit <code>margin:0 auto</code>, das bei Überlauf automatisch auf reine
+      Scroll-Darstellung ohne Zentrierung zurückfällt.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.67</span><span class="tag tag-fix">Korrektur</span></div>
@@ -11755,7 +11835,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.67.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.68.</footer>
 
 </div>`;
 
@@ -12326,6 +12406,7 @@ function openSheet(html){
   }
 }
 function closeSheet(){
+  document.querySelector(".map-zoom-overlay")?.remove();
   if(!sheetBackdrop.classList.contains("active") || sheetClosing) return;
   if(sheetHistoryPushed){
     sheetHistoryPushed = false;
@@ -13279,6 +13360,9 @@ document.addEventListener("click", e=>{
   else if(act==="set-map-mode"){
     mapViewMode = id;
     refreshMapSheet();
+  }
+  else if(act==="toggle-map-zoom"){
+    toggleMapZoom(id || currentGame().id);
   }
   else if(act==="calibration-start"){
     const game = currentGame();
