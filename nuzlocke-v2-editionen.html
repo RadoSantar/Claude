@@ -3920,7 +3920,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.66";
+const APP_VERSION = "1.9.67";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -7726,7 +7726,7 @@ const REGION_MAPS = {
       "Route 122":[56.8,36.2], "Route 123":[54.1,43.8], "Route 124":[78.3,27.4],
       "Moosbach City":[86.6,35.4], "Route 125":[85.4,22.6], "Küstenhöhle":[91.9,28.1],
       "Route 126":[78,45.5], "Route 127":[88.1,48.3], "Tiefseehöhle":[86.2,63.7],
-      "Xeneroville":[77.1,55.1], "Urzeithöhle":[79.8,57.6],
+      "Xeneroville":[77.1,55.1], "Urzeithöhle":[72,54.8],
       "Route 128":[90.9,64.2], "Route 129":[89.2,69.2],
       "Route 130":[80.6,69.2], "Wundereiland":[88.6,89.4], "Kampfzone":[80.1,80.3],
       "Höhlenatelier":[79.1,85.1], "Route 131":[71.7,70], "Floßbrunn":[64.9,68.7],
@@ -10106,7 +10106,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="stats">
     <div class="stat"><div class="n">23</div><div class="l">Editionen</div></div>
     <div class="stat"><div class="n">1075</div><div class="l">Pokémon-Arten</div></div>
-    <div class="stat"><div class="n">69</div><div class="l">Versions&shy;stände</div></div>
+    <div class="stat"><div class="n">70</div><div class="l">Versions&shy;stände</div></div>
     <div class="stat"><div class="n">Gen 1–9</div><div class="l">Abgedeckt</div></div>
   </div>
 
@@ -10116,6 +10116,14 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.67</span><span class="tag tag-fix">Korrektur</span></div>
+      <h3>Urzeithöhle-Kartenpunkt kalibriert</h3>
+      <p>Der in v1.9.65 gesetzte Platzhalter-Punkt für die neu ergänzte Urzeithöhle wurde vom Nutzer
+      über den Kalibrierungsmodus durch die tatsächlich auf der Kartengrafik abgelesene Position
+      ersetzt. Alle anderen 77 Hoenn-Punkte unverändert.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.66</span><span class="tag tag-fix">Korrektur</span></div>
@@ -11747,7 +11755,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.66.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.67.</footer>
 
 </div>`;
 

@@ -468,7 +468,11 @@ explizit wieder darum.
   (vorher an Xeneroville selbst, jetzt an die neue Urzeithöhle-Kachel - der Arenakampf folgt im
   echten Spiel erst NACH dem Höhlenbesuch). „Geheiminsel" (Secret Islet) dagegen bestätigt **kein**
   Fehler - nur einer von mehreren ORAS-Geheimbasis-Spots ohne Pokémon/Trainer/Items, für einen
-  Nuzlocke-Tracker irrelevant, korrekt ausgelassen. **Wichtige Lehre:** die bereits abgeschlossene
+  Nuzlocke-Tracker irrelevant, korrekt ausgelassen. Der neue Kartenpunkt in `REGION_MAPS.smaragd`
+  (gilt per Objektreferenz auch für rubin/saphir/omegarubin/alphasaphir) war zunächst nur ein
+  ungefährer Platzhalter nahe Xeneroville - **in v1.9.67 vom Nutzer selbst über den
+  Kalibrierungsmodus** auf die tatsächliche Position `[72, 54.8]` korrigiert, alle anderen 77
+  Hoenn-Punkte blieben dabei unverändert. **Wichtige Lehre:** die bereits abgeschlossene
   Reihenfolge-Verifikation (`order-gen1-3.md`, s. u.) hatte diese Lücke NICHT gefunden, weil sie nur
   die relative Reihenfolge bereits VORHANDENER Standorte gegen Bulbapedias „Connecting areas" prüft,
   keine Existenzlücken (komplett fehlende Standorte) aufdeckt - das ist eine andere Prüfungsart und
