@@ -436,6 +436,22 @@ explizit wieder darum.
   eigene `cls:"Vorstand"`-Bosskarten rein, nicht nur der Teamboss selbst - exakt dasselbe Muster wie
   bereits bei Team Rocket/Galaktik/Magma/Aqua/Plasma etabliert. Bei künftigen Audits (Alola: Faba/
   Plumeria: Galar: analog) diesem Präzedenzfall folgen, nicht extra nachfragen.
+- **Hoenn — Urzeithöhle fehlte komplett (behoben in v1.9.65):** Nutzerfrage "kann es sein dass in
+  allen Hoenn-Regionen die Urzeithöhle fehlt? Außerdem in ORAS die Geheiminsel." Bestätigt: die
+  Urzeithöhle (Cave of Origin, bei Xeneroville/Sootopolis City) fehlte in Rubin/Saphir/Smaragd/ORAS
+  komplett, obwohl sie in Rubin/Saphir/ORAS der Story-Pflicht-Fangort für Groudon/Kyogre (bzw. deren
+  Primal-Formen) ist - kein optionaler Postgame-Bonus. Jetzt ergänzt, mit editionsspezifischem
+  Standort-Hinweis (Rubin/Saphir/ORAS: Fangort; Smaragd: nur einmaliger Nicht-Fang-Besuch, Wallace
+  debattiert über Rayquaza, danach versperrt) sowie umgehängter `bossAfter`-Bindung für Juan/Wassili
+  (vorher an Xeneroville selbst, jetzt an die neue Urzeithöhle-Kachel - der Arenakampf folgt im
+  echten Spiel erst NACH dem Höhlenbesuch). „Geheiminsel" (Secret Islet) dagegen bestätigt **kein**
+  Fehler - nur einer von mehreren ORAS-Geheimbasis-Spots ohne Pokémon/Trainer/Items, für einen
+  Nuzlocke-Tracker irrelevant, korrekt ausgelassen. **Wichtige Lehre:** die bereits abgeschlossene
+  Reihenfolge-Verifikation (`order-gen1-3.md`, s. u.) hatte diese Lücke NICHT gefunden, weil sie nur
+  die relative Reihenfolge bereits VORHANDENER Standorte gegen Bulbapedias „Connecting areas" prüft,
+  keine Existenzlücken (komplett fehlende Standorte) aufdeckt - das ist eine andere Prüfungsart und
+  müsste bei künftigen Audits (Alola/Galar, Sinnoh/Einall-Nachrecherche) explizit mitgedacht werden,
+  nicht als durch die Reihenfolge-Verifikation bereits abgedeckt angenommen werden.
 - **Reihenfolge-Verifikation:** Kalos (`gen6.md`) und jetzt auch **Gen 1-3 (Kanto/Johto/Hoenn) sind
   erledigt**, siehe `audit_reports/order-gen1-3.md` (Stand v1.9.50) - 15 Standorte in Kanto (Rot/Blau/
   Gelb/FeuerRot/BlattGrün), Johto (Gold/Silber/Kristall/HG-SS) und Hoenn (Rubin/Saphir/Smaragd/Omega
