@@ -3907,7 +3907,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.56";
+const APP_VERSION = "1.9.57";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -5279,19 +5279,19 @@ const REGION_MAPS = {
     region: "Kanto",
     image: "sprites/maps/kanto-lgpe-map.png",
     points: {
-      "Alabastia":[14.3,88.6], "Route 1":[14.1,84.4], "Vertania City":[14.0,50.0], "Route 22":[14.0,33.5],
-      "Route 2":[18.2,38.9], "Vertania-Wald":[22.4,27.8], "Marmoria City":[26.6,16.7], "Route 3":[29.7,16.7],
-      "Mondberg":[32.8,16.7], "Route 4":[35.9,16.7], "Azuria City":[39.1,16.7], "Route 24":[45.3,19.6],
-      "Route 25":[51.6,22.6], "Route 5":[39.1,26.3], "Unterführung":[39.1,36.0], "Route 6":[39.1,45.6],
-      "Orania City":[39.2,55.3], "Route 11":[41.3,51.6], "Digdas Höhle":[43.3,48.0], "Route 9":[45.3,44.3],
-      "Route 10":[47.3,40.7], "Felstunnel":[49.4,37.0], "Lavandia":[51.4,33.3], "Pokémon-Turm":[51.7,32.2],
-      "Route 12":[48.4,44.4], "Route 13":[43.8,52.8], "Route 14":[37.5,55.6], "Route 15":[32.8,52.8],
-      "Route 8":[43.8,27.8], "Route 7":[34.4,27.8], "Prismania City":[29.7,33.3], "Saffronia City":[39.1,33.3],
-      "Route 16":[37.5,44.5], "Route 17":[35.9,55.7], "Route 18":[34.4,66.9], "Fuchsania City":[32.8,78.1],
-      "Route 19":[28.1,84.7], "Route 20":[23.4,90.3], "Seeschauminseln":[18.8,93.1], "Zinnoberinsel":[14.1,95.8],
-      "Pokémon-Villa":[11.7,93.8], "Route 21":[17.2,91.7], "Kraftwerk":[49.2,41.7], "Vertania-Arena":[14.0,50.0],
-      "Route 22 (Rückweg)":[14.0,33.5], "Route 23":[7.8,27.8], "Siegesstraße":[14.1,22.4], "Pokémon-Liga":[8.0,17.1],
-      "Azuria-Höhle":[40.6,13.2]
+      "Alabastia":[13.9,66.3], "Route 1":[13.9,58.1], "Vertania City":[15.5,49.3], "Route 22":[9.9,49.5],
+      "Route 2":[14.1,42.2], "Vertania-Wald":[14.2,33.4], "Marmoria City":[13.9,22.2], "Route 3":[20.5,22.5],
+      "Mondberg":[26.5,16.3], "Route 4":[31.0,16.1], "Azuria City":[39.1,16.9], "Route 24":[39.1,9.3],
+      "Route 25":[43.0,5.5], "Route 5":[38.9,22.8], "Unterführung":[38.9,38.1], "Route 6":[39.1,45.1],
+      "Orania City":[39.1,55.7], "Route 11":[45.0,55.4], "Digdas Höhle":[17.2,27.5], "Route 9":[44.9,16.9],
+      "Route 10":[51.3,27.2], "Felstunnel":[51.5,21.9], "Lavandia":[51.7,33.1], "Pokémon-Turm":[48.2,29.0],
+      "Route 12":[51.3,49.5], "Route 13":[48.0,66.3], "Route 14":[42.2,72.2], "Route 15":[38.4,77.1],
+      "Route 8":[44.4,32.8], "Route 7":[34.4,33.4], "Prismania City":[29.6,33.4], "Saffronia City":[39.1,33.1],
+      "Route 16":[23.8,33.4], "Route 17":[20.2,44.0], "Route 18":[26.2,77.7], "Fuchsania City":[32.8,78.0],
+      "Route 19":[32.9,84.5], "Route 20":[29.1,88.0], "Seeschauminseln":[23.5,88.6], "Zinnoberinsel":[14.2,88.9],
+      "Pokémon-Villa":[16.4,83.9], "Route 21":[13.9,76.9], "Kraftwerk":[54.8,28.1], "Vertania-Arena":[15.5,49.3],
+      "Route 22 (Rückweg)":[9.9,49.5], "Route 23":[7.8,40.1], "Siegesstraße":[7.9,27.8], "Pokémon-Liga":[7.6,16.3],
+      "Azuria-Höhle":[35.6,12.2]
     }
   }
 };
@@ -5380,7 +5380,7 @@ function regionMapSheetHtml(){
     <button class="btn ${mapViewMode==="artwork"?"btn-primary":"btn-secondary"}" data-act="set-map-mode" data-id="artwork">Kartengrafik</button>
     <button class="btn ${mapViewMode==="schema"?"btn-primary":"btn-secondary"}" data-act="set-map-mode" data-id="schema">Schema</button>
   </div>` : "";
-  const note = map ? `<div class="loc-sub" style="margin-bottom:10px;">Prototyp: die Klickpunkte auf der Kartengrafik sind ein nach Spielwissen platzierter Entwurf (die Kartengrafik selbst trägt keine Beschriftung) - Rückmeldung zu falsch sitzenden Punkten gerne melden.</div>` : "";
+  const note = map ? `<div class="loc-sub" style="margin-bottom:10px;">Prototyp: die Klickpunkte auf der Kartengrafik wurden per Kalibrierungsmodus von Hand gesetzt - bei Bedarf jederzeit erneut kalibrieren.</div>` : "";
   const body = (map && mapViewMode==="artwork") ? artworkMapHtml(game.id) : schemaMapHtml(region);
   const calibrateBtn = (map && mapViewMode==="artwork") ? `<button class="btn btn-ghost" data-act="calibration-start" style="margin-top:10px;">Punkte selbst kalibrieren</button>` : "";
   return `<h3>${escapeHtml(region||"")}-Karte</h3>${note}${modeToggle}<div id="regionMapBody">${body}</div>${calibrateBtn}`;
@@ -7653,7 +7653,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="stats">
     <div class="stat"><div class="n">23</div><div class="l">Editionen</div></div>
     <div class="stat"><div class="n">1075</div><div class="l">Pokémon-Arten</div></div>
-    <div class="stat"><div class="n">59</div><div class="l">Versions&shy;stände</div></div>
+    <div class="stat"><div class="n">60</div><div class="l">Versions&shy;stände</div></div>
     <div class="stat"><div class="n">Gen 1–9</div><div class="l">Abgedeckt</div></div>
   </div>
 
@@ -7663,6 +7663,18 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.57</span><span class="tag tag-fix">Fix</span></div>
+      <h3>Kanto-Kartenpunkte von Hand kalibriert</h3>
+      <p>Mit dem neuen Kalibrierungsmodus aus v1.9.56 alle 49 Klickpunkte der Kanto-Kartengrafik neu
+      gesetzt - ersetzt die zuvor per Spielwissen/Pixelclustering geratenen, "kreuz und quer"
+      wirkenden Positionen durch tatsächlich am Bild abgelesene Koordinaten. Vertania City/-Arena
+      sowie Route 22/Route 22 (Rückweg) - im Spiel jeweils derselbe physische Ort, nur zu
+      unterschiedlichen Zeitpunkten besucht - bekommen weiterhin bewusst identische Koordinaten
+      (Mittelwert der beiden leicht unterschiedlichen Antipp-Positionen), passend zum bestehenden
+      Prinzip aus v1.9.55. Der Hinweistext im Kartensheet wurde entsprechend angepasst.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.56</span><span class="tag tag-feat">Neu</span></div>
@@ -9134,7 +9146,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.56.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.57.</footer>
 
 </div>`;
 

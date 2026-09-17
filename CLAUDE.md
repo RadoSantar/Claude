@@ -193,18 +193,15 @@ jederzeit hier in `CLAUDE.md` + Git-Historie rekonstruierbar, siehe Rest dieser 
   Kartenausschnitt sichtbar — für Punktplatzierung ungeeignet), die klassischen `Kanto Town Map
   RBY/RGBY/GSC.png`-Dateien (alle ≤160×144, zu grobpixelig).
   **Wichtige Einschränkung, nicht vergessen:** auch das neue Bild hat KEINE Text-Beschriftungen. Die
-  18 tatsächlich im Bild sichtbaren Wegpunkt-Symbole wurden per automatisiertem Pixelfarb-Clustering
-  (Python/Pillow, Suche nach den kompakten weißen Marker-Kernen) lokalisiert — nur eines davon ist
-  visuell wirklich sicher identifizierbar (das große Säulengebäude oben links = Pokémon-Liga/Indigo-
-  Plateau, passt zur bekannten Nordwest-Lage). Die übrigen 17 wurden nach Kanto-Spielwissen/
-  Konnektivität zugeordnet, die restlichen der 49 Standorte linear zwischen den zugeordneten
-  Ankerpunkten interpoliert — **bewusst stilisiert/ungefähr, nicht pixelgenau verifiziert** (vom
-  Nutzer per Nachfrage ausdrücklich akzeptiert, da *Let's Go* Kantos Streckenführung gegenüber
-  Rot/Blau ohnehin vereinfacht, z.B. keine getrennte Route-22/23-Struktur). Standorte, die im Spiel
-  zweimal besucht werden (Vertania City/-Arena; Route 22/Route 22 (Rückweg)), bekommen bewusst
-  IDENTISCHE Koordinaten statt zweier benachbarter Punkte — spiegelt korrekt wider, dass es sich um
-  denselben Ort handelt. Nutzer-Feedback zu falsch sitzenden Punkten weiterhin einholen und
-  Koordinaten dann gezielt nachjustieren, nicht als fertig/korrekt verkaufen.
+  ursprünglichen v1.9.55-Koordinaten (18 per automatisiertem Pixelfarb-Clustering lokalisierte
+  Wegpunkt-Symbole als Anker, Rest nach Kanto-Spielwissen zugeordnet/interpoliert) wirkten laut
+  Nutzerfeedback "kreuz und quer" — **in v1.9.57 durch vom Nutzer selbst per Kalibrierungsmodus
+  (s.u.) abgetippte Koordinaten ersetzt**, jetzt also tatsächlich am Bild abgelesen statt geraten.
+  Standorte, die im Spiel zweimal besucht werden (Vertania City/-Arena; Route 22/Route 22
+  (Rückweg)), bekommen weiterhin bewusst IDENTISCHE Koordinaten statt zweier benachbarter Punkte
+  (Mittelwert der beiden leicht unterschiedlichen Antipp-Positionen) — spiegelt korrekt wider, dass
+  es sich um denselben Ort handelt. Bei weiterhin falsch wirkenden Einzelpunkten: erneut über den
+  Kalibrierungsmodus nachjustieren, nicht wieder raten.
   Bild liegt (wie schon das vorherige) bewusst nicht in `sprites/` über `extract-sprites.js`
   eingebunden (das Tool kennt nur die vier Sprite-Konstanten) — liegt stattdessen als eigene reale
   Datei unter `sprites/maps/`, die `build-netlify-zip.js` automatisch mitkopiert (kopiert den ganzen
