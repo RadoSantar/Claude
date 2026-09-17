@@ -3907,7 +3907,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.61";
+const APP_VERSION = "1.9.62";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -7649,21 +7649,24 @@ function expandCollapseGroupsForLocation(targetId){
   }
 }
 
-/* ---------- Region-Karte (Prototyp, bisher nur Rot/Blau) ----------
-   Zwei Darstellungsarten: eine echte, aus dem Bulbagarden-Archiv stammende Kartengrafik (seit
-   v1.9.55: die zusammengesetzte Ingame-Kartenansicht aus Pokémon: Let's Go, Pikachu!/Evoli! -
-   ersetzt die vorherige gemalte Rot/Blau-Illustration, die als "unübersichtlich" empfunden wurde;
-   echte Spielkacheln statt Gemälde, aber selbst ebenfalls KEINE Text-Beschriftungen - die
-   Klickpunkt-Positionen unten sind deshalb weiterhin ein Entwurf nach Spielwissen/Konnektivität,
-   diesmal zusätzlich an den 18 tatsächlich im Bild sichtbaren Wegpunkt-Symbolen ausgerichtet
-   [per Pixelfarb-Clustering ermittelt], nicht an im Bild ablesbaren Beschriftungen verifiziert -
-   siehe CLAUDE.md für Details und die bewusst identischen Koordinaten für Standorte, die im Spiel
-   zweimal besucht werden) und eine rein datengetriebene "Schema"-Ansicht (Positionen einfach aus
-   der bestehenden Standort-Reihenfolge abgeleitet, kein Recherche-/Platzierungsrisiko).
+/* ---------- Region-Karte (seit v1.9.62: Rot/Blau + Rubin/Saphir/Smaragd) ----------
+   Zwei Darstellungsarten: eine echte, aus dem Bulbagarden-Archiv stammende Kartengrafik (Kanto seit
+   v1.9.55: die zusammengesetzte Ingame-Kartenansicht aus Pokémon: Let's Go, Pikachu!/Evoli!; Hoenn
+   seit v1.9.62: "Hoenn ORAS Map.png", ebenfalls ein echtes Ingame-Kachelbild, aber mit nur 320×210px
+   deutlich niedriger aufgelöst, da es für Hoenn keine Let's-Go-artige HD-Neuauflage gibt - bewusst
+   trotzdem verwendet, siehe CLAUDE.md) - beide selbst OHNE Text-Beschriftungen, die Klickpunkt-
+   Positionen sind deshalb ein Entwurf nach Spielwissen/Konnektivität bzw. (Hoenn, Stand v1.9.62) nur
+   ein grobes Platzhalter-Raster, das noch nicht kalibriert wurde - siehe CLAUDE.md für Details und
+   die bewusst identischen Koordinaten für Standorte, die im Spiel zweimal besucht werden) und eine
+   rein datengetriebene "Schema"-Ansicht (Positionen einfach aus der bestehenden Standort-Reihenfolge
+   abgeleitet, kein Recherche-/Platzierungsrisiko).
    REGION_MAPS ist nach GAMES-Edition-ID geschlüsselt statt nach Regionname, da sich dieselbe Region
    über mehrere Editionen hinweg unterschiedlich zeichnen lässt (z.B. Kanto in Rot/Blau vs.
    FeuerRot/BlattGrün) - fehlt ein Eintrag für die aktuelle Edition, wird nur die Schema-Ansicht
-   angeboten. */
+   angeboten. Rubin/Saphir teilen sich denselben Standort-Datensatz wie Smaragd (SMARAGD_LOCATIONS,
+   siehe buildVersionGames()-Aufruf) - REGION_MAPS.rubin/.saphir zeigen deshalb bewusst per
+   Objektreferenz (nicht Kopie) auf denselben REGION_MAPS.smaragd-Eintrag: eine künftige Kalibrierung
+   unter irgendeiner der drei Editionen aktualisiert automatisch alle drei. */
 const REGION_MAPS = {
   "rot-blau": {
     region: "Kanto",
@@ -7683,8 +7686,42 @@ const REGION_MAPS = {
       "Route 22 (Rückweg)":[8.4,49.5], "Route 23":[7.8,40.1], "Siegesstraße":[7.9,27.8], "Pokémon-Liga":[7.6,16.3],
       "Azuria-Höhle":[35.6,12.2]
     }
+  },
+  "smaragd": {
+    region: "Hoenn",
+    image: "sprites/maps/hoenn-oras-map.png",
+    points: {
+      "Wurzelheim":[5.0,8.0], "Route 101":[15.0,8.0], "Rosaltstadt":[25.0,8.0],
+      "Route 102":[35.0,8.0], "Route 103":[45.0,8.0], "Blütenburg City":[55.0,8.0],
+      "Blütenburgwald":[65.0,8.0], "Metarost City":[75.0,8.0], "Route 104":[85.0,8.0],
+      "Route 105":[95.0,8.0], "Inselhöhle":[5.0,20.0], "Route 106":[15.0,20.0],
+      "Faustauhaven":[25.0,20.0], "Granithöhle":[35.0,20.0], "Route 107":[45.0,20.0],
+      "Route 108":[55.0,20.0], "Schiffswrack":[65.0,20.0], "Route 109":[75.0,20.0],
+      "Graphitport City":[85.0,20.0], "Route 110":[95.0,20.0], "Malvenfroh City":[5.0,32.0],
+      "Neu Malvenfroh":[15.0,32.0], "Rätselhaus":[25.0,32.0], "Route 117":[35.0,32.0],
+      "Wiesenflur":[45.0,32.0], "Metaflurtunnel":[55.0,32.0], "Route 116":[65.0,32.0],
+      "Route 111":[75.0,32.0], "Feuriger Pfad":[85.0,32.0], "Route 112":[95.0,32.0],
+      "Route 113":[5.0,44.0], "Laubwechselfeld":[15.0,44.0], "Route 114":[25.0,44.0],
+      "Meteorfälle":[35.0,44.0], "Schlotberg":[45.0,44.0], "Steilpass":[55.0,44.0],
+      "Bad Lavastadt":[65.0,44.0], "Wunderturm":[75.0,44.0], "Wüstenruine":[85.0,44.0],
+      "Route 115":[95.0,44.0], "Route 118":[5.0,56.0], "Route 119":[15.0,56.0],
+      "Baumhausen City":[25.0,56.0], "Route 120":[35.0,56.0], "Grabmal":[45.0,56.0],
+      "Sonnengrotte":[55.0,56.0], "Route 121":[65.0,56.0], "Safari-Zone":[75.0,56.0],
+      "Seegrasulb City":[85.0,56.0], "Insel im Süden":[95.0,56.0], "Pyroberg":[5.0,68.0],
+      "Route 122":[15.0,68.0], "Route 123":[25.0,68.0], "Route 124":[35.0,68.0],
+      "Moosbach City":[45.0,68.0], "Route 125":[55.0,68.0], "Küstenhöhle":[65.0,68.0],
+      "Route 126":[75.0,68.0], "Route 127":[85.0,68.0], "Tiefseehöhle":[95.0,68.0],
+      "Xeneroville":[5.0,80.0], "Route 128":[15.0,80.0], "Route 129":[25.0,80.0],
+      "Route 130":[35.0,80.0], "Wundereiland":[45.0,80.0], "Kampfzone":[55.0,80.0],
+      "Höhlenatelier":[65.0,80.0], "Route 131":[75.0,80.0], "Floßbrunn":[85.0,80.0],
+      "Himmelturm":[95.0,80.0], "Route 132":[5.0,92.0], "Route 133":[15.0,92.0],
+      "Route 134":[25.0,92.0], "Prachtpolis City":[35.0,92.0], "Siegelkammer":[45.0,92.0],
+      "Siegesstraße":[55.0,92.0], "Pokémon-Liga":[65.0,92.0]
+    }
   }
 };
+REGION_MAPS.rubin = REGION_MAPS.smaragd;
+REGION_MAPS.saphir = REGION_MAPS.smaragd;
 let mapViewMode = "artwork";
 
 /* Kalibrierungsmodus (seit v1.9.56): Werkzeug für den Nutzer selbst, um die Klickpunkt-Koordinaten
@@ -7770,7 +7807,7 @@ function regionMapSheetHtml(){
     <button class="btn ${mapViewMode==="artwork"?"btn-primary":"btn-secondary"}" data-act="set-map-mode" data-id="artwork">Kartengrafik</button>
     <button class="btn ${mapViewMode==="schema"?"btn-primary":"btn-secondary"}" data-act="set-map-mode" data-id="schema">Schema</button>
   </div>` : "";
-  const note = map ? `<div class="loc-sub" style="margin-bottom:10px;">Prototyp: die Klickpunkte auf der Kartengrafik wurden per Kalibrierungsmodus von Hand gesetzt - bei Bedarf jederzeit erneut kalibrieren.</div>` : "";
+  const note = map ? `<div class="loc-sub" style="margin-bottom:10px;">Prototyp: die Klickpunkte auf der Kartengrafik lassen sich jederzeit über „Punkte selbst kalibrieren" anpassen - wirken sie noch kreuz und quer (z.B. bei einem frisch hinzugefügten Kartenbild), einfach neu kalibrieren.</div>` : "";
   const body = (map && mapViewMode==="artwork") ? artworkMapHtml(game.id) : schemaMapHtml(region);
   const calibrateBtn = (map && mapViewMode==="artwork") ? `<button class="btn btn-ghost" data-act="calibration-start" style="margin-top:10px;">Punkte selbst kalibrieren</button>` : "";
   return `<h3>${escapeHtml(region||"")}-Karte</h3>${note}${modeToggle}<div id="regionMapBody">${body}</div>${calibrateBtn}`;
@@ -10049,7 +10086,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="stats">
     <div class="stat"><div class="n">23</div><div class="l">Editionen</div></div>
     <div class="stat"><div class="n">1075</div><div class="l">Pokémon-Arten</div></div>
-    <div class="stat"><div class="n">64</div><div class="l">Versions&shy;stände</div></div>
+    <div class="stat"><div class="n">65</div><div class="l">Versions&shy;stände</div></div>
     <div class="stat"><div class="n">Gen 1–9</div><div class="l">Abgedeckt</div></div>
   </div>
 
@@ -10059,6 +10096,24 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.62</span><span class="tag tag-feat">Neu</span></div>
+      <h3>Regionskarte auf Hoenn (Rubin/Saphir/Smaragd) ausgeweitet</h3>
+      <p>Zweite Edition für die seit v1.9.52 als Prototyp geführte Regionskarte, nach Kanto (Rot/Blau).
+      Kartenbild: "Hoenn ORAS Map.png" von Bulbagarden Archives - ein echtes Ingame-Kachelbild wie bei
+      Kanto, aber mit nur 320×210px deutlich niedriger aufgelöst, da es für Hoenn (anders als Kanto
+      mit Pokémon: Let's Go) keine hochauflösende Neuauflage gibt. Bewusst trotzdem verwendet (Nutzer-
+      entscheidung nach Rückfrage) - der Stil (klare Kacheln statt Gemälde) passt weiterhin genau,
+      wirkt auf großen Bildschirmen aber etwas weicher. Rubin, Saphir und Smaragd teilen sich denselben
+      77-Standorte-Datensatz und damit auch dieselbe Karte (eine Kalibrierung wirkt automatisch für
+      alle drei). <strong>Die 77 Klickpunkte sind aktuell nur ein grobes Platzhalter-Raster, noch
+      NICHT kalibriert</strong> - anders als bei Kanto, wo die Punkte bereits vom Nutzer per Hand
+      gesetzt wurden. Über "Punkte selbst kalibrieren" im Kartengrafik-Modus lässt sich das jederzeit
+      nachholen (deutlich mehr Standorte als Kantos 49, dafür deckt eine Runde gleich drei Editionen
+      ab). Johto wird bewusst zurückgestellt, bis auch Kanto/Hoenn als zweite Runde gegengecheckt
+      sind.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.61</span><span class="tag tag-feat">Neu</span></div>
@@ -11603,7 +11658,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.61.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.62.</footer>
 
 </div>`;
 

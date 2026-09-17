@@ -273,10 +273,10 @@ jederzeit hier in `CLAUDE.md` + Git-Historie rekonstruierbar, siehe Rest dieser 
   richtige Einklapp-Gruppe auf (repliziert dafür einmalig die Tile-Chunking-Logik aus `renderRoutes()`
   für die eine betroffene Region), rendert neu, scrollt zur Kachel und hebt sie kurz farbig hervor
   (`.search-highlight`, nutzt `--evolve-glow` nur als generischen Aufmerksamkeits-Farbton).
-- **Regions-Karte, PROTOTYP nur Rot/Blau (seit v1.9.52, Kartenbild ausgetauscht in v1.9.55):**
+- **Regions-Karte (seit v1.9.52 Rot/Blau, seit v1.9.62 zusätzlich Rubin/Saphir/Smaragd):**
   dritter FAB (`mapFab`), nur sichtbar wenn `REGION_MAPS[currentGame().id]` existiert. Zwei Ansichten
   in einem Sheet umschaltbar (`mapViewMode`, `regionMapSheetHtml()`): "Kartengrafik" (Bulbagarden-
-  Archiv-Bild, Standorte als absolut positionierte `%`-Punkte via `REGION_MAPS["rot-blau"].points`)
+  Archiv-Bild, Standorte als absolut positionierte `%`-Punkte via `REGION_MAPS[editionId].points`)
   und "Schema" (reine Listenansicht, Positionen direkt aus der Standort-Reihenfolge abgeleitet, kein
   Platzierungsrisiko — dem Nutzer gefällt diese Ansicht bereits uneingeschränkt gut). Beide nutzen zum
   Sprung denselben `jump-to-location-result`-Mechanismus wie die Standort-Suche (volle
@@ -324,8 +324,36 @@ jederzeit hier in `CLAUDE.md` + Git-Historie rekonstruierbar, siehe Rest dieser 
   Datei unter `sprites/maps/`, die `build-netlify-zip.js` automatisch mitkopiert (kopiert den ganzen
   `sprites/`-Ordner rekursiv) und die beim nächsten Artifact-Publish zusätzlich über den
   `files`-Parameter mitgegeben werden muss (nicht Teil der automatischen `inline-sprites.js`-
-  Pipeline). Ausweitung auf weitere Editionen/Regionen bewusst zurückgestellt, bis dieser Prototyp
-  gegengecheckt ist.
+  Pipeline).
+  **Ausweitung auf Hoenn (seit v1.9.62):** Nutzerwunsch "lass uns als nächstes Hoenn machen (Johto
+  kommt später, da es ja Johto & Kanto da gibt)" - Johto bewusst zurückgestellt, da es (anders als
+  Hoenn) noch keine zweite bereits abgedeckte Referenz-Region gäbe, an der sich das Muster schon
+  bewährt hat; Hoenn ist die logische zweite Runde. Rubin/Saphir/Smaragd teilen sich denselben
+  Standort-Datensatz `SMARAGD_LOCATIONS` (77 Standorte, ein Region-Eintrag "Hoenn" - siehe
+  `buildVersionGames(HOENN_RS_BOSSES, SMARAGD_LOCATIONS, ...)` für Rubin/Saphir), ORAS nutzt dagegen
+  ein separates `ORAS_LOCATIONS` - deshalb `REGION_MAPS.rubin = REGION_MAPS.saphir =
+  REGION_MAPS.smaragd` (Objektreferenz, keine Kopie: eine künftige Kalibrierung unter irgendeiner der
+  drei Editionen aktualisiert automatisch alle drei), ORAS bewusst NICHT mit abgedeckt (eigener
+  Datensatz, eigene Kalibrierungsrunde nötig, aus Aufwandsgründen zurückgestellt wie Johto).
+  Kartenbild: `Hoenn ORAS Map.png` (Bulbagarden Archives, dieselbe Recherchemethode wie bei Kanto -
+  Kategorie-Suche + Dateiseiten-Check auf Stil/Auflösung/Lizenz) - ein echtes Ingame-Kachelbild wie
+  bei Kanto, aber nur 320×210px (kein Let's-Go-Äquivalent für Hoenn verfügbar) - jetzt unter
+  `sprites/maps/hoenn-oras-map.png`. Nutzer nach Rückfrage (Vorschau geschickt) bewusst FÜR die
+  Verwendung trotz niedrigerer Auflösung entschieden, statt nur Schema-Ansicht für Hoenn anzubieten.
+  Geprüfte/verworfene Alternativen: die einzelnen `Hoenn <Ort> Town Map.png`-Dateien (alle ≤352×223,
+  nur Einzelstandorte, kein Vollbild); keine gemalte Artwork-Alternative gezielt gesucht, da das
+  Stil-Kriterium (Kacheln statt Gemälde) inzwischen als hartes Muss gilt (Kanto-Präzedenzfall).
+  **Wichtig, nicht wie bei Kanto verwechseln:** die 77 Klickpunkte sind (Stand v1.9.62) NOCH NICHT
+  kalibriert - anders als Kanto nur ein algorithmisch erzeugtes 10×8-Platzhalter-Raster (gleichmäßig
+  über 5-95% verteilt, siehe Commit), damit keine zwei Punkte exakt übereinanderliegen (Lektion aus
+  dem Kanto-Route-22-Vorfall, s.o.) und der Kalibrierungsmodus sofort nutzbar ist. Der Hinweistext im
+  Kartensheet wurde deshalb editionsneutral formuliert (nicht mehr "wurden von Hand gesetzt", das
+  stimmte nur für Kanto) - beschreibt jetzt nur noch den Mechanismus, ohne einen Kalibrierungsstand
+  zu behaupten. **Nächster Schritt, sobald gewünscht:** Nutzer über den Kalibrierungsmodus (s.u.)
+  durch alle 77 Hoenn-Standorte führen lassen, analog zu Kanto - deutlich mehr Tipparbeit als Kantos
+  49, dafür deckt eine Runde gleich drei Editionen ab.
+  Ausweitung auf weitere Editionen/Regionen darüber hinaus (Johto, ORAS, alles jenseits Kanto+Hoenn)
+  bewusst weiterhin zurückgestellt.
   **Kalibrierungsmodus (seit v1.9.56):** Nutzerfeedback zu den v1.9.55-Koordinaten war "wirken kreuz
   und quer" — eine gezielte Recherche nach einer beschrifteten Referenz für die Let's-Go-Kartenansicht
   (welcher der 18 sichtbaren Wegpunkte welcher Stadt entspricht) blieb ergebnislos, weder Bulbapedia
