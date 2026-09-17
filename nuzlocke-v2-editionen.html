@@ -3907,7 +3907,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.63";
+const APP_VERSION = "1.9.64";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -7649,24 +7649,26 @@ function expandCollapseGroupsForLocation(targetId){
   }
 }
 
-/* ---------- Region-Karte (seit v1.9.62: Rot/Blau + Rubin/Saphir/Smaragd) ----------
+/* ---------- Region-Karte (seit v1.9.52 Rot/Blau, seit v1.9.62 Rubin/Saphir/Smaragd/OR/AS) ----------
    Zwei Darstellungsarten: eine echte, aus dem Bulbagarden-Archiv stammende Kartengrafik (Kanto seit
-   v1.9.55: die zusammengesetzte Ingame-Kartenansicht aus Pokémon: Let's Go, Pikachu!/Evoli!; Hoenn
-   seit v1.9.62: "Hoenn ORAS Map.png", ebenfalls ein echtes Ingame-Kachelbild, aber mit nur 320×210px
-   deutlich niedriger aufgelöst, da es für Hoenn keine Let's-Go-artige HD-Neuauflage gibt - bewusst
-   trotzdem verwendet, siehe CLAUDE.md) - beide selbst OHNE Text-Beschriftungen, die Klickpunkt-
-   Positionen sind deshalb ein Entwurf nach Spielwissen/Konnektivität bzw. (Hoenn, Stand v1.9.62) nur
-   ein grobes Platzhalter-Raster, das noch nicht kalibriert wurde - siehe CLAUDE.md für Details und
-   die bewusst identischen Koordinaten für Standorte, die im Spiel zweimal besucht werden) und eine
-   rein datengetriebene "Schema"-Ansicht (Positionen einfach aus der bestehenden Standort-Reihenfolge
-   abgeleitet, kein Recherche-/Platzierungsrisiko).
+   v1.9.55: die zusammengesetzte Ingame-Kartenansicht aus Pokémon: Let's Go, Pikachu!/Evoli!, von
+   Hand kalibriert; Hoenn seit v1.9.62: "Hoenn ORAS Map.png", ebenfalls ein echtes Ingame-Kachelbild,
+   aber mit nur 320×210px deutlich niedriger aufgelöst, da es für Hoenn keine Let's-Go-artige
+   HD-Neuauflage gibt - bewusst trotzdem verwendet, seit v1.9.63 ebenfalls von Hand kalibriert) -
+   beide selbst OHNE Text-Beschriftungen, siehe CLAUDE.md für die Recherche-/Kalibrierungshistorie
+   und die bewusst NICHT identischen Koordinaten für Standorte, die im Spiel zweimal besucht werden
+   (siehe Kanto-Route-22-Lektion) - und eine rein datengetriebene "Schema"-Ansicht (Positionen
+   einfach aus der bestehenden Standort-Reihenfolge abgeleitet, kein Recherche-/Platzierungsrisiko).
    REGION_MAPS ist nach GAMES-Edition-ID geschlüsselt statt nach Regionname, da sich dieselbe Region
    über mehrere Editionen hinweg unterschiedlich zeichnen lässt (z.B. Kanto in Rot/Blau vs.
    FeuerRot/BlattGrün) - fehlt ein Eintrag für die aktuelle Edition, wird nur die Schema-Ansicht
-   angeboten. Rubin/Saphir teilen sich denselben Standort-Datensatz wie Smaragd (SMARAGD_LOCATIONS,
-   siehe buildVersionGames()-Aufruf) - REGION_MAPS.rubin/.saphir zeigen deshalb bewusst per
-   Objektreferenz (nicht Kopie) auf denselben REGION_MAPS.smaragd-Eintrag: eine künftige Kalibrierung
-   unter irgendeiner der drei Editionen aktualisiert automatisch alle drei. */
+   angeboten. Rubin/Saphir/Omega Rubin/Alpha Saphir teilen sich denselben Standort-Datensatz wie
+   Smaragd (SMARAGD_LOCATIONS bzw. die davon per .map() abgeleitete ORAS_LOCATIONS, siehe
+   buildVersionGames()-Aufrufe) - REGION_MAPS.rubin/.saphir/.omegarubin/.alphasaphir zeigen deshalb
+   bewusst per Objektreferenz (nicht Kopie) auf denselben REGION_MAPS.smaragd-Eintrag: eine künftige
+   Kalibrierung unter irgendeiner der fünf Editionen aktualisiert automatisch alle. ORAS weicht in
+   genau 3 von 79 Standorten vom 77er-Smaragd-Datensatz ab (siehe CLAUDE.md) - deren Punkte sind
+   deshalb zusätzlich im `points`-Objekt unten enthalten, unter den ORAS-eigenen Namen. */
 const REGION_MAPS = {
   "rot-blau": {
     region: "Kanto",
@@ -7716,12 +7718,16 @@ const REGION_MAPS = {
       "Höhlenatelier":[79.1,85.1], "Route 131":[71.7,70], "Floßbrunn":[64.9,68.7],
       "Himmelturm":[72.2,63.9], "Route 132":[56.8,69.2], "Route 133":[47.5,68.2],
       "Route 134":[37.2,69.2], "Prachtpolis City":[95.8,64.7], "Siegelkammer":[37.9,75],
-      "Siegesstraße":[95.7,58.1], "Pokémon-Liga":[95.3,52.1]
+      "Siegesstraße":[95.7,58.1], "Pokémon-Liga":[95.3,52.1],
+      "Seewoge Malvenfroh":[25.3,83.1],
+      "Route 103 (Postgame)":[24.2,56.1], "Blütenburg City (Delta-Episode)":[8.8,62.2]
     }
   }
 };
 REGION_MAPS.rubin = REGION_MAPS.smaragd;
 REGION_MAPS.saphir = REGION_MAPS.smaragd;
+REGION_MAPS.omegarubin = REGION_MAPS.smaragd;
+REGION_MAPS.alphasaphir = REGION_MAPS.smaragd;
 let mapViewMode = "artwork";
 
 /* Kalibrierungsmodus (seit v1.9.56): Werkzeug für den Nutzer selbst, um die Klickpunkt-Koordinaten
@@ -10086,7 +10092,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="stats">
     <div class="stat"><div class="n">23</div><div class="l">Editionen</div></div>
     <div class="stat"><div class="n">1075</div><div class="l">Pokémon-Arten</div></div>
-    <div class="stat"><div class="n">66</div><div class="l">Versions&shy;stände</div></div>
+    <div class="stat"><div class="n">67</div><div class="l">Versions&shy;stände</div></div>
     <div class="stat"><div class="n">Gen 1–9</div><div class="l">Abgedeckt</div></div>
   </div>
 
@@ -10096,6 +10102,24 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.64</span><span class="tag tag-feat">Neu</span></div>
+      <h3>Hoenn-Regionskarte auch für Omega Rubin/Alpha Saphir</h3>
+      <p>Nutzerfrage: "prüfe ob man dieselbe Karte auch für OR/AS verwenden kann oder ob dann Orte
+      fehlen." Direkter Codevergleich ergab: ORAS_LOCATIONS wird per <code>.map()</code> aus
+      SMARAGD_LOCATIONS abgeleitet, weicht aber in genau 3 von 79 Standorten ab - "Schiffswrack"
+      heißt dort "Seewoge Malvenfroh" (gleicher Ort, ORAS-exklusiv umbenannt), dazu kommen zwei neue
+      Postgame-Standorte der Delta-Episode ("Route 103 (Postgame)", "Blütenburg City (Delta-Episode)").
+      Alle drei Lücken ohne neue Kalibrierungsrunde geschlossen: der umbenannte Ort bekam denselben
+      Punkt wie "Schiffswrack" (taucht nie in derselben Editionsliste gleichzeitig auf, kein
+      Überlappungsrisiko), die beiden Postgame-Rückkehr-Standorte bekamen bewusst leicht versetzte
+      Punkte nahe ihres jeweiligen Basis-Standorts (nicht identische Koordinaten - siehe die
+      Kanto-Route-22-Lektion: exakt übereinanderliegende Kartenpunkte machen den zuerst gerenderten
+      untappbar). Omega Rubin und Alpha Saphir zeigen deshalb jetzt ebenfalls per Objektreferenz auf
+      denselben Hoenn-Karteneintrag wie Rubin/Saphir/Smaragd - alle 79 ORAS-Standorte haben einen
+      eigenen, unabhängig antippbaren Kartenpunkt, per Playwright verifiziert.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.63</span><span class="tag tag-fix">Fix</span></div>
@@ -11668,7 +11692,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.63.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.64.</footer>
 
 </div>`;
 

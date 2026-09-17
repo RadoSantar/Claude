@@ -350,8 +350,28 @@ jederzeit hier in `CLAUDE.md` + Git-Historie rekonstruierbar, siehe Rest dieser 
   Koordinaten ersetzt, analog zu Kanto - die Punkte folgen jetzt sichtbar Küstenlinie/Straßen der
   Kartengrafik statt eines Rasters. Da `REGION_MAPS.rubin`/`.saphir` per Objektreferenz auf
   `REGION_MAPS.smaragd` zeigen, gilt die Kalibrierung automatisch für alle drei Editionen.
-  Ausweitung auf weitere Editionen/Regionen darüber hinaus (Johto, ORAS, alles jenseits Kanto+Hoenn)
-  bewusst weiterhin zurückgestellt.
+  **Auf Omega Rubin/Alpha Saphir ausgeweitet (seit v1.9.64):** Nutzerfrage "prüfe ob man dieselbe
+  Karte auch für OR/AS verwenden kann oder ob dann Orte fehlen" - per direktem Codevergleich beider
+  Arrays beantwortet, nicht geraten: `ORAS_LOCATIONS` wird per `.map()` aus `SMARAGD_LOCATIONS`
+  abgeleitet (siehe Zeile bei `const ORAS_LOCATIONS`), weicht aber in genau 3 von 79 Standorten ab -
+  1) "Schiffswrack" → "Seewoge Malvenfroh" (ORAS-exklusiv umbenannt, exakt derselbe reale Ort, taucht
+  aber nie in derselben Editions-Standortliste gleichzeitig mit "Schiffswrack" auf - deshalb bewusst
+  IDENTISCHER Punkt zulässig, kein Widerspruch zur Route-22-Regel, die nur für zwei Standorte
+  INNERHALB derselben Editionsliste gilt); 2) `{name:"Route 103 (Postgame)", ...}` und 3)
+  `{name:"Blütenburg City (Delta-Episode)", ...}` - zwei zusätzliche, in ORAS_LOCATIONS direkt
+  angehängte Delta-Episode-Postgame-Standorte (siehe `ORAS_BOSS_AFTER`), die es in Rubin/Saphir/
+  Smaragd gar nicht gibt. Für diese beiden (anders als Fall 1: sie koexistieren mit ihrem jeweiligen
+  Basis-Standort IN DERSELBEN ORAS-Standortliste) bewusst NICHT dieselben Koordinaten wie "Route 103"
+  bzw. "Blütenburg City" vergeben, sondern leicht versetzte (Kanto-Route-22-Lektion: exakt
+  übereinanderliegende `<button class="map-pin">`-Elemente machen das zuerst gerenderte untappbar) -
+  ohne neue Kalibrierungsrunde, nur ein kleiner manueller Versatz in der Nähe des jeweiligen
+  Basis-Punkts. `REGION_MAPS.omegarubin`/`.alphasaphir` zeigen jetzt ebenfalls per Objektreferenz auf
+  `REGION_MAPS.smaragd` (identisches Muster wie rubin/saphir) - alle 79 ORAS-Standorte haben dadurch
+  einen eigenen Punkt, per Playwright verifiziert (Pin-Anzahl, keine fehlenden Punkte, alle vier
+  betroffenen Paare - Route 103/Route 103 (Postgame), Blütenburg City/Blütenburg City
+  (Delta-Episode) - unabhängig antippbar und springen zur jeweils richtigen, unterschiedlichen
+  Kachel). Ausweitung auf weitere Editionen/Regionen darüber hinaus (Johto, alles jenseits
+  Kanto+Hoenn) bewusst weiterhin zurückgestellt.
   **Kalibrierungsmodus (seit v1.9.56):** Nutzerfeedback zu den v1.9.55-Koordinaten war "wirken kreuz
   und quer" — eine gezielte Recherche nach einer beschrifteten Referenz für die Let's-Go-Kartenansicht
   (welcher der 18 sichtbaren Wegpunkte welcher Stadt entspricht) blieb ergebnislos, weder Bulbapedia
