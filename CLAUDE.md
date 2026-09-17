@@ -90,6 +90,26 @@ jederzeit hier in `CLAUDE.md` + Git-Historie rekonstruierbar, siehe Rest dieser 
   `nuzlocke-netlify-deploy.zip`-Snapshot kann daher beliebig veraltet sein (ist selbst nicht Teil der
   Versionshistorie/kein committetes Artefakt) — vor jeder Aussage "die Netlify-App ist aktuell" das
   ZIP-Datum bzw. den Build-Zeitpunkt prüfen, nicht annehmen.
+- **Supabase-Backend für Cloud-Sync (seit v1.8.57, seit v1.9.61 auch für Kurz-PINs)** — LIEGT NICHT
+  IM REPO, sondern als separates Cloud-Projekt bei Supabase, Projekt-ID `cyaanqljqxzsqlzeaaev`
+  (identisch mit der `SUPABASE_URL`-Konstante in `nuzlocke-v2-editionen.html`), erreichbar über das
+  Supabase-MCP-Tool dieser Sitzung (`list_projects`/`list_tables`/`execute_sql`/`apply_migration`/
+  `get_advisors`). Schema: Tabelle `nuzlocke_saves` (`sync_code` PK, `data` jsonb, `updated_at`) für
+  den eigentlichen Cloud-Spielstand, seit v1.9.61 zusätzlich `nuzlocke_pairing_pins` (`pin` PK,
+  `sync_code`, `expires_at`) für kurzlebige Kurz-PINs - beide RLS-aktiv OHNE Policies (Default-Deny),
+  Zugriff ausschließlich über SECURITY-DEFINER-RPC-Funktionen (`nuzlocke_get_save`/`nuzlocke_put_save`/
+  `nuzlocke_create_pairing_pin`/`nuzlocke_resolve_pairing_pin`), die dem `anon`-Schlüssel aus der App
+  heraus per REST-RPC-Aufruf zur Verfügung stehen (kein Supabase-JS-SDK, nur `fetch()`, siehe
+  Code-Kommentar über `SUPABASE_URL`). Schema-Änderungen bewusst per `apply_migration` (nicht rohes
+  `execute_sql`) vornehmen, damit sie in `list_migrations` nachvollziehbar bleiben - Details/
+  Funktionsdefinitionen bei Bedarf per `execute_sql` gegen `pg_proc`/`information_schema` abfragen,
+  nicht aus dem Gedächtnis rekonstruieren. **Nach jeder Schema-Änderung `get_advisors(type:"security")`
+  laufen lassen** - die erwarteten "anon kann SECURITY DEFINER ausführen"-Hinweise für die vier
+  Funktionen sind Absicht (Kernprinzip dieses Sync-Modells: kein Login, wer den Code/PIN kennt, kommt
+  rein), ein NEUER, andersartiger Hinweis wäre dagegen ein echtes Warnsignal. Beim Testen gegen das
+  Live-Projekt entstehende Test-Zeilen (Sync-Codes/PINs) hinterher wieder per `execute_sql` löschen -
+  NIE die 5 (Stand v1.9.61) echten, vom Nutzer selbst erzeugten Spielstand-Zeilen anfassen (vor dem
+  Löschen immer erst `sync_code`/`updated_at`/Edition gegenprüfen, ob es die eigene Test-Zeile ist).
 - **`audit_reports/gen{N}.md`** — Rechercheaudit-Berichte pro Generation (z.B. `gen5.md` = Einall).
   **Sofort nach dem Schreiben committen und pushen**, nicht erst am Ende einer Sitzung sammeln —
   genau das Versäumnis, das `gen6.md`–`gen8.md` (Kalos/Alola/Galar) verloren gehen ließ. Diese drei
@@ -208,6 +228,44 @@ jederzeit hier in `CLAUDE.md` + Git-Historie rekonstruierbar, siehe Rest dieser 
   bereits vor dieser Version für den "Teilen"-Link-Fall gebaut, jetzt zusätzlich für den QR-Code-Fall
   wiederverwendet. Verifiziert per Playwright + `pyzbar`-Dekodierung eines Screenshots (echter
   Scan-Test, nicht nur visuelle Kontrolle) - ergab exakt den erwarteten `#sync=`-Link.
+  **Kurzer PIN als weitere Alternative (seit v1.9.61):** Nutzerfrage "der QR-Code funktioniert aber
+  nur mit Kamera, was gäbe es für Alternativen? evtl. Login mit Benutzername/Passwort?" - Login
+  bewusst verworfen (mehr Tipp-/Verwaltungsaufwand als der bestehende Code, zusätzliche
+  Sicherheitsfläche ohne echten Nutzen hier), stattdessen ein kurzer numerischer PIN. Neue Supabase-
+  Tabelle `nuzlocke_pairing_pins` (`pin` PK, `sync_code`, `expires_at`) + zwei SECURITY-DEFINER-RPC-
+  Funktionen, per `apply_migration` (Supabase-MCP) direkt auf das Live-Projekt `cyaanqljqxzsqlzeaaev`
+  angewendet (Migrationen: `add_pairing_pin_for_sync`, `fix_ambiguous_expires_at_in_create_pairing_pin`
+  - letztere behebt einen Fehler der ersten Fassung, siehe unten):
+  `nuzlocke_create_pairing_pin(p_sync_code)` löscht zuerst abgelaufene PINs sowie alle noch aktiven
+  PINs desselben `sync_code` (immer nur ein aktiver PIN pro verknüpftem Spielstand), erzeugt dann per
+  Schleife+`unique_violation`-Abfangen einen freien 6-stelligen PIN mit 10-Minuten-Ablauf;
+  `nuzlocke_resolve_pairing_pin(p_pin)` räumt ebenfalls abgelaufene PINs auf, liefert bei Treffer den
+  zugehörigen `sync_code` zurück und LÖSCHT den PIN sofort (Einmalgebrauch - verhindert Wiederverwendung/
+  Erraten innerhalb des Zeitfensters). Bewusst dieselbe RLS-Default-Deny-Architektur wie
+  `nuzlocke_saves` (RLS aktiv, keine Policies, Zugriff ausschließlich über die beiden RPCs) -
+  `get_advisors` meldet dieselben (erwarteten) "anon kann SECURITY DEFINER ausführen"-Hinweise wie für
+  die beiden bereits bestehenden Funktionen, kein neues Risiko gegenüber dem bestehenden Modell.
+  App-seitig: `showPairingPin()`/`openPairingPinSheet()` (Button "Kurzen PIN anzeigen" in
+  `syncCodeActionsHtml()`, sichtbar überall wo Code/QR schon erscheinen); `confirmLinkSyncCode()`
+  erkennt automatisch eine rein 6-stellige Eingabe (Regex `/^\d{6}$/`) und ruft dafür zuerst
+  `nuzlocke_resolve_pairing_pin` auf, bevor der aufgelöste (oder bei einer Nicht-PIN-Eingabe
+  unveränderte) Code wie gehabt an `pullCloudSave` geht - kein separater Umschalter im Eingabefeld
+  nötig, das 10-stellige-Code-Feld akzeptiert beides.
+  **Testmethodik, Lektion:** `validate-editions.js` prüft nur bis zum `injectEditionThemeCSS();`-
+  Marker und hätte einen Syntaxfehler in später folgendem Code (z.B. im Cloud-Sync-Bereich) NICHT
+  erkannt - ein Tippfehler (unescapter `"` in einem String, der eigentlich mit `"..."` statt
+  Template-Literal `` `...` `` hätte geschrieben werden müssen) blieb dadurch zunächst unbemerkt.
+  Ab jetzt bei Änderungen JENSEITS des Validierungs-Markers zusätzlich `node --check` auf den
+  extrahierten `<script>`-Inhalt laufen lassen (siehe Vorgehen: Skript-Block per Regex aus der HTML-
+  Datei ziehen, in eine `.js`-Datei schreiben, `node --check` darauf). Reale Supabase-RPC-Aufrufe
+  (Erzeugen/Auflösen eines PINs, Konsum-Effekt) wurden zusätzlich direkt per `curl` gegen das
+  Live-Projekt verifiziert (inkl. Aufräumen der dabei entstandenen Test-Zeilen in `nuzlocke_saves`
+  hinterher) - Chromium/Playwright in dieser Sandbox kann echte HTTPS-Verbindungen zu Supabase NICHT
+  aufbauen (`ERR_CERT_AUTHORITY_INVALID`, derselbe bereits bekannte Proxy-/Zertifikats-Sonderfall wie
+  bei der Pokéos-Recherche weiter oben) - UI-seitige Logik (Regex-Erkennung, welche RPCs mit welchen
+  Parametern aufgerufen werden, Fehlertexte) deshalb per Playwright mit `page.route()`-Mocking der
+  RPC-Endpunkte getestet, DB-Verhalten (Ablauf, Einmalgebrauch, Nicht-gefunden-Fall) separat per
+  direktem `curl`.
 - **Standort-Suche (seit v1.9.51):** Lupen-FAB im Routen-Tab öffnet ein Sheet
   (`openLocationSearchSheet()`), Live-Ergebnisliste (`locationSearchResultsHtml()`) respektiert
   bestehende Sichtbarkeits-Filter (`hiddenRegions`, `hidePostgame`). Antippen eines Treffers

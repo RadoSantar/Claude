@@ -3907,7 +3907,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.60";
+const APP_VERSION = "1.9.61";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -6631,15 +6631,43 @@ async function pushCloudSave(code, dataObj){
 let syncInProgress = false;
 let pendingSyncRemote = null;
 
-/* Zwei separate Buttons (statt wie beim Run-Rückblick nur einem umgeschalteten) - hier explizit
-   gewünscht: "Kopieren" geht immer (Zwischenablage-API ist praktisch überall verfügbar), "Teilen"
-   nur wenn navigator.share existiert (progressive enhancement, gleiches Muster wie sonst im Code). */
+/* Drei Buttons (statt wie beim Run-Rückblick nur einem umgeschalteten) - hier explizit gewünscht:
+   "Kopieren" geht immer (Zwischenablage-API ist praktisch überall verfügbar), "Teilen" nur wenn
+   navigator.share existiert (progressive enhancement, gleiches Muster wie sonst im Code). "Kurzen
+   PIN anzeigen" (seit v1.9.61) erzeugt bei Bedarf einen 6-stelligen, 10 Minuten gültigen Einmal-PIN
+   über nuzlocke_create_pairing_pin - siehe showPairingPin()/CLAUDE.md für den Hintergrund (Nutzer-
+   feedback: der lange Code sei zum Abtippen umständlich). */
 function syncCodeActionsHtml(code){
   const canShare = typeof navigator!=="undefined" && !!navigator.share;
-  return `<div style="display:flex; gap:8px; margin-bottom:8px;">
+  return `<div style="display:flex; gap:8px; margin-bottom:8px; flex-wrap:wrap;">
     <button class="btn btn-secondary" data-act="copy-sync-code">Kopieren</button>
     ${canShare ? `<button class="btn btn-secondary" data-act="share-sync-code">Teilen</button>` : ""}
+    <button class="btn btn-secondary" data-act="show-pairing-pin">Kurzen PIN anzeigen</button>
   </div>`;
+}
+
+/* Fordert einen kurzlebigen 6-stelligen PIN an, der serverseitig auf state.syncCode aufloest (siehe
+   Migration add_pairing_pin_for_sync) - bequemer zu tippen als der lange Code, aber nur 10 Minuten
+   gültig und nach einmaliger Einlösung sofort ungültig (siehe confirmLinkSyncCode). */
+async function showPairingPin(){
+  if(!state.syncCode) return;
+  try{
+    const rows = await supabaseRpc("nuzlocke_create_pairing_pin", { p_sync_code: state.syncCode });
+    const row = rows && rows[0];
+    if(!row || !row.pin) throw new Error("empty");
+    openPairingPinSheet(row.pin);
+  }catch(e){
+    openSyncResultSheet("PIN nicht erzeugt", "Keine Verbindung zur Cloud möglich - versuch es erneut.");
+  }
+}
+
+function openPairingPinSheet(pin){
+  openSheet(`
+    <h3>Kurzer PIN</h3>
+    <div class="loc-sub" style="margin-bottom:14px;">Auf dem anderen Gerät unter „Laden" eintragen, anstelle des langen Codes - 10 Minuten gültig, danach automatisch ungültig (auf dem anderen Gerät einfach einen neuen erzeugen).</div>
+    <div class="loc-sub" style="font-family:var(--font-mono); font-size:2rem; letter-spacing:.2em; text-align:center; margin-bottom:14px;">${escapeHtml(pin)}</div>
+    <div class="sheet-footer"><button class="btn btn-primary btn-block" data-act="close-sheet">OK</button></div>
+  `);
 }
 
 function cloudSyncCardHtml(){
@@ -6765,9 +6793,9 @@ async function createSyncCode(){
 function openLinkSyncCodeSheet(prefillCode){
   openSheet(`
     <h3>Laden</h3>
-    <div class="loc-sub" style="margin-bottom:14px;">Verknüpft diesen Spielstand mit einem bereits bestehenden Cloud-Stand - der lokale Fortschritt hier wird dabei durch die Cloud-Version ersetzt. Der Name im Header bleibt davon unberührt, er gilt nur lokal auf diesem Gerät. Tipp: den QR-Code des anderen Geräts einfach mit der normalen Kamera-App scannen, statt den Code hier abzutippen - der Link öffnet dieses Fenster automatisch mit bereits eingetragenem Code, nur noch bestätigen.</div>
+    <div class="loc-sub" style="margin-bottom:14px;">Verknüpft diesen Spielstand mit einem bereits bestehenden Cloud-Stand - der lokale Fortschritt hier wird dabei durch die Cloud-Version ersetzt. Der Name im Header bleibt davon unberührt, er gilt nur lokal auf diesem Gerät. Statt des langen Codes geht auch der 6-stellige, 10 Minuten gültige PIN ("Kurzen PIN anzeigen" auf dem anderen Gerät). Tipp: den QR-Code des anderen Geräts einfach mit der normalen Kamera-App scannen, statt etwas abzutippen - der Link öffnet dieses Fenster automatisch mit bereits eingetragenem Code, nur noch bestätigen.</div>
     <div class="field">
-      <input id="inSyncCode" value="${escapeHtml(prefillCode||"")}" placeholder="z. B. AB3D9F7K2M" autocomplete="off" style="text-transform:uppercase; font-family:var(--font-mono); letter-spacing:.05em;" maxlength="10" />
+      <input id="inSyncCode" value="${escapeHtml(prefillCode||"")}" placeholder="Code oder 6-stelliger PIN" autocomplete="off" style="text-transform:uppercase; font-family:var(--font-mono); letter-spacing:.05em;" maxlength="10" />
     </div>
     <div class="sheet-footer">
       <button class="btn btn-secondary btn-block" data-act="close-sheet">Abbrechen</button>
@@ -6779,10 +6807,23 @@ function openLinkSyncCodeSheet(prefillCode){
 
 async function confirmLinkSyncCode(){
   const input = document.getElementById("inSyncCode");
-  const code = (input?.value||"").trim().toUpperCase();
-  if(!code) return;
+  const raw = (input?.value||"").trim();
+  if(!raw) return;
   closeSheet();
   try{
+    /* Eine rein 6-stellige Eingabe wird als Kurz-PIN behandelt (siehe showPairingPin()) und zuerst
+       serverseitig auf den echten, langen Sync-Code aufgelöst - alles andere (10-stelliger Code)
+       geht direkt durch. So braucht das Eingabefeld keinen eigenen Umschalter zwischen "Code"/"PIN". */
+    let code = raw.toUpperCase();
+    if(/^\d{6}$/.test(raw)){
+      const pinRows = await supabaseRpc("nuzlocke_resolve_pairing_pin", { p_pin: raw });
+      const resolved = pinRows && pinRows[0] && pinRows[0].sync_code;
+      if(!resolved){
+        openSyncResultSheet("PIN ungültig oder abgelaufen", `Der PIN wurde nicht gefunden oder ist nach 10 Minuten abgelaufen - auf dem anderen Gerät unter „Kurzen PIN anzeigen" einen neuen erzeugen und erneut versuchen.`);
+        return;
+      }
+      code = resolved;
+    }
     const remote = await pullCloudSave(code);
     if(!remote){
       openSyncResultSheet("Code nicht gefunden", `Zu ${code} existiert noch kein Cloud-Spielstand. Nutze stattdessen „Speichern", wenn du diesen Spielstand erstmalig hochladen willst.`);
@@ -10008,7 +10049,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="stats">
     <div class="stat"><div class="n">23</div><div class="l">Editionen</div></div>
     <div class="stat"><div class="n">1075</div><div class="l">Pokémon-Arten</div></div>
-    <div class="stat"><div class="n">63</div><div class="l">Versions&shy;stände</div></div>
+    <div class="stat"><div class="n">64</div><div class="l">Versions&shy;stände</div></div>
     <div class="stat"><div class="n">Gen 1–9</div><div class="l">Abgedeckt</div></div>
   </div>
 
@@ -10018,6 +10059,23 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.61</span><span class="tag tag-feat">Neu</span></div>
+      <h3>Cloud-Sync: kurzer PIN als Alternative zum langen Code</h3>
+      <p>Nutzerfeedback zu v1.9.60: der QR-Code funktioniert nur mit Kamera - Nachfrage nach einer
+      weiteren, weniger umständlichen Alternative. Ein Login mit Benutzername/Passwort wurde bewusst
+      verworfen (mehr Tipparbeit und Verwaltungsaufwand, nicht weniger, plus zusätzliche
+      Sicherheitsfläche ohne echten Nutzen für diesen Anwendungsfall). Stattdessen: „Kurzen PIN
+      anzeigen" (neuer Button neben „Kopieren"/„Teilen") erzeugt einen 6-stelligen, nur 10 Minuten
+      gültigen Einweg-PIN, der auf dem anderen Gerät unter „Laden" anstelle des langen Codes
+      eingetragen werden kann - deutlich schneller getippt, nach einmaliger Nutzung automatisch
+      ungültig. Der eigentliche, dauerhafte Sync-Code bleibt unverändert im Hintergrund; der PIN ist
+      nur eine kurzlebige, serverseitig aufgelöste Abkürzung dafür (neue Supabase-Tabelle
+      <code>nuzlocke_pairing_pins</code> + zwei RPC-Funktionen, gleiches RLS-Default-Deny-Muster wie
+      der bestehende Cloud-Sync). Das Eingabefeld bei „Laden" erkennt automatisch, ob eine 6-stellige
+      Ziffernfolge (PIN) oder der lange Code eingegeben wurde - kein zusätzlicher Umschalter nötig.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.60</span><span class="tag tag-feat">Neu</span></div>
@@ -11545,7 +11603,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.60.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.61.</footer>
 
 </div>`;
 
@@ -11726,7 +11784,7 @@ const SETTINGS_HELP = {
   dupes: { category:"Regeln", title:"Dupes-Clause-Warnung", text:"Klassische Nuzlocke-Hausregel: pro Entwicklungsreihe darf meist nur ein Pokémon gefangen werden. Ist die Warnung aktiv, meldet sich die App beim Fangen, wenn die Art (oder eine verwandte Entwicklungsstufe) schon im Team, in der Box oder im Friedhof vorhanden ist - der Fang bleibt trotzdem möglich, es ist nur ein Hinweis, keine Sperre." },
   nickname: { category:"Regeln", title:"Nickname-Pflicht", text:"Erzwingt beim Fangen einen Spitznamen, bevor sich der Fang speichern lässt - hilfreich, wenn ihr euch als Hausregel vorgenommen habt, jedem Pokémon einen eigenen Namen zu geben." },
   houserules: { category:"Regeln", title:"Regelwerk-Checkliste", text:"Dokumentiert, welche der üblichen Nuzlocke-Hausregeln (Set-Modus, Species-Klausel, kein Item im Kampf, Level-Cap je Bosskampf) für diesen Run gelten - rein zur Erinnerung/Dokumentation, jederzeit an-/abwählbar. Wirkt sich anders als die Dupes-Clause-Warnung und die Level-Cap-Berechnung nicht auf die App-Logik aus, das sind eigene, tatsächlich wirksame Einstellungen." },
-  cloudsync: { category:"Spielstände & Mehrspieler", title:"Cloud-Sync", text:"Verknüpft einen Spielstand über einen zufälligen, hochentropischen Code mit einer Cloud-Zeile - ganz ohne Konto oder Login. „Speichern“ lädt diesen Spielstand erstmalig hoch und zeigt dabei Code und QR-Code an; „Laden“ verknüpft dieses Gerät stattdessen mit einem bereits bestehenden Cloud-Stand (ersetzt den lokalen Fortschritt) - entweder per Code-Eingabe oder durch Scannen des QR-Codes vom anderen Gerät mit der normalen Kamera-App. Wer den Code kennt, kann den Spielstand abrufen oder überschreiben, deshalb gilt er wie ein Passwort: nicht öffentlich teilen, nur an die eigenen Geräte oder eine vertraute Person für den Duo-Vergleich weitergeben. „Jetzt synchronisieren“ gleicht danach ab - gibt es seit dem letzten bekannten Abgleich eine neuere Cloud-Version (z.&nbsp;B. von einem anderen Gerät), fragt die App nach, welche Version gelten soll, statt automatisch etwas zu überschreiben." },
+  cloudsync: { category:"Spielstände & Mehrspieler", title:"Cloud-Sync", text:"Verknüpft einen Spielstand über einen zufälligen, hochentropischen Code mit einer Cloud-Zeile - ganz ohne Konto oder Login. „Speichern“ lädt diesen Spielstand erstmalig hoch und zeigt dabei Code und QR-Code an; „Laden“ verknüpft dieses Gerät stattdessen mit einem bereits bestehenden Cloud-Stand (ersetzt den lokalen Fortschritt) - per Code-Eingabe, durch Scannen des QR-Codes vom anderen Gerät mit der normalen Kamera-App, oder per „Kurzen PIN anzeigen“: ein 6-stelliger, nur 10 Minuten gültiger und nach einmaliger Nutzung sofort verfallender Einweg-PIN als bequemere Alternative zum langen Code (der eigentliche, dauerhafte Code bleibt davon unberührt). Wer den langen Code kennt, kann den Spielstand abrufen oder überschreiben, deshalb gilt er wie ein Passwort: nicht öffentlich teilen, nur an die eigenen Geräte oder eine vertraute Person für den Duo-Vergleich weitergeben. „Jetzt synchronisieren“ gleicht danach ab - gibt es seit dem letzten bekannten Abgleich eine neuere Cloud-Version (z.&nbsp;B. von einem anderen Gerät), fragt die App nach, welche Version gelten soll, statt automatisch etwas zu überschreiben." },
   duocompare: { category:"Spielstände & Mehrspieler", title:"Duo-Vergleich", text:"Vergleicht den eigenen Fortschritt rein lesend mit dem einer anderen Person über deren Cloud-Sync-Code: Gesamtabschluss, Überlebensrate und besiegte Bosse nebeneinander. Verändert den fremden Spielstand nie und rührt die eigene Sync-Verknüpfung nicht an - der Partner-Code ist unabhängig vom eigenen Sync-Code." },
   soullink: { category:"Spielstände & Mehrspieler", title:"Soul-Link-Modus", text:"Koppelt Encounter 1:1 mit dem Duo-Partner über die Standort-ID - funktioniert automatisch überall dort, wo beide Editionen dieselben Standortnamen verwenden (z.&nbsp;B. Partnerversionen wie Schwarz/Weiß oder Rubin/Saphir), nicht nur bei exakt identischer Edition. Stirbt ein Pokémon an einem gekoppelten Standort, gibt es einen Hinweis, falls das Partner-Pokémon dort laut letztem Abgleich noch lebt. Rein informativ: aus denselben Sicherheitsgründen wie beim Duo-Vergleich schreibt die App nie in den Spielstand der Partner-Person, das Aufgeben muss jede Seite selbst vornehmen." },
   keyitems: { category:"Werkzeuge", title:"Schlüsselitems/VMs-Checkliste", text:"Zeigt, welche VMs/Schlüsselitems (Surfer, Zerschneider, Stärke, …) schon eingesammelt wurden - hilfreich, um zu sehen, welche Standorte bereits erreichbar sind. Editionsspezifisch hinterlegt, da sich das VM-Set je nach Spiel-Engine unterscheidet (z.&nbsp;B. Whirlpool/Kaskade nur in manchen Generationen)." }
@@ -13220,6 +13278,7 @@ document.addEventListener("click", e=>{
   else if(act==="run-sync") runSyncFlow();
   else if(act==="copy-sync-code"){ if(state.syncCode) copySyncCode(state.syncCode); }
   else if(act==="share-sync-code"){ if(state.syncCode) shareSyncCode(state.syncCode); }
+  else if(act==="show-pairing-pin"){ showPairingPin(); }
   else if(act==="unlink-sync"){
     openConfirmSheet("Sync trennen", "Die Verknüpfung mit der Cloud wird hier entfernt - der Cloud-Spielstand selbst bleibt bestehen und lässt sich später mit demselben Code wieder verknüpfen.", "Trennen", "confirm-unlink-sync");
   }
