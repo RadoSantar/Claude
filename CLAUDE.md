@@ -178,6 +178,36 @@ jederzeit hier in `CLAUDE.md` + Git-Historie rekonstruierbar, siehe Rest dieser 
   "X zurückgestellte Kacheln" (Sammelgruppe, Stash-FAB-Titel, Übersichts-Überschrift), da die Gruppe
   jetzt beide Kachel-Typen bündelt. Bewusst NICHT erweitert: `finalRivalCardHtml()` (Ruhmeshallen-
   Duell) - steht immer ganz am Ende, Zurückstellen ergibt dort keinen praktischen Sinn.
+- **Cloud-Sync — Umbenennung + QR-Code (seit v1.9.60):** Nutzerfeedback "ich finde die Sync-Funktion
+  nicht ganz verständlich" + "gibt es eine weniger umständliche Variante als die mit dem Code?".
+  Buttons umbenannt: "Sync aktivieren" → **„Speichern"** (`data-act="create-sync-code"`), "Code eines
+  anderen Geräts eingeben" → **„Laden"** (`data-act="open-link-sync-code"`) - bewusst NICHT an die
+  bestehende lokale "Mehrfach-Speicherstände"-Terminologie angelehnt (wurde vor der Umsetzung als
+  Verwechslungsrisiko benannt, Nutzer hat sich trotzdem für die kürzeren Begriffe entschieden, im
+  Kontext der eigenen "Cloud-Sync"-Kartenüberschrift vertretbar). Historische Changelog-Einträge
+  (v1.8.57 u.ä.), die die alten Button-Namen nennen, bewusst NICHT rückwirkend angepasst - sie
+  beschreiben akkurat, wie es damals hieß.
+  **QR-Code-Verknüpfung:** `qrCodeSvg(text, cellSize)` (kurz vor dem Cloud-Sync-Code definiert)
+  erzeugt aus jedem String eine eigenständige Inline-SVG, IMMER schwarz auf weiß unabhängig vom
+  Hell-/Dunkel-Theme der App (ein QR-Code braucht echten Kontrast zum zuverlässigen Scannen). Nutzt
+  dafür `isDark(row,col)`/`getModuleCount()` der eingebetteten Bibliothek **"QR Code Generator for
+  JavaScript" von Kazuhiko Arase** (MIT-lizenziert, https://github.com/kazuhikoarase/qrcode-generator)
+  - bezogen über den npm-Unpkg-Mirror (`unpkg.com/qrcode-generator@1.4.4/qrcode.js`), da das
+  GitHub-Repo selbst inzwischen auf ES-Module-Format umgestellt ist und keine klassische
+  (Nicht-Modul-)Version mehr im Repo führt; die klassische `var qrcode = function(){...}`-Variante
+  lässt sich dagegen unverändert als eigener `<script>`-Block einbetten (siehe Kommentar direkt davor
+  in der Datei) - **kein CDN**, bleibt Single-File-konform (gleiches Prinzip wie beim Verzicht auf das
+  Supabase-JS-SDK). Angezeigt an drei Stellen: `openSyncActivatedSheet()` (direkt nach „Speichern"),
+  der bereits-aktiv-Zustand von `cloudSyncCardHtml()` (damit ein WEITERES Gerät jederzeit ohne
+  erneuten Tastendruck gescannt werden kann) und implizit in `openLinkSyncCodeSheet()`s Hinweistext
+  (erklärt, dass Scannen das Fenster automatisch mit vorausgefülltem Code öffnet - nutzt den
+  bestehenden `#sync=CODE`-Link-Mechanismus, der QR-Code kodiert exakt `syncShareUrl(code)`, keine
+  neue URL-Form). Kein eigener In-App-Scanner nötig: die normale Kamera-App des Betriebssystems
+  erkennt den QR-Code und öffnet den enthaltenen Link direkt, der beim Laden per `syncLinkMatch`
+  (Dateiende) ohnehin schon automatisch `openLinkSyncCodeSheet()` mit vorausgefülltem Code öffnet -
+  bereits vor dieser Version für den "Teilen"-Link-Fall gebaut, jetzt zusätzlich für den QR-Code-Fall
+  wiederverwendet. Verifiziert per Playwright + `pyzbar`-Dekodierung eines Screenshots (echter
+  Scan-Test, nicht nur visuelle Kontrolle) - ergab exakt den erwarteten `#sync=`-Link.
 - **Standort-Suche (seit v1.9.51):** Lupen-FAB im Routen-Tab öffnet ein Sheet
   (`openLocationSearchSheet()`), Live-Ergebnisliste (`locationSearchResultsHtml()`) respektiert
   bestehende Sichtbarkeits-Filter (`hiddenRegions`, `hidePostgame`). Antippen eines Treffers
