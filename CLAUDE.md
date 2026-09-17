@@ -109,6 +109,14 @@ jederzeit hier in `CLAUDE.md` + Git-Historie rekonstruierbar, siehe Rest dieser 
   denen der Rivale MIT dir gegen einen dritten Gegner kämpft (z.B. Hugh/Matisse in B2W2 gegen Team
   Plasma). Solche Begegnungen gehören NICHT als `cls:"Rivale"`-Bosskarte rein, sonst suggeriert die
   App fälschlich, man müsse/könne den Rivalen dort besiegen.
+- **Zweite wichtige Unterscheidung (Fund v1.9.53, Route 22 in Rot/Blau/Gelb/FeuerRot/BlattGrün):**
+  wird ein und derselbe Standort im Spielverlauf zweimal besucht (z.B. Rückweg über eine bereits
+  bekannte Route), aber NUR damit ein später stattfindender Bosskampf an der richtigen Stelle in der
+  Liste erscheint (`bossAfter` braucht einen Listeneintrag an genau dieser Position) — dann braucht
+  dieser zweite Standort-Eintrag `noCatch:true`. Sonst suggeriert die App fälschlich einen zweiten,
+  unabhängigen Fangversuch am selben Ort, den es in einer Nuzlocke-Regel nicht gibt (nur der erste
+  Besuch eines Ortes zählt). Beim nächsten Audit gezielt nach weiteren solchen "Ort erneut betreten,
+  nur wegen eines Bosskampfs"-Einträgen ohne `noCatch:true` suchen, nicht nur bei Kanto.
 - Bei Versions-Trios (z.B. Rot/Blau/Gelb, Schwarz/Weiß) erzeugt `buildVersionGames()` mehrere
   `GAMES`-Einträge aus einem gemeinsamen Basis-Datensatz mit punktuellen Overrides.
 - Postgame-Standorte, die auf der Karte weit VOR ihrem eigentlichen Story-Zeitpunkt erscheinen
@@ -123,14 +131,29 @@ jederzeit hier in `CLAUDE.md` + Git-Historie rekonstruierbar, siehe Rest dieser 
   Standorte aktiv gegen eine Quelle (z.B. die vollständige Bulbapedia-Ortsliste) verifizieren, nicht
   nur Namen/Vollständigkeit — siehe "Reihenfolge-Verifikation" im Rechercheaudit-Backlog unten, warum
   das bisher zu kurz kam.
-- **Einklapp-Mechanik (seit v1.9.46–1.9.48):** zwei getrennte Sammel-Gruppen pro Region, farblich
-  unterschieden — grau/`collapseToggleHtml()`/`expandedRegions` für automatisch eingeklappte, bereits
-  ERLEDIGTE Standorte; gold/`stashCollapseToggleHtml()`/`expandedStashRegions` für manuell
-  eingeklappte, noch OFFENE Standorte (`state.manualCollapsedLocs`, z.B. "braucht eine noch nicht
-  vorhandene VM"). Bewusst jeweils GENAU EIN Sammel-Button pro Region und Kategorie, nicht ein Button
-  pro Standort. Das Auf-/Zuklappen selbst läuft über direkte DOM-Klassenumschaltung (nicht per
+- **Einklapp-Mechanik (seit v1.9.46, Bündelung überarbeitet in v1.9.53):** zwei getrennte
+  Sammel-Gruppen PRO REGION (nicht pro zusammenhängendem Block!), farblich unterschieden — grau/
+  `collapseToggleHtml()`/`expandedRegions` für automatisch eingeklappte, bereits ERLEDIGTE Standorte
+  (Segment-Key fest `${regionKey}-done`, seit v1.9.53); gold/`stashCollapseToggleHtml()`/
+  `expandedStashRegions` für manuell eingeklappte, noch OFFENE Standorte (`state.manualCollapsedLocs`,
+  z.B. "braucht eine noch nicht vorhandene VM", Segment-Key `${regionKey}-stash`). Beide Kategorien
+  sammeln ALLE zutreffenden Tiles der Region unabhängig von ihrer Position in EINEN einzigen Block am
+  Ende der Region ein (`renderRoutes()`: ein einziger Durchlauf über `tiles`, der in drei Eimer
+  einsortiert - offen/inline, erledigt, zurückgestellt - statt wie vor v1.9.53 pro zusammenhängendem
+  erledigt-Chunk einen eigenen Toggle mit index-basiertem Segment-Key `${regionKey}-${i}` zu erzeugen,
+  was bei mehreren dazwischenliegenden offenen Standorten mehrere kleine Toggles statt eines einzigen
+  ergab). Bewusst jeweils GENAU EIN Sammel-Button pro Region und Kategorie, nicht ein Button pro
+  Standort/Chunk. Das Auf-/Zuklappen selbst läuft über direkte DOM-Klassenumschaltung (nicht per
   Voll-Render), damit die `.collapsible-body`-Grid-Animation (`grid-template-rows`, absichtlich
   langsam/weich, s. CSS) sichtbar bleibt statt durch einen Re-Render übersprungen zu werden.
+  `expandCollapseGroupsForLocation()` (für Standort-Suche/Karten-Sprung) nutzt dieselben fest
+  benannten Segment-Keys, keine Chunk-Nachbildung mehr nötig.
+- **Später-fangbar-Übersicht (seit v1.9.53):** Lesezeichen-FAB links über dem "Zum aktuellen
+  Standort"-Button, nur sichtbar wenn `state.manualCollapsedLocs` nicht leer ist. Öffnet
+  `openStashOverviewSheet()` mit allen zurückgestellten Standorten editionsweit (nicht nur der
+  aktuellen Region) als Liste, Antippen nutzt denselben `jump-to-location-result`-Mechanismus wie die
+  Standort-Suche. Grund: vorher musste man bis zur jeweiligen Region scrollen, um dort den
+  Stash-Toggle überhaupt erst zu finden.
 - **Standort-Suche (seit v1.9.51):** Lupen-FAB im Routen-Tab öffnet ein Sheet
   (`openLocationSearchSheet()`), Live-Ergebnisliste (`locationSearchResultsHtml()`) respektiert
   bestehende Sichtbarkeits-Filter (`hiddenRegions`, `hidePostgame`). Antippen eines Treffers

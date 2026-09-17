@@ -964,6 +964,18 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 .jump-fab.point-up svg{ transform:rotate(180deg); }
 .jump-fab:active{ transform:scale(.95); }
 
+/* Schnellzugriff auf manuell zurückgestellte ("später fangbar") Standorte, ohne erst zur jeweiligen
+   Region scrollen und den dortigen Stash-Toggle suchen zu müssen (Nutzerfeedback) - nur sichtbar,
+   wenn überhaupt etwas zurückgestellt ist. Links über dem "Zum aktuellen Standort"-Button gestapelt,
+   analog zum rechten Stapel (Karte über Suche über "+"). */
+.stash-fab{
+  position:absolute; left:16px; bottom:calc(154px + env(safe-area-inset-bottom)); z-index:15;
+  width:44px; height:44px; border-radius:50%; background:var(--gold-soft); color:var(--gold);
+  border:none; box-shadow:var(--shadow); display:none; align-items:center; justify-content:center;
+}
+.stash-fab svg{ width:19px; height:19px; stroke:var(--gold); fill:none; stroke-width:2.2; }
+.stash-fab:active{ transform:scale(.94); }
+
 /* Eigener kleiner FAB statt Erweiterung von .fab (dem "+"-Button) - beide bleiben unabhängig
    antippbar, ohne dass ein kombinierter Button zwei Aktionen verwechselbar macht. Direkt über dem
    "+"-Button gestapelt (56px Höhe + 10px Abstand), da rechts unten sonst ungenutzt bliebe. */
@@ -1244,6 +1256,9 @@ datalist{}
   <button class="jump-fab" id="jumpFab" data-act="jump-to-current-loc" title="Zum aktuellen Standort">
     <svg viewBox="0 0 24 24"><path d="M12 4v14M6 12l6 6 6-6"/></svg>
     <span>Aktueller Standort</span>
+  </button>
+  <button class="stash-fab" id="stashFab" data-act="open-stash-overview" title="Später fangbare Standorte" aria-label="Später fangbare Standorte">
+    <svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4.5L6 21V3z"/></svg>
   </button>
 
   <div class="tabbar">
@@ -1743,7 +1758,7 @@ const KANTO_RB_LOCATIONS = [
     "Route 21",
     {name:"Kraftwerk", note:"Inkl. Zapdos (Postgame)."},
     {name:"Vertania-Arena", note:"Vertania City erneut, jetzt mit allen 7 anderen Orden - Giovannis Arena (Erde, achter Orden)."},
-    {name:"Route 22 (Rückweg)", note:"Route 22 erneut, auf dem Weg zur Pokémon-Liga nach Giovannis Arena - letzter Rivalenkampf vor der Top Vier."},
+    {name:"Route 22 (Rückweg)", note:"Route 22 erneut, auf dem Weg zur Pokémon-Liga nach Giovannis Arena - letzter Rivalenkampf vor der Top Vier. Kein zweiter Fangversuch (derselbe Standort wie die erste Route 22).", noCatch:true},
     "Route 23",
     {name:"Siegesstraße", note:"Nur Höhlen-Wildfang."},
     {name:"Pokémon-Liga", note:"Keine wilden Pokémon (nur Top-Vier-Kämpfe).", noCatch:true},
@@ -1854,7 +1869,7 @@ const KANTO_YELLOW_LOCATIONS = [
     "Route 21",
     {name:"Kraftwerk", note:"Inkl. Zapdos (Postgame)."},
     {name:"Vertania-Arena", note:"Vertania City erneut, jetzt mit allen 7 anderen Orden - Giovannis Arena (Erde, achter Orden)."},
-    {name:"Route 22 (Rückweg)", note:"Route 22 erneut, auf dem Weg zur Pokémon-Liga nach Giovannis Arena - letzter Rivalenkampf vor der Top Vier."},
+    {name:"Route 22 (Rückweg)", note:"Route 22 erneut, auf dem Weg zur Pokémon-Liga nach Giovannis Arena - letzter Rivalenkampf vor der Top Vier. Kein zweiter Fangversuch (derselbe Standort wie die erste Route 22).", noCatch:true},
     "Route 23",
     {name:"Siegesstraße", note:"Nur Höhlen-Wildfang."},
     {name:"Pokémon-Liga", note:"Keine wilden Pokémon (nur Top-Vier-Kämpfe).", noCatch:true},
@@ -3878,7 +3893,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.52";
+const APP_VERSION = "1.9.53";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -5144,6 +5159,28 @@ function openLocationSearchSheet(){
   `);
   setTimeout(()=>document.getElementById("locationSearchInput")?.focus(), 50);
 }
+
+/* Übersicht aller manuell zurückgestellten ("später fangbar") Standorte auf einen Blick - Antippen
+   springt wie bei der Standort-Suche direkt hin, statt erst die Region durchscrollen und dort den
+   Stash-Toggle suchen zu müssen. */
+function stashOverviewResultsHtml(){
+  const ids = state.manualCollapsedLocs||[];
+  const items = ids.map(id=>state.locations.find(l=>l.id===id)).filter(Boolean);
+  if(!items.length) return `<div class="loc-sub">Keine später fangbaren Standorte zurückgestellt.</div>`;
+  return items.map(l=>
+    `<button class="sheet-option" data-act="jump-to-location-result" data-id="${l.id}">
+      <div>${escapeHtml(l.name)}</div>
+      <div class="loc-sub" style="margin:2px 0 0;">${escapeHtml(l.custom ? "Eigener Fundort" : l.region)}</div>
+    </button>`
+  ).join("");
+}
+function openStashOverviewSheet(){
+  openSheet(`
+    <h3>Später fangbare Standorte</h3>
+    <div class="loc-sub" style="margin-bottom:10px;">Alle manuell zurückgestellten Standorte auf einen Blick - antippen springt direkt hin.</div>
+    ${stashOverviewResultsHtml()}
+  `);
+}
 /* Klappt genau die Einklapp-Gruppe(n) auf, die die Ziel-Kachel gerade verstecken - dieselbe
    Segmentierungslogik wie in renderRoutes() (erledigte Blöcke per Index-Chunk, manuell zurückgestellte
    Standorte als ein gemeinsamer Stash pro Region), nur einmalig für die eine betroffene Region/den
@@ -5162,19 +5199,12 @@ function expandCollapseGroupsForLocation(targetId){
   const locs = state.locations.filter(l=>l.region===region && !(state.hidePostgame && /Postgame/.test(l.note||"")));
   const tiles = [];
   locs.forEach(l=>{ tiles.push(...locationTiles(l, region, game, currentId)); });
-  let i = 0;
-  while(i<tiles.length){
-    if(!tiles[i].resolved){
-      if(tiles[i].kind==="loc" && tiles[i].id===targetId && (state.manualCollapsedLocs||[]).includes(targetId)){
-        expandedStashRegions.add(`${regionKey}-stash`);
-      }
-      i++;
-      continue;
-    }
-    let j = i;
-    while(j<tiles.length && tiles[j].resolved) j++;
-    if(tiles.slice(i,j).some(t=>t.id===targetId)) expandedRegions.add(`${regionKey}-${i}`);
-    i = j;
+  const targetTile = tiles.find(t=>t.id===targetId);
+  if(!targetTile) return;
+  if(targetTile.resolved){
+    expandedRegions.add(`${regionKey}-done`);
+  } else if(targetTile.kind==="loc" && (state.manualCollapsedLocs||[]).includes(targetId)){
+    expandedStashRegions.add(`${regionKey}-stash`);
   }
 }
 
@@ -5276,27 +5306,30 @@ function renderRoutes(){
     const tiles = [];
     locs.forEach(loc=>{ tiles.push(...locationTiles(loc, region, game, currentId)); });
 
+    /* Bewusst EIN Sammel-Toggle für ALLE erledigten Kacheln der Region, nicht mehr ein Toggle pro
+       zusammenhängendem Block (Nutzerfeedback: mehrere offene Standorte zwischen erledigten rissen
+       vorher mehrere kleine, separate "erledigt"-Blöcke auseinander statt sie wie beim "später
+       fangbar"-Stash konsequent an einer Stelle zu bündeln). Erledigte und noch offene, manuell
+       zurückgestellte Kacheln werden deshalb unabhängig von ihrer Position in der Liste eingesammelt;
+       nur noch offene, nicht zurückgestellte Kacheln bleiben inline in ihrer natürlichen Reihenfolge -
+       beide Sammel-Toggles erscheinen dadurch konsistent am Ende der Region. */
+    const resolvedTiles = [];
     const stashedTiles = [];
-    let i = 0;
-    while(i<tiles.length){
-      if(!tiles[i].resolved){
-        const tile = tiles[i];
-        if(tile.kind==="loc" && (state.manualCollapsedLocs||[]).includes(tile.id)){
-          stashedTiles.push(tile);
-        } else {
-          html += tile.html;
-        }
-        i++;
-        continue;
+    tiles.forEach(tile=>{
+      if(tile.resolved){
+        resolvedTiles.push(tile);
+      } else if(tile.kind==="loc" && (state.manualCollapsedLocs||[]).includes(tile.id)){
+        stashedTiles.push(tile);
+      } else {
+        html += tile.html;
       }
-      let j = i;
-      while(j<tiles.length && tiles[j].resolved) j++;
-      const segKey = `${regionKey}-${i}`;
+    });
+    if(resolvedTiles.length){
+      const segKey = `${regionKey}-done`;
       const expanded = expandedRegions.has(segKey);
-      let collapsedBody = "";
-      for(let k=i;k<j;k++) collapsedBody += tiles[k].html;
-      html += collapseToggleHtml(segKey, j-i, expanded, collapsedBody);
-      i = j;
+      let body = "";
+      resolvedTiles.forEach(t=>{ body += t.html; });
+      html += collapseToggleHtml(segKey, resolvedTiles.length, expanded, body);
     }
     if(stashedTiles.length){
       const stashKey = `${regionKey}-stash`;
@@ -7510,7 +7543,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="stats">
     <div class="stat"><div class="n">23</div><div class="l">Editionen</div></div>
     <div class="stat"><div class="n">1075</div><div class="l">Pokémon-Arten</div></div>
-    <div class="stat"><div class="n">55</div><div class="l">Versions&shy;stände</div></div>
+    <div class="stat"><div class="n">56</div><div class="l">Versions&shy;stände</div></div>
     <div class="stat"><div class="n">Gen 1–9</div><div class="l">Abgedeckt</div></div>
   </div>
 
@@ -7520,6 +7553,32 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.53</span><span class="tag tag-fix">Fix</span></div>
+      <h3>Rot/Blau-Datenfehler behoben, Einklapp-Verhalten überarbeitet, Schnellzugriff auf zurückgestellte Standorte</h3>
+      <p><strong>Route 22 doppelt fangbar behoben (Rot/Blau, Gelb, FeuerRot/BlattGrün):</strong> die
+      Standortliste führte "Route 22" und später erneut "Route 22 (Rückweg)" als zwei separat
+      fangbare Kacheln, obwohl es sich um denselben Ort handelt (die zweite Kachel existiert nur, um
+      den letzten Rivalenkampf vor der Top Vier an der richtigen Stelle einzuordnen - dort auf einen
+      Standort ganz zu verzichten, hätte den Kampf an der falschen Stelle erscheinen lassen).
+      "Route 22 (Rückweg)" ist jetzt als "Kein Wildfang" markiert: der Rivalenkampf bleibt an der
+      richtigen Stelle, aber es wird kein zweiter Fang mehr suggeriert.</p>
+      <p><strong>Erledigte Kacheln bündeln sich jetzt konsequent in EINER Gruppe pro Region</strong>,
+      unabhängig davon, ob dazwischen noch offene Standorte liegen - vorher riss jeder offene Standort
+      zwischen zwei erledigten einen neuen, eigenen Einklapp-Block auf, was bei mehreren Lücken schnell
+      unübersichtlich viele kleine "X erledigt"-Buttons erzeugte. Jetzt genau wie beim bereits
+      bestehenden "später fangbar"-Stash: alle erledigten Standorte einer Region landen unabhängig von
+      ihrer Position gesammelt in einem einzigen Block am Ende der Region, die noch offenen Standorte
+      bleiben dazwischen ohne Unterbrechung sichtbar.</p>
+      <p><strong>Neuer Schnellzugriff auf "später fangbar" zurückgestellte Standorte:</strong> ein
+      Lesezeichen-Button links über dem "Zum aktuellen Standort"-Button (nur sichtbar, wenn
+      tatsächlich etwas zurückgestellt ist) öffnet eine Übersicht aller manuell zurückgestellten
+      Standorte über alle Regionen hinweg - antippen springt direkt hin, klappt dabei die richtige
+      Gruppe automatisch auf und hebt die Kachel kurz hervor (derselbe Mechanismus wie bei der
+      Standort-Suche aus v1.9.51). Erspart das Durchscrollen bis zur jeweiligen Region, nur um dort
+      den Stash-Toggle zu finden.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.52</span><span class="tag tag-feat">Neu</span></div>
@@ -8916,7 +8975,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.52.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.53.</footer>
 
 </div>`;
 
@@ -9439,6 +9498,7 @@ function render(){
   document.getElementById("fabAdd").style.display = activeTab==="routes" ? "flex" : "none";
   document.getElementById("searchFab").style.display = activeTab==="routes" ? "flex" : "none";
   document.getElementById("mapFab").style.display = (activeTab==="routes" && REGION_MAPS[currentGame().id]) ? "flex" : "none";
+  document.getElementById("stashFab").style.display = (activeTab==="routes" && (state.manualCollapsedLocs||[]).length>0) ? "flex" : "none";
   fitNames();
 }
 
@@ -10425,6 +10485,9 @@ document.addEventListener("click", e=>{
   }
   else if(act==="open-location-search"){
     openLocationSearchSheet();
+  }
+  else if(act==="open-stash-overview"){
+    openStashOverviewSheet();
   }
   else if(act==="open-region-map"){
     openRegionMapSheet();
