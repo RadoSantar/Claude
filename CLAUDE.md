@@ -197,11 +197,22 @@ jederzeit hier in `CLAUDE.md` + Git-Historie rekonstruierbar, siehe Rest dieser 
   Wegpunkt-Symbole als Anker, Rest nach Kanto-Spielwissen zugeordnet/interpoliert) wirkten laut
   Nutzerfeedback "kreuz und quer" — **in v1.9.57 durch vom Nutzer selbst per Kalibrierungsmodus
   (s.u.) abgetippte Koordinaten ersetzt**, jetzt also tatsächlich am Bild abgelesen statt geraten.
-  Standorte, die im Spiel zweimal besucht werden (Vertania City/-Arena; Route 22/Route 22
-  (Rückweg)), bekommen weiterhin bewusst IDENTISCHE Koordinaten statt zweier benachbarter Punkte
-  (Mittelwert der beiden leicht unterschiedlichen Antipp-Positionen) — spiegelt korrekt wider, dass
-  es sich um denselben Ort handelt. Bei weiterhin falsch wirkenden Einzelpunkten: erneut über den
-  Kalibrierungsmodus nachjustieren, nicht wieder raten.
+  **Korrektur v1.9.58 — Lektion, nicht wiederholen:** in v1.9.57 wurden die Koordinaten für zweimal
+  besuchte Standorte (Vertania City/-Arena; Route 22/Route 22 (Rückweg)) bewusst auf den Mittelwert
+  vereinheitlicht, in der Annahme, identische Koordinaten würden korrekt widerspiegeln, dass es sich
+  um denselben Ort handelt. **Das war ein Fehler:** `artworkMapHtml()` rendert pro Standortname einen
+  eigenen `<button class="map-pin">`, absolut positioniert nach `left/top`-Prozent - liegen zwei Pins
+  exakt übereinander, fängt (ohne explizites z-index) der im HTML SPÄTER eingefügte den Klick ab und
+  der frühere ist praktisch untappbar. Da "Route 22" (früher Fangversuch möglich!) vor "Route 22
+  (Rückweg)" im Standort-Array steht, sprang ein Tap auf den gemeinsamen Punkt immer nur zum
+  Rückweg - Nutzerfeedback: "wenn es nun nur zum rückweg springt macht das wenig sinn". Jetzt
+  wieder auf die beiden tatsächlich vom Nutzer angetippten (leicht unterschiedlichen) Koordinaten
+  zurückgesetzt - beide Pins bleiben dadurch unabhängig tappbar, liegen aber naturgemäß nah
+  beieinander (ist ja derselbe reale Ort). **Für künftige Ähnlich-liegende-Standorte-Fälle:** NIE
+  exakt identische `points`-Koordinaten für zwei verschiedene Standortnamen vergeben, egal wie
+  thematisch passend das wirkt - lieber leicht unterschiedliche, beide individuell tappbare Punkte.
+  Bei weiterhin falsch wirkenden Einzelpunkten: erneut über den Kalibrierungsmodus nachjustieren,
+  nicht wieder raten.
   Bild liegt (wie schon das vorherige) bewusst nicht in `sprites/` über `extract-sprites.js`
   eingebunden (das Tool kennt nur die vier Sprite-Konstanten) — liegt stattdessen als eigene reale
   Datei unter `sprites/maps/`, die `build-netlify-zip.js` automatisch mitkopiert (kopiert den ganzen

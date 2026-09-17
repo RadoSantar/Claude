@@ -3907,7 +3907,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.57";
+const APP_VERSION = "1.9.58";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -5279,7 +5279,7 @@ const REGION_MAPS = {
     region: "Kanto",
     image: "sprites/maps/kanto-lgpe-map.png",
     points: {
-      "Alabastia":[13.9,66.3], "Route 1":[13.9,58.1], "Vertania City":[15.5,49.3], "Route 22":[9.9,49.5],
+      "Alabastia":[13.9,66.3], "Route 1":[13.9,58.1], "Vertania City":[14.1,49.8], "Route 22":[11.3,49.5],
       "Route 2":[14.1,42.2], "Vertania-Wald":[14.2,33.4], "Marmoria City":[13.9,22.2], "Route 3":[20.5,22.5],
       "Mondberg":[26.5,16.3], "Route 4":[31.0,16.1], "Azuria City":[39.1,16.9], "Route 24":[39.1,9.3],
       "Route 25":[43.0,5.5], "Route 5":[38.9,22.8], "Unterführung":[38.9,38.1], "Route 6":[39.1,45.1],
@@ -5289,8 +5289,8 @@ const REGION_MAPS = {
       "Route 8":[44.4,32.8], "Route 7":[34.4,33.4], "Prismania City":[29.6,33.4], "Saffronia City":[39.1,33.1],
       "Route 16":[23.8,33.4], "Route 17":[20.2,44.0], "Route 18":[26.2,77.7], "Fuchsania City":[32.8,78.0],
       "Route 19":[32.9,84.5], "Route 20":[29.1,88.0], "Seeschauminseln":[23.5,88.6], "Zinnoberinsel":[14.2,88.9],
-      "Pokémon-Villa":[16.4,83.9], "Route 21":[13.9,76.9], "Kraftwerk":[54.8,28.1], "Vertania-Arena":[15.5,49.3],
-      "Route 22 (Rückweg)":[9.9,49.5], "Route 23":[7.8,40.1], "Siegesstraße":[7.9,27.8], "Pokémon-Liga":[7.6,16.3],
+      "Pokémon-Villa":[16.4,83.9], "Route 21":[13.9,76.9], "Kraftwerk":[54.8,28.1], "Vertania-Arena":[16.9,48.7],
+      "Route 22 (Rückweg)":[8.4,49.5], "Route 23":[7.8,40.1], "Siegesstraße":[7.9,27.8], "Pokémon-Liga":[7.6,16.3],
       "Azuria-Höhle":[35.6,12.2]
     }
   }
@@ -7653,7 +7653,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="stats">
     <div class="stat"><div class="n">23</div><div class="l">Editionen</div></div>
     <div class="stat"><div class="n">1075</div><div class="l">Pokémon-Arten</div></div>
-    <div class="stat"><div class="n">60</div><div class="l">Versions&shy;stände</div></div>
+    <div class="stat"><div class="n">61</div><div class="l">Versions&shy;stände</div></div>
     <div class="stat"><div class="n">Gen 1–9</div><div class="l">Abgedeckt</div></div>
   </div>
 
@@ -7663,6 +7663,20 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.58</span><span class="tag tag-fix">Fix</span></div>
+      <h3>Route 22 / Route 22 (Rückweg) wieder unabhängig antippbar</h3>
+      <p>Nutzerfeedback zu v1.9.57: "auf Route 22 kann man schon sehr früh ein Pokémon fangen, wenn
+      es nun nur zum Rückweg springt macht das wenig Sinn". Ursache: Vertania City/-Arena sowie
+      Route 22/Route 22 (Rückweg) waren dort bewusst auf identische Kartenkoordinaten gelegt, um
+      "derselbe Ort"-Standorte korrekt widerzuspiegeln - das hat aber übersehen, dass zwei exakt
+      übereinanderliegende Klickpunkte in der Kartengrafik nicht beide tappbar sind: nur der im HTML
+      später eingefügte (hier: Vertania-Arena bzw. Route 22 (Rückweg)) fängt den Klick ab. Beide Paare
+      jetzt wieder auf die tatsächlich einzeln kalibrierten, leicht unterschiedlichen Positionen
+      zurückgesetzt - liegen naturgemäß nah beieinander (ist ja derselbe reale Ort), bleiben aber
+      beide unabhängig antippbar.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.57</span><span class="tag tag-fix">Fix</span></div>
@@ -9146,7 +9160,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.57.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.58.</footer>
 
 </div>`;
 
