@@ -3920,7 +3920,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.65";
+const APP_VERSION = "1.9.66";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -10106,7 +10106,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="stats">
     <div class="stat"><div class="n">23</div><div class="l">Editionen</div></div>
     <div class="stat"><div class="n">1075</div><div class="l">Pokémon-Arten</div></div>
-    <div class="stat"><div class="n">68</div><div class="l">Versions&shy;stände</div></div>
+    <div class="stat"><div class="n">69</div><div class="l">Versions&shy;stände</div></div>
     <div class="stat"><div class="n">Gen 1–9</div><div class="l">Abgedeckt</div></div>
   </div>
 
@@ -10116,6 +10116,24 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.66</span><span class="tag tag-fix">Korrektur</span></div>
+      <h3>Installierte PWA hing an einem 16 Versionen alten Stand (Service-Worker-Cache)</h3>
+      <p>Nutzerfund im Anschluss an die Urzeithöhle-Ergänzung: "der Punkt fehlt nun auch noch in der
+      Karte" - obwohl der Code den neuen Kartenpunkt bereits enthielt (per Playwright direkt gegen
+      die Quelldatei bestätigt). Ursache: <code>pwa/sw.js</code>s <code>CACHE_NAME</code> war seit
+      v1.9.49 nicht mehr hochgezählt worden. Der Service Worker cached <code>index.html</code>
+      cache-first ohne Versions-Check und löscht in seinem <code>activate</code>-Handler nur ANDERE
+      Cache-Namen - blieb der eigene Name über 16 Versionen gleich (Standort-Suche, Regions-Karte,
+      Zurückstellen für Bosse, Cloud-Sync-Umbenennung+QR+PIN, Hoenn-Karte, Urzeithöhle), wurde die
+      einmal gecachte Seite nie ersetzt, unabhängig davon, ob ein frisches Deploy-ZIP auf Netlify
+      gezogen wurde. Nicht nur punktuell behoben: <code>tools/build-netlify-zip.js</code>
+      überschreibt <code>CACHE_NAME</code> jetzt bei jedem Build automatisch mit der aktuellen
+      <code>APP_VERSION</code> - der Wert in <code>pwa/sw.js</code> selbst ist damit nur noch der
+      Stand des letzten Builds, kein von Hand zu pflegender Wert mehr, diese Bugklasse kann nicht
+      mehr durch Vergessen zurückkommen.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.65</span><span class="tag tag-fix">Korrektur</span></div>
@@ -11729,7 +11747,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.65.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.66.</footer>
 
 </div>`;
 

@@ -18,6 +18,15 @@
  * Nutzung:
  *   node tools/build-netlify-zip.js [Ziel-ZIP-Pfad]
  *   (Standard-Ziel: nuzlocke-netlify-deploy.zip im Repo-Root)
+ *
+ * Service-Worker-Cache-Name: pwa/sw.js' CACHE_NAME wird HIER, beim Staging, automatisch auf die
+ * aktuelle APP_VERSION überschrieben (nicht mehr von Hand pflegen) - blieb dieser Wert zwischen
+ * zwei Deploys unverändert, installiert der Browser zwar ein neues sw.js, aber dessen cache-first
+ * fetch-Handler liefert weiterhin die ALTE gecachte index.html aus demselben, unveränderten
+ * Cache-Namen aus (der activate-Handler löscht nur ANDERE Cache-Namen) - genau das ließ eine
+ * installierte PWA zwischen v1.9.49 und v1.9.65 unbemerkt auf demselben veralteten Stand stehen,
+ * bis ein Nutzer einen fehlenden, längst ergänzten Kartenpunkt meldete. Siehe ausführlicher
+ * Kommentar in pwa/sw.js selbst.
  */
 const fs = require("fs");
 const path = require("path");
@@ -29,6 +38,14 @@ const SOURCE_HTML = path.join(ROOT, "nuzlocke-v2-editionen.html");
 const PWA_DIR = path.join(ROOT, "pwa");
 const SPRITES_DIR = path.join(ROOT, "sprites");
 const target = process.argv[2] || path.join(ROOT, "nuzlocke-netlify-deploy.zip");
+
+const htmlSource = fs.readFileSync(SOURCE_HTML, "utf8");
+const versionMatch = htmlSource.match(/const APP_VERSION = "([^"]+)"/);
+if (!versionMatch) {
+  console.error("APP_VERSION nicht in nuzlocke-v2-editionen.html gefunden.");
+  process.exit(1);
+}
+const appVersion = versionMatch[1];
 
 if (!fs.existsSync(SOURCE_HTML)) {
   console.error(`Quelle nicht gefunden: ${SOURCE_HTML}`);
@@ -53,7 +70,13 @@ if (pwaFiles.length === 0) {
   process.exit(1);
 }
 pwaFiles.forEach(name => {
-  fs.copyFileSync(path.join(PWA_DIR, name), path.join(stagingDir, name));
+  if (name === "sw.js") {
+    const swSource = fs.readFileSync(path.join(PWA_DIR, name), "utf8");
+    const swStamped = swSource.replace(/const CACHE_NAME = "[^"]+";/, `const CACHE_NAME = "nuzlocke-tracker-v${appVersion}";`);
+    fs.writeFileSync(path.join(stagingDir, name), swStamped);
+  } else {
+    fs.copyFileSync(path.join(PWA_DIR, name), path.join(stagingDir, name));
+  }
 });
 
 fs.cpSync(SPRITES_DIR, path.join(stagingDir, "sprites"), { recursive: true });
@@ -80,5 +103,6 @@ execFileSync("zip", ["-r", target, "."], { cwd: stagingDir, stdio: "inherit" });
 fs.rmSync(stagingDir, { recursive: true, force: true });
 
 console.log(`\nGeschrieben: ${target}`);
+console.log(`Service-Worker-Cache-Name gesetzt auf: nuzlocke-tracker-v${appVersion}`);
 console.log(`Enthält flach (kein Unterordner): ${staged.filter(f => f !== "sprites").join(", ")}, sowie sprites/ (${spriteFileCount} Dateien).`);
 console.log(`Dieses ZIP komplett (nicht nur index.html) auf app.netlify.com/drop ziehen.`);

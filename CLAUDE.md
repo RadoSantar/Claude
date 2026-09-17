@@ -90,6 +90,28 @@ jederzeit hier in `CLAUDE.md` + Git-Historie rekonstruierbar, siehe Rest dieser 
   `nuzlocke-netlify-deploy.zip`-Snapshot kann daher beliebig veraltet sein (ist selbst nicht Teil der
   Versionshistorie/kein committetes Artefakt) — vor jeder Aussage "die Netlify-App ist aktuell" das
   ZIP-Datum bzw. den Build-Zeitpunkt prüfen, nicht annehmen.
+  **Service-Worker-Cache-Falle, behoben in v1.9.65 (Nutzerfund):** `pwa/sw.js`s `CACHE_NAME` blieb
+  zwischen v1.9.49 und v1.9.65 (16 Versionen: Standort-Suche, Regions-Karte, Zurückstellen für
+  Bosse, Cloud-Sync-Umbenennung+QR+PIN, Hoenn-Karte, Urzeithöhle) unverändert. Der `fetch`-Handler
+  ist cache-first OHNE Versions-Check, und `activate` löscht nur ANDERE Cache-Namen - blieb der
+  eigene Name gleich, wurde die einmal gecachte `index.html` nie ersetzt, selbst wenn der Browser
+  wegen eines Byte-Diffs in `sw.js` (o.Ä.) brav ein neues Service-Worker-Skript installierte. Eine
+  bereits installierte PWA konnte dadurch über ein Dutzend Versionen lang unbemerkt denselben
+  veralteten Stand zeigen, komplett unabhängig davon, ob das ZIP frisch gebaut und auf Netlify
+  gezogen wurde. Aufgefallen, als der Nutzer meldete, ein gerade committeter Kartenpunkt
+  (Urzeithöhle) fehle "auch in der Karte" - der Code war zu diesem Zeitpunkt längst korrekt (per
+  Playwright direkt gegen die Quelldatei verifiziert), der Unterschied lag ausschließlich am
+  service-worker-seitigen Cache der installierten App. **Behoben nicht nur punktuell, sondern an der
+  Wurzel:** `tools/build-netlify-zip.js` überschreibt `CACHE_NAME` beim Staging jetzt automatisch mit
+  der aktuellen `APP_VERSION` (Regex-Ersetzung beim Kopieren von `sw.js` in den Staging-Ordner,
+  Konsolenausgabe zur Kontrolle) - der im Repo committete Wert in `pwa/sw.js` ist dadurch nur noch
+  der Stand des letzten Builds, keine eigene Quelle der Wahrheit mehr, und diese Bugklasse kann nicht
+  mehr durch Vergessen wiederkehren. **Lehre für Fehlerdiagnosen bei der installierten PWA:** wirkt
+  ein frisch committeter/verifizierter Fix im Code korrekt, zeigt sich aber nicht in der installierten
+  App, zuerst den Service-Worker-Cache verdächtigen (Browser-DevTools → Application → Service Workers/
+  Cache Storage, oder schlicht Neuinstallation), bevor an der eigentlichen Datenlogik weitergesucht
+  wird - Netlifys fehlendes Auto-Deploy (s. o.) und der SW-Cache sind zwei GETRENNTE mögliche
+  Ursachen für "Änderung kommt nicht an", beide gegenprüfen.
 - **Supabase-Backend für Cloud-Sync (seit v1.8.57, seit v1.9.61 auch für Kurz-PINs)** — LIEGT NICHT
   IM REPO, sondern als separates Cloud-Projekt bei Supabase, Projekt-ID `cyaanqljqxzsqlzeaaev`
   (identisch mit der `SUPABASE_URL`-Konstante in `nuzlocke-v2-editionen.html`), erreichbar über das
