@@ -160,6 +160,24 @@ jederzeit hier in `CLAUDE.md` + Git-Historie rekonstruierbar, siehe Rest dieser 
   (FLIP-Technik wie `celebrateOrden`, aber kürzer/ohne Feier-Halt) zum `stashFab`-Button hin
   verkleinert/ausgeblendet, danach kurzer `.pulse`-Bounce am Button. Reihenfolge wichtig: Rect VOR
   dem State-Update/Render erfassen, sonst ist die Kachel an ihrer alten Position schon weg.
+  **Auf Bosskämpfe ausgeweitet (seit v1.9.59):** Nutzerwunsch - man macht ggf. erst einen anderen Weg
+  (grinden o.Ä.), bevor man sich einem Arenaleiter/Bosskampf stellt. `bossCardHtml()` bekommt jetzt
+  (nur wenn `!defeated`) denselben `toggle-loc-manual-collapse`-Button wie Standortkarten, mit
+  `boss.id` statt `loc.id` - `state.manualCollapsedLocs` ist ohnehin nur eine generische ID-Liste,
+  kein Umbau nötig. Alle Stellen, die vorher `tile.kind==="loc"` als Bedingung für die
+  Stash-Zugehörigkeit prüften (`renderRoutes()`, `expandCollapseGroupsForLocation()`), wurden von
+  dieser Einschränkung befreit - reine Mitgliedschaft in `manualCollapsedLocs` entscheidet jetzt,
+  unabhängig vom Kachel-Typ. `expandCollapseGroupsForLocation()` iteriert dafür jetzt über ALLE
+  Regionen der Edition statt nur über `loc.region` einer gefundenen `state.locations`-Kachel, da eine
+  Boss-ID keinen eigenen `state.locations`-Eintrag hat - ihre Region ergibt sich erst aus der
+  `locationTiles()`-Zuordnung des Standorts, an dem der Boss über `bossAfter` hängt.
+  `stashOverviewResultsHtml()` löst IDs seither erst gegen `state.locations`, dann gegen `bossById()`
+  auf. Der `toggle-loc-manual-collapse`-Klick-Handler suchte die Kachel für die Flug-Animation bisher
+  nur über `t.closest("[data-loc]")` - für Boss-Karten (`data-boss`) griff das nicht, jetzt
+  `t.closest("[data-loc], [data-boss]")`. Texte generalisiert: "X später fangbare Standorte" →
+  "X zurückgestellte Kacheln" (Sammelgruppe, Stash-FAB-Titel, Übersichts-Überschrift), da die Gruppe
+  jetzt beide Kachel-Typen bündelt. Bewusst NICHT erweitert: `finalRivalCardHtml()` (Ruhmeshallen-
+  Duell) - steht immer ganz am Ende, Zurückstellen ergibt dort keinen praktischen Sinn.
 - **Standort-Suche (seit v1.9.51):** Lupen-FAB im Routen-Tab öffnet ein Sheet
   (`openLocationSearchSheet()`), Live-Ergebnisliste (`locationSearchResultsHtml()`) respektiert
   bestehende Sichtbarkeits-Filter (`hiddenRegions`, `hidePostgame`). Antippen eines Treffers

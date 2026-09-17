@@ -1271,7 +1271,7 @@ datalist{}
     <svg viewBox="0 0 24 24"><path d="M12 4v14M6 12l6 6 6-6"/></svg>
     <span>Aktueller Standort</span>
   </button>
-  <button class="stash-fab" id="stashFab" data-act="open-stash-overview" title="Später fangbare Standorte" aria-label="Später fangbare Standorte">
+  <button class="stash-fab" id="stashFab" data-act="open-stash-overview" title="Zurückgestellte Kacheln" aria-label="Zurückgestellte Kacheln">
     <svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4.5L6 21V3z"/></svg>
   </button>
 
@@ -3907,7 +3907,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.58";
+const APP_VERSION = "1.9.59";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -5020,19 +5020,22 @@ function collapseToggleHtml(segKey, count, expanded, bodyHtml){
   return toggle + body;
 }
 
-/* Manuelles Einklappen NOCH NICHT abgeschlossener Standort-Kacheln (state.manualCollapsedLocs) - für
-   Standorte gedacht, an denen zwar ein Fang möglich wäre, aber erst später im Run (z.B. fehlende
-   Angel/VM). Anders als das automatische Einklappen erledigter Kacheln (collapseToggleHtml) sammelt
-   dies bewusst ALLE so markierten, noch offenen Kacheln eines Abschnitts in EINER gemeinsamen Gruppe
-   mit genau einem Auf-/Zuklapp-Button, statt für jede einzeln einen eigenen Button zu zeigen (auch
-   wenn sie an verschiedenen, nicht benachbarten Stellen der Liste liegen) - sonst würde die Liste bei
-   mehreren zurückgestellten Orten mit mehreren, kaum unterscheidbaren Buttons überladen. Optisch
-   bewusst abgesetzt (Gold-Ton statt Neutral) von den grau gehaltenen "erledigt"-Gruppen, damit auf
-   einen Blick klar ist: das hier ist Zurückgestelltes, kein abgehakter Fortschritt. */
+/* Manuelles Einklappen NOCH NICHT abgeschlossener Kacheln (state.manualCollapsedLocs) - ursprünglich
+   nur für Standorte gedacht, an denen zwar ein Fang möglich wäre, aber erst später im Run (z.B.
+   fehlende Angel/VM); seit dem Bosskampf-Zurückstellen (s. bossCardHtml) genauso für Arenaleiter/
+   Bosskämpfe nutzbar, denen man sich erst nach einem Umweg (Grinden auf einer anderen Route o.Ä.)
+   stellen will - daher bewusst generischer Text ("Kacheln" statt "Standorte"). Anders als das
+   automatische Einklappen erledigter Kacheln (collapseToggleHtml) sammelt dies bewusst ALLE so
+   markierten, noch offenen Kacheln eines Abschnitts in EINER gemeinsamen Gruppe mit genau einem
+   Auf-/Zuklapp-Button, statt für jede einzeln einen eigenen Button zu zeigen (auch wenn sie an
+   verschiedenen, nicht benachbarten Stellen der Liste liegen) - sonst würde die Liste bei mehreren
+   zurückgestellten Kacheln mit mehreren, kaum unterscheidbaren Buttons überladen. Optisch bewusst
+   abgesetzt (Gold-Ton statt Neutral) von den grau gehaltenen "erledigt"-Gruppen, damit auf einen
+   Blick klar ist: das hier ist Zurückgestelltes, kein abgehakter Fortschritt. */
 function stashCollapseToggleHtml(segKey, count, expanded, bodyHtml){
   const toggle = `<button class="collapse-toggle stash" data-act="toggle-loc-stash-collapse" data-region="${segKey}" data-count="${count}">
     <svg class="collapse-chevron${expanded?" open":""}" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
-    <span>${count} später fangbare ${count===1?"Standort":"Standorte"} ${expanded?"ausblenden":"anzeigen"}</span>
+    <span>${count} zurückgestellte ${count===1?"Kachel":"Kacheln"} ${expanded?"ausblenden":"anzeigen"}</span>
   </button>`;
   const body = `<div class="collapsible-body${expanded?" expanded":""}" data-collapse-body="${segKey}"${expanded?"":" inert"}><div class="collapsible-body-inner">${bodyHtml}</div></div>`;
   return toggle + body;
@@ -5174,24 +5177,32 @@ function openLocationSearchSheet(){
   setTimeout(()=>document.getElementById("locationSearchInput")?.focus(), 50);
 }
 
-/* Übersicht aller manuell zurückgestellten ("später fangbar") Standorte auf einen Blick - Antippen
-   springt wie bei der Standort-Suche direkt hin, statt erst die Region durchscrollen und dort den
-   Stash-Toggle suchen zu müssen. */
+/* Übersicht aller manuell zurückgestellten Kacheln auf einen Blick - Antippen springt wie bei der
+   Standort-Suche direkt hin, statt erst die Region durchscrollen und dort den Stash-Toggle suchen zu
+   müssen. Seit Bosskämpfe ebenfalls zurückstellbar sind (bossCardHtml) können die IDs in
+   state.manualCollapsedLocs sowohl zu state.locations- als auch zu Boss-Einträgen gehören - erst
+   Standort, dann Boss versuchen. */
 function stashOverviewResultsHtml(){
   const ids = state.manualCollapsedLocs||[];
-  const items = ids.map(id=>state.locations.find(l=>l.id===id)).filter(Boolean);
-  if(!items.length) return `<div class="loc-sub">Keine später fangbaren Standorte zurückgestellt.</div>`;
-  return items.map(l=>
-    `<button class="sheet-option" data-act="jump-to-location-result" data-id="${l.id}">
-      <div>${escapeHtml(l.name)}</div>
-      <div class="loc-sub" style="margin:2px 0 0;">${escapeHtml(l.custom ? "Eigener Fundort" : l.region)}</div>
+  const items = ids.map(id=>{
+    const loc = state.locations.find(l=>l.id===id);
+    if(loc) return { id: loc.id, name: loc.name, sub: loc.custom ? "Eigener Fundort" : loc.region };
+    const boss = bossById(id);
+    if(boss) return { id: boss.id, name: boss.name, sub: `${boss.cls} · ${boss.place}` };
+    return null;
+  }).filter(Boolean);
+  if(!items.length) return `<div class="loc-sub">Keine Kacheln zurückgestellt.</div>`;
+  return items.map(it=>
+    `<button class="sheet-option" data-act="jump-to-location-result" data-id="${it.id}">
+      <div>${escapeHtml(it.name)}</div>
+      <div class="loc-sub" style="margin:2px 0 0;">${escapeHtml(it.sub)}</div>
     </button>`
   ).join("");
 }
 function openStashOverviewSheet(){
   openSheet(`
-    <h3>Später fangbare Standorte</h3>
-    <div class="loc-sub" style="margin-bottom:10px;">Alle manuell zurückgestellten Standorte auf einen Blick - antippen springt direkt hin.</div>
+    <h3>Zurückgestellte Kacheln</h3>
+    <div class="loc-sub" style="margin-bottom:10px;">Alle manuell zurückgestellten Standorte und Bosskämpfe auf einen Blick - antippen springt direkt hin.</div>
     ${stashOverviewResultsHtml()}
   `);
 }
@@ -5233,29 +5244,33 @@ function flyTileToStash(cardEl){
   };
 }
 /* Klappt genau die Einklapp-Gruppe(n) auf, die die Ziel-Kachel gerade verstecken - dieselbe
-   Segmentierungslogik wie in renderRoutes() (erledigte Blöcke per Index-Chunk, manuell zurückgestellte
-   Standorte als ein gemeinsamer Stash pro Region), nur einmalig für die eine betroffene Region/den
-   einen Standort statt für die ganze Liste ausgeführt. */
+   Segmentierungslogik wie in renderRoutes() (erledigte/zurückgestellte Kacheln als gemeinsamer Block
+   pro Region), nur einmalig für die eine betroffene Region/den einen Standort statt für die ganze
+   Liste ausgeführt. Sucht seit dem Bosskampf-Zurückstellen (s. bossCardHtml) über ALLE Regionen der
+   aktuellen Edition, nicht mehr nur über die Region einer gefundenen state.locations-Kachel - eine
+   Bosskampf-ID gehört zu keinem state.locations-Eintrag, ihre Region ergibt sich erst aus der
+   locationTiles()-Zuordnung des Standorts, an dem sie über bossAfter hängt. */
 function expandCollapseGroupsForLocation(targetId){
   const loc = state.locations.find(l=>l.id===targetId);
-  if(!loc) return;
-  if(loc.custom){
+  if(loc && loc.custom){
     if(!isLocResolved(loc) && (state.manualCollapsedLocs||[]).includes(loc.id)) expandedStashRegions.add("eigene-fundorte-stash");
     return;
   }
   const game = currentGame();
-  const region = loc.region;
-  const regionKey = slug(region);
   const currentId = effectiveCurrentLocId();
-  const locs = state.locations.filter(l=>l.region===region && !(state.hidePostgame && /Postgame/.test(l.note||"")));
-  const tiles = [];
-  locs.forEach(l=>{ tiles.push(...locationTiles(l, region, game, currentId)); });
-  const targetTile = tiles.find(t=>t.id===targetId);
-  if(!targetTile) return;
-  if(targetTile.resolved){
-    expandedRegions.add(`${regionKey}-done`);
-  } else if(targetTile.kind==="loc" && (state.manualCollapsedLocs||[]).includes(targetId)){
-    expandedStashRegions.add(`${regionKey}-stash`);
+  for(const [region] of game.regions){
+    const regionKey = slug(region);
+    const locs = state.locations.filter(l=>l.region===region && !(state.hidePostgame && /Postgame/.test(l.note||"")));
+    const tiles = [];
+    locs.forEach(l=>{ tiles.push(...locationTiles(l, region, game, currentId)); });
+    const targetTile = tiles.find(t=>t.id===targetId);
+    if(!targetTile) continue;
+    if(targetTile.resolved){
+      expandedRegions.add(`${regionKey}-done`);
+    } else if((state.manualCollapsedLocs||[]).includes(targetId)){
+      expandedStashRegions.add(`${regionKey}-stash`);
+    }
+    return;
   }
 }
 
@@ -5428,7 +5443,7 @@ function renderRoutes(){
     tiles.forEach(tile=>{
       if(tile.resolved){
         resolvedTiles.push(tile);
-      } else if(tile.kind==="loc" && (state.manualCollapsedLocs||[]).includes(tile.id)){
+      } else if((state.manualCollapsedLocs||[]).includes(tile.id)){
         stashedTiles.push(tile);
       } else {
         html += tile.html;
@@ -6246,6 +6261,12 @@ function bossCardHtml(boss, isCurrent){
      oben rechts) kollidieren und eine erledigte Kachel lässt sich ohnehin nicht als "aktuell"
      halten (isCurrentTargetResolved räumt die Markierung sofort wieder ab). */
   const flagBtn = defeated ? "" : iconBtn(isCurrent?"tone-good":"tone-neutral","toggle-current-loc",boss.id,isCurrent?ICON_FLAG_FILLED:ICON_FLAG,isCurrent?"Nicht mehr aktueller Standort":"Als aktuellen Standort markieren",false,true);
+  /* Wie bei Standort-Kacheln (routeCard) manuelles Zurückstellen nur für noch offene Bosskämpfe
+     sinnvoll - man nimmt z.B. erst einen anderen Weg/grindet, bevor man sich einem Arenaleiter oder
+     Bosskampf stellt. Nutzt denselben generischen Mechanismus (state.manualCollapsedLocs, dieselbe
+     Aktion toggle-loc-manual-collapse) wie Standort-Kacheln - siehe renderRoutes()/
+     stashCollapseToggleHtml, dort inzwischen kind-unabhängig. */
+  const collapseBtn = defeated ? "" : iconBtn("tone-neutral","toggle-loc-manual-collapse",boss.id,ICON_COLLAPSE,"Später erledigen - Kachel einklappen",false,true);
   const hasBossNote = !!((state.bossNotes||{})[boss.id]||"").trim();
   const noteBtn = iconBtn(hasBossNote?"tone-gold":"tone-neutral","open-boss-note",boss.id,hasBossNote?ICON_NOTE_FILLED:ICON_NOTE,hasBossNote?"Notiz bearbeiten":"Notiz hinzufügen",false,true);
   const bossNoteHtml = hasBossNote ? `<div class="loc-note">${escapeHtml(state.bossNotes[boss.id])}</div>` : "";
@@ -6282,7 +6303,7 @@ function bossCardHtml(boss, isCurrent){
           <div class="loc-sub">${escapeHtml(boss.cls)} · ${escapeHtml(boss.place)}</div>
         </div>
       </div>
-      <div style="display:flex; gap:4px; align-items:center; flex:none;">${almostDone?'<span class="chip gold">✨ Fast geschafft</span>':""}${opponentTeamBtn}${noteBtn}${flagBtn}</div>
+      <div style="display:flex; gap:4px; align-items:center; flex:none;">${almostDone?'<span class="chip gold">✨ Fast geschafft</span>':""}${opponentTeamBtn}${noteBtn}${flagBtn}${collapseBtn}</div>
     </div>
     <div class="boss-level-row">
       <div class="boss-level-main">
@@ -7653,7 +7674,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="stats">
     <div class="stat"><div class="n">23</div><div class="l">Editionen</div></div>
     <div class="stat"><div class="n">1075</div><div class="l">Pokémon-Arten</div></div>
-    <div class="stat"><div class="n">61</div><div class="l">Versions&shy;stände</div></div>
+    <div class="stat"><div class="n">62</div><div class="l">Versions&shy;stände</div></div>
     <div class="stat"><div class="n">Gen 1–9</div><div class="l">Abgedeckt</div></div>
   </div>
 
@@ -7663,6 +7684,21 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.59</span><span class="tag tag-feat">Neu</span></div>
+      <h3>Bosskämpfe/Arenaleiter ebenfalls zurückstellbar</h3>
+      <p>Nutzerwunsch: "das Einklappen soll für alle Kacheln verfügbar sein, es kann sein, dass man
+      erst einen anderen Weg macht, bevor man sich einem Arenaleiter oder Bosskampf stellt." Das
+      manuelle Zurückstellen ("später erledigen") gab es bisher nur für Standort-Kacheln - jetzt auch
+      für noch nicht besiegte Bosskämpfe (Arenaleiter, Rivalen, Teambosse) über denselben
+      Einklapp-Button und dieselbe goldene Sammelgruppe am Ende jeder Region. Betroffen: die
+      Sammelgruppe bündelt jetzt Standorte UND Bosse gemeinsam ("X zurückgestellte Kacheln" statt
+      "X später fangbare Standorte"), die Übersicht hinter dem Lesezeichen-Button zeigt beide Arten
+      und der Sprung dorthin funktioniert für beide gleich. Das finale Rivalenduell (Ruhmeshalle)
+      bleibt bewusst ausgenommen - es steht ohnehin immer ganz am Ende, ein Zurückstellen ergibt dort
+      keinen praktischen Sinn.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.58</span><span class="tag tag-fix">Fix</span></div>
@@ -9160,7 +9196,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.58.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.59.</footer>
 
 </div>`;
 
@@ -10330,7 +10366,7 @@ document.addEventListener("click", e=>{
     const list = state.manualCollapsedLocs || (state.manualCollapsedLocs=[]);
     const idx = list.indexOf(id);
     const collapsing = idx===-1;
-    const cardEl = collapsing ? t.closest("[data-loc]") : null;
+    const cardEl = collapsing ? t.closest("[data-loc], [data-boss]") : null;
     if(collapsing) list.push(id); else list.splice(idx,1);
     saveState();
     if(cardEl) flyTileToStash(cardEl);
@@ -10351,7 +10387,7 @@ document.addEventListener("click", e=>{
     if(chevron) chevron.classList.toggle("open", willExpand);
     const label = t.querySelector("span");
     const count = Number(t.dataset.count);
-    if(label) label.textContent = `${count} später fangbare ${count===1?"Standort":"Standorte"} ${willExpand?"ausblenden":"anzeigen"}`;
+    if(label) label.textContent = `${count} zurückgestellte ${count===1?"Kachel":"Kacheln"} ${willExpand?"ausblenden":"anzeigen"}`;
   }
   else if(act==="close-sheet") closeSheet();
   else if(act==="save-catch"){
@@ -10735,7 +10771,7 @@ document.addEventListener("click", e=>{
     expandCollapseGroupsForLocation(id);
     render();
     setTimeout(()=>{
-      const el = document.querySelector(`[data-loc="${id}"]`);
+      const el = document.querySelector(`[data-loc="${id}"], [data-boss="${id}"]`);
       if(!el) return;
       el.scrollIntoView({ behavior:"smooth", block:"center" });
       el.classList.add("search-highlight");
