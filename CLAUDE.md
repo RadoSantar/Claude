@@ -154,6 +154,12 @@ jederzeit hier in `CLAUDE.md` + Git-Historie rekonstruierbar, siehe Rest dieser 
   aktuellen Region) als Liste, Antippen nutzt denselben `jump-to-location-result`-Mechanismus wie die
   Standort-Suche. Grund: vorher musste man bis zur jeweiligen Region scrollen, um dort den
   Stash-Toggle überhaupt erst zu finden.
+  **Flug-Animation beim Zurückstellen (seit v1.9.54):** `flyTileToStash(cardEl)` — beim Klick auf
+  `toggle-loc-manual-collapse` (nur Richtung "zurückstellen", nicht beim Wiederherstellen) wird VOR
+  `render()` ein `cardEl.cloneNode(true)` an der Original-Position fixiert und per Web-Animations-API
+  (FLIP-Technik wie `celebrateOrden`, aber kürzer/ohne Feier-Halt) zum `stashFab`-Button hin
+  verkleinert/ausgeblendet, danach kurzer `.pulse`-Bounce am Button. Reihenfolge wichtig: Rect VOR
+  dem State-Update/Render erfassen, sonst ist die Kachel an ihrer alten Position schon weg.
 - **Standort-Suche (seit v1.9.51):** Lupen-FAB im Routen-Tab öffnet ein Sheet
   (`openLocationSearchSheet()`), Live-Ergebnisliste (`locationSearchResultsHtml()`) respektiert
   bestehende Sichtbarkeits-Filter (`hiddenRegions`, `hidePostgame`). Antippen eines Treffers

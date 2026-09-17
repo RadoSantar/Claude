@@ -976,6 +976,20 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 .stash-fab svg{ width:19px; height:19px; stroke:var(--gold); fill:none; stroke-width:2.2; }
 .stash-fab:active{ transform:scale(.94); }
 
+/* Flug-Klon beim Zurückstellen einer Kachel (siehe flyTileToStash) - fixiert an der ursprünglichen
+   Bildschirmposition, wird per Web-Animations-API zum Stash-FAB hin verkleinert/ausgeblendet. */
+.stash-fly-tile{
+  position:fixed; z-index:60; pointer-events:none; margin:0 !important; top:0; left:0;
+}
+@media (prefers-reduced-motion: no-preference){
+  @keyframes stashFabPulse{
+    0%{ transform:scale(1); }
+    40%{ transform:scale(1.22); }
+    100%{ transform:scale(1); }
+  }
+  .stash-fab.pulse{ animation:stashFabPulse 450ms ease-out; }
+}
+
 /* Eigener kleiner FAB statt Erweiterung von .fab (dem "+"-Button) - beide bleiben unabhängig
    antippbar, ohne dass ein kombinierter Button zwei Aktionen verwechselbar macht. Direkt über dem
    "+"-Button gestapelt (56px Höhe + 10px Abstand), da rechts unten sonst ungenutzt bliebe. */
@@ -3893,7 +3907,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.53";
+const APP_VERSION = "1.9.54";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -5180,6 +5194,43 @@ function openStashOverviewSheet(){
     <div class="loc-sub" style="margin-bottom:10px;">Alle manuell zurückgestellten Standorte auf einen Blick - antippen springt direkt hin.</div>
     ${stashOverviewResultsHtml()}
   `);
+}
+
+/* Beim manuellen Zurückstellen fliegt eine Kopie der Kachel sichtbar zum "später fangbar"-Button
+   (Lesezeichen-FAB) - macht auf Anhieb klar, WOHIN die Kachel verschwindet, statt dass sie
+   kommentarlos aus der Liste verschwindet und man erst den neuen Button entdecken muss. Analog zur
+   Orden-Feier-Animation (celebrateOrden/FLIP-Technik: Start-/Zielposition per
+   getBoundingClientRect(), dazwischen per Web-Animations-API interpoliert), aber bewusst kürzer und
+   schlichter (kein Feier-Moment, nur eine kurze Bestätigung wohin es geht) - nur beim Zurückstellen
+   selbst, nicht beim Wiederherstellen aus dem Stash heraus, da nur dort ein sinnvolles Flugziel
+   existiert. */
+function flyTileToStash(cardEl){
+  if(!cardEl) return;
+  if(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const stashFab = document.getElementById("stashFab");
+  if(!stashFab) return;
+  const startRect = cardEl.getBoundingClientRect();
+  stashFab.style.display = "flex";
+  const targetRect = stashFab.getBoundingClientRect();
+  const clone = cardEl.cloneNode(true);
+  clone.classList.add("stash-fly-tile");
+  clone.style.left = startRect.left+"px";
+  clone.style.top = startRect.top+"px";
+  clone.style.width = startRect.width+"px";
+  document.body.appendChild(clone);
+  const deltaX = (targetRect.left + targetRect.width/2) - (startRect.left + startRect.width/2);
+  const deltaY = (targetRect.top + targetRect.height/2) - (startRect.top + startRect.height/2);
+  const finalScale = Math.max(targetRect.width / startRect.width, 0.08);
+  const anim = clone.animate([
+    { transform:"translate(0,0) scale(1)", opacity:1, offset:0 },
+    { transform:`translate(${deltaX*0.65}px, ${deltaY*0.65}px) scale(${Math.max(finalScale,0.45)})`, opacity:.85, offset:.55 },
+    { transform:`translate(${deltaX}px, ${deltaY}px) scale(${finalScale})`, opacity:0, offset:1 }
+  ], { duration:520, easing:"cubic-bezier(.3,0,.55,1)" });
+  anim.onfinish = () => {
+    clone.remove();
+    stashFab.classList.add("pulse");
+    setTimeout(()=>stashFab.classList.remove("pulse"), 450);
+  };
 }
 /* Klappt genau die Einklapp-Gruppe(n) auf, die die Ziel-Kachel gerade verstecken - dieselbe
    Segmentierungslogik wie in renderRoutes() (erledigte Blöcke per Index-Chunk, manuell zurückgestellte
@@ -7543,7 +7594,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="stats">
     <div class="stat"><div class="n">23</div><div class="l">Editionen</div></div>
     <div class="stat"><div class="n">1075</div><div class="l">Pokémon-Arten</div></div>
-    <div class="stat"><div class="n">56</div><div class="l">Versions&shy;stände</div></div>
+    <div class="stat"><div class="n">57</div><div class="l">Versions&shy;stände</div></div>
     <div class="stat"><div class="n">Gen 1–9</div><div class="l">Abgedeckt</div></div>
   </div>
 
@@ -7553,6 +7604,20 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.54</span><span class="tag tag-feat">Neu</span></div>
+      <h3>Flug-Animation beim Zurückstellen einer Kachel</h3>
+      <p>Tippt man das Einklapp-Symbol auf einer noch offenen Kachel an ("später fangbar"
+      zurückstellen), fliegt jetzt sichtbar eine Kopie der Kachel zum Lesezeichen-Button (der
+      Schnellzugriff auf zurückgestellte Standorte aus v1.9.53) und schrumpft dabei auf dessen
+      Größe - Nutzerfeedback: vorher verschwand die Kachel kommentarlos aus der Liste, ohne dass
+      erkennbar war, wohin sie verschwindet bzw. dass es diesen neuen Button überhaupt gibt. Analog
+      zur bestehenden Orden-Feier-Animation (Start-/Zielposition per FLIP-Technik interpoliert), aber
+      bewusst kürzer und schlichter, da reine Bestätigung statt Feier-Moment. Der Button pulsiert kurz
+      bei Ankunft. Respektiert wie alle anderen Animationen der App die
+      "Bewegung reduzieren"-Systemeinstellung.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.53</span><span class="tag tag-fix">Fix</span></div>
@@ -8975,7 +9040,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.53.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.54.</footer>
 
 </div>`;
 
@@ -10144,8 +10209,12 @@ document.addEventListener("click", e=>{
   else if(act==="toggle-loc-manual-collapse"){
     const list = state.manualCollapsedLocs || (state.manualCollapsedLocs=[]);
     const idx = list.indexOf(id);
-    if(idx===-1) list.push(id); else list.splice(idx,1);
-    saveState(); render();
+    const collapsing = idx===-1;
+    const cardEl = collapsing ? t.closest("[data-loc]") : null;
+    if(collapsing) list.push(id); else list.splice(idx,1);
+    saveState();
+    if(cardEl) flyTileToStash(cardEl);
+    render();
   }
   else if(act==="toggle-loc-stash-collapse"){
     const key = t.dataset.region;
