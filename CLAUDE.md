@@ -212,6 +212,24 @@ jederzeit hier in `CLAUDE.md` + Git-Historie rekonstruierbar, siehe Rest dieser 
   `files`-Parameter mitgegeben werden muss (nicht Teil der automatischen `inline-sprites.js`-
   Pipeline). Ausweitung auf weitere Editionen/Regionen bewusst zurückgestellt, bis dieser Prototyp
   gegengecheckt ist.
+  **Kalibrierungsmodus (seit v1.9.56):** Nutzerfeedback zu den v1.9.55-Koordinaten war "wirken kreuz
+  und quer" — eine gezielte Recherche nach einer beschrifteten Referenz für die Let's-Go-Kartenansicht
+  (welcher der 18 sichtbaren Wegpunkte welcher Stadt entspricht) blieb ergebnislos, weder Bulbapedia
+  noch gängige Walkthrough-/Guide-Seiten dokumentieren das. Zuverlässiges Erraten ist von hier aus
+  also nicht möglich — einzige verbleibende Option: der Nutzer selbst tippt die Punkte, da nur er die
+  Karte visuell erkennen kann. Button "Punkte selbst kalibrieren" (nur im Kartengrafik-Modus,
+  `calibrationActive`/`calibrationIndex`/`calibrationPoints`, `mapCalibrationHtml()`) führt einmal
+  durch alle Standortnamen der aktuellen Edition in `REGION_MAPS[...].points`-Reihenfolge; Antippen
+  der Karte (`data-act="calibration-tap"`, Klick-Koordinate relativ zur `getBoundingClientRect()` des
+  Kartencontainers in Prozent umgerechnet) setzt die Position für den gerade angezeigten Namen,
+  Zurück/Überspringen möglich. Fortschritt wird NICHT im normalen Speicherstand (`state`) abgelegt,
+  sondern in einem eigenen `localStorage`-Fach `nuzlocke-map-calibration-<edition-id>` — übersteht
+  damit einen versehentlichen Reload, ohne Spielstand-Daten zu berühren. Am Ende erscheint ein
+  fertiges, direkt in `REGION_MAPS` einfügbares Objekt-Literal zum Kopieren in einem Textfeld. Reines
+  Entwickler-/Einmalwerkzeug für die Kanto-Kalibrierung, kein für den normalen Nuzlocke-Alltag
+  gedachtes Feature — nach erfolgreicher Kalibrierung nicht zwingend entfernen (schadet nicht, könnte
+  bei künftiger Ausweitung auf weitere Editionen/Kartenbilder wiederverwendet werden), aber auch nicht
+  aktiv bewerben.
 
 ## Deutsche Namen — bekannte Stolperfallen
 

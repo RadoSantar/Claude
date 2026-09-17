@@ -3907,7 +3907,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.55";
+const APP_VERSION = "1.9.56";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -5296,6 +5296,56 @@ const REGION_MAPS = {
   }
 };
 let mapViewMode = "artwork";
+
+/* Kalibrierungsmodus (seit v1.9.56): Werkzeug für den Nutzer selbst, um die Klickpunkt-Koordinaten
+   in REGION_MAPS[...].points von Hand zu setzen, statt sie erraten zu müssen - das Kartenbild trägt
+   keine Beschriftungen, also kann nur jemand, der die Karte visuell erkennt (der Nutzer, nicht die
+   Recherche), die Punkte zuverlässig platzieren. Läuft NICHT über den normalen Speicherstand
+   (state), sondern über ein eigenes localStorage-Fach pro Edition, damit ein Reload während der
+   Kalibrierung keine Fortschritte verliert, ohne die Spielstand-Daten zu berühren. */
+let calibrationActive = false;
+let calibrationIndex = 0;
+let calibrationPoints = {};
+function refreshMapSheet(){
+  sheetEl.innerHTML = `<div class="sheet-handle-bar"><div class="sheet-handle"></div></div><div class="sheet-body">${regionMapSheetHtml()}</div>`;
+}
+function mapCalibrationHtml(gameId){
+  const map = REGION_MAPS[gameId];
+  const names = Object.keys(map.points);
+  const total = names.length;
+  if(calibrationIndex >= total){
+    const lines = names.map(n=>{
+      const p = calibrationPoints[n] || map.points[n];
+      return `      "${n}":[${p[0]},${p[1]}]`;
+    }).join(",\n");
+    return `
+      <p class="loc-sub" style="margin-bottom:10px;">Alle ${total} Punkte gesetzt. Text unten kopieren und schicken - wird direkt in <code>REGION_MAPS</code> übernommen.</p>
+      <textarea id="calibrationExport" readonly style="width:100%;min-height:240px;font-family:var(--font-mono);font-size:.7rem;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--surface-alt);color:var(--ink);">{\n${lines}\n    }</textarea>
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <button class="btn btn-secondary" data-act="calibration-restart">Neu starten</button>
+        <button class="btn btn-primary" data-act="calibration-exit">Fertig</button>
+      </div>
+    `;
+  }
+  const name = names[calibrationIndex];
+  const donePins = names.slice(0, calibrationIndex).map(n=>{
+    const p = calibrationPoints[n];
+    if(!p) return "";
+    return `<span class="map-pin done" style="left:${p[0]}%; top:${p[1]}%;" title="${escapeHtml(n)}"></span>`;
+  }).join("");
+  return `
+    <p class="loc-sub" style="margin-bottom:10px;">Punkt ${calibrationIndex+1} von ${total} - auf der Karte antippen, wo <strong>${escapeHtml(name)}</strong> liegt.</p>
+    <div class="artwork-map" data-act="calibration-tap">
+      <img src="${map.image}" alt="Kalibrierung" />
+      ${donePins}
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+      <button class="btn btn-secondary" data-act="calibration-back" ${calibrationIndex===0?"disabled":""}>Zurück</button>
+      <button class="btn btn-secondary" data-act="calibration-skip">Überspringen</button>
+      <button class="btn btn-ghost" data-act="calibration-exit">Abbrechen</button>
+    </div>
+  `;
+}
 function regionMapNodes(region){
   const currentId = effectiveCurrentLocId();
   return state.locations.filter(l=>l.region===region).map(l=>({
@@ -5323,13 +5373,17 @@ function regionMapSheetHtml(){
   const game = currentGame();
   const map = REGION_MAPS[game.id];
   const region = map ? map.region : (game.regions[0] && game.regions[0][0]);
+  if(calibrationActive && map){
+    return `<h3>${escapeHtml(region||"")}-Karte kalibrieren</h3>${mapCalibrationHtml(game.id)}`;
+  }
   const modeToggle = map ? `<div class="map-mode-toggle">
     <button class="btn ${mapViewMode==="artwork"?"btn-primary":"btn-secondary"}" data-act="set-map-mode" data-id="artwork">Kartengrafik</button>
     <button class="btn ${mapViewMode==="schema"?"btn-primary":"btn-secondary"}" data-act="set-map-mode" data-id="schema">Schema</button>
   </div>` : "";
   const note = map ? `<div class="loc-sub" style="margin-bottom:10px;">Prototyp: die Klickpunkte auf der Kartengrafik sind ein nach Spielwissen platzierter Entwurf (die Kartengrafik selbst trägt keine Beschriftung) - Rückmeldung zu falsch sitzenden Punkten gerne melden.</div>` : "";
   const body = (map && mapViewMode==="artwork") ? artworkMapHtml(game.id) : schemaMapHtml(region);
-  return `<h3>${escapeHtml(region||"")}-Karte</h3>${note}${modeToggle}<div id="regionMapBody">${body}</div>`;
+  const calibrateBtn = (map && mapViewMode==="artwork") ? `<button class="btn btn-ghost" data-act="calibration-start" style="margin-top:10px;">Punkte selbst kalibrieren</button>` : "";
+  return `<h3>${escapeHtml(region||"")}-Karte</h3>${note}${modeToggle}<div id="regionMapBody">${body}</div>${calibrateBtn}`;
 }
 function openRegionMapSheet(){
   openSheet(regionMapSheetHtml());
@@ -7599,7 +7653,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="stats">
     <div class="stat"><div class="n">23</div><div class="l">Editionen</div></div>
     <div class="stat"><div class="n">1075</div><div class="l">Pokémon-Arten</div></div>
-    <div class="stat"><div class="n">58</div><div class="l">Versions&shy;stände</div></div>
+    <div class="stat"><div class="n">59</div><div class="l">Versions&shy;stände</div></div>
     <div class="stat"><div class="n">Gen 1–9</div><div class="l">Abgedeckt</div></div>
   </div>
 
@@ -7609,6 +7663,22 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.56</span><span class="tag tag-feat">Neu</span></div>
+      <h3>Kartenpunkte selbst kalibrieren</h3>
+      <p>Nutzerfeedback zu v1.9.55: die per Spielwissen/Pixelclustering geratenen Klickpunkte auf der
+      Kanto-Kartengrafik wirken "kreuz und quer". Recherche nach einer beschrifteten Referenz für die
+      Let's-Go-Kartenansicht blieb ergebnislos (weder Bulbapedia noch Walkthrough-Seiten dokumentieren,
+      welcher Wegpunkt welcher Stadt entspricht) - ein zuverlässiges Erraten ist von hier aus also
+      nicht möglich. Stattdessen neuer Button "Punkte selbst kalibrieren" im Kartengrafik-Modus: führt
+      einmal durch alle 49 Standortnamen der aktuellen Edition, ein Antippen auf der Karte setzt die
+      Position für den jeweils angezeigten Namen (Zurück/Überspringen möglich), am Ende steht ein
+      fertiges, direkt einfügbares <code>REGION_MAPS</code>-Textfeld zum Kopieren bereit. Fortschritt
+      wird pro Edition in einem eigenen localStorage-Fach zwischengespeichert (nicht Teil des
+      Spielstands), übersteht also einen versehentlichen Reload. Reines Kalibrierungswerkzeug, kein
+      Feature für den normalen Nuzlocke-Alltag.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.55</span><span class="tag tag-fix">Fix</span></div>
@@ -9064,7 +9134,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.55.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.56.</footer>
 
 </div>`;
 
@@ -10587,7 +10657,52 @@ document.addEventListener("click", e=>{
   }
   else if(act==="set-map-mode"){
     mapViewMode = id;
-    sheetEl.innerHTML = `<div class="sheet-handle-bar"><div class="sheet-handle"></div></div><div class="sheet-body">${regionMapSheetHtml()}</div>`;
+    refreshMapSheet();
+  }
+  else if(act==="calibration-start"){
+    const game = currentGame();
+    calibrationActive = true;
+    calibrationIndex = 0;
+    calibrationPoints = {};
+    try{
+      const saved = localStorage.getItem("nuzlocke-map-calibration-"+game.id);
+      if(saved) calibrationPoints = JSON.parse(saved);
+    }catch(err){}
+    refreshMapSheet();
+  }
+  else if(act==="calibration-tap"){
+    const rect = t.getBoundingClientRect();
+    const x = Math.round(Math.max(0, Math.min(100, (e.clientX-rect.left)/rect.width*100))*10)/10;
+    const y = Math.round(Math.max(0, Math.min(100, (e.clientY-rect.top)/rect.height*100))*10)/10;
+    const game = currentGame();
+    const map = REGION_MAPS[game.id];
+    const names = Object.keys(map.points);
+    const name = names[calibrationIndex];
+    if(name){
+      calibrationPoints[name] = [x,y];
+      try{ localStorage.setItem("nuzlocke-map-calibration-"+game.id, JSON.stringify(calibrationPoints)); }catch(err){}
+      calibrationIndex++;
+    }
+    refreshMapSheet();
+  }
+  else if(act==="calibration-skip"){
+    calibrationIndex++;
+    refreshMapSheet();
+  }
+  else if(act==="calibration-back"){
+    if(calibrationIndex>0) calibrationIndex--;
+    refreshMapSheet();
+  }
+  else if(act==="calibration-restart"){
+    const game = currentGame();
+    calibrationIndex = 0;
+    calibrationPoints = {};
+    try{ localStorage.removeItem("nuzlocke-map-calibration-"+game.id); }catch(err){}
+    refreshMapSheet();
+  }
+  else if(act==="calibration-exit"){
+    calibrationActive = false;
+    refreshMapSheet();
   }
   else if(act==="jump-to-location-result"){
     closeSheet();
