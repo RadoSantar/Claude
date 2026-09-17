@@ -131,6 +131,33 @@ jederzeit hier in `CLAUDE.md` + Git-Historie rekonstruierbar, siehe Rest dieser 
   pro Standort. Das Auf-/Zuklappen selbst läuft über direkte DOM-Klassenumschaltung (nicht per
   Voll-Render), damit die `.collapsible-body`-Grid-Animation (`grid-template-rows`, absichtlich
   langsam/weich, s. CSS) sichtbar bleibt statt durch einen Re-Render übersprungen zu werden.
+- **Standort-Suche (seit v1.9.51):** Lupen-FAB im Routen-Tab öffnet ein Sheet
+  (`openLocationSearchSheet()`), Live-Ergebnisliste (`locationSearchResultsHtml()`) respektiert
+  bestehende Sichtbarkeits-Filter (`hiddenRegions`, `hidePostgame`). Antippen eines Treffers
+  (`data-act="jump-to-location-result"`) klappt via `expandCollapseGroupsForLocation()` bei Bedarf die
+  richtige Einklapp-Gruppe auf (repliziert dafür einmalig die Tile-Chunking-Logik aus `renderRoutes()`
+  für die eine betroffene Region), rendert neu, scrollt zur Kachel und hebt sie kurz farbig hervor
+  (`.search-highlight`, nutzt `--evolve-glow` nur als generischen Aufmerksamkeits-Farbton).
+- **Regions-Karte, PROTOTYP nur Rot/Blau (seit v1.9.52):** dritter FAB (`mapFab`), nur sichtbar wenn
+  `REGION_MAPS[currentGame().id]` existiert. Zwei Ansichten in einem Sheet umschaltbar
+  (`mapViewMode`, `regionMapSheetHtml()`): "Kartengrafik" (echtes Bulbagarden-Archiv-Artwork,
+  `sprites/maps/kanto-rby-artwork.png`, Standorte als absolut positionierte `%`-Punkte via
+  `REGION_MAPS["rot-blau"].points`) und "Schema" (reine Listenansicht, Positionen direkt aus der
+  Standort-Reihenfolge abgeleitet, kein Platzierungsrisiko). Beide nutzen zum Sprung denselben
+  `jump-to-location-result`-Mechanismus wie die Standort-Suche (volle Wiederverwendung).
+  **Wichtige Einschränkung, nicht vergessen:** die Rot/Blau-Artwork selbst hat KEINE
+  Text-Beschriftungen — die 49 Klickpunkt-Koordinaten in `REGION_MAPS["rot-blau"].points` sind ein
+  erster Entwurf nach recherchiertem Kanto-Spielwissen (Konnektivität aus dem Reihenfolge-
+  Rechercheaudit), NICHT anhand im Bild ablesbarer Beschriftungen verifiziert — nur zwei Landmarken
+  sind visuell wirklich sicher (Zinnoberinsel = die Vulkaninsel unten links, Orania City = die Stadt
+  beim sichtbaren Schiff). Nutzer-Feedback zu falsch sitzenden Punkten einholen und Koordinaten dann
+  gezielt nachjustieren, nicht als fertig/korrekt verkaufen. Bild wurde bewusst nicht in `sprites/`
+  über `extract-sprites.js` eingebunden (das Tool kennt nur die vier Sprite-Konstanten) — liegt
+  stattdessen als eigene reale Datei unter `sprites/maps/`, die `build-netlify-zip.js` automatisch
+  mitkopiert (kopiert den ganzen `sprites/`-Ordner rekursiv) und die beim nächsten Artifact-Publish
+  zusätzlich über den `files`-Parameter mitgegeben werden muss (nicht Teil der automatischen
+  `inline-sprites.js`-Pipeline). Ausweitung auf weitere Editionen/Regionen bewusst zurückgestellt,
+  bis dieser Prototyp gegengecheckt ist.
 
 ## Deutsche Namen — bekannte Stolperfallen
 
