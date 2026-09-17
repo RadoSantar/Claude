@@ -3907,7 +3907,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.54";
+const APP_VERSION = "1.9.55";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -5260,33 +5260,38 @@ function expandCollapseGroupsForLocation(targetId){
 }
 
 /* ---------- Region-Karte (Prototyp, bisher nur Rot/Blau) ----------
-   Zwei Darstellungsarten: eine echte, aus dem Bulbagarden-Archiv stammende Kartengrafik (Rot/Blau-
-   Artwork, hat selbst KEINE Text-Beschriftungen - die Klickpunkt-Positionen unten sind deshalb ein
-   erster Entwurf nach Spielwissen/Konnektivität aus dem Reihenfolge-Rechercheaudit, keine an im Bild
-   ablesbaren Beschriftungen verifizierte Platzierung) und eine rein datengetriebene "Schema"-Ansicht
-   (Positionen einfach aus der bestehenden Standort-Reihenfolge abgeleitet, kein Recherche-/
-   Platzierungsrisiko). REGION_MAPS ist nach GAMES-Edition-ID geschlüsselt statt nach Regionname, da
-   sich dieselbe Region über mehrere Editionen hinweg unterschiedlich zeichnen lässt (z.B. Kanto in
-   Rot/Blau vs. FeuerRot/BlattGrün) - fehlt ein Eintrag für die aktuelle Edition, wird nur die
-   Schema-Ansicht angeboten. */
+   Zwei Darstellungsarten: eine echte, aus dem Bulbagarden-Archiv stammende Kartengrafik (seit
+   v1.9.55: die zusammengesetzte Ingame-Kartenansicht aus Pokémon: Let's Go, Pikachu!/Evoli! -
+   ersetzt die vorherige gemalte Rot/Blau-Illustration, die als "unübersichtlich" empfunden wurde;
+   echte Spielkacheln statt Gemälde, aber selbst ebenfalls KEINE Text-Beschriftungen - die
+   Klickpunkt-Positionen unten sind deshalb weiterhin ein Entwurf nach Spielwissen/Konnektivität,
+   diesmal zusätzlich an den 18 tatsächlich im Bild sichtbaren Wegpunkt-Symbolen ausgerichtet
+   [per Pixelfarb-Clustering ermittelt], nicht an im Bild ablesbaren Beschriftungen verifiziert -
+   siehe CLAUDE.md für Details und die bewusst identischen Koordinaten für Standorte, die im Spiel
+   zweimal besucht werden) und eine rein datengetriebene "Schema"-Ansicht (Positionen einfach aus
+   der bestehenden Standort-Reihenfolge abgeleitet, kein Recherche-/Platzierungsrisiko).
+   REGION_MAPS ist nach GAMES-Edition-ID geschlüsselt statt nach Regionname, da sich dieselbe Region
+   über mehrere Editionen hinweg unterschiedlich zeichnen lässt (z.B. Kanto in Rot/Blau vs.
+   FeuerRot/BlattGrün) - fehlt ein Eintrag für die aktuelle Edition, wird nur die Schema-Ansicht
+   angeboten. */
 const REGION_MAPS = {
   "rot-blau": {
     region: "Kanto",
-    image: "sprites/maps/kanto-rby-artwork.png",
+    image: "sprites/maps/kanto-lgpe-map.png",
     points: {
-      "Alabastia":[18,68], "Route 1":[20,60], "Vertania City":[18,50], "Route 22":[8,48],
-      "Route 2":[20,40], "Vertania-Wald":[22,32], "Marmoria City":[25,22], "Route 3":[32,16],
-      "Mondberg":[40,10], "Route 4":[50,14], "Azuria City":[55,18], "Route 24":[56,9],
-      "Route 25":[62,7], "Route 5":[54,28], "Unterführung":[52,34], "Route 6":[52,42],
-      "Orania City":[55,52], "Route 11":[62,50], "Digdas Höhle":[30,46], "Route 9":[62,30],
-      "Route 10":[66,32], "Felstunnel":[68,34], "Lavandia":[72,36], "Pokémon-Turm":[74,33],
-      "Route 12":[70,44], "Route 13":[68,50], "Route 14":[66,56], "Route 15":[64,62],
-      "Route 8":[62,38], "Route 7":[48,40], "Prismania City":[40,42], "Saffronia City":[52,40],
-      "Route 16":[42,50], "Route 17":[44,58], "Route 18":[48,64], "Fuchsania City":[55,66],
-      "Route 19":[50,74], "Route 20":[40,78], "Seeschauminseln":[28,80], "Zinnoberinsel":[20,88],
-      "Pokémon-Villa":[20,84], "Route 21":[14,76], "Kraftwerk":[58,26], "Vertania-Arena":[16,52],
-      "Route 22 (Rückweg)":[9,50], "Route 23":[5,40], "Siegesstraße":[8,25], "Pokémon-Liga":[12,12],
-      "Azuria-Höhle":[58,20]
+      "Alabastia":[14.3,88.6], "Route 1":[14.1,84.4], "Vertania City":[14.0,50.0], "Route 22":[14.0,33.5],
+      "Route 2":[18.2,38.9], "Vertania-Wald":[22.4,27.8], "Marmoria City":[26.6,16.7], "Route 3":[29.7,16.7],
+      "Mondberg":[32.8,16.7], "Route 4":[35.9,16.7], "Azuria City":[39.1,16.7], "Route 24":[45.3,19.6],
+      "Route 25":[51.6,22.6], "Route 5":[39.1,26.3], "Unterführung":[39.1,36.0], "Route 6":[39.1,45.6],
+      "Orania City":[39.2,55.3], "Route 11":[41.3,51.6], "Digdas Höhle":[43.3,48.0], "Route 9":[45.3,44.3],
+      "Route 10":[47.3,40.7], "Felstunnel":[49.4,37.0], "Lavandia":[51.4,33.3], "Pokémon-Turm":[51.7,32.2],
+      "Route 12":[48.4,44.4], "Route 13":[43.8,52.8], "Route 14":[37.5,55.6], "Route 15":[32.8,52.8],
+      "Route 8":[43.8,27.8], "Route 7":[34.4,27.8], "Prismania City":[29.7,33.3], "Saffronia City":[39.1,33.3],
+      "Route 16":[37.5,44.5], "Route 17":[35.9,55.7], "Route 18":[34.4,66.9], "Fuchsania City":[32.8,78.1],
+      "Route 19":[28.1,84.7], "Route 20":[23.4,90.3], "Seeschauminseln":[18.8,93.1], "Zinnoberinsel":[14.1,95.8],
+      "Pokémon-Villa":[11.7,93.8], "Route 21":[17.2,91.7], "Kraftwerk":[49.2,41.7], "Vertania-Arena":[14.0,50.0],
+      "Route 22 (Rückweg)":[14.0,33.5], "Route 23":[7.8,27.8], "Siegesstraße":[14.1,22.4], "Pokémon-Liga":[8.0,17.1],
+      "Azuria-Höhle":[40.6,13.2]
     }
   }
 };
@@ -5322,7 +5327,7 @@ function regionMapSheetHtml(){
     <button class="btn ${mapViewMode==="artwork"?"btn-primary":"btn-secondary"}" data-act="set-map-mode" data-id="artwork">Kartengrafik</button>
     <button class="btn ${mapViewMode==="schema"?"btn-primary":"btn-secondary"}" data-act="set-map-mode" data-id="schema">Schema</button>
   </div>` : "";
-  const note = map ? `<div class="loc-sub" style="margin-bottom:10px;">Prototyp: die Klickpunkte auf der Kartengrafik sind ein erster, nach Spielwissen platzierter Entwurf (die Original-Illustration selbst trägt keine Beschriftung) - Rückmeldung zu falsch sitzenden Punkten gerne melden.</div>` : "";
+  const note = map ? `<div class="loc-sub" style="margin-bottom:10px;">Prototyp: die Klickpunkte auf der Kartengrafik sind ein nach Spielwissen platzierter Entwurf (die Kartengrafik selbst trägt keine Beschriftung) - Rückmeldung zu falsch sitzenden Punkten gerne melden.</div>` : "";
   const body = (map && mapViewMode==="artwork") ? artworkMapHtml(game.id) : schemaMapHtml(region);
   return `<h3>${escapeHtml(region||"")}-Karte</h3>${note}${modeToggle}<div id="regionMapBody">${body}</div>`;
 }
@@ -7594,7 +7599,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="stats">
     <div class="stat"><div class="n">23</div><div class="l">Editionen</div></div>
     <div class="stat"><div class="n">1075</div><div class="l">Pokémon-Arten</div></div>
-    <div class="stat"><div class="n">57</div><div class="l">Versions&shy;stände</div></div>
+    <div class="stat"><div class="n">58</div><div class="l">Versions&shy;stände</div></div>
     <div class="stat"><div class="n">Gen 1–9</div><div class="l">Abgedeckt</div></div>
   </div>
 
@@ -7604,6 +7609,25 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.55</span><span class="tag tag-fix">Fix</span></div>
+      <h3>Regions-Karte: gemalte Rot/Blau-Illustration durch echte Ingame-Kartenansicht ersetzt</h3>
+      <p>Nutzerfeedback zum Artwork-Kartenprototyp aus v1.9.52: die gemalte Bulbapedia-Illustration
+      wirkte unübersichtlich. Ersetzt durch die Kartengrafik aus <em>Pokémon: Let's Go, Pikachu!/
+      Evoli!</em> (ebenfalls Bulbagarden Archives, "Kanto Town Map PE.png", 1280×720) - eine echte,
+      aus Spielkacheln zusammengesetzte Kartenansicht statt eines Gemäldes, klarer lesbar (schlichte
+      beige Straßen auf grünem Terrain). Die 49 Klickpunkte wurden komplett neu platziert: anhand der
+      18 im Bild tatsächlich sichtbaren Wegpunkt-Symbole (per automatisiertem Pixelfarb-Clustering
+      gefunden, keine Texbeschriftungen im Bild vorhanden) grob nach Kanto-Spielwissen zugeordnet,
+      Routen dazwischen linear interpoliert. Standorte, die im Spiel zweimal besucht werden (Vertania
+      City/-Arena, Route 22/Route 22 (Rückweg)), bekommen dabei bewusst identische Koordinaten statt
+      zweier benachbarter Punkte. <strong>Wie beim vorherigen Kartenbild weiterhin unverifiziert</strong>
+      - Let's Go vereinfacht Kantos Streckenführung gegenüber Rot/Blau zudem spürbar (u. a. keine
+      getrennte Route-22/23-Struktur, zusammengelegte Wegabschnitte), die Zuordnung ist also bewusst
+      stilisiert/ungefähr, nicht pixelgenau verifiziert. Nutzer-Feedback weiterhin nötig, siehe
+      CLAUDE.md.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.54</span><span class="tag tag-feat">Neu</span></div>
@@ -9040,7 +9064,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.54.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.55.</footer>
 
 </div>`;
 

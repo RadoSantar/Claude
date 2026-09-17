@@ -167,26 +167,51 @@ jederzeit hier in `CLAUDE.md` + Git-Historie rekonstruierbar, siehe Rest dieser 
   richtige Einklapp-Gruppe auf (repliziert dafür einmalig die Tile-Chunking-Logik aus `renderRoutes()`
   für die eine betroffene Region), rendert neu, scrollt zur Kachel und hebt sie kurz farbig hervor
   (`.search-highlight`, nutzt `--evolve-glow` nur als generischen Aufmerksamkeits-Farbton).
-- **Regions-Karte, PROTOTYP nur Rot/Blau (seit v1.9.52):** dritter FAB (`mapFab`), nur sichtbar wenn
-  `REGION_MAPS[currentGame().id]` existiert. Zwei Ansichten in einem Sheet umschaltbar
-  (`mapViewMode`, `regionMapSheetHtml()`): "Kartengrafik" (echtes Bulbagarden-Archiv-Artwork,
-  `sprites/maps/kanto-rby-artwork.png`, Standorte als absolut positionierte `%`-Punkte via
-  `REGION_MAPS["rot-blau"].points`) und "Schema" (reine Listenansicht, Positionen direkt aus der
-  Standort-Reihenfolge abgeleitet, kein Platzierungsrisiko). Beide nutzen zum Sprung denselben
-  `jump-to-location-result`-Mechanismus wie die Standort-Suche (volle Wiederverwendung).
-  **Wichtige Einschränkung, nicht vergessen:** die Rot/Blau-Artwork selbst hat KEINE
-  Text-Beschriftungen — die 49 Klickpunkt-Koordinaten in `REGION_MAPS["rot-blau"].points` sind ein
-  erster Entwurf nach recherchiertem Kanto-Spielwissen (Konnektivität aus dem Reihenfolge-
-  Rechercheaudit), NICHT anhand im Bild ablesbarer Beschriftungen verifiziert — nur zwei Landmarken
-  sind visuell wirklich sicher (Zinnoberinsel = die Vulkaninsel unten links, Orania City = die Stadt
-  beim sichtbaren Schiff). Nutzer-Feedback zu falsch sitzenden Punkten einholen und Koordinaten dann
-  gezielt nachjustieren, nicht als fertig/korrekt verkaufen. Bild wurde bewusst nicht in `sprites/`
-  über `extract-sprites.js` eingebunden (das Tool kennt nur die vier Sprite-Konstanten) — liegt
-  stattdessen als eigene reale Datei unter `sprites/maps/`, die `build-netlify-zip.js` automatisch
-  mitkopiert (kopiert den ganzen `sprites/`-Ordner rekursiv) und die beim nächsten Artifact-Publish
-  zusätzlich über den `files`-Parameter mitgegeben werden muss (nicht Teil der automatischen
-  `inline-sprites.js`-Pipeline). Ausweitung auf weitere Editionen/Regionen bewusst zurückgestellt,
-  bis dieser Prototyp gegengecheckt ist.
+- **Regions-Karte, PROTOTYP nur Rot/Blau (seit v1.9.52, Kartenbild ausgetauscht in v1.9.55):**
+  dritter FAB (`mapFab`), nur sichtbar wenn `REGION_MAPS[currentGame().id]` existiert. Zwei Ansichten
+  in einem Sheet umschaltbar (`mapViewMode`, `regionMapSheetHtml()`): "Kartengrafik" (Bulbagarden-
+  Archiv-Bild, Standorte als absolut positionierte `%`-Punkte via `REGION_MAPS["rot-blau"].points`)
+  und "Schema" (reine Listenansicht, Positionen direkt aus der Standort-Reihenfolge abgeleitet, kein
+  Platzierungsrisiko — dem Nutzer gefällt diese Ansicht bereits uneingeschränkt gut). Beide nutzen zum
+  Sprung denselben `jump-to-location-result`-Mechanismus wie die Standort-Suche (volle
+  Wiederverwendung).
+  **Bildwechsel v1.9.55:** die ursprüngliche gemalte Rot/Blau-Illustration (`RBY_Kanto.png`, ein
+  Puzzle-Artwork) wurde vom Nutzer als "unübersichtlich" zurückgemeldet. Ein vom Nutzer über Google
+  gefundenes Referenzbild stammte angeblich von pokeos.com — direkte Prüfung der genannten URL (API-
+  Endpunkt `/api/poke/encounters/location?location_id=799&version_group_id=7&lang=6`) ergab, dass
+  diese spezielle Seite tatsächlich Begegnungsdaten für "Wandert durch Kanto" (postgame Raikou/Entei-
+  Roaming) ist, kein Kartenbild — das gezeigte Bild kam also von woanders auf der Seite. Pokéos wurde
+  davon unabhängig als Quelle verworfen (kommerzielle, werbefinanzierte Seite mit Login/"Pro"-Stufe,
+  unklare Lizenz) — anders als Bulbapedia/Bulbagarden Archives, die für Fan-/Referenzzwecke gedacht
+  sind und bereits für alle anderen Assets dieses Projekts genutzt werden. Nutzer entschied per
+  Nachfrage: **Wiki-Archiv-Suche nach ähnlichem Stil**, nicht Pokéos, nicht Edition wechseln. Gefunden:
+  `Kanto Town Map PE.png` (Bulbagarden Archives, aus *Pokémon: Let's Go, Pikachu!/Evoli!*, 1280×720,
+  saubere kachelbasierte Ingame-Kartenansicht ohne UI-Text) — jetzt unter `sprites/maps/
+  kanto-lgpe-map.png`. Verworfene Alternativkandidaten: `FRLG_Kanto.png` (ebenfalls gemaltes
+  Puzzle-Artwork, keine Verbesserung), `Stadium 2 Pokédex map Kanto.png` (echtes Ingame-Rendering,
+  aber isometrische 3D-Perspektive mit eingebranntem UI-Text wie "PIDGEY's NEST"/"KANTO", dazu nur
+  Kartenausschnitt sichtbar — für Punktplatzierung ungeeignet), die klassischen `Kanto Town Map
+  RBY/RGBY/GSC.png`-Dateien (alle ≤160×144, zu grobpixelig).
+  **Wichtige Einschränkung, nicht vergessen:** auch das neue Bild hat KEINE Text-Beschriftungen. Die
+  18 tatsächlich im Bild sichtbaren Wegpunkt-Symbole wurden per automatisiertem Pixelfarb-Clustering
+  (Python/Pillow, Suche nach den kompakten weißen Marker-Kernen) lokalisiert — nur eines davon ist
+  visuell wirklich sicher identifizierbar (das große Säulengebäude oben links = Pokémon-Liga/Indigo-
+  Plateau, passt zur bekannten Nordwest-Lage). Die übrigen 17 wurden nach Kanto-Spielwissen/
+  Konnektivität zugeordnet, die restlichen der 49 Standorte linear zwischen den zugeordneten
+  Ankerpunkten interpoliert — **bewusst stilisiert/ungefähr, nicht pixelgenau verifiziert** (vom
+  Nutzer per Nachfrage ausdrücklich akzeptiert, da *Let's Go* Kantos Streckenführung gegenüber
+  Rot/Blau ohnehin vereinfacht, z.B. keine getrennte Route-22/23-Struktur). Standorte, die im Spiel
+  zweimal besucht werden (Vertania City/-Arena; Route 22/Route 22 (Rückweg)), bekommen bewusst
+  IDENTISCHE Koordinaten statt zweier benachbarter Punkte — spiegelt korrekt wider, dass es sich um
+  denselben Ort handelt. Nutzer-Feedback zu falsch sitzenden Punkten weiterhin einholen und
+  Koordinaten dann gezielt nachjustieren, nicht als fertig/korrekt verkaufen.
+  Bild liegt (wie schon das vorherige) bewusst nicht in `sprites/` über `extract-sprites.js`
+  eingebunden (das Tool kennt nur die vier Sprite-Konstanten) — liegt stattdessen als eigene reale
+  Datei unter `sprites/maps/`, die `build-netlify-zip.js` automatisch mitkopiert (kopiert den ganzen
+  `sprites/`-Ordner rekursiv) und die beim nächsten Artifact-Publish zusätzlich über den
+  `files`-Parameter mitgegeben werden muss (nicht Teil der automatischen `inline-sprites.js`-
+  Pipeline). Ausweitung auf weitere Editionen/Regionen bewusst zurückgestellt, bis dieser Prototyp
+  gegengecheckt ist.
 
 ## Deutsche Namen — bekannte Stolperfallen
 
