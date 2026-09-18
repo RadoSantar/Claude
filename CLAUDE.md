@@ -461,6 +461,49 @@ jederzeit hier in `CLAUDE.md` + Git-Historie rekonstruierbar, siehe Rest dieser 
   leicht verwechselt werden - mehr Abstand zwischen Elementen (was reines Scale-up einer Karte mit
   fixgrößigen Overlay-Elementen liefert) ist nicht dasselbe wie größere Antipp-Ziele für die
   Elemente selbst; bei UI mit fixgrößigen Overlays auf einer skalierten Fläche beides einzeln prüfen.
+  **Routen als Klickflächen statt Einzelpunkte (seit v1.9.76):** Nutzeridee im Anschluss an die
+  Antipp-Ziel-Vergrößerung oben - statt jede Route auf einen einzelnen Punkt zu reduzieren, sollen die
+  vier Ecken einer Route abgetippt werden, sodass die GANZE Route als Klickfläche reagiert. Sonderorte
+  (Städte, Höhlen, Türme - alles ohne `"Route "`-Namenspräfix) bleiben bewusst einzelne Punkte, da sie
+  im echten Spiel kompakte, punktförmige Ziele sind, keine langen Pfade. Nutzer entschied sich explizit
+  für die aufwändigere 4-Ecken-Variante statt der einfacheren, zuvor vorgeschlagenen 2-Tap-Variante
+  (Anfang+Ende, automatisch abgeleitetes schmales Rechteck) - mehr Kalibrierungsaufwand pro Route,
+  dafür präzisere Passform auch bei winkligen/breiten Routen.
+  **Datenmodell:** `REGION_MAPS[...].points[name]` akzeptiert jetzt zwei Formen - ein Array `[x,y]`
+  (Punkt, wie bisher, unverändert für alle bereits kalibrierten Orte) ODER ein Objekt
+  `{quad:[[x1,y1],[x2,y2],[x3,y3],[x4,y4]]}` (Vierergebiet, Eckreihenfolge egal). Alle drei Konsumenten
+  (`artworkMapHtml()`, `mapCalibrationHtml()`, der `calibration-tap`-Handler) unterscheiden per
+  `Array.isArray(...)`, welche Form vorliegt - reine additive Erweiterung, kein bestehender kalibrierter
+  Punkt musste migriert werden.
+  **Rendering:** eine Fläche wird als `<button class="map-quad">` mit `position:absolute; inset:0`
+  (nimmt die komplette Kartenfläche ein) plus `clip-path: polygon(${Ecken}%)` gerendert - `clip-path`
+  beschränkt in allen modernen Browsern nicht nur die sichtbare Füllung, sondern auch den Klick-/
+  Antipp-Bereich selbst auf die tatsächliche Polygonform, nicht nur die (unsichtbare) Bounding-Box
+  drumherum. Per Playwright mit einer absichtlich windschiefen Testform (Raute statt Rechteck)
+  verifiziert: ein Tap in einer Bounding-Box-Ecke AUSSERHALB der Raute trifft daneben (fällt durch zum
+  `toggle-map-zoom` der Karte darunter), ein Tap in der Mitte der Raute trifft (springt zur Kachel,
+  hebt sie hervor) - bestätigt, dass die Formgenauigkeit nicht nur bei einfachen Rechtecken funktioniert.
+  **Wichtige Reihenfolge-Regel, direkt aus der Route-22-Lektion abgeleitet:** Flächen werden in
+  `artworkMapHtml()` IMMER vor Punkten ins HTML geschrieben, unabhängig von ihrer Reihenfolge in
+  `REGION_MAPS[...].points` - eine Fläche belegt denselben vollen `inset:0`-Container wie ein Punkt,
+  läge sie im DOM NACH einem Punkt, der zufällig innerhalb ihrer Ecken liegt (z.B. eine Stadt direkt an
+  einer Route), würde sie dessen Klicks abfangen. Dieselbe Lektion wie beim Kanto-Route-22-Vorfall
+  (spätere Elemente gewinnen bei sich überschneidenden absolut positionierten Klickzielen), nur diesmal
+  Fläche-über-Punkt statt Punkt-über-Punkt.
+  **Kalibrierungsmodus-Erweiterung:** `isRouteCalibrationName(name)` (reiner `"Route "`-Präfix-Check)
+  entscheidet, ob die aktuelle Kalibrierungs-Station 1 Tap (Punkt) oder 4 Taps (Fläche, gesammelt in
+  `calibrationQuadBuffer`) braucht. Eigener Fortschrittstext ("Ecke X von 4 für {Name}") statt "Punkt X
+  von Y", nummerierte Ecken-Marker (`.map-corner-dot`, farblich von den grauen "erledigt"-Markern
+  abgesetzt) zeigen die bereits getippten Ecken der LAUFENDEN Fläche. "Zurück" wird kontextabhängig zu
+  "Ecke zurück", solange die aktuelle Fläche noch unvollständig ist (nimmt dann nur die letzte Ecke aus
+  dem Buffer statt zur vorherigen Station zu springen) - bei leerem Buffer wie gehabt eine Station
+  zurück. "Überspringen"/"Neu starten" leeren den Buffer immer mit. Export-Textfeld formatiert Flächen
+  als `"Name":{quad:[[x,y],...]}`-Literal, direkt einfügbar in `REGION_MAPS`, exakt wie bisher bei
+  Punkten.
+  **Bewusst noch nicht umgesetzt:** die eigentliche Neukalibrierung der bestehenden Kanto-/Hoenn-Routen
+  auf das neue Flächen-Format - dieser Commit liefert nur den Mechanismus, echte Flächen-Koordinaten
+  folgen schrittweise, sobald der Nutzer Zeit für die (aufwändigere, 4-Tap-pro-Route) Kalibrierungs-
+  runde hat.
   **Kalibrierungsmodus (seit v1.9.56):** Nutzerfeedback zu den v1.9.55-Koordinaten war "wirken kreuz
   und quer" — eine gezielte Recherche nach einer beschrifteten Referenz für die Let's-Go-Kartenansicht
   (welcher der 18 sichtbaren Wegpunkte welcher Stadt entspricht) blieb ergebnislos, weder Bulbapedia

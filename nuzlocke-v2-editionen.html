@@ -1039,6 +1039,27 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 }
 .map-pin.done{ background:var(--good); border-color:var(--good); }
 .map-pin.current{ background:var(--accent); border-color:var(--accent); width:19px; height:19px; margin:-9px 0 0 -9px; }
+/* Flächen-Marker für Routen (seit v1.9.76, s. Kommentar bei calibrationQuadBuffer) - derselbe volle
+   `inset:0`-Button wie bei .map-quad-Instanzen üblich, `clip-path` beschränkt Füllung UND Klickbereich
+   auf die vier kalibrierten Ecken. `appearance:none` + zurückgesetzte Button-UA-Stile, da der Button
+   hier (anders als der winzige .map-pin) die komplette Kartenfläche einnimmt und sonst sichtbare
+   Standard-Button-Ränder/-Hintergrund über die ganze Karte legen würde (die aber ohnehin komplett
+   von clip-path verdeckt würden, aus Sauberkeitsgründen trotzdem zurückgesetzt). */
+.map-quad{
+  position:absolute; inset:0; width:100%; height:100%; margin:0; padding:0; border:none;
+  appearance:none; -webkit-appearance:none; background:rgba(var(--gold-glow),.32); cursor:pointer;
+}
+.map-quad.done{ background:rgba(var(--good-glow),.4); }
+.map-quad.current{ background:rgba(var(--gold-glow),.6); }
+/* Nummerierte Ecken-Marker während der Kalibrierung EINER Route (noch nicht abgeschlossen) - optisch
+   bewusst von den grauen "erledigt"-Markern (.map-pin.done/.map-quad.done) unterschieden, damit klar
+   ist: das hier ist der laufende Fortschritt der aktuell bearbeiteten Route, keine bereits fertige
+   Kachel. */
+.map-corner-dot{
+  position:absolute; width:18px; height:18px; margin:-9px 0 0 -9px; border-radius:50%;
+  background:var(--accent); color:#fff; font-size:.62rem; font-weight:800;
+  display:flex; align-items:center; justify-content:center; box-shadow:0 1px 3px rgba(0,0,0,.4);
+}
 .map-zoom-hint{
   position:absolute; right:8px; bottom:8px; width:26px; height:26px; border-radius:8px;
   background:rgba(20,16,10,.55); display:flex; align-items:center; justify-content:center;
@@ -3978,7 +3999,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.75";
+const APP_VERSION = "1.9.76";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -7808,12 +7829,36 @@ let mapViewMode = "artwork";
    keine Beschriftungen, also kann nur jemand, der die Karte visuell erkennt (der Nutzer, nicht die
    Recherche), die Punkte zuverlässig platzieren. Läuft NICHT über den normalen Speicherstand
    (state), sondern über ein eigenes localStorage-Fach pro Edition, damit ein Reload während der
-   Kalibrierung keine Fortschritte verliert, ohne die Spielstand-Daten zu berühren. */
+   Kalibrierung keine Fortschritte verliert, ohne die Spielstand-Daten zu berühren.
+   **Flächen statt Punkte für Routen (seit v1.9.76):** Nutzeridee - ein einzelner Punkt pro Standort
+   ist für kurze/breite Ziele (Städte, Höhlen) gut genug, aber Routen sind lange, oft gewundene Pfade,
+   bei denen ein Tap NEBEN dem einen Pixel-Punkt bisher ins Leere lief. `REGION_MAPS[...].points[name]`
+   akzeptiert deshalb jetzt zwei Formen: ein Array `[x,y]` (Punkt, wie bisher) ODER ein Objekt
+   `{quad:[[x1,y1],[x2,y2],[x3,y3],[x4,y4]]}` (Vierergebiet über die vier abgetippten Ecken der Route,
+   Reihenfolge der Ecken egal). Gerendert per CSS `clip-path: polygon(...)` auf einem Button, der die
+   gesamte Kartenfläche einnimmt (`position:absolute; inset:0`) - `clip-path` beschneidet dabei nicht
+   nur die sichtbare Füllung, sondern auch den Klick-/Antipp-Bereich selbst (Standardverhalten aller
+   modernen Browser), wodurch nur die Fläche INNERHALB der vier Ecken tatsächlich reagiert, nicht die
+   volle unsichtbare Box drumherum. Vorteil gegenüber einem einzelnen Punkt: die komplette Route wird
+   zum Ziel, nicht nur ein einzelner Pixel darauf - und in der Vollbild-Kartenansicht (`toggleMapZoom`)
+   profitieren Flächen automatisch von der größeren Darstellung, ganz ohne die separate Antipp-Ziel-
+   Vergrößerung, die Punkte dort brauchen (siehe `.map-zoom-overlay .map-pin`-Eintrag weiter oben).
+   Ob ein Standort ein Punkt oder eine Fläche wird, entscheidet `isRouteCalibrationName()` rein am
+   Namen (`"Route "`-Präfix) - passt zur bestehenden Namenskonvention dieses Projekts, in der
+   ausschließlich Routen so heißen (Städte/Höhlen/Sonderorte tragen immer einen Eigennamen). */
+function isRouteCalibrationName(name){ return name.startsWith("Route "); }
 let calibrationActive = false;
 let calibrationIndex = 0;
 let calibrationPoints = {};
+let calibrationQuadBuffer = [];
 function refreshMapSheet(){
   sheetEl.innerHTML = `<div class="sheet-handle-bar"><div class="sheet-handle"></div></div><div class="sheet-body">${regionMapSheetHtml()}</div>`;
+}
+function calibrationDoneMarkerHtml(name, p){
+  if(!p) return "";
+  if(Array.isArray(p)) return `<span class="map-pin done" style="left:${p[0]}%; top:${p[1]}%;" title="${escapeHtml(name)}"></span>`;
+  const poly = p.quad.map(([x,y])=>`${x}% ${y}%`).join(", ");
+  return `<span class="map-quad done" style="clip-path:polygon(${poly});" title="${escapeHtml(name)}"></span>`;
 }
 function mapCalibrationHtml(gameId){
   const map = REGION_MAPS[gameId];
@@ -7822,10 +7867,11 @@ function mapCalibrationHtml(gameId){
   if(calibrationIndex >= total){
     const lines = names.map(n=>{
       const p = calibrationPoints[n] || map.points[n];
-      return `      "${n}":[${p[0]},${p[1]}]`;
+      if(Array.isArray(p)) return `      "${n}":[${p[0]},${p[1]}]`;
+      return `      "${n}":{quad:[${p.quad.map(([x,y])=>`[${x},${y}]`).join(",")}]}`;
     }).join(",\n");
     return `
-      <p class="loc-sub" style="margin-bottom:10px;">Alle ${total} Punkte gesetzt. Text unten kopieren und schicken - wird direkt in <code>REGION_MAPS</code> übernommen.</p>
+      <p class="loc-sub" style="margin-bottom:10px;">Alle ${total} Punkte/Flächen gesetzt. Text unten kopieren und schicken - wird direkt in <code>REGION_MAPS</code> übernommen.</p>
       <textarea id="calibrationExport" readonly style="width:100%;min-height:240px;font-family:var(--font-mono);font-size:.7rem;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--surface-alt);color:var(--ink);">{\n${lines}\n    }</textarea>
       <div style="display:flex;gap:8px;margin-top:10px;">
         <button class="btn btn-secondary" data-act="calibration-restart">Neu starten</button>
@@ -7834,19 +7880,22 @@ function mapCalibrationHtml(gameId){
     `;
   }
   const name = names[calibrationIndex];
-  const donePins = names.slice(0, calibrationIndex).map(n=>{
-    const p = calibrationPoints[n];
-    if(!p) return "";
-    return `<span class="map-pin done" style="left:${p[0]}%; top:${p[1]}%;" title="${escapeHtml(n)}"></span>`;
-  }).join("");
+  const isRoute = isRouteCalibrationName(name);
+  const doneMarkers = names.slice(0, calibrationIndex).map(n=>calibrationDoneMarkerHtml(n, calibrationPoints[n])).join("");
+  const cornerDots = isRoute ? calibrationQuadBuffer.map(([x,y],i)=>`<span class="map-corner-dot" style="left:${x}%; top:${y}%;">${i+1}</span>`).join("") : "";
+  const prompt = isRoute
+    ? `Ecke ${calibrationQuadBuffer.length+1} von 4 für <strong>${escapeHtml(name)}</strong> antippen - die vier Eckpunkte der Route auf der Karte, Reihenfolge egal.`
+    : `Punkt ${calibrationIndex+1} von ${total} - auf der Karte antippen, wo <strong>${escapeHtml(name)}</strong> liegt.`;
+  const backDisabled = calibrationIndex===0 && calibrationQuadBuffer.length===0;
   return `
-    <p class="loc-sub" style="margin-bottom:10px;">Punkt ${calibrationIndex+1} von ${total} - auf der Karte antippen, wo <strong>${escapeHtml(name)}</strong> liegt.</p>
+    <p class="loc-sub" style="margin-bottom:10px;">${prompt}</p>
     <div class="artwork-map" data-act="calibration-tap">
       <img src="${map.image}" alt="Kalibrierung" />
-      ${donePins}
+      ${doneMarkers}
+      ${cornerDots}
     </div>
     <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
-      <button class="btn btn-secondary" data-act="calibration-back" ${calibrationIndex===0?"disabled":""}>Zurück</button>
+      <button class="btn btn-secondary" data-act="calibration-back" ${backDisabled?"disabled":""}>${calibrationQuadBuffer.length>0?"Ecke zurück":"Zurück"}</button>
       <button class="btn btn-secondary" data-act="calibration-skip">Überspringen</button>
       <button class="btn btn-ghost" data-act="calibration-exit">Abbrechen</button>
     </div>
@@ -7869,10 +7918,26 @@ function artworkMapHtml(gameId, zoomed){
   const map = REGION_MAPS[gameId];
   if(!map) return "";
   const nodes = regionMapNodes(map.region);
-  const pins = nodes.filter(n=>map.points[n.name]).map(n=>{
-    const [x,y] = map.points[n.name];
-    return `<button class="map-pin${n.resolved?" done":""}${n.current?" current":""}" style="left:${x}%; top:${y}%;" data-act="jump-to-location-result" data-id="${n.id}" title="${escapeHtml(n.name)}"></button>`;
-  }).join("");
+  const withData = nodes.filter(n=>map.points[n.name]);
+  /* Flächen (Routen) IMMER vor Punkten rendern, unabhängig davon, in welcher Reihenfolge sie in
+     REGION_MAPS[...].points stehen: eine Fläche ist per clip-path zwar nur innerhalb ihrer vier Ecken
+     antippbar, belegt aber denselben vollen `inset:0`-Container wie jede andere Fläche/jeder Punkt -
+     läge sie im HTML NACH einem Punkt, der zufällig innerhalb ihrer Ecken liegt (z.B. eine Stadt/
+     Höhle direkt an einer Route), würde sie dessen Klicks abfangen (dieselbe Lektion wie beim
+     Kanto-Route-22-Vorfall, nur diesmal Fläche-über-Punkt statt Punkt-über-Punkt). */
+  const quadNodes = withData.filter(n=>!Array.isArray(map.points[n.name]));
+  const pointNodes = withData.filter(n=>Array.isArray(map.points[n.name]));
+  const renderMarker = n => {
+    const data = map.points[n.name];
+    const cls = `${n.resolved?" done":""}${n.current?" current":""}`;
+    if(Array.isArray(data)){
+      const [x,y] = data;
+      return `<button class="map-pin${cls}" style="left:${x}%; top:${y}%;" data-act="jump-to-location-result" data-id="${n.id}" title="${escapeHtml(n.name)}"></button>`;
+    }
+    const poly = data.quad.map(([x,y])=>`${x}% ${y}%`).join(", ");
+    return `<button class="map-quad${cls}" style="clip-path:polygon(${poly});" data-act="jump-to-location-result" data-id="${n.id}" title="${escapeHtml(n.name)}"></button>`;
+  };
+  const pins = quadNodes.map(renderMarker).join("") + pointNodes.map(renderMarker).join("");
   /* Im kleinen Sheet-Preview bekommt der Container selbst toggle-map-zoom, damit ein Tap irgendwo
      auf der Karte (außerhalb eines Pins - dessen eigenes data-act gewinnt dank closest()) die
      Vollbild-Vergrößerung öffnet. In der Vollbild-Ansicht selbst (zoomed===true) bewusst KEIN
@@ -10232,7 +10297,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="stats">
     <div class="stat"><div class="n">23</div><div class="l">Editionen</div></div>
     <div class="stat"><div class="n">1075</div><div class="l">Pokémon-Arten</div></div>
-    <div class="stat"><div class="n">78</div><div class="l">Versions&shy;stände</div></div>
+    <div class="stat"><div class="n">79</div><div class="l">Versions&shy;stände</div></div>
     <div class="stat"><div class="n">Gen 1–9</div><div class="l">Abgedeckt</div></div>
   </div>
 
@@ -10242,6 +10307,28 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.76</span><span class="tag tag-feat">Neu</span></div>
+      <h3>Routen als Klickflächen statt Einzelpunkte auf der Kartengrafik</h3>
+      <p>Nutzeridee: statt für jede Route nur einen einzelnen Punkt zu setzen, sollen die vier Ecken
+      der Route abgetippt werden, sodass die ganze Route als Klickfläche reagiert - Sonderorte wie
+      Digdas Höhle bleiben einzelne Punkte. Umgesetzt: <code>REGION_MAPS[...].points[name]</code>
+      akzeptiert jetzt entweder ein Array <code>[x,y]</code> (Punkt, wie bisher) oder ein Objekt
+      <code>{quad:[[x1,y1],[x2,y2],[x3,y3],[x4,y4]]}</code> (Vierergebiet). Gerendert per CSS
+      <code>clip-path: polygon(...)</code> auf einem Button, der die komplette Kartenfläche einnimmt -
+      <code>clip-path</code> beschränkt dabei nicht nur die sichtbare Füllung, sondern auch den
+      Antipp-Bereich selbst auf die vier Ecken, per Playwright inklusive einer absichtlich windschief
+      geformten Testfläche (Raute statt Rechteck) verifiziert: ein Tap in einer Bounding-Box-Ecke
+      AUSSERHALB der Fläche trifft daneben, ein Tap in der Mitte trifft. Der Kalibrierungsmodus
+      erkennt automatisch an einem <code>"Route "</code>-Namenspräfix, ob eine Fläche (4 Taps für die
+      Ecken) oder ein Punkt (1 Tap) gefragt ist, mit eigenem Fortschrittsanzeiger ("Ecke X von 4") und
+      einem "Ecke zurück" statt "Zurück", solange eine Fläche noch nicht komplett ist. Flächen
+      profitieren in der Vollbild-Kartenansicht automatisch von der größeren Darstellung, ganz ohne
+      die separate Antipp-Ziel-Vergrößerung, die einzelne Punkte dort brauchen. Vorerst nur als
+      Mechanismus bereitgestellt - die konkreten Routen von Kanto/Hoenn sind noch nicht auf das neue
+      Flächen-Format umkalibriert, das folgt schrittweise über den Kalibrierungsmodus.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.75</span><span class="tag tag-fix">Korrektur</span></div>
@@ -12007,7 +12094,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.75.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.76.</footer>
 
 </div>`;
 
@@ -13541,6 +13628,7 @@ document.addEventListener("click", e=>{
     calibrationActive = true;
     calibrationIndex = 0;
     calibrationPoints = {};
+    calibrationQuadBuffer = [];
     try{
       const saved = localStorage.getItem("nuzlocke-map-calibration-"+game.id);
       if(saved) calibrationPoints = JSON.parse(saved);
@@ -13556,24 +13644,41 @@ document.addEventListener("click", e=>{
     const names = Object.keys(map.points);
     const name = names[calibrationIndex];
     if(name){
-      calibrationPoints[name] = [x,y];
-      try{ localStorage.setItem("nuzlocke-map-calibration-"+game.id, JSON.stringify(calibrationPoints)); }catch(err){}
-      calibrationIndex++;
+      if(isRouteCalibrationName(name)){
+        calibrationQuadBuffer.push([x,y]);
+        if(calibrationQuadBuffer.length>=4){
+          calibrationPoints[name] = { quad: calibrationQuadBuffer };
+          calibrationQuadBuffer = [];
+          try{ localStorage.setItem("nuzlocke-map-calibration-"+game.id, JSON.stringify(calibrationPoints)); }catch(err){}
+          calibrationIndex++;
+        }
+      } else {
+        calibrationPoints[name] = [x,y];
+        try{ localStorage.setItem("nuzlocke-map-calibration-"+game.id, JSON.stringify(calibrationPoints)); }catch(err){}
+        calibrationIndex++;
+      }
     }
     refreshMapSheet();
   }
   else if(act==="calibration-skip"){
+    calibrationQuadBuffer = [];
     calibrationIndex++;
     refreshMapSheet();
   }
   else if(act==="calibration-back"){
-    if(calibrationIndex>0) calibrationIndex--;
+    if(calibrationQuadBuffer.length>0){
+      calibrationQuadBuffer.pop();
+    } else if(calibrationIndex>0){
+      calibrationIndex--;
+      calibrationQuadBuffer = [];
+    }
     refreshMapSheet();
   }
   else if(act==="calibration-restart"){
     const game = currentGame();
     calibrationIndex = 0;
     calibrationPoints = {};
+    calibrationQuadBuffer = [];
     try{ localStorage.removeItem("nuzlocke-map-calibration-"+game.id); }catch(err){}
     refreshMapSheet();
   }
