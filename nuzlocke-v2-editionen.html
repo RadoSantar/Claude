@@ -1811,7 +1811,8 @@ const KANTO_RB_LOCATIONS = [
     {name:"Prismania City", note:"Inkl. Rocket-Versteck unterm Rocket-Gamer-Paradies (Giovanni, Belohnung: Silph-Skop) + Geschenk: Evoli (Lv. 25, Prismania-Apartments)."},
     {name:"Saffronia City", note:"Inkl. Sabrina-Arena + Silph Co. (Rivale, danach Giovanni)."},
     "Route 16","Route 17","Route 18",
-    {name:"Fuchsania City", note:"Safari-Zone (eigene Bälle) + Arena."},
+    {name:"Fuchsania City", note:"Nur Angeln (Quapsel, Goldini)."},
+    {name:"Safari-Zone", note:"Eigene Bälle, Schrittlimit statt Zufallsbegegnungen - eigene Fangliste (u.a. Kangama, Chaneira, dazu Sichlor in Rot bzw. Pinsir in Blau, sonst nirgends fangbar)."},
     "Route 19","Route 20",
     {name:"Seeschauminseln", note:"Nur Höhlen-Wildfang."},
     {name:"Zinnoberinsel", note:"Nur Angeln."},
@@ -1922,7 +1923,8 @@ const KANTO_YELLOW_LOCATIONS = [
     {name:"Prismania City", note:"Inkl. Rocket-Versteck unterm Rocket-Gamer-Paradies (Doppelkampf gegen Jessie & James, dann Giovanni, Belohnung: Silph-Skop) + Geschenk: Evoli (Lv. 25, Prismania-Apartments)."},
     {name:"Saffronia City", note:"Inkl. Sabrina-Arena + Silph Co. (Doppelkampf gegen Jessie & James, dann Rivale, danach Giovanni)."},
     "Route 16","Route 17","Route 18",
-    {name:"Fuchsania City", note:"Safari-Zone (eigene Bälle) + Arena."},
+    {name:"Fuchsania City", note:"Nur Angeln (Quapsel, Goldini, Garados)."},
+    {name:"Safari-Zone", note:"Eigene Bälle, Schrittlimit statt Zufallsbegegnungen - eigene Fangliste (u.a. garantiertes Kangama, Chaneira, Pinsir, sonst nirgends fangbar)."},
     "Route 19","Route 20",
     {name:"Seeschauminseln", note:"Nur Höhlen-Wildfang."},
     {name:"Zinnoberinsel", note:"Nur Angeln."},
@@ -3966,7 +3968,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.72";
+const APP_VERSION = "1.9.73";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -7742,6 +7744,7 @@ const REGION_MAPS = {
       "Route 12":[51.3,49.5], "Route 13":[48.0,66.3], "Route 14":[42.2,72.2], "Route 15":[38.4,77.1],
       "Route 8":[44.4,32.8], "Route 7":[34.4,33.4], "Prismania City":[29.6,33.4], "Saffronia City":[39.1,33.1],
       "Route 16":[23.8,33.4], "Route 17":[20.2,44.0], "Route 18":[26.2,77.7], "Fuchsania City":[32.8,78.0],
+      "Safari-Zone":[36.0,80.5],
       "Route 19":[32.9,84.5], "Route 20":[29.1,88.0], "Seeschauminseln":[23.5,88.6], "Zinnoberinsel":[14.2,88.9],
       "Pokémon-Villa":[16.4,83.9], "Route 21":[13.9,76.9], "Kraftwerk":[54.8,28.1], "Vertania-Arena":[16.9,48.7],
       "Route 22 (Rückweg)":[8.4,49.5], "Route 23":[7.8,40.1], "Siegesstraße":[7.9,27.8], "Pokémon-Liga":[7.6,16.3],
@@ -10219,7 +10222,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="stats">
     <div class="stat"><div class="n">23</div><div class="l">Editionen</div></div>
     <div class="stat"><div class="n">1075</div><div class="l">Pokémon-Arten</div></div>
-    <div class="stat"><div class="n">75</div><div class="l">Versions&shy;stände</div></div>
+    <div class="stat"><div class="n">76</div><div class="l">Versions&shy;stände</div></div>
     <div class="stat"><div class="n">Gen 1–9</div><div class="l">Abgedeckt</div></div>
   </div>
 
@@ -10229,6 +10232,23 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.73</span><span class="tag tag-fix">Korrektur</span></div>
+      <h3>Kanto: Safari-Zone fehlte als eigener Standort (Rot/Blau/Gelb/FeuerRot/BlattGrün)</h3>
+      <p>Nutzerfund: "in Kanto scheint die Safari-Zone zu fehlen." Bestätigt - sie war in allen fünf
+      Kanto-Editionen nur als Text im Notizfeld von Fuchsania City vermerkt ("Safari-Zone (eigene
+      Bälle) + Arena."), nicht als eigene, separat trackbare Kachel - obwohl sie eine eigene,
+      betretbare Fläche mit eigener, sehr artenreicher Fangliste ist (u.a. Kangama, Chaneira, dazu
+      versionsexklusiv Sichlor in Rot bzw. Pinsir in Blau/Gelb - alle sonst nirgends im Spiel
+      fangbar), exakt das Muster, nach dem andere Fuchsania-nahe Sonderorte wie der Pokémon-Turm
+      oder das Kraftwerk in dieser Liste längst eigene Kacheln bekommen. Als eigene Kachel direkt
+      nach Fuchsania City ergänzt (dort betritt man sie im echten Spiel über ein Tor). Fuchsania
+      Citys eigene Notiz auf die tatsächlich dort noch vorhandenen Angel-Fänge reduziert (Quapsel/
+      Goldini, in Gelb zusätzlich Garados). FeuerRot/BlattGrün übernimmt die Korrektur automatisch
+      mit (teilt sich denselben Rot/Blau-Datensatz). Kartenpunkt für Rot/Blau als ungefährer
+      Platzhalter neben Fuchsania City ergänzt (noch unkalibriert).</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.72</span><span class="tag tag-fix">Korrektur</span></div>
@@ -11955,7 +11975,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.72.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.73.</footer>
 
 </div>`;
 

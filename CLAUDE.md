@@ -577,6 +577,23 @@ explizit wieder darum.
   eigene `cls:"Vorstand"`-Bosskarten rein, nicht nur der Teamboss selbst - exakt dasselbe Muster wie
   bereits bei Team Rocket/Galaktik/Magma/Aqua/Plasma etabliert. Bei künftigen Audits (Alola: Faba/
   Plumeria: Galar: analog) diesem Präzedenzfall folgen, nicht extra nachfragen.
+- **Kanto — Safari-Zone fehlte als eigene Kachel (behoben in v1.9.73):** Nutzerfund "in Kanto scheint
+  die Safari-Zone zu fehlen." Bestätigt: in allen fünf Kanto-Editionen (Rot/Blau/Gelb/FeuerRot/
+  BlattGrün) war sie nur als Notiz-Text bei Fuchsania City vermerkt, keine eigene trackbare Kachel -
+  obwohl sie im echten Spiel eine eigene, betretbare Fläche mit eigener Fangliste ist (Kangama,
+  Chaneira, versionsexklusiv Sichlor/Pinsir - alle sonst nirgends im Spiel fangbar). Als eigene
+  Kachel direkt nach Fuchsania City ergänzt (Zugang im Spiel über ein Tor dort). Da
+  `KANTO_FRLG_LOCATIONS` per `...KANTO_RB_LOCATIONS`-Spread denselben Datensatz wie Rot/Blau
+  wiederverwendet (siehe Datenmodell-Abschnitt oben), war die Korrektur in `KANTO_RB_LOCATIONS`
+  automatisch auch für FeuerRot/BlattGrün erledigt - nur `KANTO_YELLOW_LOCATIONS` (eigener,
+  vollständig separater Datensatz) musste zusätzlich einzeln angepasst werden. **Genau dieselbe
+  Bugklasse wie bei der Urzeithöhle** (Existenzlücke, keine Reihenfolgefrage - die abgeschlossene
+  Reihenfolge-Verifikation für Kanto in `order-gen1-3.md` hatte sie folgerichtig nicht gefunden, s.
+  dortiger Eintrag zur Unterscheidung Reihenfolge- vs. Existenzprüfung). **Für künftige Audits:**
+  gezielt nach weiteren "nur im Notizfeld einer Stadt erwähnter Sonderort mit eigener Fangliste"-
+  Fällen suchen (Präzedenzfall bereits vorhanden: Pokémon-Turm/Kraftwerk/Pokémon-Villa bekommen in
+  derselben Kanto-Liste längst eigene Kacheln, Safari-Zone war die Ausnahme) - Silph Co./S.S. Anne/
+  Rocket-Versteck bleiben dagegen bewusst reine Notizen, da sie keine eigenen wilden Pokémon haben.
 - **Hoenn — Urzeithöhle fehlte komplett (behoben in v1.9.65):** Nutzerfrage "kann es sein dass in
   allen Hoenn-Regionen die Urzeithöhle fehlt? Außerdem in ORAS die Geheiminsel." Bestätigt: die
   Urzeithöhle (Cave of Origin, bei Xeneroville/Sootopolis City) fehlte in Rubin/Saphir/Smaragd/ORAS
