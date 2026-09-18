@@ -3966,7 +3966,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.71";
+const APP_VERSION = "1.9.72";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -10081,6 +10081,34 @@ const UNDOABLE_ACTIONS = {
   "delete-location": "Standort gelöscht"
 };
 let lastUndoSnapshot = null;
+/* Der Toast saß bis v1.9.71 fest bei bottom:160px - fest genug, um über die "+"/Lupen-FAB-Reihe
+   hinauszuragen, solange nur diese existierten. Mit stash-fab/map-fab kamen später zwei weitere,
+   höher gestapelte FAB-Reihen dazu (siehe .fab/.search-fab/.map-fab/.stash-fab weiter oben) - der
+   feste Wert wurde dabei nie nachgezogen, wodurch der Toast z.B. beim Fangen eines Pokémon (Routen-
+   Tab, alle FABs potenziell sichtbar) mit der mittleren/oberen FAB-Reihe überlappte (Nutzerfund).
+   Statt erneut einen (nächstes Mal wieder veraltenden) festen Wert zu raten, misst diese Funktion
+   bei JEDEM Anzeigen live nach, was gerade tatsächlich sichtbar ist, und positioniert den Toast
+   knapp darüber - automatisch niedriger auf Tabs ohne FABs (z.B. Team/Box) oder wenn weniger FABs
+   sichtbar sind (kein Zurückgestelltes, keine Regionskarte für die aktuelle Edition), automatisch
+   höher, sobald mehr gestapelt sind. `getBoundingClientRect()` liefert Viewport-Koordinaten und
+   berücksichtigt damit automatisch bereits eingerechnete `env(safe-area-inset-bottom)`-Anteile der
+   Referenzelemente - keine zusätzliche eigene Safe-Area-Rechnung nötig. Die Tab-Bar selbst zählt
+   immer als Referenz mit, damit auch auf FAB-losen Tabs eine sinnvolle Mindesthöhe über ihr bleibt. */
+function undoToastBottomPx(){
+  const refs = [document.querySelector(".tabbar")];
+  ["fabAdd","searchFab","mapFab","stashFab"].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el && el.offsetParent !== null) refs.push(el);
+  });
+  const jumpFab = document.getElementById("jumpFab");
+  if(jumpFab && jumpFab.classList.contains("visible")) refs.push(jumpFab);
+  const topMost = Math.min(...refs.filter(Boolean).map(el=>el.getBoundingClientRect().top));
+  const gap = 14;
+  return Math.max(0, window.innerHeight - topMost + gap);
+}
+function positionUndoToast(toast){
+  try{ toast.style.bottom = undoToastBottomPx() + "px"; }catch(e){}
+}
 function showUndoToast(label){
   document.querySelector(".undo-toast")?.remove();
   const toast = document.createElement("div");
@@ -10097,6 +10125,7 @@ function showUndoToast(label){
     dismissUndoToast(toast);
   });
   document.body.appendChild(toast);
+  positionUndoToast(toast);
   toast._timer = setTimeout(()=>dismissUndoToast(toast), 6000);
   attachToastSwipeDismiss(toast);
 }
@@ -10173,6 +10202,7 @@ function showStorageWarnToast(){
   `;
   toast.querySelector(".undo-toast-btn").addEventListener("click", ()=>dismissUndoToast(toast));
   document.body.appendChild(toast);
+  positionUndoToast(toast);
   toast._timer = setTimeout(()=>dismissUndoToast(toast), 10000);
   attachToastSwipeDismiss(toast);
 }
@@ -10189,7 +10219,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="stats">
     <div class="stat"><div class="n">23</div><div class="l">Editionen</div></div>
     <div class="stat"><div class="n">1075</div><div class="l">Pokémon-Arten</div></div>
-    <div class="stat"><div class="n">74</div><div class="l">Versions&shy;stände</div></div>
+    <div class="stat"><div class="n">75</div><div class="l">Versions&shy;stände</div></div>
     <div class="stat"><div class="n">Gen 1–9</div><div class="l">Abgedeckt</div></div>
   </div>
 
@@ -10199,6 +10229,23 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.72</span><span class="tag tag-fix">Korrektur</span></div>
+      <h3>Rückgängig-Hinweis überlappte FAB-Buttons</h3>
+      <p>Nutzerfund nach der Allrichtungs-Wisch-Erweiterung: der Hinweis (z.B. nach einem Fang) saß
+      fest bei <code>bottom:160px</code> - passend, solange es nur die "+"/Lupen-FAB-Reihe gab.
+      Mit der später hinzugekommenen Regionskarte (<code>map-fab</code>) und der Zurückstellen-
+      Übersicht (<code>stash-fab</code>) kamen zwei weitere, höher gestapelte FAB-Reihen dazu, ohne
+      dass der feste Wert je nachgezogen wurde - der Hinweis überlappte dadurch je nach Edition/
+      Zustand die mittlere oder obere FAB-Reihe. Jetzt komplett dynamisch: bei jedem Anzeigen misst
+      <code>undoToastBottomPx()</code> live nach, welche FABs (<code>fabAdd</code>/<code>searchFab</code>/
+      <code>mapFab</code>/<code>stashFab</code>/<code>jumpFab</code>) und die Tab-Bar selbst gerade
+      tatsächlich sichtbar sind, und positioniert den Hinweis knapp über dem höchsten davon - auf
+      Tabs ganz ohne FABs (Team/Box) entsprechend niedriger, mit mehreren gestapelten FABs
+      entsprechend höher. Per Playwright in beiden Extremen verifiziert (alle FABs sichtbar vs.
+      Team-Tab ohne jeden FAB) - keine Überlappung mehr in beiden Fällen.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.71</span><span class="tag tag-fix">Korrektur</span></div>
@@ -11908,7 +11955,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.71.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.72.</footer>
 
 </div>`;
 

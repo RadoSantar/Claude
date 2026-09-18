@@ -507,6 +507,30 @@ jederzeit hier in `CLAUDE.md` + Git-Historie rekonstruierbar, siehe Rest dieser 
   `false` liefert und die Tab-Bar bei den ursprünglichen 6px bleibt - der iOS-Zweig selbst ließ sich
   in der Sandbox nicht gegenprüfen (kein echtes WebKit-iOS verfügbar, derselbe bekannte Sonderfall
   wie schon bei früheren `viewport-fit`/`env(safe-area-inset-*)`-Fixes).
+- **Rückgängig-Hinweis überlappte FAB-Buttons (behoben in v1.9.72):** Nutzerfund direkt im Anschluss
+  an die Allrichtungs-Wisch-Erweiterung (s.o.): der Hinweis saß fest bei `bottom:160px` (CSS) - ein
+  Wert, der ursprünglich genau über der "+"/Lupen-FAB-Reihe (`bottom:88px`) lag, aber nie nachgezogen
+  wurde, als später `map-fab` (Regionskarte, `bottom:210px`) und `stash-fab` (Zurückgestellt-
+  Übersicht, `bottom:154px`) als zusätzliche, höher gestapelte FAB-Reihen dazukamen (siehe
+  Regions-Karte/Später-fangbar-Übersicht-Einträge oben). Klassisches "Konstante wurde bei einer
+  späteren Erweiterung nicht nachgezogen"-Muster, wie schon beim Service-Worker-`CACHE_NAME` und dem
+  fehlenden `id`-Feld bei Boss-Kacheln - der Hinweis überlappte je nach Edition/Zustand (z.B. beim
+  Fangen auf einer Edition mit Regionskarte) mit der mittleren oder oberen FAB-Reihe. Statt erneut
+  einen (beim nächsten neuen FAB wieder veraltenden) festen Wert zu raten: `undoToastBottomPx()`
+  misst bei JEDEM Anzeigen live per `getBoundingClientRect()` nach, welche der fünf FAB-Elemente
+  (`fabAdd`/`searchFab`/`mapFab`/`stashFab` per `offsetParent!==null`-Sichtbarkeitscheck, da sie über
+  `style.display` ein-/ausgeblendet werden; `jumpFab` separat über seine `.visible`-Klasse, da es
+  stattdessen mit Opacity/Pointer-events arbeitet und `offsetParent` deshalb nicht zuverlässig wäre)
+  sowie die Tab-Bar selbst (immer als Referenz, damit auch FAB-lose Tabs wie Team/Box eine sinnvolle
+  Mindesthöhe bekommen) gerade sichtbar sind, und setzt `toast.style.bottom` per Inline-Style knapp
+  über dem höchsten davon (14px Abstand). `getBoundingClientRect()` liefert Viewport-Koordinaten und
+  hat bereits gerenderte `env(safe-area-inset-bottom)`-Anteile der Referenzelemente eingerechnet -
+  keine separate Safe-Area-Rechnung in der neuen Funktion nötig. Per Playwright in beiden Extremen
+  verifiziert (Rot/Blau mit erzwungenermaßen allen FABs sichtbar vs. Team-Tab ganz ohne FABs) - in
+  keinem der beiden Fälle Überlappung mit einem FAB oder der Tab-Bar. **Lehre:** ein UI-Element, das
+  sich an anderen, potenziell wachsenden UI-Stapeln orientieren muss (hier: FAB-Reihen), sollte seine
+  Position nach Möglichkeit aus deren tatsächlichem, gerade sichtbarem Zustand ableiten statt aus
+  einer zum Zeitpunkt der Implementierung passenden, aber stillschweigend alternden Konstante.
 
 ## Deutsche Namen — bekannte Stolperfallen
 
