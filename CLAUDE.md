@@ -482,6 +482,31 @@ jederzeit hier in `CLAUDE.md` + Git-Historie rekonstruierbar, siehe Rest dieser 
   ist ein eigener Konstruktor) - vier Fälle geprüft: aufwärts, diagonal runter-rechts, diagonal
   hoch-links (jeweils Fliegen-Animation + tatsächliches Entfernen aus dem DOM), sowie ein kurzer Zug
   unter der Schwelle (Zurückschnappen, Toast bleibt bestehen).
+- **Tab-Bar auf iPhones von der Ecken-Rundung angeschnitten (behoben in v1.9.71):** Nutzerfeedback:
+  die App füllt den Bildschirm komplett aus - auf Android kein Problem (dort folgt unter der App
+  noch die eigene System-Navigationsleiste, per Nutzer bestätigt z.B. auf einem Pixel 7 Pro), auf
+  iPhones ohne Home-Taste liegt der äußerste Rand der `.tabbar` aber exakt dort, wo die abgerundeten
+  Bildschirmecken ein Icon optisch anschneiden (u.a. das Einstellungen-Icon ganz rechts, da es das
+  äußerste ist). **Wichtige Erkenntnis, die die bestehende v1.8.24/v1.8.25-Doku ergänzt:** jene
+  beiden Einträge lösten ein VERTIKALES Problem (Lücke zwischen Tab-Bar und unterem Bildschirmrand
+  durch Safaris unzuverlässige dvh/vh-Berechnung, behoben durch Entfernen von `viewport-fit=cover` +
+  `position:fixed; inset:0` statt `height:100dvh`) - das Ecken-Rundungs-Problem ist ein GETRENNTES,
+  HORIZONTALES Problem: `env(safe-area-inset-left/right)` ist im Hochformat auf so gut wie allen
+  iPhones 0 (unabhängig von `viewport-fit`), die Ecken-Rundung wird also nie als "unsicherer
+  Bereich" gemeldet - ein größerer vertikaler Sicherheitsabstand (Safe-Area-Bottom) hätte das
+  horizontale Eckenproblem deshalb gar nicht adressiert, es brauchte einen eigenen, seitlichen Fix.
+  Nutzerfrage dabei: soll das dynamisch nur die betroffenen Geräte treffen, statt pauschal überall
+  Platz wegzunehmen (der auf Android schlicht nicht nötig ist)? Lösung ohne JavaScript/User-Agent-
+  Sniffing: `@supports (-webkit-touch-callout: none)` - diese CSS-Eigenschaft wird ausschließlich von
+  WebKit auf iOS erkannt (Safari und, weil Apple allen iOS-Browsern denselben WebKit-Unterbau
+  vorschreibt, auch Chrome/Firefox auf iOS) und existiert auf Android in keiner Form. Nur innerhalb
+  dieses `@supports`-Blocks bekommt `.tabbar` 16px statt der sonst üblichen 6px horizontalen
+  Innenabstand - reine CSS-Feature-Erkennung, kein Geräte-/Browser-String-Vergleich, automatisch
+  zukunftssicher für jedes kommende iPhone-Modell. Per Playwright verifiziert, dass
+  `CSS.supports('-webkit-touch-callout','none')` in Chromium (verhält sich wie Android) korrekt
+  `false` liefert und die Tab-Bar bei den ursprünglichen 6px bleibt - der iOS-Zweig selbst ließ sich
+  in der Sandbox nicht gegenprüfen (kein echtes WebKit-iOS verfügbar, derselbe bekannte Sonderfall
+  wie schon bei früheren `viewport-fit`/`env(safe-area-inset-*)`-Fixes).
 
 ## Deutsche Namen — bekannte Stolperfallen
 

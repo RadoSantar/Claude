@@ -1145,6 +1145,18 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
   padding:6px 6px calc(6px + env(safe-area-inset-bottom)); z-index:20;
   box-shadow:var(--shadow-up); position:relative;
 }
+/* iOS-only, per reinem CSS-Feature-Test statt User-Agent-Sniffing: -webkit-touch-callout wird
+   ausschließlich von WebKit auf iOS erkannt (Safari + jeder andere iOS-Browser, die wegen Apples
+   Vorgabe alle denselben WebKit-Unterbau nutzen müssen) - auf Android greift die Regel nie, auch
+   nicht in Chrome/WebView. Grund: env(safe-area-inset-left/right) ist im Hochformat auf so gut wie
+   allen iPhones 0 (kein viewport-fit=cover, siehe Kommentar dort), meldet die abgerundeten
+   Bildschirmecken also nicht als "unsicheren Bereich" - die äußersten Tab-Icons saßen dadurch exakt
+   in der Ecken-Rundung, wo sie optisch angeschnitten wirkten (Nutzerfund, u.a. beim Einstellungen-
+   Icon ganz rechts). Kein Android-Gerät (z.B. Pixel 7 Pro, kein Rundungsproblem berichtet) bekommt
+   dadurch unnötig schmaleren Platz - der zusätzliche Rand gilt nur dort, wo er wirklich nötig ist. */
+@supports (-webkit-touch-callout: none){
+  .tabbar{ padding-left:16px; padding-right:16px; }
+}
 .tab{
   flex:1; background:none; border:none; display:flex; flex-direction:column; align-items:center; justify-content:center;
   gap:3px; padding:8px 4px; border-radius:12px; color:var(--ink-soft); font-size:.68rem; font-weight:700;
@@ -3954,7 +3966,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.70";
+const APP_VERSION = "1.9.71";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -10177,7 +10189,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="stats">
     <div class="stat"><div class="n">23</div><div class="l">Editionen</div></div>
     <div class="stat"><div class="n">1075</div><div class="l">Pokémon-Arten</div></div>
-    <div class="stat"><div class="n">73</div><div class="l">Versions&shy;stände</div></div>
+    <div class="stat"><div class="n">74</div><div class="l">Versions&shy;stände</div></div>
     <div class="stat"><div class="n">Gen 1–9</div><div class="l">Abgedeckt</div></div>
   </div>
 
@@ -10187,6 +10199,23 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.71</span><span class="tag tag-fix">Korrektur</span></div>
+      <h3>Tab-Bar-Icons auf iPhones nicht mehr von der Ecken-Rundung angeschnitten</h3>
+      <p>Nutzerfeedback: die App füllt den Bildschirm komplett aus - auf Android kein Problem (dort
+      folgt unter der App noch die eigene Navigationsleiste des Betriebssystems), auf iPhones ohne
+      Home-Taste liegt der äußerste Rand der Tab-Bar aber exakt dort, wo die abgerundeten
+      Bildschirmecken das Icon optisch anschneiden (u.a. das Einstellungen-Icon ganz rechts).
+      Ursache: <code>env(safe-area-inset-left/right)</code> ist im Hochformat auf so gut wie allen
+      iPhones 0 (die App nutzt bewusst kein <code>viewport-fit=cover</code>, siehe v1.8.24/v1.8.25 -
+      die Ecken-Rundung wird dadurch nie als "unsicherer Bereich" gemeldet). Fix OHNE zusätzlichen,
+      alle Geräte betreffenden Sicherheitsabstand: <code>@supports (-webkit-touch-callout: none)</code>
+      erkennt rein per CSS-Feature-Test ausschließlich WebKit auf iOS (jeder iOS-Browser muss laut
+      Apple denselben Unterbau nutzen) und vergibt nur dort 16px statt 6px horizontalen Innenabstand
+      auf die Tab-Bar - kein JavaScript/User-Agent-Sniffing nötig, Android-Geräte (u.a. Pixel 7 Pro,
+      dort kein Problem gemeldet) bleiben unverändert bei 6px.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.70</span><span class="tag tag-feat">Neu</span></div>
@@ -11879,7 +11908,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.70.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.71.</footer>
 
 </div>`;
 
