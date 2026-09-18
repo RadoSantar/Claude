@@ -220,6 +220,30 @@ jederzeit hier in `CLAUDE.md` + Git-Historie rekonstruierbar, siehe Rest dieser 
   "X zurückgestellte Kacheln" (Sammelgruppe, Stash-FAB-Titel, Übersichts-Überschrift), da die Gruppe
   jetzt beide Kachel-Typen bündelt. Bewusst NICHT erweitert: `finalRivalCardHtml()` (Ruhmeshallen-
   Duell) - steht immer ganz am Ende, Zurückstellen ergibt dort keinen praktischen Sinn.
+  **Regression, behoben in v1.9.69 (Nutzerfund):** trotz der v1.9.59-Erweiterung wirkte das
+  Zurückstellen bei Bossen rein optisch NICHT - Nutzerfeedback: "sie verschieben zwar in den dafür
+  vorgesehenen Tab, allerdings werden sie immer noch angezeigt danach, als wären sie nicht
+  eingeklappt worden." Ursache: `locationTiles()` (Zeile ~7418) vergab dem internen Kachel-Objekt für
+  Boss-Kacheln (`tiles.push({ html: h, resolved: ..., kind:"boss" })`) NIE ein `id`-Feld - anders als
+  bei Standort-Kacheln, die von Anfang an `id: loc.id` mitbekommen. `renderRoutes()`s
+  Zugehörigkeits-Check `(state.manualCollapsedLocs||[]).includes(tile.id)` verglich dadurch für jeden
+  Boss immer gegen `undefined`, was nie zu einem Treffer in `manualCollapsedLocs` (das reale IDs
+  enthält) führen konnte - die Kachel landete deshalb IMMER im `else`-Zweig (inline rendern), egal ob
+  sie tatsächlich zurückgestellt war. Der Klick selbst hatte trotzdem sichtbare Nebenwirkungen (ID
+  landete korrekt in `state.manualCollapsedLocs`, der Stash-FAB erschien, die Übersicht listete den
+  Boss korrekt auf) - nur die Routenliste selbst ignorierte das. Betraf aus demselben Grund auch
+  `expandCollapseGroupsForLocation()` (nutzt denselben `tiles.find(t=>t.id===targetId)`-Abgleich, um
+  beim Antippen eines Suchtreffers/Kartenpunkts die richtige Sammelgruppe vorab aufzuklappen) - ein
+  Sprung zu einem bereits erledigten ODER zurückgestellten Boss klappte dadurch nie die passende
+  Gruppe automatisch auf. Fix: beiden `tiles.push(...)`-Aufrufen in `locationTiles()` (regulärer
+  Boss UND `finalRivalCardHtml`-Zweig) `id: boss.id` ergänzt. **Lehre:** ein Kachel-Objekt, das
+  zwei verschiedene Kachel-Arten (`kind:"loc"`/`kind:"boss"`) über gemeinsamen Code (hier:
+  `renderRoutes()`s Bucket-Logik) verarbeitet, braucht bei jeder neuen `kind`-Variante dieselben
+  Pflichtfelder wie die bereits funktionierende - ein Feld, das nur bei einer Variante fehlt, fällt
+  beim Draufschauen auf den Code leicht nicht auf (die Kachel wird ja trotzdem korrekt gerendert,
+  nur ihre spätere Einsortierung schlägt lautlos fehl), aber sofort per Playwright auf, sobald man
+  den tatsächlichen Bucket-Zielzustand nach einem Klick prüft statt nur "Klick löst keinen Fehler
+  aus" zu verifizieren.
 - **Cloud-Sync — Umbenennung + QR-Code (seit v1.9.60):** Nutzerfeedback "ich finde die Sync-Funktion
   nicht ganz verständlich" + "gibt es eine weniger umständliche Variante als die mit dem Code?".
   Buttons umbenannt: "Sync aktivieren" → **„Speichern"** (`data-act="create-sync-code"`), "Code eines

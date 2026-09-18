@@ -3954,7 +3954,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.68";
+const APP_VERSION = "1.9.69";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -7425,10 +7425,10 @@ function locationTiles(loc, region, game, currentId){
        Duellpartner nach dem Champion - im Einzelspieler-Modus gibt es niemanden dafür, die Kachel
        entfällt komplett (siehe isBossSettled: dort wird sie transparent als "erledigt" behandelt,
        damit sie die umgebenden Kacheln nicht dauerhaft am Einklappen hindert). */
-    if(boss.final){ if(!state.soloMode) tiles.push({ html: finalRivalCardHtml(boss, boss.id===currentId), resolved: isBossSettled(boss), kind:"boss" }); return; }
+    if(boss.final){ if(!state.soloMode) tiles.push({ html: finalRivalCardHtml(boss, boss.id===currentId), resolved: isBossSettled(boss), kind:"boss", id: boss.id }); return; }
     let h = bossCardHtml(boss, boss.id===currentId);
     if(boss.pvp && !state.soloMode) h += pvpCardHtml(boss);
-    tiles.push({ html: h, resolved: isBossSettled(boss), kind:"boss" });
+    tiles.push({ html: h, resolved: isBossSettled(boss), kind:"boss", id: boss.id });
   });
   return tiles;
 }
@@ -10169,7 +10169,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="stats">
     <div class="stat"><div class="n">23</div><div class="l">Editionen</div></div>
     <div class="stat"><div class="n">1075</div><div class="l">Pokémon-Arten</div></div>
-    <div class="stat"><div class="n">71</div><div class="l">Versions&shy;stände</div></div>
+    <div class="stat"><div class="n">72</div><div class="l">Versions&shy;stände</div></div>
     <div class="stat"><div class="n">Gen 1–9</div><div class="l">Abgedeckt</div></div>
   </div>
 
@@ -10179,6 +10179,25 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.69</span><span class="tag tag-fix">Korrektur</span></div>
+      <h3>Zurückstellen von Bosskämpfen wirkte optisch nicht</h3>
+      <p>Nutzerfund: "das Einklappen noch offener Bosskämpfe klappt nicht - sie verschieben zwar in
+      den dafür vorgesehenen Tab, allerdings werden sie immer noch angezeigt danach, als wären sie
+      nicht eingeklappt worden." Ursache: <code>locationTiles()</code> vergab für Boss-Kacheln
+      (anders als für Standort-Kacheln) nie eine <code>id</code> im internen Kachel-Objekt - der
+      Zugehörigkeits-Check in <code>renderRoutes()</code>
+      (<code>state.manualCollapsedLocs.includes(tile.id)</code>) verglich dadurch immer gegen
+      <code>undefined</code> und schlug für Bosse folglich IMMER fehl, egal ob der Boss tatsächlich
+      zurückgestellt war. Der Klick selbst funktionierte korrekt (die ID landete in
+      <code>state.manualCollapsedLocs</code>, die „X zurückgestellte Kacheln"-Übersicht zeigte den
+      Eintrag auch richtig an) - nur die Routenliste selbst rendere die Kachel trotzdem weiter inline
+      statt sie in die goldene Sammelgruppe zu verschieben. Betraf denselben Bug auch beim Antippen
+      eines zurückgestellten (oder bereits besiegten) Bosses aus der Standort-Suche/Kartenansicht
+      heraus (<code>expandCollapseGroupsForLocation()</code> nutzt denselben ID-Abgleich, um die
+      richtige Sammelgruppe vorab aufzuklappen). Fix: <code>id: boss.id</code> ergänzt.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.68</span><span class="tag tag-feat">Neu</span></div>
@@ -11835,7 +11854,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.68.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.69.</footer>
 
 </div>`;
 
