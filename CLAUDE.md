@@ -448,6 +448,19 @@ jederzeit hier in `CLAUDE.md` + Git-Historie rekonstruierbar, siehe Rest dieser 
   `margin:auto` auf dem Kind in normalem Block-Fluss bevorzugen - sonst bei jeder neuen Karte (auch
   bei künftigen Regionen) erneut prüfen, ob wirklich der komplette Inhalt erreichbar bleibt, nicht
   nur die optische Zentrierung stimmt.
+  **Größere Antipp-Ziele in der Vollbild-Ansicht (seit v1.9.75):** Nutzerwunsch "die Punkte sollen
+  auch klickbar sein wenn die Karte vergrößert ist" - der Tap-Mechanismus selbst war zu diesem
+  Zeitpunkt bereits nachweislich funktionsfähig (per Playwright inkl. `page.touchscreen.tap()`,
+  Chromiums realistischste Touch-Emulation, verifiziert), aber `.map-pin` hat eine feste CSS-Pixel-
+  Größe (15px, 19px fürs `.current`) statt einer relativen - die Vollbild-Vergrößerung selbst
+  schafft dadurch nur mehr ABSTAND zwischen benachbarten Punkten (Prozent-Koordinaten auf einer
+  breiteren Karte), macht aber keinen einzelnen Punkt für sich größer. Für einen echten Finger blieb
+  das Ziel selbst also weiterhin klein. Fix: `.map-zoom-overlay .map-pin{ width:26px; height:26px;
+  ...}` (32px fürs `.current`) - reine CSS-Regel, die nur innerhalb der Vollbild-Ansicht greift,
+  kein JS-Eingriff nötig. **Lehre:** "vergrößert" kann zwei unterschiedliche Dinge bedeuten, die
+  leicht verwechselt werden - mehr Abstand zwischen Elementen (was reines Scale-up einer Karte mit
+  fixgrößigen Overlay-Elementen liefert) ist nicht dasselbe wie größere Antipp-Ziele für die
+  Elemente selbst; bei UI mit fixgrößigen Overlays auf einer skalierten Fläche beides einzeln prüfen.
   **Kalibrierungsmodus (seit v1.9.56):** Nutzerfeedback zu den v1.9.55-Koordinaten war "wirken kreuz
   und quer" — eine gezielte Recherche nach einer beschrifteten Referenz für die Let's-Go-Kartenansicht
   (welcher der 18 sichtbaren Wegpunkte welcher Stadt entspricht) blieb ergebnislos, weder Bulbapedia

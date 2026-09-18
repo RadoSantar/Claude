@@ -1067,6 +1067,16 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
   padding:calc(60px + env(safe-area-inset-top)) 20px calc(20px + env(safe-area-inset-bottom));
 }
 .map-zoom-scroll .artwork-map{ width:220vw; max-width:1100px; margin:0 auto; }
+/* Standort-Punkte bekommen in der Vollbild-Ansicht ein größeres Antipp-Ziel als im kleinen Preview
+   (26px/32px statt 15px/19px) - die Vergrößerung selbst schafft zwar schon mehr ABSTAND zwischen
+   benachbarten Punkten (Prozent-Koordinaten auf einer breiteren Karte), macht aber jeden einzelnen
+   Punkt für sich nicht größer, da .map-pin eine feste CSS-Pixel-Größe hat, keine relative - genau
+   das war mit reiner Vergrößerung noch nicht gelöst (Nutzerfeedback: Punkte sollen "auch klickbar
+   sein" in der Vollbild-Ansicht, obwohl der Tap-Mechanismus selbst bereits per Playwright inkl.
+   echter Touchscreen-Emulation funktionierend nachgewiesen war - kleine ~15px-Ziele sind auf einem
+   echten Finger trotzdem knifflig zu treffen). */
+.map-zoom-overlay .map-pin{ width:26px; height:26px; margin:-13px 0 0 -13px; border-width:3px; }
+.map-zoom-overlay .map-pin.current{ width:32px; height:32px; margin:-16px 0 0 -16px; }
 .map-zoom-close{
   position:fixed; top:calc(14px + env(safe-area-inset-top)); right:16px; z-index:86;
   width:40px; height:40px; border-radius:50%; border:none; background:var(--surface); color:var(--ink);
@@ -3968,7 +3978,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.74";
+const APP_VERSION = "1.9.75";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -10222,7 +10232,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="stats">
     <div class="stat"><div class="n">23</div><div class="l">Editionen</div></div>
     <div class="stat"><div class="n">1075</div><div class="l">Pokémon-Arten</div></div>
-    <div class="stat"><div class="n">77</div><div class="l">Versions&shy;stände</div></div>
+    <div class="stat"><div class="n">78</div><div class="l">Versions&shy;stände</div></div>
     <div class="stat"><div class="n">Gen 1–9</div><div class="l">Abgedeckt</div></div>
   </div>
 
@@ -10232,6 +10242,20 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.75</span><span class="tag tag-fix">Korrektur</span></div>
+      <h3>Standort-Punkte in der Vollbild-Kartenansicht größer</h3>
+      <p>Nutzerwunsch: "die Punkte sollen auch klickbar sein wenn die Karte vergrößert ist." Der
+      Antipp-Mechanismus selbst funktionierte bereits zuverlässig (per Playwright inkl. echter
+      Touchscreen-Emulation bestätigt) - die Vergrößerung selbst schafft aber nur mehr ABSTAND
+      zwischen benachbarten Punkten (Prozent-Koordinaten auf einer breiteren Karte), macht jeden
+      einzelnen Punkt für sich nicht größer, da <code>.map-pin</code> eine feste CSS-Pixel-Größe hat.
+      Die ursprünglichen ~15px waren auf einem echten Finger trotzdem knifflig zu treffen. Jetzt
+      bekommen Punkte in der Vollbild-Ansicht ein deutlich größeres Antipp-Ziel (26px, 32px für den
+      aktuellen Standort, statt 15px/19px im kleinen Kartenvorschau) - reine CSS-Regel, die nur
+      innerhalb von <code>.map-zoom-overlay</code> greift.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.74</span><span class="tag tag-fix">Korrektur</span></div>
@@ -11983,7 +12007,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.74.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.75.</footer>
 
 </div>`;
 
