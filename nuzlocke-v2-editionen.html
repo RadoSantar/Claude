@@ -3999,7 +3999,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.76";
+const APP_VERSION = "1.9.77";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -7766,19 +7766,55 @@ const REGION_MAPS = {
     region: "Kanto",
     image: "sprites/maps/kanto-lgpe-map.png",
     points: {
-      "Alabastia":[13.9,66.3], "Route 1":[13.9,58.1], "Vertania City":[14.1,49.8], "Route 22":[11.3,49.5],
-      "Route 2":[14.1,42.2], "Vertania-Wald":[14.2,33.4], "Marmoria City":[13.9,22.2], "Route 3":[20.5,22.5],
-      "Mondberg":[26.5,16.3], "Route 4":[31.0,16.1], "Azuria City":[39.1,16.9], "Route 24":[39.1,9.3],
-      "Route 25":[43.0,5.5], "Route 5":[38.9,22.8], "Unterführung":[38.9,38.1], "Route 6":[39.1,45.1],
-      "Orania City":[39.1,55.7], "Route 11":[45.0,55.4], "Digdas Höhle":[17.2,27.5], "Route 9":[44.9,16.9],
-      "Route 10":[51.3,27.2], "Felstunnel":[51.5,21.9], "Lavandia":[51.7,33.1], "Pokémon-Turm":[48.2,29.0],
-      "Route 12":[51.3,49.5], "Route 13":[48.0,66.3], "Route 14":[42.2,72.2], "Route 15":[38.4,77.1],
-      "Route 8":[44.4,32.8], "Route 7":[34.4,33.4], "Prismania City":[29.6,33.4], "Saffronia City":[39.1,33.1],
-      "Route 16":[23.8,33.4], "Route 17":[20.2,44.0], "Route 18":[26.2,77.7], "Fuchsania City":[32.8,78.0],
+      "Alabastia":[13.9,66.3],
+      "Route 1":{quad:[[13.2,63.2],[14.6,63.2],[13.4,52.6],[14.9,52.6]]},
+      "Vertania City":[14.1,49.8],
+      "Route 22":{quad:[[7.5,50.9],[8.4,48.2],[12.3,48.5],[12.1,50.9]]},
+      "Route 2":{quad:[[13.2,46.5],[14.9,46.8],[14.7,25.3],[13.2,25.6]]},
+      "Vertania-Wald":[14.2,33.4],
+      "Marmoria City":[13.9,22.2],
+      "Route 3":{quad:[[15.9,23.3],[24.7,23.3],[25,15.7],[15.9,18.9]]},
+      "Mondberg":[26.5,16.3],
+      "Route 4":{quad:[[28.1,15.1],[37.1,15.1],[37.3,17.7],[28.1,17.7]]},
+      "Azuria City":[39.1,16.9],
+      "Route 24":{quad:[[38.4,13.3],[38.4,4.5],[39.9,6.8],[39.6,13.6]]},
+      "Route 25":{quad:[[38.6,4.5],[45.5,4.5],[45.2,6.6],[40.1,6.8]]},
+      "Route 5":{quad:[[38.2,19.8],[39.7,20.4],[39.6,29.7],[38.1,30]]},
+      "Unterführung":[38.9,38.1],
+      "Route 6":{quad:[[38.1,36.2],[39.7,36.2],[39.7,52.1],[38.1,52.1]]},
+      "Orania City":[39.1,55.7],
+      "Route 11":{quad:[[40.9,54.1],[50.5,54.1],[50.5,56.8],[40.7,56.5]]},
+      "Digdas Höhle":[17.2,27.5],
+      "Route 9":{quad:[[40.6,15.7],[52.2,15.7],[50.5,18],[40.7,18]]},
+      "Route 10":{quad:[[52.2,15.4],[52.2,30.1],[50.7,30.1],[50.5,18.3]]},
+      "Felstunnel":[51.5,21.9],
+      "Lavandia":[51.7,33.1],
+      "Pokémon-Turm":[48.2,29.0],
+      "Route 12":{quad:[[50.8,36.5],[52.3,35.9],[52.2,67.3],[50.7,64.4]]},
+      "Route 13":{quad:[[41.6,65.3],[50.7,64.7],[52.2,67.6],[42.9,67.9]]},
+      "Route 14":{quad:[[41.6,65.3],[41.2,75.9],[42.7,78.5],[42.9,67.6]]},
+      "Route 15":{quad:[[41.2,75.9],[34.3,76.2],[34.4,78.8],[42.5,78.5]]},
+      "Route 8":{quad:[[40.6,32.1],[49.7,32.1],[49.7,34.5],[40.7,34.8]]},
+      "Route 7":{quad:[[31.5,32.1],[37.3,32.1],[37.1,34.8],[31.5,34.2]]},
+      "Prismania City":[29.6,33.4],
+      "Saffronia City":[39.1,33.1],
+      "Route 16":{quad:[[27.6,32.1],[19.7,31.8],[20.9,34.5],[27.8,34.5]]},
+      "Route 17":{quad:[[19.7,32.1],[19.4,78.8],[21.2,75.3],[21,35.1]]},
+      "Route 18":{quad:[[19.4,79.1],[31,78.2],[30.5,75.6],[21.2,75.3]]},
+      "Fuchsania City":[32.8,78.0],
       "Safari-Zone":[34.6,70.9],
-      "Route 19":[32.9,84.5], "Route 20":[29.1,88.0], "Seeschauminseln":[23.5,88.6], "Zinnoberinsel":[14.2,88.9],
-      "Pokémon-Villa":[16.4,83.9], "Route 21":[13.9,76.9], "Kraftwerk":[54.8,28.1], "Vertania-Arena":[16.9,48.7],
-      "Route 22 (Rückweg)":[8.4,49.5], "Route 23":[7.8,40.1], "Siegesstraße":[7.9,27.8], "Pokémon-Liga":[7.6,16.3],
+      "Route 19":{quad:[[32,80.4],[32,86.6],[33.1,89.2],[33.6,80.4]]},
+      "Route 20":{quad:[[15.9,87.2],[31.8,86.9],[32.8,89.5],[15.9,89.5]]},
+      "Seeschauminseln":[23.5,88.6],
+      "Zinnoberinsel":[14.2,88.9],
+      "Pokémon-Villa":[16.4,83.9],
+      "Route 21":{quad:[[13.1,85.4],[14.9,85.1],[14.9,69.6],[13.1,69.3]]},
+      "Kraftwerk":[54.8,28.1],
+      "Vertania-Arena":[16.9,48.7],
+      "Route 22 (Rückweg)":[10.0,49.4],
+      "Route 23":{quad:[[7.3,50.5],[7.3,20.2],[8.6,19.7],[8.6,47]]},
+      "Siegesstraße":[7.9,27.8],
+      "Pokémon-Liga":[7.6,16.3],
       "Azuria-Höhle":[35.6,12.2]
     }
   },
@@ -10297,7 +10333,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="stats">
     <div class="stat"><div class="n">23</div><div class="l">Editionen</div></div>
     <div class="stat"><div class="n">1075</div><div class="l">Pokémon-Arten</div></div>
-    <div class="stat"><div class="n">79</div><div class="l">Versions&shy;stände</div></div>
+    <div class="stat"><div class="n">80</div><div class="l">Versions&shy;stände</div></div>
     <div class="stat"><div class="n">Gen 1–9</div><div class="l">Abgedeckt</div></div>
   </div>
 
@@ -10307,6 +10343,29 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.77</span><span class="tag tag-feat">Neu</span></div>
+      <h3>Kanto-Routen auf der Kartengrafik als Fläche kalibriert</h3>
+      <p>Nutzer hat alle Kanto-Routen im Kalibrierungsmodus abgetippt - jede "Route N" (plus
+      "Route 22 (Rückweg)") hat jetzt eine echte, vom Nutzer selbst am Bild abgelesene Vierecksfläche
+      statt eines einzelnen Punkts, alle anderen Standorte (Städte, Höhlen, Sonderorte) bleiben
+      unverändert Punkte. Beim Verifizieren fiel dabei genau der Fall auf, vor dem die Route-22-
+      Lektion (siehe v1.9.58) bereits warnte, nur diesmal in Flächen- statt Punktform: "Route 22" und
+      "Route 22 (Rückweg)" verlaufen über dieselbe reale Straße und ihre eingereichten Flächen
+      überlappten sich dadurch fast vollständig - geometrisch nachgemessen lagen nur rund 4% von
+      "Route 22"s Fläche außerhalb von "Route 22 (Rückweg)"s Fläche, der Rest war wegen der
+      DOM-Reihenfolge-Regel (später gerenderte Fläche gewinnt bei Überlappung) für "Route 22"
+      praktisch untappbar. Nutzerentscheidung: "Route 22 (Rückweg)" bleibt bewusst ein einzelner Punkt
+      statt einer Fläche (Ausnahme von der sonst reinen "Route "-Namenspräfix-Regel für den
+      Kalibrierungsmodus) - sie ist ohnehin nur ein einmaliger, fangfreier Rückweg-Durchgang zur
+      richtigen Platzierung von Giovannis Arenakampf in der Liste, keine eigenständig zu durchquerende
+      neue Strecke. "Route 22" selbst bleibt die volle Fläche. Per Playwright verifiziert: alle 25
+      Routen-Flächen (25 Punkte für die übrigen Standorte, 50 insgesamt) rendern und reagieren korrekt,
+      "Route 22" ist jetzt großflächig korrekt antippbar, nur der kleine, für jeden Kartenpunkt übliche
+      Radius um den "Route 22 (Rückweg)"-Punkt herum löst weiterhin zu diesem auf (dasselbe Verhalten
+      wie bei jedem anderen Punkt, der nah an oder auf einer Fläche liegt).</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.76</span><span class="tag tag-feat">Neu</span></div>
@@ -12094,7 +12153,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.76.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.77.</footer>
 
 </div>`;
 

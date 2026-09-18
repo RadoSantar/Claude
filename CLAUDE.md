@@ -500,10 +500,38 @@ jederzeit hier in `CLAUDE.md` + Git-Historie rekonstruierbar, siehe Rest dieser 
   zurück. "Überspringen"/"Neu starten" leeren den Buffer immer mit. Export-Textfeld formatiert Flächen
   als `"Name":{quad:[[x,y],...]}`-Literal, direkt einfügbar in `REGION_MAPS`, exakt wie bisher bei
   Punkten.
-  **Bewusst noch nicht umgesetzt:** die eigentliche Neukalibrierung der bestehenden Kanto-/Hoenn-Routen
-  auf das neue Flächen-Format - dieser Commit liefert nur den Mechanismus, echte Flächen-Koordinaten
-  folgen schrittweise, sobald der Nutzer Zeit für die (aufwändigere, 4-Tap-pro-Route) Kalibrierungs-
-  runde hat.
+  **Kanto-Routen kalibriert (v1.9.77):** Nutzer hat alle Kanto-Routen per 4-Tap-Kalibrierung
+  abgetippt - jede "Route N" (plus "Route 22 (Rückweg)") hat jetzt eine echte Vierecksfläche statt
+  eines Punkts, restliche Standorte unverändert Punkte. **Regression beim Verifizieren gefunden,
+  genau der vor der Umsetzung befürchtete Fall:** "Route 22" und "Route 22 (Rückweg)" verlaufen über
+  dieselbe reale Straße - ihre eingereichten Flächen überlappten sich dadurch fast vollständig
+  (geometrisch nachgemessen: nur ~4% von "Route 22"s Fläche lagen außerhalb von "Route 22
+  (Rückweg)"s Fläche). Wegen der DOM-Reihenfolge-Regel (später gerenderte Fläche gewinnt bei
+  Überlappung, s. o.) war "Route 22" dadurch auf fast seiner gesamten Fläche untappbar - exakt die
+  Kanto-Route-22-Lektion von v1.9.58, nur diesmal in Flächen- statt Punktform. Nutzerentscheidung
+  (Rückfrage): "Route 22 (Rückweg)" bleibt bewusst ein einzelner PUNKT statt einer Fläche - explizite
+  Ausnahme von der sonst reinen `"Route "`-Namenspräfix-Regel für den Kalibrierungsmodus
+  (`isRouteCalibrationName()` würde ihr weiterhin eine Fläche anbieten, das REGION_MAPS-Datenmodell
+  erlaubt aber ohnehin beide Formen pro Eintrag unabhängig vom Namen). Begründung: sie ist nur ein
+  einmaliger, fangfreier Rückweg-Durchgang zur richtigen Platzierung von Giovannis Arenakampf in der
+  Liste, keine eigenständig zu durchquerende neue Strecke - anders als bei den zwei ursprünglich
+  identischen Punkt-Koordinaten in v1.9.58 reicht hier ein einzelner Punkt an geeigneter Stelle
+  innerhalb von "Route 22"s Fläche, da Punkte laut DOM-Reihenfolge-Regel ohnehin immer NACH allen
+  Flächen gerendert werden und so unabhängig von ihrer Position tappbar bleiben - nur der übliche
+  kleine Radius um den Punkt herum (26px in der Vollbild-Ansicht, wie bei jedem anderen Punkt) löst
+  weiterhin zum Rückweg auf, der Rest von "Route 22"s Fläche korrekt zu "Route 22". Verifiziert per
+  Playwright: 25 Flächen + 25 Punkte (50 Standorte insgesamt), alle klickbar an der richtigen Stelle.
+  **Lehre, über die reine Punkt/Punkt-Kollision aus v1.9.58 hinaus verallgemeinert:** die
+  Route-22-Falle (zwei Standortnamen für denselben physischen Ort im Spiel) betrifft nicht nur exakt
+  identische Punkt-Koordinaten, sondern jede Overlap-Situation zwischen zwei antippbaren Zielen an
+  derselben realen Stelle - bei Flächen zusätzlich verschärft, weil zwei unabhängig kalibrierte
+  Vierecke für denselben Ort naturgemäß einen Großteil ihrer Fläche teilen, nicht nur einen Punkt.
+  Bei künftigen Editionen mit ähnlichen "Ort wird zweimal besucht"-Fällen (s. Datenmodell-Abschnitt
+  oben zu `noCatch:true`) aktiv prüfen, ob eine der beiden Positionen besser ein Punkt statt einer
+  Fläche bleibt, statt beide unbesehen als Fläche zu übernehmen.
+  **Hoenn-Routen weiterhin nicht auf das Flächen-Format umkalibriert** - bewusst zurückgestellt, bis
+  der Nutzer Zeit für die entsprechende Kalibrierungsrunde hat (analog zum ursprünglichen
+  Kanto-Aufwand).
   **Kalibrierungsmodus (seit v1.9.56):** Nutzerfeedback zu den v1.9.55-Koordinaten war "wirken kreuz
   und quer" — eine gezielte Recherche nach einer beschrifteten Referenz für die Let's-Go-Kartenansicht
   (welcher der 18 sichtbaren Wegpunkte welcher Stadt entspricht) blieb ergebnislos, weder Bulbapedia
