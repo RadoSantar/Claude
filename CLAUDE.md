@@ -312,6 +312,66 @@ jederzeit hier in `CLAUDE.md` + Git-Historie rekonstruierbar, siehe Rest dieser 
   Parametern aufgerufen werden, Fehlertexte) deshalb per Playwright mit `page.route()`-Mocking der
   RPC-Endpunkte getestet, DB-Verhalten (Ablauf, Einmalgebrauch, Nicht-gefunden-Fall) separat per
   direktem `curl`.
+  **Rückbau von "Jetzt synchronisieren" zu "Speichern"/"Laden" + Auto-Save-Schalter (seit v1.9.78):**
+  Nutzerfrage "cloud sync sollte doch mal speichern und laden als buttons beinhalten was ist mit
+  denen passiert?" - Ursache: `cloudSyncCardHtml()` zeigte "Speichern"/"Laden" NUR im noch nicht
+  verknüpften Zustand (`!state.syncCode`); war Sync bereits aktiv, gab es nur noch einen einzigen
+  Button "Jetzt synchronisieren" (`runSyncFlow()` - zog erst den Cloud-Stand, verglich
+  `lastSyncedAt` gegen `updated_at` und zeigte bei Abweichung `openSyncConflictSheet()` mit
+  "Cloud-Version übernehmen"/"Lokale Version behalten" zur Auswahl, sonst schrieb es direkt). Nutzer
+  wollte stattdessen wieder die zwei einfachen, immer sichtbaren Aktionen, auch wenn Sync bereits
+  aktiv ist - **kompletter Ersatz, nicht Ergänzung**: `runSyncFlow()`, `openSyncConflictSheet()`,
+  `progressSummary()` und `pendingSyncRemote` vollständig entfernt (samt der zugehörigen
+  `use-cloud-save`/`use-local-save`-Klick-Handler), da sie sonst als tote Anschlussstellen ohne
+  jeden Aufrufer im Code stehen geblieben wären. Neue Funktion `saveToCloud()`
+  (`data-act="save-to-cloud"`) pusht ohne jeden Vergleich direkt den lokalen Stand unter dem
+  bestehenden Code - fällt auf `createSyncCode()` zurück, falls (praktisch nie über diesen Button
+  erreichbar) noch gar kein Code existiert. "Laden" (`data-act="open-link-sync-code"`) nutzt jetzt
+  bei bereits aktivem Sync denselben Dialog wie beim Erstverknüpfen, aber mit dem eigenen
+  `state.syncCode` als `data-id` vorausgefüllt (der Klick-Dispatcher reicht `id = t.dataset.id` an
+  `openLinkSyncCodeSheet(id)` durch) - bewusst weiterhin ÄNDERBAR im Eingabefeld, nicht schreibgeschützt,
+  damit sich darüber auch auf einen komplett anderen Code umspringen lässt (z. B. um versehentlich
+  falsch verknüpft zu haben). Beide Aktionen überschreiben ohne Rückfrage die jeweils andere Seite -
+  das ist so gewollt (explizite Nutzerentscheidung statt automatischer Konflikterkennung), im
+  Hilfetext (`SETTINGS_HELP.cloudsync`) entsprechend als "wer zuletzt speichert/lädt gewinnt"
+  erklärt.
+  **QR-Code nur noch auf Antippen:** zweiter Teil derselben Nutzeranfrage - "der qr code muss nicht
+  ständig sondern nur bei bedarf angezeigt werden". Der permanente `qrCodeSvg(...)`-Aufruf sowohl in
+  `cloudSyncCardHtml()` (aktiver Zustand) als auch in `openSyncActivatedSheet()` (Sheet direkt nach
+  dem Erstellen eines Codes) wurde entfernt - `syncCodeActionsHtml()` bekam stattdessen einen
+  vierten Button "QR-Code anzeigen" (`data-act="show-sync-qr"`, `data-id="<code>"`), der eine neue
+  Funktion `openSyncQrSheet(code)` aufruft (eigenes kleines Sheet, nur der QR-Code selbst). Da
+  `syncCodeActionsHtml()` bereits an beiden vorherigen QR-Stellen eingebunden war, war keine
+  zusätzliche Einbindung nötig - nur die beiden direkten `qrCodeSvg(...)`-Aufrufe mussten raus.
+  **Neuer Auto-Save-Schalter**, im selben Zug per Rückfrage geklärt (Trigger: sofort nach jeder
+  Änderung statt Zeitintervall oder Beim-Schließen; eigener Ein/Aus-Schalter statt automatisch immer
+  an, sobald Sync aktiv ist - Nutzerbegründung indirekt: Kontrolle über Mobilfunk-Datenverbrauch/
+  Verhalten bei mehreren gleichzeitig genutzten Geräten bleibt beim Nutzer). Neues Datenfeld
+  `state.autoSyncEnabled` (Default `false`, normalisiert in `normalizeState()` analog zu
+  `syncCode`/`lastSyncedAt` direkt daneben), Checkbox in `cloudSyncCardHtml()`
+  (`data-auto-sync-toggle`, `.check-row`-Muster wie bei den Hausregeln/Schlüsselitems) nur im
+  bereits-aktiv-Zustand sichtbar (Auto-Save ohne bestehenden Sync-Code ergibt keinen Sinn). Zentral
+  verdrahtet über `saveState()` selbst (`function saveState(){ writeSave(activeSaveId, state);
+  scheduleAutoCloudSave(); }`) statt an einzelnen Änderungsstellen im Code verteilt - `saveState()`
+  läuft ohnehin nach praktisch jeder Zustandsänderung im gesamten Code, ein einziger Anschlusspunkt
+  genügt dadurch. `scheduleAutoCloudSave()` bricht sofort ab, wenn der Schalter aus ist oder kein
+  Sync-Code existiert, sonst setzt es einen 4-Sekunden-`setTimeout` (per `clearTimeout` bei jedem
+  erneuten Aufruf verworfen und neu gestartet - klassisches Debounce, mehrere schnelle Änderungen
+  hintereinander lösen dadurch nur einen einzigen Push aus, nicht einen pro Änderung). **Wichtige
+  Falle, beim Schreiben direkt vermieden:** der Timer-Callback selbst darf `state.lastSyncedAt`
+  NICHT über `saveState()` wegschreiben, sondern muss direkt `writeSave(activeSaveId, state)`
+  aufrufen - sonst würde dieser interne Schreibvorgang wiederum `scheduleAutoCloudSave()` erneut
+  auslösen und einen Endlos-Alle-4-Sekunden-Push in Gang setzen, obwohl gar keine echte
+  Nutzeränderung mehr stattgefunden hat. Bewusst kein Ergebnis-Sheet nach einem Auto-Save (anders als
+  bei manuellem "Speichern") - ein Fehlschlag wird beim nächsten Änderungs-Tick automatisch erneut
+  versucht, sichtbar nur indirekt über einen veralteten "Zuletzt synchronisiert"-Zeitstempel in der
+  Karte. Beim manuellen "Sync trennen" wird der Schalter mit zurückgesetzt
+  (`state.autoSyncEnabled = false`) und ein eventuell noch laufender Timer per `clearTimeout`
+  verworfen, damit nach dem Trennen kein verspäteter Push mehr auf den (dann u. U. schon
+  überschriebenen) alten Code zielt. Verifiziert per Playwright mit gemocktem `supabaseRpc()`: drei
+  schnell aufeinanderfolgende `saveState()`-Aufrufe lösten nachweislich nur einen einzigen
+  `nuzlocke_put_save`-Aufruf aus (nicht drei), Ausschalten des Schalters verhinderte jeden weiteren
+  Push zuverlässig.
 - **Standort-Suche (seit v1.9.51):** Lupen-FAB im Routen-Tab öffnet ein Sheet
   (`openLocationSearchSheet()`), Live-Ergebnisliste (`locationSearchResultsHtml()`) respektiert
   bestehende Sichtbarkeits-Filter (`hiddenRegions`, `hidePostgame`). Antippen eines Treffers

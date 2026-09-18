@@ -3999,7 +3999,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.77";
+const APP_VERSION = "1.9.78";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -4146,6 +4146,7 @@ function normalizeState(parsed){
   if(!Array.isArray(parsed.teamOrder)) parsed.teamOrder = [];
   if(typeof parsed.syncCode !== "string") parsed.syncCode = null;
   if(typeof parsed.lastSyncedAt !== "number") parsed.lastSyncedAt = null;
+  if(typeof parsed.autoSyncEnabled !== "boolean") parsed.autoSyncEnabled = false;
   if(!parsed.keyItemsChecked) parsed.keyItemsChecked = {};
   if(!parsed.houseRules) parsed.houseRules = { setMode:true, speciesClause:true, noItems:true, levelCap:true };
   if(typeof parsed.duoCode !== "string") parsed.duoCode = null;
@@ -4339,7 +4340,7 @@ function bootstrapActiveSave(){
   state = loadSaveState(activeSaveId);
 }
 
-function saveState(){ writeSave(activeSaveId, state); }
+function saveState(){ writeSave(activeSaveId, state); scheduleAutoCloudSave(); }
 
 /* ---------- Eingebettete QR-Code-Bibliothek (fuer Sync-Verknuepfung per Scan, seit v1.9.60) ----------
    "QR Code Generator for JavaScript" von Kazuhiko Arase (https://github.com/kazuhikoarase/qrcode-generator),
@@ -6721,21 +6722,34 @@ async function pushCloudSave(code, dataObj){
 }
 
 let syncInProgress = false;
-let pendingSyncRemote = null;
+let autoSyncTimer = null;
 
-/* Drei Buttons (statt wie beim Run-Rückblick nur einem umgeschalteten) - hier explizit gewünscht:
+/* Vier Buttons (statt wie beim Run-Rückblick nur einem umgeschalteten) - hier explizit gewünscht:
    "Kopieren" geht immer (Zwischenablage-API ist praktisch überall verfügbar), "Teilen" nur wenn
    navigator.share existiert (progressive enhancement, gleiches Muster wie sonst im Code). "Kurzen
    PIN anzeigen" (seit v1.9.61) erzeugt bei Bedarf einen 6-stelligen, 10 Minuten gültigen Einmal-PIN
    über nuzlocke_create_pairing_pin - siehe showPairingPin()/CLAUDE.md für den Hintergrund (Nutzer-
-   feedback: der lange Code sei zum Abtippen umständlich). */
+   feedback: der lange Code sei zum Abtippen umständlich). "QR-Code anzeigen" (seit v1.9.78) zeigt
+   den QR-Code nur noch auf Antippen in einem eigenen Sheet, statt wie zuvor permanent in der
+   Cloud-Sync-Karte zu stehen - Nutzerfeedback: der QR-Code müsse "nicht ständig sondern nur bei
+   Bedarf" sichtbar sein. */
 function syncCodeActionsHtml(code){
   const canShare = typeof navigator!=="undefined" && !!navigator.share;
   return `<div style="display:flex; gap:8px; margin-bottom:8px; flex-wrap:wrap;">
     <button class="btn btn-secondary" data-act="copy-sync-code">Kopieren</button>
     ${canShare ? `<button class="btn btn-secondary" data-act="share-sync-code">Teilen</button>` : ""}
     <button class="btn btn-secondary" data-act="show-pairing-pin">Kurzen PIN anzeigen</button>
+    <button class="btn btn-secondary" data-act="show-sync-qr" data-id="${escapeHtml(code)}">QR-Code anzeigen</button>
   </div>`;
+}
+
+function openSyncQrSheet(code){
+  openSheet(`
+    <h3>QR-Code</h3>
+    <div class="loc-sub" style="margin-bottom:14px;">Mit der Kamera-App eines anderen Geräts scannen, um diesen Spielstand dort unter „Laden" zu übernehmen.</div>
+    <div style="margin-bottom:14px;">${qrCodeSvg(syncShareUrl(code), 5)}</div>
+    <div class="sheet-footer"><button class="btn btn-primary btn-block" data-act="close-sheet">OK</button></div>
+  `);
 }
 
 /* Fordert einen kurzlebigen 6-stelligen PIN an, der serverseitig auf state.syncCode aufloest (siehe
@@ -6780,6 +6794,7 @@ function cloudSyncCardHtml(){
       </div>
     </div>`;
   }
+  const autoSyncChecked = !!state.autoSyncEnabled;
   return `<div class="card">
     <div class="card-top">
       <div class="loc-name">Cloud-Sync</div>
@@ -6787,9 +6802,15 @@ function cloudSyncCardHtml(){
     </div>
     <div class="loc-sub" style="margin-bottom:10px;">Sync aktiv · Zuletzt synchronisiert: ${formatRelativeTime(state.lastSyncedAt)}</div>
     ${nameField}
-    <button class="btn btn-primary btn-block" style="margin-bottom:8px;" data-act="run-sync" ${syncInProgress?"disabled":""}>${syncInProgress?"Synchronisiert …":"Jetzt synchronisieren"}</button>
+    <label class="check-row${autoSyncChecked?" done":""}" style="margin-bottom:12px;">
+      <input type="checkbox" data-auto-sync-toggle ${autoSyncChecked?"checked":""} />
+      <span>Auto-Save (nach jeder Änderung automatisch in die Cloud speichern)</span>
+    </label>
+    <div style="display:flex; gap:8px; margin-bottom:8px;">
+      <button class="btn btn-primary" style="flex:1;" data-act="save-to-cloud" ${syncInProgress?"disabled":""}>${syncInProgress?"Speichert …":"Speichern"}</button>
+      <button class="btn btn-secondary" style="flex:1;" data-act="open-link-sync-code" data-id="${escapeHtml(state.syncCode)}">Laden</button>
+    </div>
     <div class="loc-sub" style="margin-bottom:8px;">Um ein weiteres Gerät zu verknüpfen, dort auf „Laden" diesen Code eingeben oder den QR-Code scannen: <strong style="font-family:var(--font-mono); letter-spacing:.05em;">${escapeHtml(state.syncCode)}</strong></div>
-    <div style="margin-bottom:10px;">${qrCodeSvg(syncShareUrl(state.syncCode), 4)}</div>
     ${syncCodeActionsHtml(state.syncCode)}
     <button class="btn btn-ghost" data-act="unlink-sync">Sync trennen</button>
   </div>`;
@@ -6808,63 +6829,57 @@ function openSyncActivatedSheet(code){
     <h3>Gespeichert</h3>
     <div class="loc-sub" style="margin-bottom:14px;">Um ein weiteres Gerät zu verknüpfen: dort die App öffnen, unter „Laden" diesen Code eintragen oder den QR-Code mit der Kamera scannen:</div>
     <div class="loc-sub" style="font-family:var(--font-mono); font-size:1.3rem; letter-spacing:.08em; text-align:center; margin-bottom:14px;">${escapeHtml(code)}</div>
-    <div style="margin-bottom:14px;">${qrCodeSvg(syncShareUrl(code), 5)}</div>
     ${syncCodeActionsHtml(code)}
     <div class="sheet-footer"><button class="btn btn-primary btn-block" data-act="close-sheet">OK</button></div>
   `);
 }
 
-/* Grobe, editionsunabhängige Kennzahlen für den Konflikt-Vergleich - bewusst NICHT über die
-   bestehenden aliveCount()/deadCount()/activeBosses()-Helfer, die alle fest auf den globalen
-   state zugreifen: hier muss dieselbe Zählung auch auf dem rohen Cloud-Datensatz laufen, ohne
-   den globalen state dafür umzuschalten. */
-function progressSummary(s){
-  const locs = Array.isArray(s.locations) ? s.locations : [];
-  const caught = locs.filter(l=>l.mon && !l.mon.dead).length;
-  const dead = locs.filter(l=>l.mon && l.mon.dead).length;
-  const bossesDefeated = Object.keys(s.bossDefeated||{}).length;
-  return `${caught} gefangen · ${dead} gestorben · ${bossesDefeated} Bosse besiegt`;
-}
-
-function openSyncConflictSheet(remote){
-  pendingSyncRemote = remote;
-  openSheet(`
-    <h3>Unterschiedliche Stände</h3>
-    <div class="loc-sub" style="margin-bottom:10px;">Die Cloud-Version wurde zuletzt ${escapeHtml(formatRelativeTime(new Date(remote.updated_at).getTime()))} aktualisiert - vermutlich von einem anderen Gerät. Welche Version soll gelten?</div>
-    <div class="loc-sub" style="margin-bottom:4px;"><strong>Cloud:</strong> ${escapeHtml(progressSummary(remote.data||{}))}</div>
-    <div class="loc-sub" style="margin-bottom:14px;"><strong>Lokal:</strong> ${escapeHtml(progressSummary(state))}</div>
-    <div class="sheet-footer" style="flex-direction:column; gap:10px;">
-      <button class="btn btn-primary btn-block" data-act="use-cloud-save">Cloud-Version übernehmen</button>
-      <button class="btn btn-secondary btn-block" data-act="use-local-save">Lokale Version behalten (Cloud überschreiben)</button>
-      <button class="btn btn-ghost btn-block" data-act="close-sheet">Abbrechen</button>
-    </div>
-  `);
-}
-
-/* Manuelles "Jetzt synchronisieren": zieht zuerst den Cloud-Stand, um zu prüfen, ob der seit dem
-   letzten bekannten Sync-Zeitpunkt von einem anderen Gerät verändert wurde (echter Konflikt) -
-   nur dann wird nachgefragt, statt eine Seite stillschweigend zu überschreiben. Ohne Konflikt
-   (kein Cloud-Stand oder unverändert seit dem letzten Sync) wird der lokale Stand einfach
-   hochgeladen, das ist der Normalfall bei nur einem aktiv genutzten Gerät. */
-async function runSyncFlow(){
-  if(!state.syncCode || syncInProgress) return;
+/* "Speichern" bei bereits aktivem Sync: schreibt den lokalen Stand direkt unter dem bestehenden
+   Code in die Cloud (überschreibt dort bewusst ohne Rückfrage/Konfliktvergleich - eine explizite,
+   vom Nutzer selbst angestoßene Aktion, kein automatischer Hintergrund-Abgleich). Ersetzt seit
+   v1.9.78 das frühere "Jetzt synchronisieren" (das vor jedem Push erst zog und bei Abweichung ein
+   Konfliktfenster zeigte) - Nutzerwunsch: wieder die zwei einfachen, eindeutigen Aktionen
+   "Speichern"/"Laden" statt einer automatisierten Sync-Logik. Ohne vorhandenen Code (sollte über
+   den Button praktisch nie vorkommen, da er dann "open-link-sync-code"/"create-sync-code" zeigt)
+   fällt es auf createSyncCode() zurück. */
+async function saveToCloud(){
+  if(!state.syncCode) return createSyncCode();
+  if(syncInProgress) return;
   syncInProgress = true; render();
   try{
-    const remote = await pullCloudSave(state.syncCode);
-    if(remote && (!state.lastSyncedAt || new Date(remote.updated_at).getTime() > state.lastSyncedAt + 2000)){
-      syncInProgress = false; render();
-      openSyncConflictSheet(remote);
-      return;
-    }
     const updatedAt = await pushCloudSave(state.syncCode, state);
     state.lastSyncedAt = new Date(updatedAt).getTime();
     saveState();
     syncInProgress = false; render();
-    openSyncResultSheet("Synchronisiert", "Dein Spielstand ist jetzt aktuell in der Cloud.");
+    openSyncResultSheet("Gespeichert", "Dein Spielstand ist jetzt in der Cloud gesichert.");
   }catch(e){
     syncInProgress = false; render();
-    openSyncResultSheet("Synchronisierung fehlgeschlagen", "Keine Verbindung zur Cloud möglich - prüfe deine Internetverbindung und versuch es erneut.");
+    openSyncResultSheet("Cloud nicht erreichbar", "Keine Verbindung möglich - versuch es später erneut.");
   }
+}
+
+/* Auto-Save (seit v1.9.78, eigener Ein/Aus-Schalter in der Cloud-Sync-Karte, standardmäßig aus):
+   pusht bei aktiviertem Schalter automatisch nach jeder Änderung in die Cloud, ohne dass "Speichern"
+   angetippt werden muss. Verzögert/gebündelt (4s nach der letzten Änderung, per clearTimeout bei
+   jedem erneuten Aufruf verschoben) statt bei jedem einzelnen Tap sofort einen eigenen Netzwerk-
+   Request auszulösen - mehrere schnelle Änderungen (z.B. mehrere Fänge hintereinander) landen so
+   in nur einem Push. Bewusst still im Hintergrund (kein Ergebnis-Sheet wie bei manuellem
+   "Speichern") - ein Fehlschlag wird beim nächsten Änderungs-Tick automatisch erneut versucht,
+   sichtbar nur indirekt über einen veralteten "Zuletzt synchronisiert"-Zeitstempel in der Karte.
+   Schreibt den neuen Zeitstempel bewusst per writeSave() direkt statt über saveState() weg - sonst
+   würde saveState() hier erneut scheduleAutoCloudSave() auslösen und einen Endlos-Alle-4-Sekunden-
+   Push ganz ohne weitere echte Änderungen in Gang setzen. */
+function scheduleAutoCloudSave(){
+  if(!state.autoSyncEnabled || !state.syncCode) return;
+  clearTimeout(autoSyncTimer);
+  autoSyncTimer = setTimeout(async ()=>{
+    try{
+      const updatedAt = await pushCloudSave(state.syncCode, state);
+      state.lastSyncedAt = new Date(updatedAt).getTime();
+      writeSave(activeSaveId, state);
+      render();
+    }catch(e){ /* nächster Änderungs-Tick versucht es erneut */ }
+  }, 4000);
 }
 
 async function createSyncCode(){
@@ -6878,7 +6893,7 @@ async function createSyncCode(){
     openSyncActivatedSheet(code);
   }catch(e){
     render();
-    openSyncResultSheet("Cloud nicht erreichbar", `Der Code ${code} wurde lokal gespeichert, aber noch nicht hochgeladen - „Jetzt synchronisieren" versucht es erneut, sobald wieder eine Verbindung besteht.`);
+    openSyncResultSheet("Cloud nicht erreichbar", `Der Code ${code} wurde lokal gespeichert, aber noch nicht hochgeladen - „Speichern" versucht es erneut, sobald wieder eine Verbindung besteht.`);
   }
 }
 
@@ -10333,7 +10348,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="stats">
     <div class="stat"><div class="n">23</div><div class="l">Editionen</div></div>
     <div class="stat"><div class="n">1075</div><div class="l">Pokémon-Arten</div></div>
-    <div class="stat"><div class="n">80</div><div class="l">Versions&shy;stände</div></div>
+    <div class="stat"><div class="n">81</div><div class="l">Versions&shy;stände</div></div>
     <div class="stat"><div class="n">Gen 1–9</div><div class="l">Abgedeckt</div></div>
   </div>
 
@@ -10343,6 +10358,31 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.78</span><span class="tag tag-feat">Neu</span></div>
+      <h3>Cloud-Sync: wieder "Speichern"/"Laden" statt automatischem Abgleich, QR-Code nur auf Antippen, neuer Auto-Save-Schalter</h3>
+      <p>Nutzerfeedback: die Cloud-Sync-Karte sollte auch bei bereits aktivem Sync wieder die zwei
+      einfachen Buttons "Speichern"/"Laden" zeigen (bisher nur vor der ersten Aktivierung sichtbar -
+      danach gab es nur noch "Jetzt synchronisieren", das vor jedem Push erst zog und bei Abweichung
+      ein Konfliktfenster zeigte). Umgesetzt: "Jetzt synchronisieren" samt Konflikt-Vergleichsfenster
+      entfernt, stattdessen wie im nicht verknüpften Zustand zwei eindeutige Aktionen - "Speichern"
+      überschreibt ohne Rückfrage die Cloud mit dem lokalen Stand, "Laden" öffnet denselben Dialog wie
+      beim Erstverknüpfen (jetzt mit dem eigenen Code vorausgefüllt, aber weiterhin änderbar, um auch
+      auf einen anderen Code umzuspringen) und überschreibt den lokalen Stand mit der Cloud-Version.
+      Zweiter Punkt: der QR-Code stand bisher permanent in der Karte, obwohl er nur beim Verknüpfen
+      eines weiteren Geräts gebraucht wird - "nicht ständig sondern nur bei Bedarf" laut
+      Nutzerwunsch. Jetzt hinter einem eigenen "QR-Code anzeigen"-Button (neben "Kopieren"/"Kurzen PIN
+      anzeigen") in einem eigenen Sheet, exakt wie die bereits bestehenden Buttons. Dritter Punkt,
+      direkt im Anschluss gewünscht: ein neuer "Auto-Save"-Schalter (Checkbox in der Karte,
+      standardmäßig AUS) speichert danach ohne weiteres Zutun nach jeder Änderung automatisch in die
+      Cloud - verzögert/gebündelt 4 Sekunden nach der letzten Änderung (per Playwright verifiziert:
+      drei schnell aufeinanderfolgende Änderungen lösen nur einen einzigen Push aus, keinen pro
+      Änderung), damit z. B. mehrere Fänge hintereinander nicht mehrere einzelne Netzwerk-Requests
+      auslösen. Bewusst ein eigener Schalter statt eines Automatismus, sobald Sync eingerichtet ist -
+      bei mehreren gleichzeitig genutzten Geräten würde Auto-Save sonst unbemerkt den zuletzt
+      schreibenden Stand gewinnen lassen, ohne dass die App das anzeigt.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.77</span><span class="tag tag-feat">Neu</span></div>
@@ -12153,7 +12193,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.77.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.78.</footer>
 
 </div>`;
 
@@ -12334,7 +12374,7 @@ const SETTINGS_HELP = {
   dupes: { category:"Regeln", title:"Dupes-Clause-Warnung", text:"Klassische Nuzlocke-Hausregel: pro Entwicklungsreihe darf meist nur ein Pokémon gefangen werden. Ist die Warnung aktiv, meldet sich die App beim Fangen, wenn die Art (oder eine verwandte Entwicklungsstufe) schon im Team, in der Box oder im Friedhof vorhanden ist - der Fang bleibt trotzdem möglich, es ist nur ein Hinweis, keine Sperre." },
   nickname: { category:"Regeln", title:"Nickname-Pflicht", text:"Erzwingt beim Fangen einen Spitznamen, bevor sich der Fang speichern lässt - hilfreich, wenn ihr euch als Hausregel vorgenommen habt, jedem Pokémon einen eigenen Namen zu geben." },
   houserules: { category:"Regeln", title:"Regelwerk-Checkliste", text:"Dokumentiert, welche der üblichen Nuzlocke-Hausregeln (Set-Modus, Species-Klausel, kein Item im Kampf, Level-Cap je Bosskampf) für diesen Run gelten - rein zur Erinnerung/Dokumentation, jederzeit an-/abwählbar. Wirkt sich anders als die Dupes-Clause-Warnung und die Level-Cap-Berechnung nicht auf die App-Logik aus, das sind eigene, tatsächlich wirksame Einstellungen." },
-  cloudsync: { category:"Spielstände & Mehrspieler", title:"Cloud-Sync", text:"Verknüpft einen Spielstand über einen zufälligen, hochentropischen Code mit einer Cloud-Zeile - ganz ohne Konto oder Login. „Speichern“ lädt diesen Spielstand erstmalig hoch und zeigt dabei Code und QR-Code an; „Laden“ verknüpft dieses Gerät stattdessen mit einem bereits bestehenden Cloud-Stand (ersetzt den lokalen Fortschritt) - per Code-Eingabe, durch Scannen des QR-Codes vom anderen Gerät mit der normalen Kamera-App, oder per „Kurzen PIN anzeigen“: ein 6-stelliger, nur 10 Minuten gültiger und nach einmaliger Nutzung sofort verfallender Einweg-PIN als bequemere Alternative zum langen Code (der eigentliche, dauerhafte Code bleibt davon unberührt). Wer den langen Code kennt, kann den Spielstand abrufen oder überschreiben, deshalb gilt er wie ein Passwort: nicht öffentlich teilen, nur an die eigenen Geräte oder eine vertraute Person für den Duo-Vergleich weitergeben. „Jetzt synchronisieren“ gleicht danach ab - gibt es seit dem letzten bekannten Abgleich eine neuere Cloud-Version (z.&nbsp;B. von einem anderen Gerät), fragt die App nach, welche Version gelten soll, statt automatisch etwas zu überschreiben." },
+  cloudsync: { category:"Spielstände & Mehrspieler", title:"Cloud-Sync", text:"Verknüpft einen Spielstand über einen zufälligen, hochentropischen Code mit einer Cloud-Zeile - ganz ohne Konto oder Login. „Speichern“ lädt den lokalen Stand in die Cloud hoch (beim ersten Mal wird dafür ein neuer Code erzeugt, danach überschreibt jeder weitere Tap einfach die bestehende Cloud-Zeile); „Laden“ ersetzt stattdessen den lokalen Fortschritt durch einen bestehenden Cloud-Stand - per Code-Eingabe, durch Scannen des QR-Codes vom anderen Gerät mit der normalen Kamera-App, oder per „Kurzen PIN anzeigen“: ein 6-stelliger, nur 10 Minuten gültiger und nach einmaliger Nutzung sofort verfallender Einweg-PIN als bequemere Alternative zum langen Code (der eigentliche, dauerhafte Code bleibt davon unberührt). Beide Aktionen überschreiben ohne weiteren Vergleich die jeweils andere Seite - wer auf mehreren Geräten gleichzeitig spielt, sollte deshalb bewusst zwischen „Speichern“ (dieses Gerät gilt) und „Laden“ (das andere Gerät gilt) wählen. Der QR-Code selbst wird nicht dauerhaft angezeigt, sondern erst nach Antippen von „QR-Code anzeigen“ in einem eigenen Fenster. Wer den langen Code kennt, kann den Spielstand abrufen oder überschreiben, deshalb gilt er wie ein Passwort: nicht öffentlich teilen, nur an die eigenen Geräte oder eine vertraute Person für den Duo-Vergleich weitergeben. Der Schalter „Auto-Save“ speichert danach automatisch nach jeder Änderung in die Cloud (kurz gebündelt, kein Tap auf „Speichern“ mehr nötig) - standardmäßig aus, da er bei aktivem Sync auf mehreren gleichzeitig genutzten Geräten den zuletzt schreibenden Stand automatisch gewinnen lässt." },
   duocompare: { category:"Spielstände & Mehrspieler", title:"Duo-Vergleich", text:"Vergleicht den eigenen Fortschritt rein lesend mit dem einer anderen Person über deren Cloud-Sync-Code: Gesamtabschluss, Überlebensrate und besiegte Bosse nebeneinander. Verändert den fremden Spielstand nie und rührt die eigene Sync-Verknüpfung nicht an - der Partner-Code ist unabhängig vom eigenen Sync-Code." },
   soullink: { category:"Spielstände & Mehrspieler", title:"Soul-Link-Modus", text:"Koppelt Encounter 1:1 mit dem Duo-Partner über die Standort-ID - funktioniert automatisch überall dort, wo beide Editionen dieselben Standortnamen verwenden (z.&nbsp;B. Partnerversionen wie Schwarz/Weiß oder Rubin/Saphir), nicht nur bei exakt identischer Edition. Stirbt ein Pokémon an einem gekoppelten Standort, gibt es einen Hinweis, falls das Partner-Pokémon dort laut letztem Abgleich noch lebt. Rein informativ: aus denselben Sicherheitsgründen wie beim Duo-Vergleich schreibt die App nie in den Spielstand der Partner-Person, das Aufgeben muss jede Seite selbst vornehmen." },
   keyitems: { category:"Werkzeuge", title:"Schlüsselitems/VMs-Checkliste", text:"Zeigt, welche VMs/Schlüsselitems (Surfer, Zerschneider, Stärke, …) schon eingesammelt wurden - hilfreich, um zu sehen, welche Standorte bereits erreichbar sind. Editionsspezifisch hinterlegt, da sich das VM-Set je nach Spiel-Engine unterscheidet (z.&nbsp;B. Whirlpool/Kaskade nur in manchen Generationen)." }
@@ -13845,41 +13885,22 @@ document.addEventListener("click", e=>{
     inp.click();
   }
   else if(act==="create-sync-code") createSyncCode();
-  else if(act==="open-link-sync-code") openLinkSyncCodeSheet();
+  else if(act==="save-to-cloud") saveToCloud();
+  else if(act==="open-link-sync-code") openLinkSyncCodeSheet(id);
   else if(act==="confirm-link-sync-code") confirmLinkSyncCode();
-  else if(act==="run-sync") runSyncFlow();
   else if(act==="copy-sync-code"){ if(state.syncCode) copySyncCode(state.syncCode); }
   else if(act==="share-sync-code"){ if(state.syncCode) shareSyncCode(state.syncCode); }
   else if(act==="show-pairing-pin"){ showPairingPin(); }
+  else if(act==="show-sync-qr"){ if(id) openSyncQrSheet(id); }
   else if(act==="unlink-sync"){
     openConfirmSheet("Sync trennen", "Die Verknüpfung mit der Cloud wird hier entfernt - der Cloud-Spielstand selbst bleibt bestehen und lässt sich später mit demselben Code wieder verknüpfen.", "Trennen", "confirm-unlink-sync");
   }
   else if(act==="confirm-unlink-sync"){
     state.syncCode = null;
     state.lastSyncedAt = null;
+    state.autoSyncEnabled = false;
+    clearTimeout(autoSyncTimer);
     saveState(); closeSheet(); render();
-  }
-  else if(act==="use-cloud-save"){
-    if(!pendingSyncRemote){ closeSheet(); return; }
-    const remoteData = normalizeState(pendingSyncRemote.data);
-    remoteData.syncCode = state.syncCode;
-    remoteData.lastSyncedAt = new Date(pendingSyncRemote.updated_at).getTime();
-    state = remoteData;
-    pendingSyncRemote = null;
-    saveState(); closeSheet(); render();
-  }
-  else if(act==="use-local-save"){
-    closeSheet();
-    if(!pendingSyncRemote) return;
-    const code = state.syncCode;
-    pendingSyncRemote = null;
-    pushCloudSave(code, state).then(updatedAt=>{
-      state.lastSyncedAt = new Date(updatedAt).getTime();
-      saveState(); render();
-      openSyncResultSheet("Synchronisiert", "Deine lokale Version wurde in die Cloud übernommen.");
-    }).catch(()=>{
-      openSyncResultSheet("Synchronisierung fehlgeschlagen", "Keine Verbindung zur Cloud möglich - prüfe deine Internetverbindung und versuch es erneut.");
-    });
   }
   else if(act==="link-duo-code"){
     const input = document.getElementById("duoCodeInput");
@@ -14096,6 +14117,13 @@ document.addEventListener("input", e=>{
   }
   if(e.target && e.target.dataset && e.target.dataset.houseRule){
     state.houseRules[e.target.dataset.houseRule] = e.target.checked;
+    saveState();
+    const row = e.target.closest(".check-row");
+    if(row) row.classList.toggle("done", e.target.checked);
+  }
+  if(e.target && e.target.dataset && "autoSyncToggle" in e.target.dataset){
+    state.autoSyncEnabled = e.target.checked;
+    if(!e.target.checked) clearTimeout(autoSyncTimer);
     saveState();
     const row = e.target.closest(".check-row");
     if(row) row.classList.toggle("done", e.target.checked);
