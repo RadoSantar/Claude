@@ -594,6 +594,9 @@ explizit wieder darum.
   Fällen suchen (Präzedenzfall bereits vorhanden: Pokémon-Turm/Kraftwerk/Pokémon-Villa bekommen in
   derselben Kanto-Liste längst eigene Kacheln, Safari-Zone war die Ausnahme) - Silph Co./S.S. Anne/
   Rocket-Versteck bleiben dagegen bewusst reine Notizen, da sie keine eigenen wilden Pokémon haben.
+  Der neue Kartenpunkt in `REGION_MAPS["rot-blau"]` war zunächst nur ein ungefährer Platzhalter neben
+  Fuchsania City - **in v1.9.74 vom Nutzer selbst über den Kalibrierungsmodus** auf die tatsächliche
+  Position `[34.6, 70.9]` korrigiert, alle anderen Kanto-Punkte blieben dabei unverändert.
 - **Hoenn — Urzeithöhle fehlte komplett (behoben in v1.9.65):** Nutzerfrage "kann es sein dass in
   allen Hoenn-Regionen die Urzeithöhle fehlt? Außerdem in ORAS die Geheiminsel." Bestätigt: die
   Urzeithöhle (Cave of Origin, bei Xeneroville/Sootopolis City) fehlte in Rubin/Saphir/Smaragd/ORAS
