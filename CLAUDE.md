@@ -466,6 +466,22 @@ jederzeit hier in `CLAUDE.md` + Git-Historie rekonstruierbar, siehe Rest dieser 
   gedachtes Feature — nach erfolgreicher Kalibrierung nicht zwingend entfernen (schadet nicht, könnte
   bei künftiger Ausweitung auf weitere Editionen/Kartenbilder wiederverwendet werden), aber auch nicht
   aktiv bewerben.
+- **Rückgängig-Toast — Wegwischen in alle Richtungen (seit v1.9.70):** Nutzerwunsch "der
+  Rückgängig-Button soll auf alle Richtungen weg geschoben werden und auch mit einer Animation."
+  Bis dahin (seit v1.9.33) ließ sich `.undo-toast` nur seitlich wegwischen -
+  `attachToastSwipeDismiss()` trackte nur `clientX`, und die CSS-Regel `touch-action:pan-y` überließ
+  vertikales Wischen bewusst der nativen Seiten-Scroll-Geste, wodurch ein Hoch-/Runterwischen den
+  Toast gar nicht erst erreichte. Jetzt `touch-action:none` (übergibt die volle Fläche der eigenen
+  Logik) plus echtes Zwei-Achsen-Tracking (`curDx`/`curDy`, `Math.hypot()` für Gesamtdistanz und
+  -geschwindigkeit statt nur `Math.abs(curDx)`) - der Toast folgt dem Finger in jede Richtung
+  inklusive diagonal und fliegt beim Loslassen (Schwellwert weiterhin 80px Distanz ODER 0.5px/ms
+  Geschwindigkeit) exakt in der gezogenen Richtung hinaus (`scale = 480/dist` auf `(curDx,curDy)`
+  angewendet, statt vorher fest ±420px auf der X-Achse), bei zu kurzem Zug schnappt er weich zurück.
+  Verifiziert per Playwright mit `hasTouch:true` + synthetisch erzeugten `new Touch(...)`/
+  `new TouchEvent(...)`-Objekten (ein `{clientX, clientY}`-Objektliteral reicht dafür NICHT, `Touch`
+  ist ein eigener Konstruktor) - vier Fälle geprüft: aufwärts, diagonal runter-rechts, diagonal
+  hoch-links (jeweils Fliegen-Animation + tatsächliches Entfernen aus dem DOM), sowie ein kurzer Zug
+  unter der Schwelle (Zurückschnappen, Toast bleibt bestehen).
 
 ## Deutsche Namen — bekannte Stolperfallen
 
