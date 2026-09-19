@@ -592,6 +592,33 @@ jederzeit hier in `CLAUDE.md` + Git-Historie rekonstruierbar, siehe Rest dieser 
   **Hoenn-Routen weiterhin nicht auf das Flächen-Format umkalibriert** - bewusst zurückgestellt, bis
   der Nutzer Zeit für die entsprechende Kalibrierungsrunde hat (analog zum ursprünglichen
   Kanto-Aufwand).
+  **Beliebig viele Ecken statt fest 4, kleinere Ecken-Marker, kräftigere Farben (seit v1.9.79):**
+  Nutzerfeedback direkt nach der ersten kompletten Kanto-Routen-Kalibrierung: "nebst kurven routen
+  gibt es auch welche mit wckigen Kurven besser wäre wenn ich beliebig viele ecken anwählen kann und
+  dann bestätige" + "wenn ich eine ecke angewählt habe ist der punkt dafür viel zu gross" + "die
+  farben sind mir zu dezent nimm kräftigere farben". Drei getrennte Anpassungen an derselben Stelle:
+  1) **Ecken-Obergrenze entfernt** - der `calibration-tap`-Handler committete bisher automatisch beim
+  vierten Tap (`if(calibrationQuadBuffer.length>=4){...}`), das reichte für Routen mit mehreren
+  Richtungswechseln (nicht nur ein einfaches Viereck) nicht aus. Jetzt sammelt `calibrationQuadBuffer`
+  beliebig viele Ecken ohne Auto-Abschluss, ein neuer Button "Fertig (`data-act=
+  "calibration-confirm-corners"`)" committet erst auf expliziten Tap - `disabled`, solange weniger als
+  3 Ecken gesetzt sind (ein Polygon braucht mindestens ein Dreieck). Wichtig: das Datenformat selbst
+  (`{quad:[[x,y],...]}`, `clip-path: polygon(...)`) kannte diese 4er-Grenze nie - sie war reine
+  UI-Beschränkung des Kalibrierungsmodus, keine Datenmodell-Grenze. `mapCalibrationHtml()`s
+  Fortschrittstext dadurch von "Ecke X von 4" auf "Ecke X" (ohne Gesamtzahl) vereinfacht, "Ecke
+  zurück" (`calibration-back`) unverändert - nimmt weiterhin nur die zuletzt gesetzte Ecke aus dem
+  Buffer, keine Änderung an dieser Logik nötig. 2) **`.map-corner-dot` von 18px auf 11px verkleinert**
+  (Font von .62rem auf .5rem) - auf der nur ~300-350px breiten Kalibrierungs-Kartenvorschau wirkte der
+  ursprüngliche Marker deutlich überdimensioniert und verdeckte bei eng beieinanderliegenden Ecken
+  (genau der Fall bei winkligen Routen) die darunterliegenden Kartendetails, die man zum präzisen
+  Antippen der nächsten Ecke braucht. 3) **`.map-quad`-Deckkraft kräftig angehoben**: offen (nicht
+  erledigt) 32%→55%, erledigt 40%→62%, aktueller Standort 60%→78% - vorher auf der Kartengrafik
+  gegenüber deren eigenem, ähnlich getöntem Pink/Tan-Wegbelag kaum wahrnehmbar (per Vorher/Nachher-
+  Screenshot-Vergleich bereits bei der ursprünglichen v1.9.77-Auslieferung selbst aufgefallen, aber
+  damals nicht als eigener Punkt behoben, da nicht explizit bemängelt - jetzt nachgeholt). Verifiziert
+  per Playwright: 7 nacheinander simulierte Ecken-Taps landeten vollständig im Buffer (kein Abbruch
+  bei 4), der "Fertig"-Button blieb bis zur dritten Ecke `disabled` und committete danach das
+  komplette 7-Ecken-Polygon unverändert (keine Kappung auf 4) in `calibrationPoints`.
   **Kalibrierungsmodus (seit v1.9.56):** Nutzerfeedback zu den v1.9.55-Koordinaten war "wirken kreuz
   und quer" — eine gezielte Recherche nach einer beschrifteten Referenz für die Let's-Go-Kartenansicht
   (welcher der 18 sichtbaren Wegpunkte welcher Stadt entspricht) blieb ergebnislos, weder Bulbapedia
