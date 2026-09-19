@@ -613,6 +613,50 @@ jederzeit hier in `CLAUDE.md` + Git-Historie rekonstruierbar, siehe Rest dieser 
   Standorte (25 Flächen, 25 Punkte); ein Tap direkt auf den Rückweg-Punkt trifft "Route 22
   (Rückweg)"; ein Tap in einer vom Punkt entfernten Ecke von "Route 22"s neuer Fläche trifft korrekt
   "Route 22".
+  **Sauberere Routenflächen, dritte Farbe für den aktuellen Standort, Farb-Legende (v1.9.89):**
+  direktes Nutzerfeedback im Anschluss an die v1.9.88-Neukalibrierung: "das grün der routen ist noch
+  immer etwas zu dezent... beides wirkt optisch noch etwas 'billig' wie können wir es erreichen dass
+  es sauber und clean aussieht" + "der aktuelle standort ist noch etwas zu dezent evtl. sollte hier
+  sind wir in einer anderen farbe dargestellt werden?" Drei Änderungen an `.map-quad`/`.map-pin`:
+  1. **Tiefe statt Flachfarbe:** `.map-quad` hatte bislang einen einzelnen flachen `rgba(...)`-Ton
+     direkt auf `clip-path` - wirkt wie ein hart ausgeschnittener Farbfleck ohne Tiefe ("billig
+     hingeklatscht"). Jetzt ein diagonaler `linear-gradient` (heller oben-links, kräftiger
+     unten-rechts) statt eines flachen Tons, plus `filter:drop-shadow(...)` statt `box-shadow` für
+     den Rand-Schatten. **Wichtiger technischer Grund für `filter` statt `box-shadow`:** `box-shadow`
+     (wie `border`) orientiert sich am rechteckigen Element-Body, nicht am sichtbaren, von
+     `clip-path` beschnittenen Vieleck - ein `box-shadow` würde also am Rand der UNSICHTBAREN
+     Bounding-Box ansetzen, nicht an der tatsächlichen Polygonform. `filter` wird dagegen laut
+     CSS-Spezifikation NACH dem `clip-path` auf das bereits beschnittene Ergebnis angewendet und
+     folgt damit exakt der sichtbaren Silhouette - ergibt einen echten, an der Form anliegenden
+     Schlagschatten. Grün (`.map-quad.done`) zusätzlich von .5/.85 (vorher .62 flach) angehoben.
+  2. **Aktueller Standort in eigener dritter Farbe:** bislang nutzten `.map-pin.current`/
+     `.map-quad.current` denselben Gold-/Editions-Akzentton wie "offen" (`--gold`/`--gold-glow`), nur
+     mit höherer Deckkraft - auf derselben Karte kaum vom "offen"-Zustand zu unterscheiden. Jetzt
+     `--evolve`/`--evolve-glow` (dieselbe Blau-Familie, die im übrigen Code schon als generischer
+     "hier hinschauen"-Akzent dient, z. B. `.search-highlight`, `evolveFlash`) - drei jetzt klar
+     unterscheidbare Farben: Gold/Editionsfarbe = offen, Grün = erledigt, Blau = aktueller Standort.
+     `.map-pin.current` bekam zusätzlich einen weichen Leuchtring (`box-shadow` mit `--evolve-glow`,
+     da Punkte anders als Flächen keinen `clip-path` haben und `box-shadow` dort problemlos
+     funktioniert) und wuchs leicht (19px→20px). Beide `.current`-Marker pulsieren jetzt zusätzlich
+     dezent (`@keyframes mapCurrentPulse`, Opacity 1↔.72, 2,4s, in
+     `@media (prefers-reduced-motion: no-preference)` gekapselt wie alle anderen Animationen dieser
+     Codebase) - bewusst langsam/leise gehalten, damit es auffällt, ohne unruhig oder erneut "billig"
+     zu wirken.
+  3. **Farb-Legende:** neue kompakte `<div class="map-legend">` mit drei Punkt+Label-Paaren
+     (`regionMapSheetHtml()`, direkt über der Kartengrafik) - NUR im Kartengrafik-Modus, nicht im
+     Schema-Modus, da die Schema-Ansicht ihre Zustände bereits über Text + eigene `.schema-dot`-
+     Klassen selbsterklärend zeigt und die Legende dort nur zusätzlicher Lärm wäre.
+  **Wichtige Randnotiz, per Playwright-Test entdeckt (kein Bug, aber zunächst überraschend):** die
+  Farbwerte, die `getComputedStyle()` für `--gold-glow` in Rot/Blau zurückgibt, sind KEIN Gold-Ton,
+  sondern ein Rot-Ton (z. B. `224,57,60`) - das ist beabsichtigtes bestehendes Verhalten von
+  `injectEditionThemeCSS()`, das `--gold`/`--gold-glow` pro Edition auf deren eigene Akzentfarbe
+  umbiegt (der Name "gold" ist rein historisch/generisch, keine feste Farbaussage) - die neuen
+  Verlauf-/Schatten-Regeln erben dieses Verhalten automatisch korrekt mit, da sie dieselben
+  CSS-Variablen verwenden wie zuvor, keine Anpassung nötig. Verifiziert per Playwright (inkl.
+  Screenshot-Kontrolle): Verlauf und Schlagschatten korrekt berechnet und editionsspezifisch
+  eingefärbt; der aktuelle Standort zeigt nachweislich `--evolve` als Hintergrund-/Randfarbe plus
+  laufende `mapCurrentPulse`-Animation; die Legende erscheint nur im Kartengrafik-Modus, verschwindet
+  im Schema-Modus.
   **Hoenn-Routen weiterhin nicht auf das Flächen-Format umkalibriert** - bewusst zurückgestellt, bis
   der Nutzer Zeit für die entsprechende Kalibrierungsrunde hat (analog zum ursprünglichen
   Kanto-Aufwand).

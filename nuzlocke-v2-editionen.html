@@ -1063,6 +1063,9 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 
 .map-mode-toggle{ display:flex; gap:8px; margin-bottom:12px; }
 .map-mode-toggle .btn{ flex:1; padding:9px 14px; min-height:auto; font-size:.82rem; }
+.map-legend{ display:flex; flex-wrap:wrap; gap:6px 14px; margin-bottom:10px; }
+.map-legend-item{ display:flex; align-items:center; gap:6px; font-size:.76rem; font-weight:600; color:var(--ink-soft); }
+.map-legend-dot{ width:10px; height:10px; border-radius:50%; flex:none; }
 
 .schema-map{ display:flex; flex-direction:column; position:relative; padding:4px 0; }
 .schema-map::before{
@@ -1088,19 +1091,59 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
   background:var(--surface); border:2.5px solid var(--ink-soft); padding:0; box-shadow:0 1px 3px rgba(0,0,0,.4);
 }
 .map-pin.done{ background:var(--good); border-color:var(--good); }
-.map-pin.current{ background:var(--accent); border-color:var(--accent); width:19px; height:19px; margin:-9px 0 0 -9px; }
+/* Aktueller Standort (seit v1.9.89, Nutzerfeedback "der aktuelle standort ist noch etwas zu dezent")
+   bekommt eine eigene, dritte Farbe (--evolve, das bereits an anderer Stelle als "hier hinschauen"-
+   Akzent dient, z.B. .search-highlight/evolveFlash) statt weiterhin Gold zu verwenden - Gold steht
+   auf derselben Karte schon für "offen/nicht erledigt", ein Gold-Ton für "aktueller Standort" war
+   dadurch zu ähnlich zum Rest der Karte, um wirklich herauszustechen. Drei klar unterscheidbare
+   Farben jetzt: Gold=offen, Grün=erledigt, Blau=aktueller Standort. Der zusätzliche weiche Ring
+   (box-shadow, `--evolve-glow`) plus die dezente Pulsieren-Animation (s.u.) sollen den Standort auch
+   auf den ersten Blick zwischen den anderen Markern finden lassen, nicht erst beim genauen Hinsehen. */
+.map-pin.current{
+  background:var(--evolve); border-color:var(--evolve); width:20px; height:20px; margin:-10px 0 0 -10px;
+  box-shadow:0 0 0 5px rgba(var(--evolve-glow),.4), 0 1px 4px rgba(0,0,0,.45);
+}
 /* Flächen-Marker für Routen (seit v1.9.76, s. Kommentar bei calibrationQuadBuffer) - derselbe volle
    `inset:0`-Button wie bei .map-quad-Instanzen üblich, `clip-path` beschränkt Füllung UND Klickbereich
    auf die vier kalibrierten Ecken. `appearance:none` + zurückgesetzte Button-UA-Stile, da der Button
    hier (anders als der winzige .map-pin) die komplette Kartenfläche einnimmt und sonst sichtbare
    Standard-Button-Ränder/-Hintergrund über die ganze Karte legen würde (die aber ohnehin komplett
-   von clip-path verdeckt würden, aus Sauberkeitsgründen trotzdem zurückgesetzt). */
+   von clip-path verdeckt würden, aus Sauberkeitsgründen trotzdem zurückgesetzt).
+   Design überarbeitet in v1.9.89 (Nutzerfeedback: "wirkt noch billig hingeklatscht") - ein einzelner
+   flacher rgba()-Ton auf `clip-path` sieht wie ein hart ausgeschnittener Farbfleck ohne jede Tiefe
+   aus. Zwei Verbesserungen, beide bewusst rein visuell (Klick-/Kalibrierungslogik unverändert):
+   1) ein diagonaler Verlauf (heller oben-links, kräftiger unten-rechts) statt eines flachen Farbtons
+   - wirkt weniger wie "eine Farbe drübergelegt", mehr wie eine bewusst gestaltete Fläche mit Licht/
+   Tiefe. 2) `filter:drop-shadow(...)` statt `box-shadow` - `box-shadow` würde sich (wie `border`) am
+   rechteckigen Element orientieren und dadurch am Rand der UNSICHTBAREN Bounding-Box statt an der
+   tatsächlich sichtbaren Polygonform ansetzen; `filter` wird dagegen erst NACH dem `clip-path`
+   angewendet und folgt damit exakt der sichtbaren Vieleck-Silhouette - das ergibt einen echten,
+   an der Form anliegenden Schlagschatten statt eines rechteckigen Artefakts. */
 .map-quad{
   position:absolute; inset:0; width:100%; height:100%; margin:0; padding:0; border:none;
-  appearance:none; -webkit-appearance:none; background:rgba(var(--gold-glow),.55); cursor:pointer;
+  appearance:none; -webkit-appearance:none; cursor:pointer;
+  background:linear-gradient(155deg, rgba(var(--gold-glow),.4), rgba(var(--gold-glow),.72));
+  filter:drop-shadow(0 1px 2px rgba(20,16,10,.4));
 }
-.map-quad.done{ background:rgba(var(--good-glow),.62); }
-.map-quad.current{ background:rgba(var(--gold-glow),.78); }
+.map-quad.done{
+  background:linear-gradient(155deg, rgba(var(--good-glow),.5), rgba(var(--good-glow),.85));
+  filter:drop-shadow(0 1px 2px rgba(20,16,10,.35));
+}
+.map-quad.current{
+  background:linear-gradient(155deg, rgba(var(--evolve-glow),.55), rgba(var(--evolve-glow),.9));
+  filter:drop-shadow(0 1px 3px rgba(var(--evolve-glow),.55));
+}
+@media (prefers-reduced-motion: no-preference){
+  /* Dezentes, langsames "Atmen" statt eines auffälligen Blinkens - soll beim ersten Blick auf die
+     Karte auffallen, ohne unruhig/"billig" zu wirken. Wirkt auf Punkt UND Fläche gleichermaßen, damit
+     der aktuelle Standort unabhängig von seiner Marker-Form (Stadt=Punkt, Route=Fläche) denselben
+     Wiedererkennungswert hat. */
+  @keyframes mapCurrentPulse{
+    0%, 100%{ opacity:1; }
+    50%{ opacity:.72; }
+  }
+  .map-pin.current, .map-quad.current{ animation:mapCurrentPulse 2.4s ease-in-out infinite; }
+}
 /* Nummerierte Ecken-Marker während der Kalibrierung EINER Route (noch nicht abgeschlossen) - optisch
    bewusst von den grauen "erledigt"-Markern (.map-pin.done/.map-quad.done) unterschieden, damit klar
    ist: das hier ist der laufende Fortschritt der aktuell bearbeiteten Route, keine bereits fertige
@@ -4080,7 +4123,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.88";
+const APP_VERSION = "1.9.89";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -8147,9 +8190,19 @@ function regionMapSheetHtml(){
     <button class="btn ${mapViewMode==="schema"?"btn-primary":"btn-secondary"}" data-act="set-map-mode" data-id="schema">Schema</button>
   </div>` : "";
   const note = map ? `<div class="loc-sub" style="margin-bottom:10px;">Prototyp: die Klickpunkte auf der Kartengrafik lassen sich jederzeit über „Punkte selbst kalibrieren" anpassen - wirken sie noch kreuz und quer (z.B. bei einem frisch hinzugefügten Kartenbild), einfach neu kalibrieren.</div>` : "";
+  /* Farb-Legende (seit v1.9.89) - nur in der Kartengrafik-Ansicht, da die Schema-Ansicht ihre drei
+     Zustände (offen/erledigt/aktuell) bereits über Text + eigene .schema-dot-Klassen selbsterklärend
+     zeigt. Auf der Kartengrafik dagegen tragen die Marker keinerlei Text - seit der neuen dritten
+     Farbe für den aktuellen Standort (s. CSS bei .map-pin.current) lohnt sich eine einzeilige
+     Erklärung, damit die Bedeutung nicht erraten werden muss. */
+  const legend = (map && mapViewMode==="artwork") ? `<div class="map-legend">
+    <span class="map-legend-item"><span class="map-legend-dot" style="background:var(--gold);"></span>Offen</span>
+    <span class="map-legend-item"><span class="map-legend-dot" style="background:var(--good);"></span>Erledigt</span>
+    <span class="map-legend-item"><span class="map-legend-dot" style="background:var(--evolve);"></span>Aktueller Standort</span>
+  </div>` : "";
   const body = (map && mapViewMode==="artwork") ? artworkMapHtml(game.id) : schemaMapHtml(region);
   const calibrateBtn = (map && mapViewMode==="artwork") ? `<button class="btn btn-ghost" data-act="calibration-start" style="margin-top:10px;">Punkte selbst kalibrieren</button>` : "";
-  return `<h3>${escapeHtml(region||"")}-Karte</h3>${note}${modeToggle}<div id="regionMapBody">${body}</div>${calibrateBtn}`;
+  return `<h3>${escapeHtml(region||"")}-Karte</h3>${note}${modeToggle}${legend}<div id="regionMapBody">${body}</div>${calibrateBtn}`;
 }
 function openRegionMapSheet(){
   openSheet(regionMapSheetHtml());
@@ -10518,7 +10571,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="stats">
     <div class="stat"><div class="n">23</div><div class="l">Editionen</div></div>
     <div class="stat"><div class="n">1075</div><div class="l">Pokémon-Arten</div></div>
-    <div class="stat"><div class="n">91</div><div class="l">Versions&shy;stände</div></div>
+    <div class="stat"><div class="n">92</div><div class="l">Versions&shy;stände</div></div>
     <div class="stat"><div class="n">Gen 1–9</div><div class="l">Abgedeckt</div></div>
   </div>
 
@@ -10528,6 +10581,39 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.89</span><span class="tag tag-feat">Neu</span></div>
+      <h3>Kartengrafik: sauberere Routenflächen, dritte Farbe für den aktuellen Standort, Legende</h3>
+      <p>Nutzerfeedback direkt nach der Kanto-Neukalibrierung: "das grün der routen ist noch immer
+      etwas zu dezent... beides wirkt optisch noch etwas 'billig' wie können wir es erreichen dass es
+      sauber und clean aussieht" sowie "der aktuelle standort ist noch etwas zu dezent evtl. sollte
+      hier sind wir in einer anderen farbe dargestellt werden?" Drei Änderungen:</p>
+      <ul>
+        <li><strong>Routenflächen mit Tiefe statt Flachfarbe:</strong> die Routen-Flächen (<code>.map-quad</code>)
+        hatten bisher einen einzelnen flachen <code>rgba()</code>-Ton auf <code>clip-path</code> - sah
+        wie ein hart ausgeschnittener Farbfleck ohne jede Tiefe aus. Jetzt ein diagonaler Verlauf
+        (heller oben-links, kräftiger unten-rechts) plus ein an die tatsächliche Vieleckform
+        anliegender Schlagschatten (<code>filter:drop-shadow(...)</code> statt <code>box-shadow</code>,
+        da <code>box-shadow</code> sich am unsichtbaren Rechteck statt am sichtbaren Polygon
+        orientieren würde). Grün ("Erledigt") zusätzlich kräftiger.</li>
+        <li><strong>Aktueller Standort in eigener, dritter Farbe:</strong> bisher nutzte der aktuelle
+        Standort denselben Gold-/Akzent-Ton wie "offen", nur mit höherer Deckkraft - auf derselben
+        Karte kaum zu unterscheiden. Jetzt Blau (<code>--evolve</code>, dieselbe Farbe, die auch an
+        anderer Stelle als "hier hinschauen"-Akzent dient) mit weichem Leuchtring
+        (<code>--evolve-glow</code>) und einer dezenten, langsamen Pulsieren-Animation (2,4s, respektiert
+        <code>prefers-reduced-motion</code>) - fällt jetzt auch beim ersten Blick auf, ohne unruhig zu
+        wirken. Drei klar unterscheidbare Farben: Gold/Editionsfarbe = offen, Grün = erledigt, Blau =
+        aktueller Standort.</li>
+        <li><strong>Kleine Farb-Legende</strong> über der Kartengrafik (nur dort, die Schema-Ansicht
+        erklärt ihre Zustände bereits über Text) - drei kompakte Punkt+Label-Paare, damit die neue
+        Bedeutung nicht erraten werden muss.</li>
+      </ul>
+      <p>Verifiziert per Playwright: Verlauf und Schlagschatten korrekt berechnet (inkl. editionsspezifischer
+      Einfärbung über <code>injectEditionThemeCSS()</code>, die "Gold" pro Edition durch deren Akzentfarbe
+      ersetzt); der aktuelle Standort zeigt nachweislich <code>--evolve</code> als Hintergrund-/Randfarbe
+      und die Pulsieren-Animation; die Legende erscheint nur in der Kartengrafik-Ansicht, nicht im Schema.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.88</span><span class="tag tag-fix">Korrektur</span></div>
@@ -12609,7 +12695,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.88.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.89.</footer>
 
 </div>`;
 
