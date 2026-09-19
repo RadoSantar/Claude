@@ -702,6 +702,41 @@ jederzeit hier in `CLAUDE.md` + Git-Historie rekonstruierbar, siehe Rest dieser 
   sich an anderen, potenziell wachsenden UI-Stapeln orientieren muss (hier: FAB-Reihen), sollte seine
   Position nach Möglichkeit aus deren tatsächlichem, gerade sichtbarem Zustand ableiten statt aus
   einer zum Zeitpunkt der Implementierung passenden, aber stillschweigend alternden Konstante.
+- **Todesursache-Tracking, zwei getrennte Wege (Bosskampf-Verlinkung seit v1.9.80):** Nutzerfrage
+  "hatten wir da nicht mal eine Funktion, dass beim Sterben abgefragt wird, gegen wen es verloren
+  hat?" - stimmte, aber nur für den EINEN der zwei Fälle. Es gibt zwei komplett unabhängige
+  Hausregel-Schalter, die leicht verwechselt werden:
+  1. **"Todesursache eintragen"** (`state.trackDeathCause`, unter „Regeln", seit v1.8.48/1.9.x
+     ausgebaut) - fragt beim "Als gestorben markieren" AUSSERHALB von Bosskämpfen
+     (`openDeathCauseSheet()`) per Freitext+Spezies-Autovervollständigung ab, gegen was es passiert
+     ist (z.B. ein wildes Pokémon beim Grinden, wo es keinen vorab bekannten Gegner gibt).
+  2. **"Gegner-Team tracken"** (`state.trackBossTeams`, unter „Duell &amp; Bosse") - lässt pro Boss
+     das tatsächliche gegnerische Team (bis zu 6 Pokémon, `state.bossOpponentTeams[bossId]`)
+     eintragen. Bis v1.9.79 diente das NUR der Anzeige/Referenz auf der Bosskarte - beim Eintragen
+     einer Niederlage (`openBossResultSheet()`) gab es weiterhin nur eine reine Checkliste "welche
+     Team-Pokémon sind gestorben", ohne jede Verlinkung zum bereits bekannten Gegner-Team. Genau
+     diese fehlende Verlinkung war der Nutzerfund.
+  **Fix (v1.9.80):** `openBossResultSheet()` zeigt jetzt, wenn `trackBossTeams` an ist UND für
+  genau diesen Boss ein Team eingetragen wurde, unter jeder angehakten Todeszeile eine Reihe
+  antippbarer Chips mit den Namen aus `bossOpponentTeams[bossId]` (`.death-vs-chip`,
+  `data-act="toggle-death-vs"`, Einzelauswahl pro Zeile - nochmaliges Antippen hebt sie wieder auf).
+  Auswahl landet in einer rein lokalen, nicht persistierten Zwischenvariable `bossLossDeathVs`
+  (keyed nach `loc.id`), wird erst bei `confirm-boss-result` in `loc.mon.deathCause` übernommen -
+  **dasselbe Feld**, das auch der Freitext-Weg (1.) nutzt, dadurch identische Anzeige im Friedhof
+  ("Gestorben gegen: …") ohne zusätzlichen Code. Bewusst **unabhängig von `trackDeathCause`**
+  nutzbar (kein zweiter Schalter nötig, wer schon ein Gegner-Team pflegt, soll die Verlinkung direkt
+  bekommen) - beide Schalter bleiben aber weiterhin unabhängig voneinander umschaltbar, keiner setzt
+  den anderen voraus. Die Chip-Zeile blendet sich live mit dem zugehörigen Kontrollkästchen ein/aus
+  (neuer Eintrag im zentralen `input`-Event-Delegierer für `[data-death-loc]`,
+  `.death-vs-row.hidden` per `classList.toggle`) - kein Grund, nach einer Auswahl zu fragen, wenn
+  das Pokémon gar nicht als gestorben markiert ist. Bewusst KEIN natives `<select>` verwendet (kommt
+  im gesamten Code sonst nirgends vor, überall stattdessen Buttons/Chips) - stattdessen dieselbe
+  Chip-Optik wie die bestehenden `.chip.gold`/`.chip.accent`-Badges, nur klickbar gemacht. Ohne
+  eingetragenes Gegner-Team für den jeweiligen Boss (oder bei deaktiviertem `trackBossTeams`) bleibt
+  die Checkliste unverändert wie vor v1.9.80 - reine additive Erweiterung, kein bestehender Ablauf
+  musste angepasst werden. Verifiziert per Playwright: Checkbox-Toggle blendet die richtige
+  Chip-Gruppe ein/aus, Chip-Auswahl landet nach Bestätigen korrekt als `deathCause` am richtigen
+  Pokémon, Anzeige im Friedhof stimmt.
 
 ## Deutsche Namen — bekannte Stolperfallen
 

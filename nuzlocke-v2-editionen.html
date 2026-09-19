@@ -1279,6 +1279,17 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 .sheet-option:disabled{ opacity:.4; }
 .death-check-row{ display:flex; align-items:center; gap:10px; cursor:pointer; }
 .death-check-row input[type="checkbox"]{ width:20px; height:20px; flex:none; accent-color:var(--red); }
+/* "Gegen wen verloren?"-Auswahl unter einer angehakten Todeszeile (seit v1.9.80) - Chips statt
+   nativem <select>, damit sie zum Rest der App passen (die sonst nirgends ein <select> nutzt,
+   überall stattdessen Buttons/Chips). .hidden blendet die Zeile aus, solange das zugehörige
+   Kontrollkästchen nicht angehakt ist (Klick-Handler in confirm-boss-result unten synchronisiert
+   das bei jedem Umschalten) - eine Zuordnung ergibt nur für tatsächlich markierte Tode Sinn. */
+.death-vs-row.hidden{ display:none; }
+.death-vs-chip{
+  border:1.5px solid var(--line); background:var(--surface); color:var(--ink-soft); cursor:pointer;
+  transition:background .12s ease, color .12s ease, border-color .12s ease;
+}
+.death-vs-chip.selected{ background:var(--red-soft); color:var(--red); border-color:var(--red); }
 .check-row{ display:flex; align-items:center; gap:10px; cursor:pointer; padding:10px 4px; border-bottom:1px solid var(--line); }
 .check-row:last-of-type{ border-bottom:none; }
 .check-row input[type="checkbox"]{ width:20px; height:20px; flex:none; accent-color:var(--accent); }
@@ -3882,6 +3893,13 @@ let expandedSettingsGroups = new Set(); // welche Einstellungs-Gruppen aufgeklap
 let ordenCaseOpen = false; // ob die Orden-Schatulle im Team-Tab gerade geöffnet ist - nicht persistiert, startet immer zu
 let boxSearchQuery = ""; // Box-Suche - nicht persistiert, jeder Tab-Wechsel startet leer
 let boxSortMode = "default"; // "default" (Routen-Reihenfolge) | "name" | "caught"
+/* Zwischenspeicher für "gegen wen verloren?" im offenen Bosskampf-Ergebnis-Sheet (seit v1.9.80,
+   siehe openBossResultSheet()) - keyed nach loc.id, Wert ist die gewählte Gegner-Spezies aus
+   state.bossOpponentTeams. Bewusst nur eine lokale Variable, kein state-Feld: existiert nur für die
+   Dauer des offenen Sheets, wird bei confirm-boss-result in loc.mon.deathCause übernommen und danach
+   sofort geleert - ein Reload/Sheet-Schließen ohne Bestätigen verwirft die Auswahl ohnehin, genau wie
+   die Checkbox-Auswahl selbst (die auch nicht persistiert wird, bevor bestätigt ist). */
+let bossLossDeathVs = {};
 
 /* Region gilt als abgeschlossen, wenn jeder fangbare (nicht noCatch) Standort dort einen Fangversuch
    hat - Bosse zählen bewusst nicht mit rein, das Ausblenden bezieht sich nur auf die Routen-Liste. */
@@ -4002,7 +4020,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.79";
+const APP_VERSION = "1.9.80";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -8989,13 +9007,30 @@ function openBossResultSheet(bossId, result){
   const rivalNick = isRival ? (state.rivalNickname||"").trim() : "";
   const displayName = rivalNick || boss.name;
   const team = teamAliveList();
+  /* "Gegen wen verloren?" (seit v1.9.80): nur möglich, wenn das Gegner-Team für GENAU diesen Boss
+     bereits eingetragen ist (state.bossOpponentTeams[bossId], siehe Gegner-Team-Tracking-Hausregel)
+     - ohne eingetragenes Team gäbe es nichts zur Auswahl, dann bleibt die Karte wie bisher reine
+     Checkliste ohne Verlinkung. Bewusst UNABHÄNGIG von state.trackDeathCause (das gilt nur für den
+     separaten Freitext-Dialog außerhalb von Bosskämpfen, siehe openDeathCauseSheet) - wer sich die
+     Arbeit macht, das Gegnerteam einzutragen, soll diese Zuordnung direkt nutzen können, ohne
+     zusätzlich einen zweiten Hausregel-Schalter aktivieren zu müssen. */
+  const opponentTeam = state.trackBossTeams ? ((state.bossOpponentTeams||{})[bossId]||[]) : [];
+  bossLossDeathVs = {};
   const rows = team.map(loc=>{
     const m = loc.mon;
+    const vsChips = opponentTeam.length
+      ? `<div class="death-vs-row${isLoss?"":" hidden"}" data-death-vs-group="${loc.id}">
+          <div class="loc-sub" style="margin:2px 0 6px 30px;">Gegen wen?</div>
+          <div style="display:flex; gap:6px; flex-wrap:wrap; margin:0 0 10px 30px;">
+            ${opponentTeam.map(sp=>`<button type="button" class="chip death-vs-chip" data-act="toggle-death-vs" data-id="${loc.id}" data-species="${escapeHtml(sp)}">${escapeHtml(sp)}</button>`).join("")}
+          </div>
+        </div>`
+      : "";
     return `<label class="sheet-option death-check-row">
       <input type="checkbox" data-death-loc="${loc.id}" ${isLoss?"checked":""} />
       ${spriteImgHtml(m.species, 40)}
       <span>${escapeHtml(m.nickname || m.species)}</span>
-    </label>`;
+    </label>${vsChips}`;
   }).join("") || `<div class="loc-sub">Kein Pokémon im Team.</div>`;
   /* Manche Story-Rivalenkämpfe (meist der erste) gehen auch bei einer Niederlage story-technisch
      einfach weiter - ohne Recherche pro Boss gilt die Option pauschal für jeden Bosskampf, die
@@ -10368,7 +10403,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="stats">
     <div class="stat"><div class="n">23</div><div class="l">Editionen</div></div>
     <div class="stat"><div class="n">1075</div><div class="l">Pokémon-Arten</div></div>
-    <div class="stat"><div class="n">82</div><div class="l">Versions&shy;stände</div></div>
+    <div class="stat"><div class="n">83</div><div class="l">Versions&shy;stände</div></div>
     <div class="stat"><div class="n">Gen 1–9</div><div class="l">Abgedeckt</div></div>
   </div>
 
@@ -10378,6 +10413,32 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.80</span><span class="tag tag-feat">Neu</span></div>
+      <h3>Bosskampf-Niederlagen: "Gegen wen verloren?" direkt aus dem getrackten Gegner-Team wählbar</h3>
+      <p>Nutzerfrage: es gebe doch eine Funktion, bei der man beim Sterben eines Pokémon abfragt,
+      gegen wen es verloren hat - stimmt, aber nur außerhalb von Bosskämpfen (Hausregel "Todesursache
+      eintragen", Freitext mit Autovervollständigung). Bei einer Bosskampf-Niederlage gab es bisher nur
+      die reine Checkliste "welche Team-Pokémon sind gestorben", ohne jede Verlinkung zu einem
+      konkreten Gegner - obwohl bei aktiviertem "Gegner-Team tracken" (Hausregel unter „Duell &amp;
+      Bosse") die tatsächliche gegnerische Mannschaft (bis zu 6 Pokémon) für genau diesen Bosskampf
+      längst hinterlegt ist. Jetzt erscheint unter jedem angehakten Team-Pokémon in diesem Fall eine
+      Reihe antippbarer Chips mit genau den Namen aus dem getrackten Gegner-Team - Antippen wählt aus
+      (nochmaliges Antippen hebt die Auswahl wieder auf), landet beim Bestätigen in
+      <code>loc.mon.deathCause</code> und erscheint danach wie gewohnt im Friedhof ("Gestorben gegen:
+      …") - exakt dasselbe Feld, das auch der bestehende Freitext-Dialog nutzt, nur diesmal mit echter
+      Verlinkung zum tatsächlichen Gegner statt freier Eingabe. Bewusst unabhängig vom separaten
+      "Todesursache eintragen"-Schalter nutzbar: wer sich bereits die Arbeit macht, ein Gegner-Team
+      einzutragen, soll diese Zuordnung direkt nutzen können, ohne zusätzlich einen zweiten
+      Hausregel-Schalter aktivieren zu müssen. Die Chip-Zeile blendet sich automatisch mit dem
+      zugehörigen Kontrollkästchen ein/aus (nur ein tatsächlich als gestorben markiertes Pokémon
+      braucht eine Zuordnung) und bleibt komplett unsichtbar, wenn für diesen Bosskampf noch kein
+      Gegner-Team eingetragen wurde oder das Tracking insgesamt deaktiviert ist - keine Änderung am
+      bisherigen Ablauf in diesen Fällen. Per Playwright verifiziert: Checkbox-Auswahl blendet die
+      passende Chip-Reihe korrekt ein/aus, Chip-Auswahl landet nach "Niederlage eintragen" korrekt als
+      <code>deathCause</code> am richtigen Pokémon und erscheint sichtbar im Friedhof.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.79</span><span class="tag tag-fix">Korrektur</span></div>
@@ -12237,7 +12298,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.79.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.80.</footer>
 
 </div>`;
 
@@ -12541,7 +12602,7 @@ function renderSettings(){
   </div>
   <div class="card">
     <div class="loc-name">Gegner-Team tracken</div>
-    <div class="loc-sub">Blendet auf jeder Bosskarte ein Feld ein, um das tatsächliche gegnerische Team (bis zu 6 Pokémon) einzutragen und später wieder einzusehen.</div>
+    <div class="loc-sub">Blendet auf jeder Bosskarte ein Feld ein, um das tatsächliche gegnerische Team (bis zu 6 Pokémon) einzutragen und später wieder einzusehen. Bei einer Niederlage lässt sich dann pro gestorbenem Team-Pokémon direkt auswählen, gegen welches dieser Pokémon es verloren hat.</div>
     <button class="btn ${state.trackBossTeams?"btn-primary":"btn-secondary"} btn-block" style="margin-top:10px;" data-act="toggle-track-boss-teams">${state.trackBossTeams?"Aktiviert":"Deaktiviert"}</button>
   </div>`);
 
@@ -13556,6 +13617,18 @@ document.addEventListener("click", e=>{
   }
   else if(act==="open-boss-win") openBossResultSheet(id, "win");
   else if(act==="open-boss-loss") openBossResultSheet(id, "loss");
+  else if(act==="toggle-death-vs"){
+    const locId = id;
+    const species = t.dataset.species;
+    const group = t.closest("[data-death-vs-group]");
+    if(bossLossDeathVs[locId] === species){
+      delete bossLossDeathVs[locId];
+      if(group) group.querySelectorAll(".death-vs-chip").forEach(c=>c.classList.remove("selected"));
+    } else {
+      bossLossDeathVs[locId] = species;
+      if(group) group.querySelectorAll(".death-vs-chip").forEach(c=>c.classList.toggle("selected", c===t));
+    }
+  }
   else if(act==="confirm-boss-result"){
     const boss = bossById(id);
     if(!boss) return;
@@ -13569,9 +13642,12 @@ document.addEventListener("click", e=>{
       const loc = findLoc(cb.dataset.deathLoc);
       if(!loc || !loc.mon || loc.mon.dead) return;
       loc.mon.dead = true; loc.mon.inTeam = false;
+      const vs = bossLossDeathVs[loc.id];
+      if(vs) loc.mon.deathCause = vs;
       deadNames.push(loc.mon.nickname || loc.mon.species);
       deadLocIds.push(loc.id);
     });
+    bossLossDeathVs = {};
     if(result==="win"){
       state.bossDefeated[id] = true;
       logEvent("boss", `${displayName} besiegt (${boss.place})`);
@@ -14178,6 +14254,10 @@ document.addEventListener("input", e=>{
     saveState();
     const row = e.target.closest(".check-row");
     if(row) row.classList.toggle("done", e.target.checked);
+  }
+  if(e.target && e.target.dataset && e.target.dataset.deathLoc){
+    const group = document.querySelector(`[data-death-vs-group="${e.target.dataset.deathLoc}"]`);
+    if(group) group.classList.toggle("hidden", !e.target.checked);
   }
   if(e.target && e.target.id==="usernameInput"){
     setGlobalUsername(e.target.value);
