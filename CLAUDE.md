@@ -797,6 +797,34 @@ jederzeit hier in `CLAUDE.md` + Git-Historie rekonstruierbar, siehe Rest dieser 
   - **Ausführlichere Recap-Erzählung** (`runRecapNarrative()`/`runRecapInsights()`): einen Insight wie
     "Dein größter Feind war {Species}, hat {N} deiner Pokémon besiegt" ergänzen, analog zum
     bestehenden "Härtester Gegner"-Insight, aber pokémon- statt bosszentriert.
+- **Soul-Link-Modus war unauffindbar, wenn man ihn nicht schon kannte (behoben in v1.9.83):**
+  Nutzerfrage "hatten wir nicht noch eine Soul-Link-Funktion integriert? oder war das einfach eine
+  Idee?" - die Funktion existierte bereits vollständig (`state.soulLinkMode`, `soulLinkMismatches()`,
+  `checkSoulLinkAfterDeath()`, `openSoulLinkHintSheet()`, siehe Datenmodell-Abschnitt oben), war aber
+  in der UI komplett verborgen: der Schalter (`data-act="toggle-soul-link"`) steckt in
+  `duoCompareCardHtml()` und wird nur im ZWEITEN Zweig dieser Funktion gerendert - also erst, NACHDEM
+  `state.duoCode` bereits gesetzt ist (ein Duo-Vergleichspartner verknüpft wurde). Im ersten Zweig
+  (noch kein Partner verknüpft, der Normalfall beim ersten Entdecken der Einstellungen) gibt es
+  überhaupt keinen Hinweis, dass ein Soul-Link-Modus existiert - dieselbe Karte zeigt dort nur das
+  Duo-Vergleich-Eingabefeld. Nutzer-Nachfrage bestätigte das Problem treffend: "wenn man den Modus
+  nicht kennt kann man nicht wissen, dass ein solcher möglich ist" - eine rein bedingt gerenderte
+  Funktion ohne jeden Vorab-Hinweis ist von der Discoverability her nicht von einer nicht
+  existierenden Funktion zu unterscheiden. **Fix, bewusst NICHT den Schalter selbst vorzeitig
+  anzeigen** (er bräuchte ohnehin einen verknüpften Partner-Spielstand zum Koppeln, ein Klick vorher
+  liefe ins Leere) - stattdessen an zwei Stellen einen Vorab-Hinweis ergänzt: 1) der `loc-sub`-Text
+  der noch-nicht-verknüpften Duo-Vergleich-Karte selbst bekam den Satz "Danach lässt sich hier
+  zusätzlich der Soul-Link-Modus aktivieren, der eure Encounter 1:1 pro Standort koppelt." angehängt
+  - sichtbar auch ohne das Info-Icon anzutippen. 2) `SETTINGS_HELP.duocompare` (der ausführliche
+  Hilfetext hinter dem Info-Icon, ebenfalls schon vor dem Verknüpfen sichtbar) erwähnt jetzt
+  zusätzlich, dass nach dem Verknüpfen ein Soul-Link-Schalter erscheint, mit Verweis auf den eigenen
+  `SETTINGS_HELP.soullink`-Eintrag. **Lehre, verallgemeinerbar:** eine Funktion, die erst nach einer
+  Voraussetzung (hier: Partner-Verknüpfung) überhaupt im DOM erscheint, braucht einen Vorab-Hinweis
+  IN DEM ZUSTAND DAVOR, sonst ist sie faktisch unauffindbar, egal wie gut sie dokumentiert ist, sobald
+  man sie einmal erreicht hat - bei künftigen Feature-Additionen, die an eine Bedingung geknüpft sind
+  (ähnlich wie hier `state.duoCode`, oder z. B. `state.trackBossTeams` bei der Gegner-Team-Chip-
+  Auswahl aus v1.9.80, die ihrerseits schon einen sichtbaren Schalter unter „Duell & Bosse" hat und
+  dieses Problem deshalb nicht hat), aktiv prüfen, ob der Zustand DAVOR ebenfalls einen Hinweis
+  bekommt.
 
 ## Deutsche Namen — bekannte Stolperfallen
 
