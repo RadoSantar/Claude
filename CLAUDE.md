@@ -899,6 +899,86 @@ jederzeit hier in `CLAUDE.md` + Git-Historie rekonstruierbar, siehe Rest dieser 
   änderung als auch über echte `.tab[data-tab]`-Klicks leert sich `expandedSettingsGroups`
   zuverlässig beim Verlassen der Einstellungen; ein Wechsel zwischen zwei Nicht-Einstellungen-Tabs
   bleibt wie erwartet folgenlos (die Menge ist zu diesem Zeitpunkt ohnehin schon leer).
+- **Mehr Übersicht in den Einstellungen — Suche, Sortierung, Zähler, Alle-einklappen (seit
+  v1.9.86):** direkte Anschlussfrage im selben Gespräch wie die beiden Punkte oben ("erfolge sollen
+  die freigeschalteten automatisch nach oben sortiert werden und auch hier sollen die erfolge
+  eingeklappt sein ich möchte für mehr übersicht in den einstellungen sorgen was gibt es sonst noch
+  für möglichkeiten?"), gefolgt von "setze alle um" nachdem vier zusätzliche Ideen vorgeschlagen
+  wurden (Suchfeld, Zähler in Kapitel-Headern, Alle-einklappen-Button, Kapitel-Reihenfolge nach
+  Nutzungshäufigkeit). Fünf Änderungen in einer Runde:
+  1. **Erfolge sortiert:** in der `(()=>{...})()`-IIFE, die bisher `ACHIEVEMENTS.map(...)` direkt
+     ohne Sortierung rendert hat, jetzt zuerst `const sortedAchievements = [...ACHIEVEMENTS].sort((a,b)=>{
+     const au = state.achievements[a.id]?0:1; const bu = state.achievements[b.id]?0:1; return au-bu; })`
+     - `Array.prototype.sort` ist seit ES2019 spezifikationsgemäß stabil, die Reihenfolge innerhalb
+     "freigeschaltet"/"gesperrt" bleibt dadurch jeweils erhalten, nur die zwei Gruppen selbst wandern
+     nach vorn/hinten.
+  2. **Erfolge-Liste eingeklappt:** die inzwischen 56 Erfolge (`ACHIEVEMENTS.length`) bekommen einen
+     eigenen, verschachtelten Auf-/Zuklapp-Toggle - `settingsGroupHtml("achievements-list", ...)`
+     wird ein zweites Mal aufgerufen, diesmal INNERHALB des Kartenkörpers der äußeren
+     `settingsGroupHtml("achievements", ...)`-Gruppe. Das funktioniert beliebig verschachtelt, weil
+     `settingsGroupHtml()` rein über den übergebenen String-Key gegen `expandedSettingsGroups`
+     arbeitet, keine Kenntnis von einer Eltern-Kind-Beziehung braucht. Startet eingeklappt, selbst
+     wenn das äußere Kapitel "Erfolge & Titel" aufgeklappt ist.
+  3. **Zähler im (weiterhin eingeklappten) Kapitel-Titel:** `settingsGroupHtml()`s `label`-Parameter
+     bekam für zwei Kapitel dynamische Zusätze - "Erfolge & Titel (12/56)" bzw. bei mindestens einer
+     ausgeblendeten Region "Regionen (2 ausgeblendet)" (sonst bleibt der Titel schlicht "Regionen").
+     Andere Kapitel (Spielstände, Regeln, Darstellung, Werkzeuge, App-Info) bekamen bewusst KEINEN
+     erzwungenen Zähler - es gibt dort keine einzelne, natürliche Kennzahl, die das Kapitel auf einen
+     Blick zusammenfasst, ein künstlicher Zähler wäre nur Lärm gewesen.
+  4. **"Alle Kapitel einklappen"-Button:** neuer `data-act="collapse-all-settings-groups"`-Handler
+     (`expandedSettingsGroups.clear(); render();`) - bewusst per vollem `render()` statt der sonst
+     für `toggle-settings-group` üblichen Direkt-DOM-Klassenumschaltung, weil hier potenziell
+     mehrere Kapitel gleichzeitig zuklappen sollen (ein Einzel-Element-Toggle deckt das nicht ab) und
+     ein seltener Sammel-Klick keine übersprungsfreie Einzel-Animation braucht, anders als das
+     häufige Auf-/Zuklappen einzelner Kapitel.
+  5. **Volltextsuche über alle Kapitel** - technisch der größte Umbau: `renderSettings()` wurde
+     aufgeteilt in einen festen Rahmen (Fortschritt-Karten + `settingsSearchBarHtml()`, enthält das
+     `#settingsSearchInput`-Feld) und `<div id="settingsGroupsContainer">${settingsGroupsHtml()}</div>`.
+     `settingsGroupsHtml()` baut jetzt alle Kapitel zunächst als Datensatz-Array `{key,label,html}`
+     statt sie sofort String an String zu hängen - genau das macht sowohl Filtern (Suche) als auch
+     Neusortieren (Punkt "Kapitel-Reihenfolge" unten) möglich, ohne mehrere verstreute
+     String-Konkatenationen einzeln anpassen zu müssen. Die Suche selbst prüft simpel per
+     `(label + " " + html).replace(/<[^>]*>/g," ").toLowerCase().includes(query)` - deckt dadurch
+     automatisch jede künftig hinzugefügte Karte ab, ohne separat gepflegt werden zu müssen. Treffer-
+     Kapitel werden über einen neuen vierten Parameter `forceExpanded` an `settingsGroupHtml(key,
+     label, bodyHtml, forceExpanded)` sichtbar aufgeklappt gerendert (`const expanded = forceExpanded
+     || expandedSettingsGroups.has(key);`) - WICHTIG: das verändert `expandedSettingsGroups` selbst
+     NICHT, nur die Render-Entscheidung für diesen einen Aufruf. Nach Löschen der Suche fällt der
+     Zustand dadurch automatisch auf den vorherigen (meist eingeklappten) zurück, ohne dass Kapitel,
+     die man nur wegen eines Treffers sah, danach fälschlich als "manuell aufgeklappt" hängen
+     bleiben. Für die verschachtelte Erfolge-Liste gibt es eine zweite, unabhängige
+     `achievementsMatchesQuery`-Prüfung direkt gegen Erfolgsnamen/-beschreibungen (nicht einfach vom
+     äußeren Kapitel-Treffer abgeleitet) - ein Treffer z. B. im "Aktiver Titel"-Kartentext öffnet
+     zwar das äußere Kapitel, aber nicht sinnlos die ganze 56er-Liste, während ein Treffer in einem
+     konkreten Erfolgsnamen beide öffnet. Bei keinem Treffer erscheint `"Keine Treffer für „…“."`.
+     **Kritischer Punkt, von Anfang an bedacht, nicht nachträglich als Bug gefunden:** der
+     `input`-Event-Handler für `#settingsSearchInput` aktualisiert bei jedem Tastendruck NUR
+     `document.getElementById("settingsGroupsContainer").innerHTML`, NICHT das gesamte `#content` -
+     ein voller `render()`-Aufruf pro Zeichen hätte das Suchfeld-Element selbst mit ausgetauscht und
+     dabei sofort den Tastaturfokus gekostet (nur ein Zeichen pro Tap möglich gewesen). Exakt
+     dasselbe bereits etablierte Grundmuster wie bei der Standort-Suche
+     (`locationSearchInput`→`#locationSearchResults`) und der Box-Suche
+     (`boxSearchInput`→`#boxResults`) - dort aus demselben Grund ebenfalls nur ein separates
+     Ergebnis-Element statt der ganzen Oberfläche aktualisiert.
+  **Nebeneffekt, in derselben Runde mit erledigt:** Kapitel-Reihenfolge von der ursprünglichen
+  Aufbau-Reihenfolge (Spielstände, Duell & Bosse, Regeln, Erfolge & Titel, Regionen, Darstellung,
+  Werkzeuge, App-Info) auf eine nach geschätzter Nutzungshäufigkeit sortierte Reihenfolge geändert
+  (`SETTINGS_GROUP_ORDER = ["rules","saves","duel-bosses","achievements","regions","appearance",
+  "tools","app-info"]`, angewendet per `groups.sort((a,b)=> SETTINGS_GROUP_ORDER.indexOf(a.key) -
+  SETTINGS_GROUP_ORDER.indexOf(b.key))`) - Regeln/Spielstände (inkl. Cloud-Sync)/Duell & Bosse werden
+  während eines laufenden Runs am ehesten nochmal angefasst, App-Info/Werkzeuge/Darstellung praktisch
+  nur einmalig oder gar nicht. Rein kosmetisch, keiner der Gruppen-Keys hat sich geändert -
+  `expandedSettingsGroups`-Einträge bleiben dadurch über die Umsortierung hinweg gültig. Verifiziert
+  per Playwright (alle Punkte in einem Testlauf): Sortierung der Erfolge (56 Zeilen, erste zwei
+  künstlich freigeschaltete stehen vorn, keine freigeschaltete Zeile erscheint nach einer gesperrten);
+  verschachtelte Liste bleibt eingeklappt, obwohl das äußere Kapitel aufgeklappt ist; Kapitel-Titel
+  zeigt "Erfolge & Titel (2/56)" schon im eingeklappten Zustand; Tippen von "Vibration" filtert auf
+  genau das "Darstellung"-Kapitel, klappt es auf UND das Eingabefeld behält nachweislich den Fokus
+  (`document.activeElement.id`) sowie den eingegebenen Wert; Tippen eines Erfolgsnamens klappt sowohl
+  das äußere Kapitel als auch die verschachtelte Liste auf; eine erfundene Zeichenkette zeigt den
+  "Keine Treffer"-Text; Leeren des Suchfelds stellt den eingeklappten Ausgangszustand wieder her; der
+  "Alle einklappen"-Button leert `expandedSettingsGroups` zuverlässig; die gerenderte Kapitel-
+  Reihenfolge entspricht `SETTINGS_GROUP_ORDER`.
 
 ## Deutsche Namen — bekannte Stolperfallen
 

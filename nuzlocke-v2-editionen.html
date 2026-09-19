@@ -3912,6 +3912,8 @@ let lastRenderedTab = null;
 let ordenCaseOpen = false; // ob die Orden-Schatulle im Team-Tab gerade geöffnet ist - nicht persistiert, startet immer zu
 let boxSearchQuery = ""; // Box-Suche - nicht persistiert, jeder Tab-Wechsel startet leer
 let boxSortMode = "default"; // "default" (Routen-Reihenfolge) | "name" | "caught"
+let settingsSearchQuery = ""; // Einstellungen-Suche (seit v1.9.86) - nicht persistiert, wird beim
+  // Verlassen der Einstellungen zusammen mit expandedSettingsGroups geleert, siehe render().
 /* Zwischenspeicher für "gegen wen verloren?" im offenen Bosskampf-Ergebnis-Sheet (seit v1.9.80,
    siehe openBossResultSheet()) - keyed nach loc.id, Wert ist die gewählte Gegner-Spezies aus
    state.bossOpponentTeams. Bewusst nur eine lokale Variable, kein state-Feld: existiert nur für die
@@ -4039,7 +4041,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.85";
+const APP_VERSION = "1.9.86";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -9979,8 +9981,12 @@ function copyRunRecapToClipboard(){
   else failed();
 }
 
-function settingsGroupHtml(key, label, bodyHtml){
-  const expanded = expandedSettingsGroups.has(key);
+function settingsGroupHtml(key, label, bodyHtml, forceExpanded){
+  /* forceExpanded (seit v1.9.86) überschreibt expandedSettingsGroups nur für die RENDER-Entscheidung,
+     ohne den Set-Eintrag selbst zu setzen - genutzt von der Einstellungen-Suche, um Treffer-Kapitel
+     sichtbar aufgeklappt zu zeigen, ohne dass diese Aufklapp-Entscheidung nach dem Löschen der Suche
+     als "manuell aufgeklappt" bestehen bliebe. */
+  const expanded = forceExpanded || expandedSettingsGroups.has(key);
   const header = `<button class="region-header settings-group-header" data-act="toggle-settings-group" data-group="${key}">
     <span>${escapeHtml(label)}</span>
     <svg class="collapse-chevron${expanded?" open":""}" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
@@ -10447,7 +10453,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="stats">
     <div class="stat"><div class="n">23</div><div class="l">Editionen</div></div>
     <div class="stat"><div class="n">1075</div><div class="l">Pokémon-Arten</div></div>
-    <div class="stat"><div class="n">88</div><div class="l">Versions&shy;stände</div></div>
+    <div class="stat"><div class="n">89</div><div class="l">Versions&shy;stände</div></div>
     <div class="stat"><div class="n">Gen 1–9</div><div class="l">Abgedeckt</div></div>
   </div>
 
@@ -10457,6 +10463,44 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.86</span><span class="tag tag-feat">Neu</span></div>
+      <h3>Mehr Übersicht in den Einstellungen: Suche, Sortierung, Zähler, Alle-einklappen</h3>
+      <p>Direkte Anschlussfrage zum vorherigen Punkt: "was gibt es sonst noch für Möglichkeiten,
+      um mehr Übersicht in den Einstellungen zu schaffen?" Fünf Verbesserungen auf einmal
+      umgesetzt ("setze alle um"):</p>
+      <ul>
+        <li><strong>Erfolge sortiert:</strong> freigeschaltete Erfolge stehen jetzt automatisch
+        zuerst in der Liste (<code>Array.prototype.sort</code> ist spezifikationsgemäß stabil,
+        die Reihenfolge innerhalb "freigeschaltet"/"gesperrt" bleibt dadurch jeweils erhalten).</li>
+        <li><strong>Erfolge-Liste eingeklappt:</strong> die inzwischen 56 Erfolge bekommen einen
+        eigenen, verschachtelten Auf-/Zuklapp-Toggle innerhalb von "Erfolge &amp; Titel" (dieselbe
+        <code>settingsGroupHtml()</code>-Funktion, nur mit eigenem Key "achievements-list") - startet
+        eingeklappt, auch wenn das äußere Kapitel selbst aufgeklappt ist.</li>
+        <li><strong>Zähler direkt im Kapitel-Titel:</strong> "Erfolge &amp; Titel (12/56)" bzw.
+        "Regionen (2 ausgeblendet)" sind jetzt schon am eingeklappten Titel ablesbar, ohne das
+        Kapitel erst öffnen zu müssen.</li>
+        <li><strong>"Alle Kapitel einklappen"-Button</strong> über den Kapiteln - räumt alle
+        gleichzeitig offenen Kapitel (inkl. der verschachtelten Erfolge-Liste) mit einem Klick auf.</li>
+        <li><strong>Volltextsuche über alle Kapitel</strong> (neues Eingabefeld über den Kapiteln):
+        filtert nach Kapitel-Titel und dem von HTML-Tags befreiten Kartentext, klappt Treffer-Kapitel
+        automatisch auf (ohne den normalen Auf-/Zu-Zustand dauerhaft zu verändern) und öffnet bei
+        einem Treffer in einem Erfolgs-Namen/-Text zusätzlich die verschachtelte Erfolge-Liste. Bei
+        keinem Treffer erscheint ein "Keine Treffer für …"-Hinweis. Technisch nötig dafür:
+        <code>renderSettings()</code> wurde in einen festen Rahmen (Fortschritt + Suchleiste) und
+        einen bei jedem Tastendruck neu gerenderten <code>#settingsGroupsContainer</code> aufgeteilt -
+        ein Ersetzen des kompletten Tab-Inhalts bei jedem Zeichen hätte sonst das Suchfeld selbst
+        mit ausgetauscht und dabei den Tastaturfokus verloren (dasselbe Grundmuster wie bei der
+        bestehenden Standort-/Box-Suche).</li>
+      </ul>
+      <p>Als Nebeneffekt außerdem die <strong>Kapitel-Reihenfolge nach geschätzter
+      Nutzungshäufigkeit</strong> sortiert (Regeln/Spielstände/Duell &amp; Bosse nach oben,
+      App-Info/Werkzeuge/Darstellung nach unten) - rein kosmetisch, keiner der internen Kapitel-Keys
+      hat sich geändert. Verifiziert per Playwright: Sortierung, verschachteltes Einklappen, Zähler,
+      Such-Filterung samt Fokus-Erhalt im Eingabefeld, Erfolgs-Treffer-Aufklappen, Leer-Treffer-Text,
+      Zurücksetzen beim Löschen der Suche, "Alle einklappen" und die neue Kapitel-Reihenfolge.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.85</span><span class="tag tag-feat">Neu</span></div>
@@ -12434,7 +12478,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.85.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.86.</footer>
 
 </div>`;
 
@@ -12671,14 +12715,49 @@ function openFeatureIndexSheet(){
 }
 
 function renderSettings(){
+  let html = `<div class="region-header no-sticky">Fortschritt</div>` + statsCardHtml() + hallOfFameCardHtml();
+  html += settingsSearchBarHtml();
+  html += `<div id="settingsGroupsContainer">${settingsGroupsHtml()}</div>`;
+  document.getElementById("content").innerHTML = html;
+}
+
+/* Suchleiste über den Einstellungs-Kapiteln (seit v1.9.86) - bewusst AUSSERHALB von
+   settingsGroupsHtml() gerendert und nur einmal pro renderSettings()-Aufruf erzeugt: der
+   input-Event-Handler (siehe unten) ersetzt bei jedem Tastendruck nur #settingsGroupsContainer,
+   nicht das ganze #content - würde die Suchleiste selbst mit-ersetzt, verlöre das Eingabefeld nach
+   jedem Zeichen den Fokus (dasselbe Grundmuster wie bei der Standort-/Box-Suche, die aus demselben
+   Grund ebenfalls nur ein separates #...Results-Element aktualisieren). */
+function settingsSearchBarHtml(){
+  return `<div class="card" style="padding:10px 12px 12px;">
+    <div class="field" style="margin-bottom:8px;">
+      <input type="search" id="settingsSearchInput" placeholder="Einstellungen durchsuchen…" value="${escapeHtml(settingsSearchQuery)}" autocomplete="off" />
+    </div>
+    <button class="btn btn-ghost" data-act="collapse-all-settings-groups">Alle Kapitel einklappen</button>
+  </div>`;
+}
+
+/* Reihenfolge der Kapitel (seit v1.9.86) - nach geschätzter Nutzungshäufigkeit WÄHREND eines
+   laufenden Runs sortiert statt der ursprünglichen Aufbau-Reihenfolge: Regeln/Spielstände (inkl.
+   Cloud-Sync)/Duell & Bosse werden am ehesten mitten im Run nochmal angefasst, App-Info/Werkzeuge/
+   Darstellung praktisch nur einmalig oder gar nicht. Rein kosmetisch - keiner der Gruppen-Keys
+   ändert sich, expandedSettingsGroups bleibt davon unberührt. */
+const SETTINGS_GROUP_ORDER = ["rules","saves","duel-bosses","achievements","regions","appearance","tools","app-info"];
+
+/* Baut alle Einstellungs-Kapitel als Datensätze {key,label,html} statt sie sofort aneinanderzuhängen
+   - ermöglicht Filtern (Suche) und Neusortieren (Häufigkeit, s.o.), ohne dass mehrere verstreute
+   String-Konkatenationen dafür einzeln angepasst werden müssten. Wird sowohl beim ersten Rendern des
+   Einstellungen-Tabs als auch bei jedem Tastendruck in der Suche erneut aufgerufen (siehe
+   settingsSearchInput-Handler). */
+function settingsGroupsHtml(){
   const percents = currentGame().bosses.map(b=>bossPercent(b.id));
   const min = Math.min(...percents), max = Math.max(...percents);
   const percentLabel = min===max ? `${min>0?'+':''}${min}%` : `${min}%–${max}%`;
   const eff = effectiveTheme();
+  const query = (settingsSearchQuery||"").trim().toLowerCase();
 
-  let html = `<div class="region-header no-sticky">Fortschritt</div>` + statsCardHtml() + hallOfFameCardHtml();
+  const groups = [];
 
-  html += settingsGroupHtml("saves", "Spielstände", `
+  groups.push({ key:"saves", label:"Spielstände", html: `
   <div class="card">
     <div class="loc-name">Mehrere Runs</div>
     <div class="loc-sub" style="margin-bottom:10px;">Zwischen Spielständen wechseln oder einen neuen anlegen, ohne den aktuellen zu verlieren. Zuletzt exportiert: ${formatRelativeTime(state.lastExportAt)}</div>
@@ -12696,9 +12775,9 @@ function renderSettings(){
     </div>
   </div>
   ${cloudSyncCardHtml()}
-  ${duoCompareCardHtml()}`);
+  ${duoCompareCardHtml()}` });
 
-  html += settingsGroupHtml("duel-bosses", state.soloMode ? "Bosse" : "Duell & Bosse", `
+  groups.push({ key:"duel-bosses", label: state.soloMode ? "Bosse" : "Duell & Bosse", html: `
   ${state.soloMode ? `<div class="card">
     <div class="loc-name">Einzelspieler-Modus</div>
     <div class="loc-sub">Dieser Run läuft ohne Duellpartner:in - keine Rivalenduell-Karten nach Bossen, keine Ruhmeshalle. Gilt fest für diesen Spielstand, umschaltbar nur bei der Erstellung eines neuen Spielstands.</div>
@@ -12740,9 +12819,9 @@ function renderSettings(){
     <div class="loc-name">Gegner-Team tracken</div>
     <div class="loc-sub">Blendet auf jeder Bosskarte ein Feld ein, um das tatsächliche gegnerische Team (bis zu 6 Pokémon) einzutragen und später wieder einzusehen. Bei einer Niederlage lässt sich dann pro gestorbenem Team-Pokémon direkt auswählen, gegen welches dieser Pokémon es verloren hat.</div>
     <button class="btn ${state.trackBossTeams?"btn-primary":"btn-secondary"} btn-block" style="margin-top:10px;" data-act="toggle-track-boss-teams">${state.trackBossTeams?"Aktiviert":"Deaktiviert"}</button>
-  </div>`);
+  </div>` });
 
-  html += settingsGroupHtml("rules", "Regeln", `
+  groups.push({ key:"rules", label:"Regeln", html: `
   <div class="card">
     <div class="card-top">
       <div class="loc-name">Dupes-Clause-Warnung</div>
@@ -12769,15 +12848,23 @@ function renderSettings(){
     <div class="loc-sub">Fragt beim Markieren als gestorben (außerhalb von Bosskämpfen) optional ab, gegen welches Pokémon es passiert ist - erscheint dann sichtbar im Friedhof.</div>
     <button class="btn ${state.trackDeathCause?"btn-primary":"btn-secondary"} btn-block" style="margin-top:10px;" data-act="toggle-track-death-cause">${state.trackDeathCause?"Aktiviert":"Deaktiviert"}</button>
   </div>
-  ${houseRulesCardHtml()}`);
+  ${houseRulesCardHtml()}` });
 
-  html += (()=>{
+  {
     const unlocked = ACHIEVEMENTS.filter(a=>state.achievements[a.id]);
     const titlePicker = `<div class="title-picker">
       <button class="title-pill ${!state.activeTitle?"active":""}" data-act="set-active-title" data-id="">Kein Titel</button>
       ${unlocked.map(a=>`<button class="title-pill ${state.activeTitle===a.id?"active":""}" data-act="set-active-title" data-id="${a.id}">${a.icon} ${escapeHtml(a.title)}</button>`).join("")}
     </div>`;
-    const list = ACHIEVEMENTS.map(a=>{
+    /* Freigeschaltete Erfolge zuerst (seit v1.9.86, Nutzerwunsch) - Array.prototype.sort ist laut
+       Spezifikation stabil, die ursprüngliche Reihenfolge innerhalb "freigeschaltet"/"gesperrt"
+       bleibt dadurch jeweils erhalten, nur die zwei Gruppen selbst werden neu angeordnet. */
+    const sortedAchievements = [...ACHIEVEMENTS].sort((a,b)=>{
+      const au = state.achievements[a.id] ? 0 : 1;
+      const bu = state.achievements[b.id] ? 0 : 1;
+      return au - bu;
+    });
+    const list = sortedAchievements.map(a=>{
       const isUnlocked = !!state.achievements[a.id];
       /* Versteckte Erfolge (a.hidden) verraten weder Name noch Beschreibung, solange sie nicht
          freigeschaltet sind - der Überraschungsmoment ist bei denen bewusst Teil der Idee. */
@@ -12799,23 +12886,35 @@ function renderSettings(){
         </div>
       </div>`;
     }).join("");
-    return settingsGroupHtml("achievements", "Erfolge & Titel", `
+    /* Die inzwischen 56 Erfolge bekommen einen eigenen, verschachtelten Auf-/Zuklapp-Toggle (seit
+       v1.9.86, Nutzerwunsch "auch hier sollen die Erfolge eingeklappt sein") - dieselbe
+       settingsGroupHtml()-Funktion wie für die äußeren Kapitel, nur mit eigenem Key
+       "achievements-list" innerhalb des Kartenkörpers der äußeren "achievements"-Gruppe (verschachtelte
+       Keys funktionieren dort problemlos, settingsGroupHtml() kennt nur den eigenen String-Key). Die
+       Anzahl steht direkt im - weiterhin eingeklappten - Titel, damit der Fortschritt auch ohne
+       Aufklappen sichtbar ist. Klappt zusätzlich automatisch auf, wenn eine laufende Einstellungen-
+       Suche (s.u.) einen konkreten Erfolgsnamen/-text trifft, unabhängig davon, ob die äußere Gruppe
+       aus einem anderen Grund ebenfalls sichtbar ist. */
+    const achievementsMatchesQuery = !!query && sortedAchievements.some(a=>{
+      if(!state.achievements[a.id] && a.hidden) return false;
+      return (a.name||"").toLowerCase().includes(query) || (a.desc||"").toLowerCase().includes(query);
+    });
+    const achievementsListHtml = settingsGroupHtml("achievements-list", `Erfolge (${unlocked.length}/${ACHIEVEMENTS.length})`, `<div class="achievements-list">${list}</div>`, achievementsMatchesQuery);
+    groups.push({ key:"achievements", label:`Erfolge & Titel (${unlocked.length}/${ACHIEVEMENTS.length})`, html: `
     <div class="card">
       <div class="loc-name">Aktiver Titel</div>
       <div class="loc-sub" style="margin-bottom:10px;">${unlocked.length?"Wird im Kopfbereich neben dem Run-Titel angezeigt.":"Noch kein Titel freigeschaltet - die Erfolge weiter unten zeigen, wie."}</div>
       ${titlePicker}
     </div>
-    <div class="card">
-      <div class="loc-name">Erfolge (${unlocked.length}/${ACHIEVEMENTS.length})</div>
-      <div class="achievements-list">${list}</div>
-    </div>`);
-  })();
+    ${achievementsListHtml}` });
+  }
 
   /* Nur anzeigen, wenn die Edition überhaupt mehr als eine Region hat (z.B. Johto+Kanto bei
      HGSS/GSC) - bei Editionen mit nur einer Region (Rot/Blau, Smaragd, ...) gäbe es nichts
      sinnvoll auszublenden. Ausblenden ist rein visuell (Liste ausdünnen) und wirkt sich nicht
      auf Statistik/Gesamtabschluss aus - der Fortschritt der versteckten Region bleibt erhalten. */
   if(currentGame().regions.length > 1){
+    const hiddenCount = currentGame().regions.filter(([region])=>(state.hiddenRegions||[]).includes(region)).length;
     const regionToggles = currentGame().regions.map(([region])=>{
       const hidden = (state.hiddenRegions||[]).includes(region);
       return `<div class="card">
@@ -12824,10 +12923,10 @@ function renderSettings(){
         <button class="btn ${hidden?"btn-secondary":"btn-primary"} btn-block" style="margin-top:10px;" data-act="toggle-region-visibility" data-id="${escapeHtml(region)}">${hidden?"Wieder einblenden":"Ausblenden"}</button>
       </div>`;
     }).join("");
-    html += settingsGroupHtml("regions", "Regionen", regionToggles);
+    groups.push({ key:"regions", label: hiddenCount ? `Regionen (${hiddenCount} ausgeblendet)` : "Regionen", html: regionToggles });
   }
 
-  html += settingsGroupHtml("appearance", "Darstellung", `
+  groups.push({ key:"appearance", label:"Darstellung", html: `
   <div class="card">
     <div class="loc-name">Farbschema</div>
     <div class="loc-sub" style="margin-bottom:10px;">Hell oder dunkel wählen</div>
@@ -12845,9 +12944,9 @@ function renderSettings(){
     <div class="loc-name">Status nie nur über Farbe</div>
     <div class="loc-sub">Zeigt bei besiegten Bosskämpfen zusätzlich zur Farbe ein eigenes Symbol für Sieg (Häkchen) bzw. Niederlage (Kreuz) - hilfreich bei Rot-Grün-Sehschwäche.</div>
     <button class="btn ${state.colorBlindSafeMode?"btn-primary":"btn-secondary"} btn-block" style="margin-top:10px;" data-act="toggle-colorblind-safe">${state.colorBlindSafeMode?"Aktiviert":"Deaktiviert"}</button>
-  </div>`);
+  </div>` });
 
-  html += settingsGroupHtml("tools", "Werkzeuge", `
+  groups.push({ key:"tools", label:"Werkzeuge", html: `
   <div class="card">
     <div class="loc-name">Pokédex</div>
     <div class="loc-sub">Typen-Rechner &amp; Nachschlagewerk öffnen</div>
@@ -12890,9 +12989,9 @@ function renderSettings(){
     <div class="loc-name">Ausführliche Tour</div>
     <div class="loc-sub">Durchsuchbare Themen-Übersicht mit allen Detail-Erklärungen zum Nachschlagen</div>
     <button class="btn btn-secondary btn-block" style="margin-top:12px;" data-act="open-feature-index">Themen-Übersicht öffnen</button>
-  </div>`);
+  </div>` });
 
-  html += settingsGroupHtml("app-info", "App-Info", `
+  groups.push({ key:"app-info", label:"App-Info", html: `
   <div class="card">
     <div class="loc-name">Nuzlocke</div>
     <div class="loc-sub">Version ${escapeHtml(APP_VERSION)}</div>
@@ -12901,9 +13000,30 @@ function renderSettings(){
     <div class="loc-name">Änderungsprotokoll</div>
     <div class="loc-sub">Alle bisherigen App-Updates &amp; Fixes nachlesen</div>
     <button class="btn btn-secondary btn-block" style="margin-top:12px;" data-act="open-changelog">Änderungsprotokoll öffnen</button>
-  </div>`);
+  </div>` });
 
-  document.getElementById("content").innerHTML = html;
+  groups.sort((a,b)=> SETTINGS_GROUP_ORDER.indexOf(a.key) - SETTINGS_GROUP_ORDER.indexOf(b.key));
+
+  /* Suche (seit v1.9.86): filtert nach reinem Textinhalt (Label + vom HTML befreiter Kartentext)
+     statt einer strukturierten Feld-Liste - simpel, aber deckt automatisch jede künftig
+     hinzugefügte Karte mit ab, ohne dass die Suche separat gepflegt werden müsste. Treffer-Kapitel
+     werden per forceExpanded (s. settingsGroupHtml) sichtbar aufgeklappt gerendert, OHNE
+     expandedSettingsGroups selbst zu verändern - nach Löschen der Suche fällt der Zustand dadurch
+     automatisch wieder auf den vorherigen (meist eingeklappten) zurück. */
+  let visibleGroups = groups;
+  if(query){
+    visibleGroups = groups.filter(g=>{
+      const plain = (g.label + " " + g.html).replace(/<[^>]*>/g," ").toLowerCase();
+      return plain.includes(query);
+    });
+  }
+
+  let out = "";
+  if(query && !visibleGroups.length){
+    out += `<div class="loc-sub" style="text-align:center; padding:24px 12px;">Keine Treffer für „${escapeHtml(settingsSearchQuery)}“.</div>`;
+  }
+  visibleGroups.forEach(g=>{ out += settingsGroupHtml(g.key, g.label, g.html, !!query); });
+  return out;
 }
 
 function fitNames(){
@@ -12943,7 +13063,7 @@ function applyEdition(){
 }
 
 function render(){
-  if(lastRenderedTab==="settings" && activeTab!=="settings") expandedSettingsGroups.clear();
+  if(lastRenderedTab==="settings" && activeTab!=="settings"){ expandedSettingsGroups.clear(); settingsSearchQuery = ""; }
   lastRenderedTab = activeTab;
   applyEdition();
   renderHeaderTeam();
@@ -13952,6 +14072,16 @@ document.addEventListener("click", e=>{
     const chevron = t.querySelector(".collapse-chevron");
     if(chevron) chevron.classList.toggle("open", willExpand);
   }
+  else if(act==="collapse-all-settings-groups"){
+    /* Seit v1.9.86, Nutzerwunsch "mehr Übersicht in den Einstellungen" - klappt ausnahmslos alle
+       Kapitel (inkl. der verschachtelten Erfolge-Liste, die denselben Set nutzt) auf einen Schlag
+       wieder zu. Bewusst per vollem render() statt der sonst üblichen Direkt-DOM-Umschaltung
+       einzelner toggle-settings-group-Klicks - hier sollen potenziell mehrere Kapitel gleichzeitig
+       zuklappen, ein Einzel-Element-Toggle würde das nicht abdecken, und ein seltener Sammel-Klick
+       braucht (anders als das häufige einzelne Auf-/Zuklappen) keine übersprungsfreie Animation. */
+    expandedSettingsGroups.clear();
+    render();
+  }
   else if(act==="toggle-orden-case"){
     ordenCaseOpen = !ordenCaseOpen;
     const bodyEl = document.querySelector(`[data-orden-case-body]`);
@@ -14425,6 +14555,11 @@ document.addEventListener("input", e=>{
     featureIndexQuery = e.target.value;
     const resultsEl = document.getElementById("featureIndexResults");
     if(resultsEl) resultsEl.innerHTML = featureIndexResultsHtml(featureIndexQuery);
+  }
+  if(e.target && e.target.id==="settingsSearchInput"){
+    settingsSearchQuery = e.target.value;
+    const containerEl = document.getElementById("settingsGroupsContainer");
+    if(containerEl) containerEl.innerHTML = settingsGroupsHtml();
   }
 });
 
