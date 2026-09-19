@@ -589,6 +589,30 @@ jederzeit hier in `CLAUDE.md` + Git-Historie rekonstruierbar, siehe Rest dieser 
   Bei künftigen Editionen mit ähnlichen "Ort wird zweimal besucht"-Fällen (s. Datenmodell-Abschnitt
   oben zu `noCatch:true`) aktiv prüfen, ob eine der beiden Positionen besser ein Punkt statt einer
   Fläche bleibt, statt beide unbesehen als Fläche zu übernehmen.
+  **Komplette Neu-Kalibrierung aller 50 Kanto-Punkte (v1.9.88) - dieselbe Route-22-Falle ein drittes
+  Mal aufgetreten, dieselbe Gegenmaßnahme:** Nutzer hat den kompletten Kalibrierungsmodus erneut
+  durchlaufen und eine komplett neue Koordinatenliste eingereicht (alle 50 Standorte). Vor dem
+  Übernehmen per Shapely-Geometrieprüfung nachgerechnet (`shapely.geometry.Polygon(...).intersection(...)`)
+  - exakt derselbe Fall wie in v1.9.77: die neu eingereichte "Route 22 (Rückweg)"-Fläche überlappte
+  zu ~78% mit der neuen "Route 22"-Fläche, hätte "Route 22" also wieder größtenteils untappbar
+  gemacht. 49 der 50 eingereichten Werte 1:1 übernommen, für "Route 22 (Rückweg)" wieder bei der
+  v1.9.77-Ausnahme geblieben (einzelner Punkt statt Fläche, Koordinate = arithmetischer Mittelpunkt
+  der vier eingereichten Ecken - fiel praktisch exakt mit dem alten v1.9.77-Punkt zusammen). **Lehre,
+  die die v1.9.77-Lehre bestätigt statt sie zu ersetzen:** der Kalibrierungsmodus selbst kennt die
+  Route-22-Ausnahme NICHT (`isRouteCalibrationName()` bietet "Route 22 (Rückweg)" bei jedem Durchlauf
+  wieder ganz normal eine Fläche an, da es rein ein `"Route "`-Präfix-Check ist) - bei jeder künftigen
+  Neukalibrierung (Kanto erneut, oder erstmals Hoenn/andere Editionen mit Flächen-Format) MUSS die
+  eingereichte Rohdaten-Liste vor dem Commit auf genau solche Überlappungen geprüft werden, sich
+  NICHT darauf verlassen, dass eine frühere Handkorrektur "sich schon gemerkt" hätte - sie tut es
+  nicht, jede neue Kalibrierungsrunde reproduziert die Falle unverändert, wenn nicht erneut geprüft
+  wird. Praktisches Vorgehen, das sich hier bewährt hat: bei Verdacht auf zwei sich physisch
+  überschneidende Standorte (identischer/ähnlicher Name, "(Rückweg)"/"(Postgame)"-Suffix o.Ä.) die
+  eingereichten Ecken-Koordinaten mit `pip install shapely` + `Polygon(...).intersection(...).area`
+  gegenrechnen, statt nur visuell/nach Gefühl zu urteilen - eine 78%-Überlappung ist mit bloßem Auge
+  an reinen Zahlenlisten nicht zuverlässig erkennbar. Verifiziert per Playwright: weiterhin 50
+  Standorte (25 Flächen, 25 Punkte); ein Tap direkt auf den Rückweg-Punkt trifft "Route 22
+  (Rückweg)"; ein Tap in einer vom Punkt entfernten Ecke von "Route 22"s neuer Fläche trifft korrekt
+  "Route 22".
   **Hoenn-Routen weiterhin nicht auf das Flächen-Format umkalibriert** - bewusst zurückgestellt, bis
   der Nutzer Zeit für die entsprechende Kalibrierungsrunde hat (analog zum ursprünglichen
   Kanto-Aufwand).
