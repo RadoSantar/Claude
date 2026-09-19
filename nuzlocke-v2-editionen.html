@@ -1086,11 +1086,33 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 
 .artwork-map{ position:relative; border-radius:14px; overflow:hidden; border:1px solid var(--line); }
 .artwork-map img{ width:100%; display:block; }
+/* Standort-Punkte (Städte/Höhlen/Türme) - Design überarbeitet in v1.9.90 (Nutzerfeedback: "die punkte
+   wirken... wie billige farbkleckse"), dasselbe Grundproblem wie bei den Routenflächen davor: eine
+   einzelne flache Füllfarbe auf einer Kreisform sieht wie ein simpler eingefärbter Punkt aus, ohne
+   jede Tiefe. Statt einer echten 3D-Kugel-Optik (bräuchte je nach Farbe unterschiedlich abgestimmte
+   Lichter/Schatten-Farbwerte) zwei EINFARBIGE, radiale Weiß-/Schwarz-Verläufe über der jeweiligen
+   Grundfarbe gelegt (helles "Glanzlicht" oben-links, dunkler "Schatten" unten-rechts) - funktioniert
+   automatisch mit JEDER Grundfarbe (weiß/grün/blau) und in beiden Farbschemata, ohne dass für jede
+   Variante eigene abgestimmte Verlaufsfarben gepflegt werden müssten. Exakt dasselbe Muster wie beim
+   bereits bestehenden `.type-coverage-icon::after` (Perlen-/Kugel-Optik dort), nur mit reinen
+   Weiß-/Schwarz-Layern statt fest codierter Hex-Werte, da die Grundfarbe hier variiert (offen/
+   erledigt/aktuell) statt immer gleich zu sein. */
 .map-pin{
   position:absolute; width:15px; height:15px; margin:-7px 0 0 -7px; border-radius:50%;
-  background:var(--surface); border:2.5px solid var(--ink-soft); padding:0; box-shadow:0 1px 3px rgba(0,0,0,.4);
+  border:2px solid var(--ink-soft); padding:0;
+  background:
+    radial-gradient(circle at 32% 26%, rgba(255,255,255,.95) 0%, rgba(255,255,255,0) 52%),
+    radial-gradient(circle at 68% 80%, rgba(0,0,0,.22) 0%, rgba(0,0,0,0) 62%),
+    var(--surface);
+  box-shadow:0 1px 3px rgba(0,0,0,.4);
 }
-.map-pin.done{ background:var(--good); border-color:var(--good); }
+.map-pin.done{
+  border-color:var(--good);
+  background:
+    radial-gradient(circle at 32% 26%, rgba(255,255,255,.8) 0%, rgba(255,255,255,0) 52%),
+    radial-gradient(circle at 68% 80%, rgba(0,0,0,.3) 0%, rgba(0,0,0,0) 62%),
+    var(--good);
+}
 /* Aktueller Standort (seit v1.9.89, Nutzerfeedback "der aktuelle standort ist noch etwas zu dezent")
    bekommt eine eigene, dritte Farbe (--evolve, das bereits an anderer Stelle als "hier hinschauen"-
    Akzent dient, z.B. .search-highlight/evolveFlash) statt weiterhin Gold zu verwenden - Gold steht
@@ -1100,7 +1122,11 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
    (box-shadow, `--evolve-glow`) plus die dezente Pulsieren-Animation (s.u.) sollen den Standort auch
    auf den ersten Blick zwischen den anderen Markern finden lassen, nicht erst beim genauen Hinsehen. */
 .map-pin.current{
-  background:var(--evolve); border-color:var(--evolve); width:20px; height:20px; margin:-10px 0 0 -10px;
+  border-color:var(--evolve); width:20px; height:20px; margin:-10px 0 0 -10px;
+  background:
+    radial-gradient(circle at 32% 26%, rgba(255,255,255,.85) 0%, rgba(255,255,255,0) 52%),
+    radial-gradient(circle at 68% 80%, rgba(0,0,0,.3) 0%, rgba(0,0,0,0) 62%),
+    var(--evolve);
   box-shadow:0 0 0 5px rgba(var(--evolve-glow),.4), 0 1px 4px rgba(0,0,0,.45);
 }
 /* Flächen-Marker für Routen (seit v1.9.76, s. Kommentar bei calibrationQuadBuffer) - derselbe volle
@@ -4123,7 +4149,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.89";
+const APP_VERSION = "1.9.90";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -10571,7 +10597,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="stats">
     <div class="stat"><div class="n">23</div><div class="l">Editionen</div></div>
     <div class="stat"><div class="n">1075</div><div class="l">Pokémon-Arten</div></div>
-    <div class="stat"><div class="n">92</div><div class="l">Versions&shy;stände</div></div>
+    <div class="stat"><div class="n">93</div><div class="l">Versions&shy;stände</div></div>
     <div class="stat"><div class="n">Gen 1–9</div><div class="l">Abgedeckt</div></div>
   </div>
 
@@ -10581,6 +10607,24 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.90</span><span class="tag tag-feat">Neu</span></div>
+      <h3>Kartengrafik: Standort-Punkte mit Glanz-Optik statt flacher Farbe</h3>
+      <p>Direktes Anschlussfeedback zur vorherigen Version: "die punkte wirken aber auch noch nicht
+      wirklich hochwertig die wirken einfach wie billige farbkleckse." Dasselbe Grundproblem wie bei
+      den Routenflächen zuvor - eine einzelne flache Füllfarbe auf einem Kreis sieht wie ein simpler
+      eingefärbter Punkt aus, ohne jede Tiefe. Fix: zwei radiale Weiß-/Schwarz-Verläufe über der
+      jeweiligen Grundfarbe gelegt (helles "Glanzlicht" oben-links, dunkler "Schatten" unten-rechts) -
+      ergibt eine Perlen-/Kugel-Optik statt eines flachen Punkts, funktioniert dabei automatisch mit
+      jeder Grundfarbe (Weiß für offen, Grün für erledigt, Blau für den aktuellen Standort) und in
+      beiden Farbschemata, ohne dass für jede Variante eigene abgestimmte Verlaufsfarben gepflegt
+      werden müssten. Exakt dasselbe Muster, das an anderer Stelle im Code bereits für die
+      Typabdeckungs-Kugel im Team-Tab verwendet wird, nur mit reinen Weiß-/Schwarz-Ebenen statt fest
+      codierter Hex-Werte, da hier die Grundfarbe je nach Zustand wechselt. Reine Verlauf-Änderung,
+      Größe/Klickbereich/Kalibrierung unverändert. Per Screenshot-Vergleich (klein + Vollbild-
+      Vergrößerung) gegengeprüft.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.89</span><span class="tag tag-feat">Neu</span></div>
@@ -12695,7 +12739,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.89.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.90.</footer>
 
 </div>`;
 

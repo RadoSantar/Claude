@@ -657,6 +657,27 @@ jederzeit hier in `CLAUDE.md` + Git-Historie rekonstruierbar, siehe Rest dieser 
   eingefärbt; der aktuelle Standort zeigt nachweislich `--evolve` als Hintergrund-/Randfarbe plus
   laufende `mapCurrentPulse`-Animation; die Legende erscheint nur im Kartengrafik-Modus, verschwindet
   im Schema-Modus.
+  **Standort-Punkte mit Glanz-Optik statt Flachfarbe (v1.9.90):** direktes Anschlussfeedback zur
+  v1.9.89-Auslieferung: "die punkte wirken aber auch noch nicht wirklich hochwertig die wirken einfach
+  wie billige farbkleckse" - dasselbe Grundproblem wie bei den Routenflächen zuvor, nur bei
+  `.map-pin` statt `.map-quad`: eine einzelne flache Füllfarbe (`var(--surface)`/`var(--good)`/
+  `var(--evolve)`) auf einem Kreis sieht wie ein simpler eingefärbter Punkt aus. **Lösung, bewusst
+  OHNE pro Zustand einzeln abgestimmte Verlaufsfarben:** zwei rein weiße/schwarze radiale Verläufe
+  ÜBER der jeweiligen Grundfarbe gelegt (`radial-gradient(circle at 32% 26%, rgba(255,255,255,.X) 0%,
+  rgba(255,255,255,0) 52%)` für ein Glanzlicht oben-links, `radial-gradient(circle at 68% 80%,
+  rgba(0,0,0,.X) 0%, rgba(0,0,0,0) 62%)` für einen Schatten unten-rechts, darunter die eigentliche
+  `var(...)`-Grundfarbe als dritte, unterste `background`-Ebene) - ergibt eine Perlen-/Kugel-Optik,
+  die automatisch mit JEDER Grundfarbe funktioniert (Weiß/Grün/Blau) und in beiden Farbschemata,
+  ohne dass für jede Kombination aus Zustand × Farbschema eigene Lichtwerte gepflegt werden müssten.
+  **Exakt dasselbe bereits etablierte Muster wie `.type-coverage-icon::after`** (die Regenbogen-
+  Energie-Kugel im Team-Tab, siehe Datenmodell-Abschnitt oben) - dort mit fest codierten Hex-Werten,
+  weil die Grundfarbe dort immer gleich ist; hier bewusst mit reinen Weiß-/Schwarz-Ebenen, weil die
+  Grundfarbe je nach Zustand (offen/erledigt/aktuell) wechselt und ein fest codierter Glanzlicht-Ton
+  nur zu EINER der drei Grundfarben gepasst hätte. Reine `background`/`border-color`-Änderung an
+  `.map-pin`/`.map-pin.done`/`.map-pin.current` - Größe, Klickbereich, Kalibrierungslogik und die
+  v1.9.89-Erweiterungen (Leuchtring, Pulsieren beim aktuellen Standort) alle unverändert. Per
+  Playwright-Screenshot-Vergleich gegengeprüft (kleine Kartenvorschau UND Vollbild-Vergrößerung) -
+  sichtbar reifere "Kugel mit Glanzpunkt"-Optik statt der vorherigen flachen Punkte.
   **Hoenn-Routen weiterhin nicht auf das Flächen-Format umkalibriert** - bewusst zurückgestellt, bis
   der Nutzer Zeit für die entsprechende Kalibrierungsrunde hat (analog zum ursprünglichen
   Kanto-Aufwand).
