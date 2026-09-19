@@ -979,6 +979,89 @@ jederzeit hier in `CLAUDE.md` + Git-Historie rekonstruierbar, siehe Rest dieser 
   "Keine Treffer"-Text; Leeren des Suchfelds stellt den eingeklappten Ausgangszustand wieder her; der
   "Alle einklappen"-Button leert `expandedSettingsGroups` zuverlässig; die gerenderte Kapitel-
   Reihenfolge entspricht `SETTINGS_GROUP_ORDER`.
+- **Icons, kurze Kennzahlen, Toggle-Switches, gebündelte Karten & "Erweitert"-Bereiche (seit
+  v1.9.87):** direkte Folgerunde derselben "mehr Übersicht"-Konversation wie oben. Nutzer bat um
+  Ideen, die "gerne genutzt werden" und "leicht verständlich, nicht überladen" wirken; auf Vorschlag
+  von fünf Optionen (Icon pro Kapitel, kurze Zusammenfassung, "Erweitert"-Unterteilung, Toggle-
+  Switches statt Buttons, verwandte Schalter bündeln) kam "die zwei und die anderen drei umsetzen" -
+  alle fünf in einer Runde:
+  1. **`SETTINGS_GROUP_ICONS`** (neue Konstante direkt vor `settingsGroupHtml()`) - Emoji-Map nur für
+     die acht TOP-LEVEL-Kapitel-Keys (`rules:"📜"`, `saves:"💾"`, `"duel-bosses":"⚔️"`,
+     `achievements:"🏆"`, `regions:"🗺️"`, `appearance:"🎨"`, `tools:"🧰"`, `"app-info":"ℹ️"`) -
+     bewusst NICHT für verschachtelte Keys wie `"achievements-list"`/`"saves-advanced"` gepflegt,
+     damit Unterebenen optisch klar untergeordnet bleiben statt mit demselben Gewicht wie die
+     Haupt-Navigation zu wirken. Emoji statt neu gezeichneter SVGs - passt zum bereits etablierten
+     leichtgewichtigen Icon-Stil dieser Codebase (ACHIEVEMENTS-Icons, "🧪 Tour-Idee", "❔"/"🔒").
+  2. **`settingsGroupHtml(key, label, bodyHtml, forceExpanded, summary)`** bekam einen fünften,
+     optionalen `summary`-Parameter - eine kurze Kennzahl ("2/4 aktiv", "2 ausgeblendet"), die in
+     einem EIGENEN `<span class="settings-group-summary">` rechts neben dem Titel steht, auch im
+     eingeklappten Zustand sichtbar. Löst die v1.9.86-Übergangslösung ab, die "Erfolge & Titel
+     (12/56)" noch direkt in den `label`-String einbackte - jetzt sauber getrennt, damit der Titel
+     für die Suche unabhängig von der Zahl bleibt und beide unterschiedlich gestylt werden können
+     (Titel fett, Zahl matt/klein). Neu berechnete Summaries: "Regeln" zählt die vier ECHTEN
+     Ein/Aus-Einstellungen (`dupesWarning`, `nicknameRequired`, `hidePostgame`, `trackDeathCause`) -
+     bewusst OHNE die Regelwerk-Checkliste (`houseRulesCardHtml()`), die rein zur Dokumentation dient
+     und keine App-Logik beeinflusst, siehe eigener Kommentar dort; "Darstellung" zählt
+     `vibrationEnabled`+`colorBlindSafeMode` (die Farbschema-Wahl selbst ist kein Boolean, zählt
+     nicht mit). "Spielstände", "Duell & Bosse", "Werkzeuge", "App-Info" bekommen bewusst KEINE
+     Summary - dort gibt es keine einzelne, natürliche Kennzahl, die das Kapitel zusammenfasst (exakt
+     dieselbe "nicht jedes Kapitel braucht eine künstliche Zahl"-Regel wie schon in v1.9.86).
+  3. **Toggle-Switches** (`.switch`/`.switch-track`/`.switch-thumb`, klassisches Checkbox-Hack-Muster:
+     eine unsichtbar gemachte, aber weiter fokussier-/klickbare native `<input type="checkbox">`
+     treibt per CSS-Geschwisterselektor `:checked + .switch-track` Track-Farbe und Thumb-Position) -
+     ersetzen die zuvor vollbreiten `btn ${x?"btn-primary":"btn-secondary"} btn-block`-Buttons mit
+     Text "Aktiviert"/"Deaktiviert" für alle SIEBEN echten Ein/Aus-Einstellungen: `dupesWarning`,
+     `nicknameRequired`, `hidePostgame`, `trackDeathCause`, `trackBossTeams`, `vibrationEnabled`,
+     `colorBlindSafeMode`. Neuer Helfer `switchHtml(stateKey, checked)` baut das Markup zentral,
+     `data-toggle-setting="${stateKey}"` trägt direkt den echten `state`-Feldnamen. **Bewusst NICHT**
+     für Checklisten (Schlüsselitems, Regelwerk-Checkliste, beide weiterhin `.check-row` mit echter
+     Checkbox) übernommen - dort ist "das habe ich erledigt" semantisch etwas anderes als "dieses
+     Feature ist an", ein Switch wäre dort die falsche Interaktions-Metapher. Die bereits vorhandene
+     `autoSyncEnabled`-Checkbox in `cloudSyncCardHtml()` wurde bewusst NICHT mit umgestellt - sie ist
+     bereits kompakt (inline in einer längeren Karte, kein vollbreiter Button) und liegt in einem
+     gerade erst in dieser Sitzung angefassten, funktional sensiblen Bereich (Soul-Link/Auto-Sync-
+     Debounce) - kosmetische Vereinheitlichung dort war den zusätzlichen Berührungsaufwand nicht wert.
+     **Ein einziger generischer `input`-Handler** (`if(e.target.dataset.toggleSetting){ state[key] =
+     e.target.checked; saveState(); ...; document.getElementById("settingsGroupsContainer").innerHTML
+     = settingsGroupsHtml(); }`) ersetzt die bisherigen SIEBEN einzelnen `toggle-X`-Klick-Handler
+     (ersatzlos gelöscht, keine Karteileichen) - `vibrationEnabled`s Sonderfall (sofortiges
+     `vibrateFeedback(35)` beim Einschalten als Demo-Feedback) blieb dabei als einzige
+     Feldnamen-Sonderprüfung erhalten. Bewusst KEIN volles `render()`, nur der Container wird neu
+     gezeichnet - aktualisiert nebenbei automatisch die "X/Y aktiv"-Kennzahl im Kapitel-Titel, ohne
+     den Rest der App unnötig neu zu rendern.
+  4. **Gebündelte Karten:** die vier "Regeln"-Schalter stehen jetzt als vier `.switch-row`-Zeilen in
+     EINER Karte statt vier einzelner Karten, ebenso die beiden "Darstellung"-Schalter (Vibration,
+     Farbenblind-Symbole) - "Gegner-Team tracken" (nur ein Schalter in "Duell & Bosse") blieb trotzdem
+     als eigene, jetzt aber kompaktere Karte, da es dort nichts zum Bündeln gibt. Die bisher IMMER
+     sichtbaren Erklärungstexte unter jedem Button (z. B. "Warnt beim Fangen, wenn die Spezies schon
+     existiert...") wanderten dafür hinter neue "?"-Hilfe-Icons - fünf neue `SETTINGS_HELP`-Einträge
+     (`hidepostgame`, `deathcause`, `bossteams`, `vibration`, `colorblind`), Text 1:1 aus den
+     bisherigen `loc-sub`-Absätzen übernommen, keine Information ging verloren, nur der Ort wechselte
+     von "immer sichtbar" zu "auf Wunsch abrufbar" - dieselbe Behandlung, die Dupes-Warnung und
+     Nickname-Pflicht schon vorher hatten. Automatisch auch in der "Ausführlichen Tour"
+     (`featureIndexResultsHtml()`, iteriert über ALLE `SETTINGS_HELP`-Einträge) mit aufgeführt, ohne
+     zusätzlichen Code.
+  5. **"Erweitert"-Unterteilung:** drei neue verschachtelte Toggle-Sektionen nach demselben Muster wie
+     die "Erfolge"-Liste aus v1.9.86 (`settingsGroupHtml()` innerhalb eines Kapitel-Bodys erneut
+     aufgerufen) - `"saves-advanced"` (Randomizer-Seed, typischerweise einmal zu Run-Beginn gesetzt),
+     `"duel-bosses-advanced"` (Boss-Level-Boost, ebenfalls eine einmalige Randomizer-Konfiguration)
+     und `"tools-advanced"` (die experimentelle "🧪 Tour-Idee"-Vorschau, ein Nischen-Feature für
+     Feedback-Zwecke). Alle drei stehen bewusst als LETZTES Element ihres jeweiligen Kapitels
+     (übliches Muster: Kernfunktionen zuerst, Seltenes ganz unten). Neuer Helfer
+     `textIncludesQuery(label, html, query)` (ersetzt die vorher inline in der Such-Filterfunktion
+     stehende Textextraktion) wird sowohl für die äußere Kapitel-Filterung als auch für jede der drei
+     neuen "Erweitert"-Sektionen einzeln aufgerufen, damit ein Suchtreffer im jeweiligen Inhalt (z. B.
+     "Randomizer") automatisch auch die verschachtelte Sektion mit aufklappt, nicht nur das äußere
+     Kapitel.
+  Verifiziert per Playwright: Icons erscheinen nur bei den acht Top-Level-Keys, fehlen bei
+  verschachtelten; "Regeln"/"Darstellung" zeigen "2/4 aktiv"/"1/2 aktiv" schon eingeklappt; alle drei
+  "Erweitert"-Bereiche existieren und starten eingeklappt; ein Klick auf einen Schalter ändert
+  sowohl `state[key]` als auch sofort die Kennzahl im Kapitel-Titel (ohne Seiteneffekt auf andere
+  offene Kapitel); die "Regeln"-Karte enthält exakt vier gebündelte Schalter-Zeilen; eine Suche nach
+  "Randomizer" klappt sowohl "Spielstände" als auch den verschachtelten "Erweitert"-Bereich
+  automatisch auf, ohne den Fokus im Suchfeld zu verlieren; alle fünf neuen Hilfe-Einträge sind über
+  `SETTINGS_HELP` abrufbar; keine toten `data-act="toggle-X"`-Referenzen der sieben ersetzten
+  Buttons bleiben im Code zurück.
 
 ## Deutsche Namen — bekannte Stolperfallen
 

@@ -305,6 +305,45 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
 }
 .settings-group-header:active{ opacity:.85; transform:scale(.98); background:var(--surface); }
 .settings-group-header .collapse-chevron{ flex:none; stroke:var(--ink-soft); }
+/* Titel+Icon links (nimmt den verfügbaren Platz, kürzt mit Ellipsis statt umzubrechen), Zähler+
+   Chevron rechts als eigene Gruppe (seit v1.9.87) - siehe settingsGroupHtml()-Kommentar. */
+.settings-group-title{
+  flex:1; min-width:0; display:flex; align-items:center; gap:8px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.settings-group-icon{ flex:none; font-size:1rem; line-height:1; }
+.settings-group-right{ flex:none; display:flex; align-items:center; gap:8px; }
+.settings-group-summary{
+  font-family:var(--font-body); font-size:.74rem; font-weight:600; letter-spacing:0;
+  color:var(--ink-soft); white-space:nowrap;
+}
+
+/* Toggle-Switch (seit v1.9.87, ersetzt die vormals vollbreiten "Aktiviert"/"Deaktiviert"-Buttons für
+   echte Ein/Aus-Einstellungen) - klassisches Checkbox-Hack-Muster: eine unsichtbar gemachte, aber
+   weiterhin fokussier-/klickbare native Checkbox treibt per CSS-Geschwisterselektor Track und Thumb.
+   Bewusst NICHT für Checklisten (Schlüsselitems, Regelwerk-Checkliste) verwendet - dort ist eine
+   echte Checkbox (.check-row) semantisch richtiger ("das habe ich erledigt" statt "dieses Feature ist
+   an"), nur für binäre Verhaltens-Einstellungen wie Dupes-Warnung/Vibration/etc. */
+.switch{ position:relative; display:inline-block; width:44px; height:26px; flex:none; }
+.switch input{ position:absolute; inset:0; opacity:0; margin:0; cursor:pointer; }
+.switch-track{
+  position:absolute; inset:0; background:var(--surface); border:1px solid var(--line);
+  border-radius:999px; transition:background .2s ease, border-color .2s ease; pointer-events:none;
+}
+.switch-thumb{
+  position:absolute; top:2px; left:2px; width:20px; height:20px; border-radius:50%;
+  background:var(--ink-soft); opacity:.5; transition:transform .2s ease, background .2s ease, opacity .2s ease;
+}
+.switch input:checked + .switch-track{ background:var(--accent-soft); border-color:var(--accent); }
+.switch input:checked + .switch-track .switch-thumb{ transform:translateX(18px); background:var(--accent); opacity:1; }
+.switch input:focus-visible + .switch-track{ outline:2px solid var(--accent); outline-offset:2px; }
+/* Gebündelte Schalter-Zeilen (seit v1.9.87, Nutzerwunsch "verwandte Schalter in einer Karte
+   bündeln") - mehrere Einstellungen als Zeilen EINER Karte statt je einer eigenen Karte pro
+   Einstellung, reduziert die Kartenflut in Kapiteln mit mehreren einfachen Ein/Aus-Optionen. */
+.switch-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 0; border-bottom:1px solid var(--line); }
+.switch-row:last-child{ border-bottom:none; }
+.switch-row-label{ display:flex; align-items:center; gap:6px; min-width:0; font-weight:600; font-size:.9rem; }
+.switch-row-label > span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 /* Wiederverwendete Auf-/Zuklapp-Animation für alles Einklappbare (Einstellungs-Gruppen, erledigte
    Standort-Blöcke im Routen-Tab, die "später fangbar"-Sammelgruppe, ...): Inhalt bleibt immer im
    DOM, grid-template-rows animiert zwischen 0fr und 1fr - braucht keine bekannte/gemessene Höhe,
@@ -4041,7 +4080,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.86";
+const APP_VERSION = "1.9.87";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -9981,15 +10020,34 @@ function copyRunRecapToClipboard(){
   else failed();
 }
 
-function settingsGroupHtml(key, label, bodyHtml, forceExpanded){
+/* Icon pro Kapitel (seit v1.9.87, Nutzerwunsch "Icon vor jedem Kapitel-Titel") - bewusst nur für die
+   ACHT äußeren Kapitel-Keys gepflegt (nicht z.B. "achievements-list" oder "*-advanced"), damit
+   verschachtelte Unterebenen optisch klar untergeordnet bleiben statt mit dem gleichen Gewicht wie
+   die Hauptnavigation zu wirken. Emoji statt neu gezeichneter SVGs - im Code bereits etablierter,
+   leichtgewichtiger Stil (siehe ACHIEVEMENTS-Icons, "🧪 Tour-Idee", "❔"/"🔒" bei Erfolgen). */
+const SETTINGS_GROUP_ICONS = {
+  rules:"📜", saves:"💾", "duel-bosses":"⚔️", achievements:"🏆",
+  regions:"🗺️", appearance:"🎨", tools:"🧰", "app-info":"ℹ️"
+};
+
+function settingsGroupHtml(key, label, bodyHtml, forceExpanded, summary){
   /* forceExpanded (seit v1.9.86) überschreibt expandedSettingsGroups nur für die RENDER-Entscheidung,
      ohne den Set-Eintrag selbst zu setzen - genutzt von der Einstellungen-Suche, um Treffer-Kapitel
      sichtbar aufgeklappt zu zeigen, ohne dass diese Aufklapp-Entscheidung nach dem Löschen der Suche
-     als "manuell aufgeklappt" bestehen bliebe. */
+     als "manuell aufgeklappt" bestehen bliebe.
+     summary (seit v1.9.87) ist eine optionale kurze Kennzahl ("3/4 aktiv", "2 ausgeblendet", ...),
+     die rechts neben dem Titel steht - auch im eingeklappten Zustand sichtbar, ohne das Kapitel öffnen
+     zu müssen. Bewusst ein EIGENES Element statt in den label-Text eingebacken (wie noch in v1.9.86
+     bei "Erfolge & Titel (12/56)") - dadurch bleibt der Titel für die Suche unabhängig von der Zahl
+     durchsuchbar/lesbar und die beiden können unterschiedlich gestylt werden (Titel fett, Zahl matt). */
   const expanded = forceExpanded || expandedSettingsGroups.has(key);
+  const icon = SETTINGS_GROUP_ICONS[key];
   const header = `<button class="region-header settings-group-header" data-act="toggle-settings-group" data-group="${key}">
-    <span>${escapeHtml(label)}</span>
-    <svg class="collapse-chevron${expanded?" open":""}" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
+    <span class="settings-group-title">${icon?`<span class="settings-group-icon" aria-hidden="true">${icon}</span>`:""}${escapeHtml(label)}</span>
+    <span class="settings-group-right">
+      ${summary?`<span class="settings-group-summary">${escapeHtml(summary)}</span>`:""}
+      <svg class="collapse-chevron${expanded?" open":""}" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
+    </span>
   </button>`;
   /* Der Inhalt liegt immer im DOM (statt bei expanded:false komplett wegzulassen) und wird über
      grid-template-rows 0fr<->1fr auf- bzw. zugefahren - das braucht keine bekannte/gemessene Höhe
@@ -10453,7 +10511,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="stats">
     <div class="stat"><div class="n">23</div><div class="l">Editionen</div></div>
     <div class="stat"><div class="n">1075</div><div class="l">Pokémon-Arten</div></div>
-    <div class="stat"><div class="n">89</div><div class="l">Versions&shy;stände</div></div>
+    <div class="stat"><div class="n">90</div><div class="l">Versions&shy;stände</div></div>
     <div class="stat"><div class="n">Gen 1–9</div><div class="l">Abgedeckt</div></div>
   </div>
 
@@ -10463,6 +10521,54 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.87</span><span class="tag tag-feat">Neu</span></div>
+      <h3>Icons, kurze Kennzahlen, Toggle-Switches, gebündelte Karten &amp; "Erweitert"-Bereiche</h3>
+      <p>Weitere Runde derselben "mehr Übersicht"-Anfrage: nach ein paar vorgeschlagenen Optionen
+      ("icon vor jedem kapitel-titel", "kurze zusammenfassung", "erweitert"-Unterteilung,
+      Toggle-Switches, gebündelte Karten) die Antwort "die zwei und die anderen drei umsetzen" - alle
+      fünf auf einmal:</p>
+      <ul>
+        <li><strong>Icon pro Kapitel:</strong> jedes der acht Hauptkapitel bekommt ein kleines Emoji
+        vor dem Titel (📜 Regeln, 💾 Spielstände, ⚔️ Duell &amp; Bosse, 🏆 Erfolge &amp; Titel, 🗺️
+        Regionen, 🎨 Darstellung, 🧰 Werkzeuge, ℹ️ App-Info) - verschachtelte Unterebenen
+        ("Erweitert", "Alle Erfolge") bekommen bewusst KEIN Icon, damit sie optisch klar
+        untergeordnet bleiben.</li>
+        <li><strong>Kurze Kennzahl im (weiterhin eingeklappten) Kapitel-Titel:</strong> die bisher in
+        den Titeltext eingebackenen Zahlen bei "Erfolge &amp; Titel"/"Regionen" wurden in ein
+        eigenes, separat gestyltes Element rechts neben dem Titel verschoben, und zwei neue Kapitel
+        bekamen dieselbe Behandlung: "Regeln" zeigt jetzt "X/4 aktiv", "Darstellung" zeigt "X/2 aktiv"
+        - beide zählen nur echte Ein/Aus-Einstellungen, keine Freitextfelder oder reinen
+        Navigations-Buttons.</li>
+        <li><strong>Toggle-Switches statt vollbreiter "Aktiviert"/"Deaktiviert"-Buttons:</strong> alle
+        sieben echten Ein/Aus-Einstellungen (Dupes-Warnung, Nickname-Pflicht, Postgame ausblenden,
+        Todesursache eintragen, Gegner-Team tracken, Vibration, Farbenblind-Symbole) zeigen jetzt
+        einen kompakten Schalter statt eines großen Buttons - das vertraute Muster aus praktisch
+        jeder App-Einstellungsseite. Bewusst NICHT für Checklisten (Schlüsselitems, Regelwerk-
+        Checkliste) übernommen, die bleiben echte Checkboxen - dort ist "das habe ich erledigt"
+        semantisch etwas anderes als "dieses Feature ist an".</li>
+        <li><strong>Verwandte Schalter in einer Karte gebündelt:</strong> die vier "Regeln"-Schalter
+        stehen jetzt als vier Zeilen in EINER Karte statt vier einzelner Karten, ebenso die beiden
+        "Darstellung"-Schalter (Vibration, Farbenblind-Symbole). Die bisher immer sichtbaren
+        Erklärungstexte darunter wanderten dafür hinter eigene neue "?"-Hilfe-Symbole (fünf neue
+        Einträge in <code>SETTINGS_HELP</code>) - dieselbe Behandlung, die Dupes-Warnung und
+        Nickname-Pflicht schon vorher hatten.</li>
+        <li><strong>"Erweitert"-Bereiche für selten gebrauchte Einstellungen:</strong> Randomizer-Seed
+        (unter "Spielstände"), der Boss-Level-Boost (unter "Duell &amp; Bosse") und die experimentelle
+        Tour-Vorschau (unter "Werkzeuge") stecken jetzt in einem eigenen, standardmäßig eingeklappten
+        "Erweitert"-Unterpunkt am Ende des jeweiligen Kapitels - dieselbe verschachtelte
+        Auf-/Zuklapp-Technik wie bei der Erfolge-Liste. Klappt bei einem passenden Treffer in der
+        Einstellungen-Suche automatisch mit auf.</li>
+      </ul>
+      <p>Verifiziert per Playwright: Icons erscheinen bei Top-Level-Kapiteln, fehlen bei
+      verschachtelten; Kennzahlen zeigen "2/4 aktiv" bzw. "1/2 aktiv" schon im eingeklappten Zustand;
+      alle drei "Erweitert"-Bereiche existieren und starten eingeklappt; ein Klick auf einen Schalter
+      ändert sowohl den State als auch sofort die Kennzahl im Kapitel-Titel; die "Regeln"-Karte
+      enthält genau vier gebündelte Schalter-Zeilen; eine Suche nach "Randomizer" klappt sowohl das
+      äußere "Spielstände"-Kapitel als auch den verschachtelten "Erweitert"-Bereich automatisch auf,
+      ohne den Fokus im Suchfeld zu verlieren; alle fünf neuen Hilfe-Einträge sind abrufbar.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.86</span><span class="tag tag-feat">Neu</span></div>
@@ -12478,7 +12584,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.86.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.87.</footer>
 
 </div>`;
 
@@ -12658,6 +12764,11 @@ const SETTINGS_HELP = {
   bossboost: { category:"Duell & Bosse", title:"Level-Boost für Bosstrainer", text:"Erhöht die angezeigten Level aller Bosstrainer gemeinsam um den gewählten Prozentsatz - z. B. wird aus einem Basis-Level 50 bei +5% ein angezeigtes Level 53 (aufgerundet). Rein informativ für den Schwierigkeitsgrad eures Randomizers, ändert nichts an echten Spieldaten." },
   dupes: { category:"Regeln", title:"Dupes-Clause-Warnung", text:"Klassische Nuzlocke-Hausregel: pro Entwicklungsreihe darf meist nur ein Pokémon gefangen werden. Ist die Warnung aktiv, meldet sich die App beim Fangen, wenn die Art (oder eine verwandte Entwicklungsstufe) schon im Team, in der Box oder im Friedhof vorhanden ist - der Fang bleibt trotzdem möglich, es ist nur ein Hinweis, keine Sperre." },
   nickname: { category:"Regeln", title:"Nickname-Pflicht", text:"Erzwingt beim Fangen einen Spitznamen, bevor sich der Fang speichern lässt - hilfreich, wenn ihr euch als Hausregel vorgenommen habt, jedem Pokémon einen eigenen Namen zu geben." },
+  hidepostgame: { category:"Regeln", title:"Postgame-Inhalte ausblenden", text:"Blendet Standorte aus, die als reine Postgame-Inhalte markiert sind (z.&nbsp;B. Nachfolge-Events nach dem Hauptspiel) - rein visuell, wirkt sich nicht auf die Statistik aus." },
+  deathcause: { category:"Regeln", title:"Todesursache eintragen", text:"Fragt beim Markieren als gestorben (außerhalb von Bosskämpfen) optional ab, gegen welches Pokémon es passiert ist - erscheint dann sichtbar im Friedhof. Bei einer Niederlage in einem getrackten Bosskampf lässt sich zusätzlich (unabhängig von diesem Schalter) direkt aus dem gegnerischen Team auswählen, siehe „Gegner-Team tracken“." },
+  bossteams: { category:"Duell & Bosse", title:"Gegner-Team tracken", text:"Blendet auf jeder Bosskarte ein Feld ein, um das tatsächliche gegnerische Team (bis zu 6 Pokémon) einzutragen und später wieder einzusehen. Bei einer Niederlage lässt sich dann pro gestorbenem Team-Pokémon direkt auswählen, gegen welches dieser Pokémon es verloren hat." },
+  vibration: { category:"Darstellung", title:"Vibrations-Feedback", text:"Kurzes haptisches Feedback bei Fang, Tod und Bosssieg (nur auf unterstützten Geräten spürbar)." },
+  colorblind: { category:"Darstellung", title:"Status nie nur über Farbe", text:"Zeigt bei besiegten Bosskämpfen zusätzlich zur Farbe ein eigenes Symbol für Sieg (Häkchen) bzw. Niederlage (Kreuz) - hilfreich bei Rot-Grün-Sehschwäche." },
   houserules: { category:"Regeln", title:"Regelwerk-Checkliste", text:"Dokumentiert, welche der üblichen Nuzlocke-Hausregeln (Set-Modus, Species-Klausel, kein Item im Kampf, Level-Cap je Bosskampf) für diesen Run gelten - rein zur Erinnerung/Dokumentation, jederzeit an-/abwählbar. Wirkt sich anders als die Dupes-Clause-Warnung und die Level-Cap-Berechnung nicht auf die App-Logik aus, das sind eigene, tatsächlich wirksame Einstellungen." },
   cloudsync: { category:"Spielstände & Mehrspieler", title:"Cloud-Sync", text:"Verknüpft einen Spielstand über einen zufälligen, hochentropischen Code mit einer Cloud-Zeile - ganz ohne Konto oder Login. „Speichern“ lädt den lokalen Stand in die Cloud hoch (beim ersten Mal wird dafür ein neuer Code erzeugt, danach überschreibt jeder weitere Tap einfach die bestehende Cloud-Zeile); „Laden“ ersetzt stattdessen den lokalen Fortschritt durch einen bestehenden Cloud-Stand - per Code-Eingabe, durch Scannen des QR-Codes vom anderen Gerät mit der normalen Kamera-App, oder per „Kurzen PIN anzeigen“: ein 6-stelliger, nur 10 Minuten gültiger und nach einmaliger Nutzung sofort verfallender Einweg-PIN als bequemere Alternative zum langen Code (der eigentliche, dauerhafte Code bleibt davon unberührt). Beide Aktionen überschreiben ohne weiteren Vergleich die jeweils andere Seite - wer auf mehreren Geräten gleichzeitig spielt, sollte deshalb bewusst zwischen „Speichern“ (dieses Gerät gilt) und „Laden“ (das andere Gerät gilt) wählen. Der QR-Code selbst wird nicht dauerhaft angezeigt, sondern erst nach Antippen von „QR-Code anzeigen“ in einem eigenen Fenster. Wer den langen Code kennt, kann den Spielstand abrufen oder überschreiben, deshalb gilt er wie ein Passwort: nicht öffentlich teilen, nur an die eigenen Geräte oder eine vertraute Person für den Duo-Vergleich weitergeben. Der Schalter „Auto-Save“ speichert danach automatisch nach jeder Änderung in die Cloud (kurz gebündelt, kein Tap auf „Speichern“ mehr nötig) - standardmäßig aus, da er bei aktivem Sync auf mehreren gleichzeitig genutzten Geräten den zuletzt schreibenden Stand automatisch gewinnen lässt." },
   duocompare: { category:"Spielstände & Mehrspieler", title:"Duo-Vergleich", text:"Vergleicht den eigenen Fortschritt rein lesend mit dem einer anderen Person über deren Cloud-Sync-Code: Gesamtabschluss, Überlebensrate und besiegte Bosse nebeneinander. Verändert den fremden Spielstand nie und rührt die eigene Sync-Verknüpfung nicht an - der Partner-Code ist unabhängig vom eigenen Sync-Code. Auf derselben Karte steht auch schon der Schalter „Soul-Link-Modus“ (siehe eigener Hilfetext) - er lässt sich aber erst nach dem Verknüpfen eines Partner-Spielstands tatsächlich aktivieren, da er dessen Fortschritt zum Koppeln braucht." },
@@ -12743,6 +12854,23 @@ function settingsSearchBarHtml(){
    ändert sich, expandedSettingsGroups bleibt davon unberührt. */
 const SETTINGS_GROUP_ORDER = ["rules","saves","duel-bosses","achievements","regions","appearance","tools","app-info"];
 
+/* Baut die Markup-Fragmente für einen einzelnen Toggle-Switch (seit v1.9.87) - siehe CSS-Kommentar
+   bei .switch für die Funktionsweise. Ein zentraler Helfer statt das Markup an jeder Umschalt-Stelle
+   zu wiederholen; der data-toggle-setting-Wert wird 1:1 als state[...]-Schlüssel im generischen
+   input-Handler verwendet (siehe dort), muss also exakt dem echten state-Feldnamen entsprechen. */
+function switchHtml(stateKey, checked){
+  return `<label class="switch"><input type="checkbox" data-toggle-setting="${stateKey}" ${checked?"checked":""} /><span class="switch-track"><span class="switch-thumb"></span></span></label>`;
+}
+
+/* Reiner Text-Enthalten-Check für die Einstellungen-Suche (seit v1.9.87) - vorher direkt inline in
+   der Filter-Funktion, jetzt als eigener Helfer, weil auch die verschachtelten "Erweitert"-Toggles
+   (s.u.) dieselbe Logik brauchen, um bei einem Treffer automatisch mit aufzuklappen. */
+function textIncludesQuery(label, html, query){
+  if(!query) return false;
+  const plain = (label + " " + html).replace(/<[^>]*>/g," ").toLowerCase();
+  return plain.includes(query);
+}
+
 /* Baut alle Einstellungs-Kapitel als Datensätze {key,label,html} statt sie sofort aneinanderzuhängen
    - ermöglicht Filtern (Suche) und Neusortieren (Häufigkeit, s.o.), ohne dass mehrere verstreute
    String-Konkatenationen dafür einzeln angepasst werden müssten. Wird sowohl beim ersten Rendern des
@@ -12757,98 +12885,119 @@ function settingsGroupsHtml(){
 
   const groups = [];
 
-  groups.push({ key:"saves", label:"Spielstände", html: `
-  <div class="card">
-    <div class="loc-name">Mehrere Runs</div>
-    <div class="loc-sub" style="margin-bottom:10px;">Zwischen Spielständen wechseln oder einen neuen anlegen, ohne den aktuellen zu verlieren. Zuletzt exportiert: ${formatRelativeTime(state.lastExportAt)}</div>
-    <button class="btn btn-primary btn-block" style="margin-bottom:8px;" data-act="open-saves-sheet">Spielstände verwalten</button>
-    <button class="btn btn-secondary btn-block" style="margin-bottom:8px;" data-act="open-leaderboard">Bestenliste anzeigen</button>
-    <button class="btn btn-secondary btn-block" style="margin-bottom:8px;" data-act="export-data">Fortschritt exportieren (JSON)</button>
-    <button class="btn btn-secondary btn-block" style="margin-bottom:8px;" data-act="import-data">Fortschritt importieren</button>
-    <button class="btn btn-danger btn-block" data-act="reset-run">Aktuellen Spielstand zurücksetzen</button>
-  </div>
-  <div class="card">
-    <div class="loc-name">Randomizer-Seed</div>
-    <div class="loc-sub" style="margin-bottom:10px;">Freitext für Seed/Einstellungen des verwendeten Randomizers, damit sich die Konfiguration später nachvollziehen lässt.</div>
-    <div class="field" style="margin-bottom:0;">
-      <input id="randomizerSeedInput" value="${escapeHtml(state.randomizerSeed||"")}" placeholder="z. B. Seed-Code oder Link zu den Einstellungen" autocomplete="off" />
+  {
+    const savesMainHtml = `
+    <div class="card">
+      <div class="loc-name">Mehrere Runs</div>
+      <div class="loc-sub" style="margin-bottom:10px;">Zwischen Spielständen wechseln oder einen neuen anlegen, ohne den aktuellen zu verlieren. Zuletzt exportiert: ${formatRelativeTime(state.lastExportAt)}</div>
+      <button class="btn btn-primary btn-block" style="margin-bottom:8px;" data-act="open-saves-sheet">Spielstände verwalten</button>
+      <button class="btn btn-secondary btn-block" style="margin-bottom:8px;" data-act="open-leaderboard">Bestenliste anzeigen</button>
+      <button class="btn btn-secondary btn-block" style="margin-bottom:8px;" data-act="export-data">Fortschritt exportieren (JSON)</button>
+      <button class="btn btn-secondary btn-block" style="margin-bottom:8px;" data-act="import-data">Fortschritt importieren</button>
+      <button class="btn btn-danger btn-block" data-act="reset-run">Aktuellen Spielstand zurücksetzen</button>
     </div>
-  </div>
-  ${cloudSyncCardHtml()}
-  ${duoCompareCardHtml()}` });
-
-  groups.push({ key:"duel-bosses", label: state.soloMode ? "Bosse" : "Duell & Bosse", html: `
-  ${state.soloMode ? `<div class="card">
-    <div class="loc-name">Einzelspieler-Modus</div>
-    <div class="loc-sub">Dieser Run läuft ohne Duellpartner:in - keine Rivalenduell-Karten nach Bossen, keine Ruhmeshalle. Gilt fest für diesen Spielstand, umschaltbar nur bei der Erstellung eines neuen Spielstands.</div>
-  </div>` : `<div class="card">
-    <div class="loc-name">Duellpartner</div>
-    <div class="loc-sub" style="margin-bottom:10px;">Name für die Rivalenduelle gegen deine:n echte:n Duellpartner:in (nicht die Spielfigur) – wird u. a. in der Ruhmeshalle verwendet.</div>
-    <div class="field" style="margin-bottom:0;">
-      <input id="duelPartnerInput" value="${escapeHtml(state.duelPartnerName||"")}" placeholder="z. B. Max" autocomplete="off" />
-    </div>
-  </div>`}
-  <div class="card">
-    <div class="loc-name">Rivale (Spielfigur)</div>
-    <div class="loc-sub" style="margin-bottom:10px;">Spitzname für den Rivalen der Spielfigur im Run - lässt sich alternativ auch direkt über dessen Namen in der Kartenliste anpassen.</div>
-    <div class="field" style="margin-bottom:0;">
-      <input id="rivalNicknameInput" value="${escapeHtml(state.rivalNickname||"")}" placeholder="${escapeHtml((currentGame().bosses.find(b=>b.group==="Rivale")||{}).name||"Rivale")}" autocomplete="off" />
-    </div>
-  </div>
-  <div class="card boss-bulk">
-    <div>
-      <div class="card-top">
-        <div class="loc-name">Alle Bosse</div>
-        ${iconBtn("tone-neutral","open-setting-help","bossboost",ICON_INFO,"Erklärung anzeigen",false,true)}
-      </div>
-      <div class="loc-sub">Level-Boost für alle Bosstrainer gleichzeitig anpassen</div>
-      <span class="boss-percent-pill ${max>0?'active':''}" style="margin-top:8px;">Aktuell ${percentLabel}</span>
-    </div>
-    <div class="boss-bulk-actions">
-      <button class="btn btn-secondary" data-act="boss-dec-all">-5% Alle</button>
-      <button class="btn btn-primary" data-act="boss-inc-all">+5% Alle</button>
-    </div>
-    <div class="field-row" style="margin-top:10px; width:100%;">
+    ${cloudSyncCardHtml()}
+    ${duoCompareCardHtml()}`;
+    /* "Erweitert"-Unterteilung (seit v1.9.87, Nutzerwunsch "mehr Übersicht, nicht überladen") - der
+       Randomizer-Seed wird typischerweise einmal zu Run-Beginn gesetzt und danach kaum noch
+       angefasst, anders als Spielstände-Verwaltung/Cloud-Sync/Duo-Vergleich direkt darüber. Dieselbe
+       verschachtelte settingsGroupHtml()-Technik wie bei "achievements-list" (s.u.), hier mit eigenem
+       Key "saves-advanced" - klappt bei einem Suchtreffer im Seed-Feld automatisch mit auf. */
+    const savesAdvancedLabel = "Randomizer-Seed";
+    const savesAdvancedBody = `<div class="card">
+      <div class="loc-name">Randomizer-Seed</div>
+      <div class="loc-sub" style="margin-bottom:10px;">Freitext für Seed/Einstellungen des verwendeten Randomizers, damit sich die Konfiguration später nachvollziehen lässt.</div>
       <div class="field" style="margin-bottom:0;">
-        <input type="number" id="bossBoostInput" inputmode="numeric" min="0" step="5" placeholder="z. B. 20" />
+        <input id="randomizerSeedInput" value="${escapeHtml(state.randomizerSeed||"")}" placeholder="z. B. Seed-Code oder Link zu den Einstellungen" autocomplete="off" />
       </div>
-      <button class="btn btn-secondary" data-act="boss-set-all" style="flex:none;">Setzen</button>
-    </div>
-  </div>
-  <div class="card">
-    <div class="loc-name">Gegner-Team tracken</div>
-    <div class="loc-sub">Blendet auf jeder Bosskarte ein Feld ein, um das tatsächliche gegnerische Team (bis zu 6 Pokémon) einzutragen und später wieder einzusehen. Bei einer Niederlage lässt sich dann pro gestorbenem Team-Pokémon direkt auswählen, gegen welches dieser Pokémon es verloren hat.</div>
-    <button class="btn ${state.trackBossTeams?"btn-primary":"btn-secondary"} btn-block" style="margin-top:10px;" data-act="toggle-track-boss-teams">${state.trackBossTeams?"Aktiviert":"Deaktiviert"}</button>
-  </div>` });
+    </div>`;
+    const savesAdvancedMatches = textIncludesQuery(savesAdvancedLabel, savesAdvancedBody, query);
+    groups.push({ key:"saves", label:"Spielstände", html: savesMainHtml + settingsGroupHtml("saves-advanced", "Erweitert", savesAdvancedBody, savesAdvancedMatches) });
+  }
 
-  groups.push({ key:"rules", label:"Regeln", html: `
-  <div class="card">
-    <div class="card-top">
-      <div class="loc-name">Dupes-Clause-Warnung</div>
-      ${iconBtn("tone-neutral","open-setting-help","dupes",ICON_INFO,"Erklärung anzeigen",false,true)}
+  {
+    const duelBossesMainHtml = `
+    ${state.soloMode ? `<div class="card">
+      <div class="loc-name">Einzelspieler-Modus</div>
+      <div class="loc-sub">Dieser Run läuft ohne Duellpartner:in - keine Rivalenduell-Karten nach Bossen, keine Ruhmeshalle. Gilt fest für diesen Spielstand, umschaltbar nur bei der Erstellung eines neuen Spielstands.</div>
+    </div>` : `<div class="card">
+      <div class="loc-name">Duellpartner</div>
+      <div class="loc-sub" style="margin-bottom:10px;">Name für die Rivalenduelle gegen deine:n echte:n Duellpartner:in (nicht die Spielfigur) – wird u. a. in der Ruhmeshalle verwendet.</div>
+      <div class="field" style="margin-bottom:0;">
+        <input id="duelPartnerInput" value="${escapeHtml(state.duelPartnerName||"")}" placeholder="z. B. Max" autocomplete="off" />
+      </div>
+    </div>`}
+    <div class="card">
+      <div class="loc-name">Rivale (Spielfigur)</div>
+      <div class="loc-sub" style="margin-bottom:10px;">Spitzname für den Rivalen der Spielfigur im Run - lässt sich alternativ auch direkt über dessen Namen in der Kartenliste anpassen.</div>
+      <div class="field" style="margin-bottom:0;">
+        <input id="rivalNicknameInput" value="${escapeHtml(state.rivalNickname||"")}" placeholder="${escapeHtml((currentGame().bosses.find(b=>b.group==="Rivale")||{}).name||"Rivale")}" autocomplete="off" />
+      </div>
     </div>
-    <div class="loc-sub">Warnt beim Fangen, wenn die Spezies schon existiert (Team/Box/Friedhof)</div>
-    <button class="btn ${state.dupesWarning?"btn-primary":"btn-secondary"} btn-block" style="margin-top:10px;" data-act="toggle-dupes-warning">${state.dupesWarning?"Aktiviert":"Deaktiviert"}</button>
-  </div>
-  <div class="card">
-    <div class="card-top">
-      <div class="loc-name">Nickname-Pflicht</div>
-      ${iconBtn("tone-neutral","open-setting-help","nickname",ICON_INFO,"Erklärung anzeigen",false,true)}
-    </div>
-    <div class="loc-sub">Erzwingt einen Spitznamen beim Fangen eines Pokémon</div>
-    <button class="btn ${state.nicknameRequired?"btn-primary":"btn-secondary"} btn-block" style="margin-top:10px;" data-act="toggle-nickname-required">${state.nicknameRequired?"Aktiviert":"Deaktiviert"}</button>
-  </div>
-  <div class="card">
-    <div class="loc-name">Postgame-Inhalte ausblenden</div>
-    <div class="loc-sub">Blendet Standorte aus, die als reine Postgame-Inhalte markiert sind (z.&nbsp;B. Nachfolge-Events nach dem Hauptspiel) - rein visuell, wirkt sich nicht auf die Statistik aus.</div>
-    <button class="btn ${state.hidePostgame?"btn-primary":"btn-secondary"} btn-block" style="margin-top:10px;" data-act="toggle-hide-postgame">${state.hidePostgame?"Aktiviert":"Deaktiviert"}</button>
-  </div>
-  <div class="card">
-    <div class="loc-name">Todesursache eintragen</div>
-    <div class="loc-sub">Fragt beim Markieren als gestorben (außerhalb von Bosskämpfen) optional ab, gegen welches Pokémon es passiert ist - erscheint dann sichtbar im Friedhof.</div>
-    <button class="btn ${state.trackDeathCause?"btn-primary":"btn-secondary"} btn-block" style="margin-top:10px;" data-act="toggle-track-death-cause">${state.trackDeathCause?"Aktiviert":"Deaktiviert"}</button>
-  </div>
-  ${houseRulesCardHtml()}` });
+    <div class="card">
+      <div class="switch-row">
+        <div class="switch-row-label">
+          <span>Gegner-Team tracken</span>
+          ${iconBtn("tone-neutral","open-setting-help","bossteams",ICON_INFO,"Erklärung anzeigen",false,true)}
+        </div>
+        ${switchHtml("trackBossTeams", !!state.trackBossTeams)}
+      </div>
+    </div>`;
+    /* Boss-Boost (Level-Prozentsätze) ist eine Randomizer-Konfiguration, die typischerweise einmal zu
+       Run-Beginn festgelegt wird - passt zur "Erweitert"-Logik wie oben bei "Randomizer-Seed". */
+    const duelBossesAdvancedLabel = "Alle Bosse";
+    const duelBossesAdvancedBody = `<div class="card boss-bulk">
+      <div>
+        <div class="card-top">
+          <div class="loc-name">Alle Bosse</div>
+          ${iconBtn("tone-neutral","open-setting-help","bossboost",ICON_INFO,"Erklärung anzeigen",false,true)}
+        </div>
+        <div class="loc-sub">Level-Boost für alle Bosstrainer gleichzeitig anpassen</div>
+        <span class="boss-percent-pill ${max>0?'active':''}" style="margin-top:8px;">Aktuell ${percentLabel}</span>
+      </div>
+      <div class="boss-bulk-actions">
+        <button class="btn btn-secondary" data-act="boss-dec-all">-5% Alle</button>
+        <button class="btn btn-primary" data-act="boss-inc-all">+5% Alle</button>
+      </div>
+      <div class="field-row" style="margin-top:10px; width:100%;">
+        <div class="field" style="margin-bottom:0;">
+          <input type="number" id="bossBoostInput" inputmode="numeric" min="0" step="5" placeholder="z. B. 20" />
+        </div>
+        <button class="btn btn-secondary" data-act="boss-set-all" style="flex:none;">Setzen</button>
+      </div>
+    </div>`;
+    const duelBossesAdvancedMatches = textIncludesQuery(duelBossesAdvancedLabel, duelBossesAdvancedBody, query);
+    groups.push({ key:"duel-bosses", label: state.soloMode ? "Bosse" : "Duell & Bosse", html: duelBossesMainHtml + settingsGroupHtml("duel-bosses-advanced", "Erweitert", duelBossesAdvancedBody, duelBossesAdvancedMatches) });
+  }
+
+  {
+    /* Vier einzelne Karten mit vollbreiten "Aktiviert"/"Deaktiviert"-Buttons (bis v1.9.86) wurden zu
+       EINER Karte mit vier Schalter-Zeilen gebündelt (seit v1.9.87, Nutzerwunsch "verwandte Schalter
+       in einer Karte bündeln") - die erklärenden Fließtexte, die vorher immer sichtbar unter jedem
+       Button standen, wanderten dafür in eigene SETTINGS_HELP-Einträge hinter das "?"-Icon (siehe
+       "hidepostgame"/"deathcause" dort) - dieselbe Behandlung, die "dupes"/"nickname" schon vorher
+       hatten. Die Regelwerk-Checkliste (houseRulesCardHtml) bleibt bewusst eine eigene Karte
+       DANACH - das ist eine Checkliste für eigene Hausregeln ohne Auswirkung auf die App-Logik,
+       keine echte Ein/Aus-Einstellung wie die vier Schalter hier, siehe eigener Kommentar dort. */
+    const rulesToggles = [
+      ["dupesWarning","Dupes-Clause-Warnung","dupes"],
+      ["nicknameRequired","Nickname-Pflicht","nickname"],
+      ["hidePostgame","Postgame-Inhalte ausblenden","hidepostgame"],
+      ["trackDeathCause","Todesursache eintragen","deathcause"],
+    ];
+    const activeRulesCount = rulesToggles.filter(([key])=>!!state[key]).length;
+    const rulesRows = rulesToggles.map(([key,label,helpKey])=>`
+      <div class="switch-row">
+        <div class="switch-row-label">
+          <span>${escapeHtml(label)}</span>
+          ${iconBtn("tone-neutral","open-setting-help",helpKey,ICON_INFO,"Erklärung anzeigen",false,true)}
+        </div>
+        ${switchHtml(key, !!state[key])}
+      </div>`).join("");
+    groups.push({ key:"rules", label:"Regeln", summary:`${activeRulesCount}/${rulesToggles.length} aktiv`, html: `
+    <div class="card">${rulesRows}</div>
+    ${houseRulesCardHtml()}` });
+  }
 
   {
     const unlocked = ACHIEVEMENTS.filter(a=>state.achievements[a.id]);
@@ -12899,8 +13048,9 @@ function settingsGroupsHtml(){
       if(!state.achievements[a.id] && a.hidden) return false;
       return (a.name||"").toLowerCase().includes(query) || (a.desc||"").toLowerCase().includes(query);
     });
-    const achievementsListHtml = settingsGroupHtml("achievements-list", `Erfolge (${unlocked.length}/${ACHIEVEMENTS.length})`, `<div class="achievements-list">${list}</div>`, achievementsMatchesQuery);
-    groups.push({ key:"achievements", label:`Erfolge & Titel (${unlocked.length}/${ACHIEVEMENTS.length})`, html: `
+    const achievementsSummary = `${unlocked.length}/${ACHIEVEMENTS.length}`;
+    const achievementsListHtml = settingsGroupHtml("achievements-list", "Alle Erfolge", `<div class="achievements-list">${list}</div>`, achievementsMatchesQuery, achievementsSummary);
+    groups.push({ key:"achievements", label:"Erfolge & Titel", summary:achievementsSummary, html: `
     <div class="card">
       <div class="loc-name">Aktiver Titel</div>
       <div class="loc-sub" style="margin-bottom:10px;">${unlocked.length?"Wird im Kopfbereich neben dem Run-Titel angezeigt.":"Noch kein Titel freigeschaltet - die Erfolge weiter unten zeigen, wie."}</div>
@@ -12923,73 +13073,86 @@ function settingsGroupsHtml(){
         <button class="btn ${hidden?"btn-secondary":"btn-primary"} btn-block" style="margin-top:10px;" data-act="toggle-region-visibility" data-id="${escapeHtml(region)}">${hidden?"Wieder einblenden":"Ausblenden"}</button>
       </div>`;
     }).join("");
-    groups.push({ key:"regions", label: hiddenCount ? `Regionen (${hiddenCount} ausgeblendet)` : "Regionen", html: regionToggles });
+    groups.push({ key:"regions", label:"Regionen", summary: hiddenCount ? `${hiddenCount} ausgeblendet` : "", html: regionToggles });
   }
 
-  groups.push({ key:"appearance", label:"Darstellung", html: `
-  <div class="card">
-    <div class="loc-name">Farbschema</div>
-    <div class="loc-sub" style="margin-bottom:10px;">Hell oder dunkel wählen</div>
-    <div style="display:flex; gap:8px;">
-      <button class="btn ${eff==="light"?"btn-primary":"btn-secondary"}" data-act="set-theme" data-id="light">Hell</button>
-      <button class="btn ${eff==="dark"?"btn-primary":"btn-secondary"}" data-act="set-theme" data-id="dark">Dunkel</button>
+  {
+    const appearanceToggles = [
+      ["vibrationEnabled","Vibrations-Feedback","vibration"],
+      ["colorBlindSafeMode","Status nie nur über Farbe","colorblind"],
+    ];
+    const activeAppearanceCount = appearanceToggles.filter(([key])=>!!state[key]).length;
+    const appearanceRows = appearanceToggles.map(([key,label,helpKey])=>`
+      <div class="switch-row">
+        <div class="switch-row-label">
+          <span>${escapeHtml(label)}</span>
+          ${iconBtn("tone-neutral","open-setting-help",helpKey,ICON_INFO,"Erklärung anzeigen",false,true)}
+        </div>
+        ${switchHtml(key, !!state[key])}
+      </div>`).join("");
+    groups.push({ key:"appearance", label:"Darstellung", summary:`${activeAppearanceCount}/${appearanceToggles.length} aktiv`, html: `
+    <div class="card">
+      <div class="loc-name">Farbschema</div>
+      <div class="loc-sub" style="margin-bottom:10px;">Hell oder dunkel wählen</div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn ${eff==="light"?"btn-primary":"btn-secondary"}" data-act="set-theme" data-id="light">Hell</button>
+        <button class="btn ${eff==="dark"?"btn-primary":"btn-secondary"}" data-act="set-theme" data-id="dark">Dunkel</button>
+      </div>
     </div>
-  </div>
-  <div class="card">
-    <div class="loc-name">Vibrations-Feedback</div>
-    <div class="loc-sub">Kurzes haptisches Feedback bei Fang, Tod und Bosssieg (nur auf unterstützten Geräten spürbar).</div>
-    <button class="btn ${state.vibrationEnabled?"btn-primary":"btn-secondary"} btn-block" style="margin-top:10px;" data-act="toggle-vibration">${state.vibrationEnabled?"Aktiviert":"Deaktiviert"}</button>
-  </div>
-  <div class="card">
-    <div class="loc-name">Status nie nur über Farbe</div>
-    <div class="loc-sub">Zeigt bei besiegten Bosskämpfen zusätzlich zur Farbe ein eigenes Symbol für Sieg (Häkchen) bzw. Niederlage (Kreuz) - hilfreich bei Rot-Grün-Sehschwäche.</div>
-    <button class="btn ${state.colorBlindSafeMode?"btn-primary":"btn-secondary"} btn-block" style="margin-top:10px;" data-act="toggle-colorblind-safe">${state.colorBlindSafeMode?"Aktiviert":"Deaktiviert"}</button>
-  </div>` });
+    <div class="card">${appearanceRows}</div>` });
+  }
 
-  groups.push({ key:"tools", label:"Werkzeuge", html: `
-  <div class="card">
-    <div class="loc-name">Pokédex</div>
-    <div class="loc-sub">Typen-Rechner &amp; Nachschlagewerk öffnen</div>
-    <a class="btn btn-primary btn-block" style="display:flex; align-items:center; justify-content:center; margin-top:12px; text-decoration:none;" href="https://dexora.adrianhoppler.chatgpt.site/" target="_blank" rel="noopener noreferrer">Pokédex öffnen</a>
-  </div>
-  <div class="card">
-    <div class="loc-name">Verlauf</div>
-    <div class="loc-sub">Chronologisches Log aller Fänge, Tode, Entwicklungen und Bosssiege (${state.eventLog.length} Einträge)</div>
-    <button class="btn btn-secondary btn-block" style="margin-top:12px;" data-act="open-event-log">Verlauf öffnen</button>
-  </div>
-  <div class="card">
-    <div class="loc-name">Team-Rotation-Historie</div>
-    <div class="loc-sub">Wer wann ins Team kam oder es verlassen hat</div>
-    <button class="btn btn-secondary btn-block" style="margin-top:12px;" data-act="open-team-history">Historie öffnen</button>
-  </div>
-  <div class="card">
-    <div class="loc-name">Ausgelassene Routen</div>
-    <div class="loc-sub">Standorte ohne bisherigen Fangversuch, mit Sprung zur jeweiligen Karte (${pendingLocationsList().length} offen)</div>
-    <button class="btn btn-secondary btn-block" style="margin-top:12px;" data-act="open-pending-locations">Übersicht öffnen</button>
-  </div>
-  <div class="card">
-    <div class="card-top">
-      <div class="loc-name">Schlüsselitems / VMs</div>
-      ${iconBtn("tone-neutral","open-setting-help","keyitems",ICON_INFO,"Erklärung anzeigen",false,true)}
+  {
+    const toolsMainHtml = `
+    <div class="card">
+      <div class="loc-name">Pokédex</div>
+      <div class="loc-sub">Typen-Rechner &amp; Nachschlagewerk öffnen</div>
+      <a class="btn btn-primary btn-block" style="display:flex; align-items:center; justify-content:center; margin-top:12px; text-decoration:none;" href="https://dexora.adrianhoppler.chatgpt.site/" target="_blank" rel="noopener noreferrer">Pokédex öffnen</a>
     </div>
-    <div class="loc-sub">Checkliste der VMs dieser Edition (${currentKeyItems().filter(name=>state.keyItemsChecked[name]).length}/${currentKeyItems().length} eingesammelt) - hilft zu sehen, welche Standorte schon erreichbar sind.</div>
-    <button class="btn btn-secondary btn-block" style="margin-top:12px;" data-act="open-key-items">Checkliste öffnen</button>
-  </div>
-  <div class="card">
-    <div class="loc-name">Erste-Schritte-Tour</div>
-    <div class="loc-sub">Kurze, aktive Einführung durch die echte Oberfläche erneut ansehen</div>
-    <button class="btn btn-secondary btn-block" style="margin-top:12px;" data-act="open-onboarding-tour">Tour erneut starten</button>
-  </div>
-  <div class="card">
-    <div class="loc-name">🧪 Tour-Idee: Der Weg eines Fangs</div>
-    <div class="loc-sub">Experimentelle Vorschau als Antwort auf Feedback zur großen Tour-Karte: kleine Hinweise statt einer großen Textbox, mehrere kurze Stationen statt einer pro Thema, deutlich langsamere Übergänge.</div>
-    <button class="btn btn-secondary btn-block" style="margin-top:12px;" data-act="start-tour-cycle" data-id="catching">Vorschau starten</button>
-  </div>
-  <div class="card">
-    <div class="loc-name">Ausführliche Tour</div>
-    <div class="loc-sub">Durchsuchbare Themen-Übersicht mit allen Detail-Erklärungen zum Nachschlagen</div>
-    <button class="btn btn-secondary btn-block" style="margin-top:12px;" data-act="open-feature-index">Themen-Übersicht öffnen</button>
-  </div>` });
+    <div class="card">
+      <div class="loc-name">Verlauf</div>
+      <div class="loc-sub">Chronologisches Log aller Fänge, Tode, Entwicklungen und Bosssiege (${state.eventLog.length} Einträge)</div>
+      <button class="btn btn-secondary btn-block" style="margin-top:12px;" data-act="open-event-log">Verlauf öffnen</button>
+    </div>
+    <div class="card">
+      <div class="loc-name">Team-Rotation-Historie</div>
+      <div class="loc-sub">Wer wann ins Team kam oder es verlassen hat</div>
+      <button class="btn btn-secondary btn-block" style="margin-top:12px;" data-act="open-team-history">Historie öffnen</button>
+    </div>
+    <div class="card">
+      <div class="loc-name">Ausgelassene Routen</div>
+      <div class="loc-sub">Standorte ohne bisherigen Fangversuch, mit Sprung zur jeweiligen Karte (${pendingLocationsList().length} offen)</div>
+      <button class="btn btn-secondary btn-block" style="margin-top:12px;" data-act="open-pending-locations">Übersicht öffnen</button>
+    </div>
+    <div class="card">
+      <div class="card-top">
+        <div class="loc-name">Schlüsselitems / VMs</div>
+        ${iconBtn("tone-neutral","open-setting-help","keyitems",ICON_INFO,"Erklärung anzeigen",false,true)}
+      </div>
+      <div class="loc-sub">Checkliste der VMs dieser Edition (${currentKeyItems().filter(name=>state.keyItemsChecked[name]).length}/${currentKeyItems().length} eingesammelt) - hilft zu sehen, welche Standorte schon erreichbar sind.</div>
+      <button class="btn btn-secondary btn-block" style="margin-top:12px;" data-act="open-key-items">Checkliste öffnen</button>
+    </div>
+    <div class="card">
+      <div class="loc-name">Erste-Schritte-Tour</div>
+      <div class="loc-sub">Kurze, aktive Einführung durch die echte Oberfläche erneut ansehen</div>
+      <button class="btn btn-secondary btn-block" style="margin-top:12px;" data-act="open-onboarding-tour">Tour erneut starten</button>
+    </div>
+    <div class="card">
+      <div class="loc-name">Ausführliche Tour</div>
+      <div class="loc-sub">Durchsuchbare Themen-Übersicht mit allen Detail-Erklärungen zum Nachschlagen</div>
+      <button class="btn btn-secondary btn-block" style="margin-top:12px;" data-act="open-feature-index">Themen-Übersicht öffnen</button>
+    </div>`;
+    /* Die experimentelle Tour-Vorschau ist ein Nischen-Feature für Feedback-Zwecke, keine alltägliche
+       Aktion wie die Karten darüber - passt zur "Erweitert"-Logik wie bei "saves"/"duel-bosses" oben. */
+    const toolsAdvancedLabel = "🧪 Tour-Idee: Der Weg eines Fangs";
+    const toolsAdvancedBody = `<div class="card">
+      <div class="loc-name">${toolsAdvancedLabel}</div>
+      <div class="loc-sub">Experimentelle Vorschau als Antwort auf Feedback zur großen Tour-Karte: kleine Hinweise statt einer großen Textbox, mehrere kurze Stationen statt einer pro Thema, deutlich langsamere Übergänge.</div>
+      <button class="btn btn-secondary btn-block" style="margin-top:12px;" data-act="start-tour-cycle" data-id="catching">Vorschau starten</button>
+    </div>`;
+    const toolsAdvancedMatches = textIncludesQuery(toolsAdvancedLabel, toolsAdvancedBody, query);
+    groups.push({ key:"tools", label:"Werkzeuge", html: toolsMainHtml + settingsGroupHtml("tools-advanced", "Erweitert", toolsAdvancedBody, toolsAdvancedMatches) });
+  }
 
   groups.push({ key:"app-info", label:"App-Info", html: `
   <div class="card">
@@ -13012,17 +13175,14 @@ function settingsGroupsHtml(){
      automatisch wieder auf den vorherigen (meist eingeklappten) zurück. */
   let visibleGroups = groups;
   if(query){
-    visibleGroups = groups.filter(g=>{
-      const plain = (g.label + " " + g.html).replace(/<[^>]*>/g," ").toLowerCase();
-      return plain.includes(query);
-    });
+    visibleGroups = groups.filter(g=>textIncludesQuery(g.label, g.html, query));
   }
 
   let out = "";
   if(query && !visibleGroups.length){
     out += `<div class="loc-sub" style="text-align:center; padding:24px 12px;">Keine Treffer für „${escapeHtml(settingsSearchQuery)}“.</div>`;
   }
-  visibleGroups.forEach(g=>{ out += settingsGroupHtml(g.key, g.label, g.html, !!query); });
+  visibleGroups.forEach(g=>{ out += settingsGroupHtml(g.key, g.label, g.html, !!query, g.summary); });
   return out;
 }
 
@@ -14327,35 +14487,6 @@ document.addEventListener("click", e=>{
     applyTheme(); render();
   }
   else if(act==="set-box-sort"){ boxSortMode = id; render(); }
-  else if(act==="toggle-dupes-warning"){
-    state.dupesWarning = !state.dupesWarning;
-    saveState(); render();
-  }
-  else if(act==="toggle-nickname-required"){
-    state.nicknameRequired = !state.nicknameRequired;
-    saveState(); render();
-  }
-  else if(act==="toggle-hide-postgame"){
-    state.hidePostgame = !state.hidePostgame;
-    saveState(); render();
-  }
-  else if(act==="toggle-track-boss-teams"){
-    state.trackBossTeams = !state.trackBossTeams;
-    saveState(); render();
-  }
-  else if(act==="toggle-track-death-cause"){
-    state.trackDeathCause = !state.trackDeathCause;
-    saveState(); render();
-  }
-  else if(act==="toggle-colorblind-safe"){
-    state.colorBlindSafeMode = !state.colorBlindSafeMode;
-    saveState(); render();
-  }
-  else if(act==="toggle-vibration"){
-    state.vibrationEnabled = !state.vibrationEnabled;
-    saveState(); render();
-    if(state.vibrationEnabled) vibrateFeedback(35);
-  }
   else if(act==="toggle-region-visibility"){
     if(!Array.isArray(state.hiddenRegions)) state.hiddenRegions = [];
     const idx = state.hiddenRegions.indexOf(id);
@@ -14530,6 +14661,22 @@ document.addEventListener("input", e=>{
     saveState();
     const row = e.target.closest(".check-row");
     if(row) row.classList.toggle("done", e.target.checked);
+  }
+  if(e.target && e.target.dataset && e.target.dataset.toggleSetting){
+    /* Generischer Schalter-Handler (seit v1.9.87) für alle echten Ein/Aus-Einstellungen, die bis
+       v1.9.86 noch als eigene toggle-X-Klick-Handler + vollbreite Aktiviert/Deaktiviert-Buttons
+       existierten (dupesWarning, nicknameRequired, hidePostgame, trackDeathCause, trackBossTeams,
+       vibrationEnabled, colorBlindSafeMode) - jetzt EIN Handler für alle, der data-toggle-setting
+       direkt 1:1 als state-Feldnamen verwendet (siehe switchHtml()). Bewusst KEIN volles render(),
+       nur der Einstellungen-Container wird neu gezeichnet - das aktualisiert nebenbei auch die
+       "X/Y aktiv"-Kennzahl im (ggf. eingeklappten) Kapitel-Titel, ohne den Rest der App unnötig neu
+       zu rendern. */
+    const key = e.target.dataset.toggleSetting;
+    state[key] = e.target.checked;
+    saveState();
+    if(key==="vibrationEnabled" && state.vibrationEnabled) vibrateFeedback(35);
+    const containerEl = document.getElementById("settingsGroupsContainer");
+    if(containerEl) containerEl.innerHTML = settingsGroupsHtml();
   }
   if(e.target && e.target.dataset && e.target.dataset.deathLoc){
     const group = document.querySelector(`[data-death-vs-group="${e.target.dataset.deathLoc}"]`);
