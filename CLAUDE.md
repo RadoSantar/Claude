@@ -1271,6 +1271,42 @@ explizit wieder darum.
      ordensfrei, was genau umgekehrt zum PokéWiki-Befund wäre. Ursprung: `order-gen1-3.md` Abschnitt
      4.3. Eigener Namens-/Bossaudit nötig, bevor Punkt 2 oben angegangen wird.
 
+## Bekannter offener UX-/QoL-Backlog (Stand v1.9.90)
+
+Sammlung von Ideen zur Verbesserung des Nutzererlebnisses, auf Nutzerwunsch ("nimm die Themen mal
+ins Backlog auf") gesammelt statt sofort umgesetzt - noch keine davon ist implementiert, keine
+Priorisierung/Reihenfolge impliziert:
+
+- **Barrierefreiheit:** nur 11 `aria-label`-Attribute im gesamten Code, aber deutlich mehr
+  icon-only-Buttons (Mon-Aktionen `.icon-act`, Sheet-Schließen, Bearbeiten-Icons etc.) - für
+  Screenreader-Nutzer aktuell lückenhaft beschriftet. Zusätzlich denkbar: eine eigene, von der
+  System-Textgröße unabhängige Schriftgrößen-Einstellung, falls kleine Chips/Labels auf Dauer
+  schwer lesbar sind.
+- **Gefühlte Performance:** statt des reinen "?"-Platzhalters (`mon-sprite-placeholder`) beim ersten
+  Sprite-Laden ein dezentes Shimmer/Pulse-Skeleton - passend zum in v1.9.89/90 begonnenen visuellen
+  Polish der Kartengrafik-Marker. Bei sehr langen Editionen (Hoenn 79 Standorte, umfangreiche Box)
+  ggf. eine Ergebnis-Begrenzung/"mehr laden" statt alles auf einmal zu rendern, falls das je spürbar
+  ruckelt (aktuell kein bekannter konkreter Fall, nur vorsorglich notiert).
+- **Auffindbarkeit neuer Funktionen:** ein kleines "Neu"-Badge auf Einstellungs-Kapiteln, die seit
+  dem letzten Öffnen ein Update bekommen haben (ließe sich aus dem ohnehin versionierten Changelog
+  ableiten) - würde dasselbe Grundproblem lösen wie der Soul-Link-Discoverability-Fund (v1.9.83/84):
+  neue, bedingt sichtbare Funktionen bleiben sonst leicht unentdeckt.
+- **Datensicherheit:** JSON-Export/-Import gibt es bereits (siehe `a.download =
+  ...+"_export.json"` bzw. der `<input type="file">`-Import-Weg) - zusätzlich denkbar wäre ein
+  automatisches, rollierendes LOKALES Backup (z. B. die letzten 3 Speicherstände als Snapshot in
+  einem eigenen `localStorage`-Fach), unabhängig von Cloud-Sync, als zusätzliches Sicherheitsnetz
+  gegen versehentliches Überschreiben/Löschen.
+- **Auswertung/Motivation:** die bereits an anderer Stelle dokumentierte "Nemesis-Pokémon"-Idee
+  (siehe Backlog-Absatz beim Todesursache-Tracking-Eintrag, v1.9.82) ist dank `deathBossId`
+  technisch bereits vorbereitet - reine Auszählung, kein neues Datenmodell nötig. Zusätzlich denkbar:
+  eine teilbare Bild-Karte des Run-Rückblicks (Editions-Logo, Orden, Team, Todesursachen als
+  Screenshot-artige Zusammenfassung) zum Teilen/Sichern - der Recap-Text existiert schon
+  (`runRecapNarrative()`/`runRecapInsights()`), nur nicht als teilbares Bild.
+- **Kleinigkeit, kein Feature, eher ein bei dieser Gelegenheit gefundener Fehler:**
+  `pwa/manifest.json`s `description` beschreibt die App noch als "Offline-Tracker für
+  Pokémon-Nuzlocke-Runs über 14 Editionen (Gen 1-5)" - das ist seit Kalos/Hoenn (Gen 6) längst
+  überholt und sollte bei Gelegenheit aktualisiert werden, unabhängig von den Ideen oben.
+
 ## Workflow-Hinweise für diese Codebase
 
 - Branch: `claude/magical-cray-d6vvlx` (siehe Git-Remote-Konfiguration der Session).
