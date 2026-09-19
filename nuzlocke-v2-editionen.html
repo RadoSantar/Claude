@@ -4149,7 +4149,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.91";
+const APP_VERSION = "1.9.92";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -9625,7 +9625,7 @@ function closeOnboardingTour(){
    weitere Einträge in TOUR_CYCLES ergänzt werden, sobald sich der Stil bewährt hat. */
 const TOUR_CYCLES = {
   catching: [
-    { tab:"routes", target:'#content .card[data-loc]', text:"Hier trägst du ein, wenn du an diesem Standort ein Pokémon gefangen hast." },
+    { tab:"routes", target:"CURRENT_LOCATION", text:"Hier trägst du ein, wenn du an diesem Standort ein Pokémon gefangen hast." },
     { tab:"team", target:'#teamGrid .slot', text:"Ist im Team noch ein Platz frei, landet dein Fang automatisch hier." },
     { tab:"box", target:'.tab[data-tab="box"]', text:"War das Team schon voll, findest du ihn stattdessen hier in der Box." },
     { tab:"grave", target:'.tab[data-tab="grave"]', text:"Stirbt er später, wandert er von hier aus in den Friedhof - jederzeit nachvollziehbar." }
@@ -9666,6 +9666,32 @@ function closeTourCycle(){
   tourBusy = false;
   activeCycleId = null;
 }
+/* Wartet per requestAnimationFrame, bis sich targetEl (Ziel eines gerade laufenden "smooth"
+   scrollIntoView) drei Frames in Folge nicht mehr nennenswert bewegt hat, statt eine feste Frist zu
+   raten - siehe Kommentar bei renderCycleStep()/proceed() für den konkreten Fund, den das behebt. */
+function waitForScrollSettle(cb){
+  /* Ein rAF-basiertes "Position X Frames unverändert"-Abbruchkriterium erwies sich beim Testen als
+     unzuverlässig: direkt nach scrollIntoView() liest man in den allerersten Frames oft noch die
+     alte, unbewegte Position, BEVOR die native Scroll-Animation ihren ersten Schritt gemacht hat -
+     das sah "stabil" aus, war aber nur der Startzustand, nicht das Ziel (führte zu genau demselben
+     "Tipp landet außerhalb des Bildschirms"-Fund bei größeren Scrollstrecken). Robuster: das
+     `scrollend`-Event des tatsächlich scrollenden Containers (#content) abwarten - feuert genau
+     einmal, wenn eine Scroll-Bewegung (inkl. "smooth") abgeschlossen ist, ohne Rate-Timing nötig.
+     Mit Not-Ausstieg per Timeout, falls der Browser `scrollend` nicht unterstützt (ältere Safari-
+     Versionen, siehe die anderen Safari-Sonderfälle in CLAUDE.md) ODER gar kein Scrollen nötig war
+     (Ziel schon sichtbar, dann feuert nie ein Scroll-Event). */
+  const container = document.getElementById("content");
+  let done = false;
+  const finish = ()=>{
+    if(done) return;
+    done = true;
+    if(container) container.removeEventListener("scrollend", finish);
+    clearTimeout(fallback);
+    cb();
+  };
+  if(container) container.addEventListener("scrollend", finish, { once:true });
+  const fallback = setTimeout(finish, 700);
+}
 /* Deutlich längere, klarer nachvollziehbare Übergänge als die große Tour: Blitz-Ausblenden (0ms)
    wirkte im Nutzertest "zu schnell" - hier erst sanftes Ausblenden (300ms), dann "smooth" statt
    "instant" scrollIntoView (man SIEHT die Seite zur nächsten Station wandern) mit anschließender
@@ -9677,11 +9703,36 @@ function renderCycleStep(){
   const existing = document.querySelector(".tour-tip");
   const proceed = ()=>{
     clearCycleStepDom();
+    /* "CURRENT_LOCATION" statt eines festen Selektors: eine statische Positions-Auswahl wie
+       '#content .card[data-loc]' trifft in einem realen, bereits fortgeschrittenen Spielstand oft
+       auf eine längst ERLEDIGTE Kachel in der automatisch eingeklappten "erledigt"-Sammelgruppe
+       statt auf eine tatsächlich offene. Fix: denselben `effectiveCurrentLocId()` +
+       `expandCollapseGroupsForLocation()`-Mechanismus wiederverwenden, den Standort-Suche/Karten-
+       Sprung schon nutzen - liefert immer eine tatsächlich vorhandene, offene Kachel und klappt
+       deren Sammelgruppe (falls zurückgestellt) VOR dem render() weiter unten auf. */
+    let targetSelector = step.target;
+    if(targetSelector==="CURRENT_LOCATION"){
+      const id = effectiveCurrentLocId();
+      if(id) expandCollapseGroupsForLocation(id);
+      targetSelector = id ? `[data-loc="${id}"], [data-boss="${id}"]` : null;
+    }
     if(step.tab){ activeTab = step.tab; render(); }
     setTimeout(()=>{
-      const targetEl = step.target ? document.querySelector(step.target) : null;
-      if(targetEl) targetEl.scrollIntoView({ behavior:"smooth", block:"center" });
-      setTimeout(()=>placeCycleTip(step, targetEl), targetEl ? 450 : 0);
+      const targetEl = targetSelector ? document.querySelector(targetSelector) : null;
+      if(!targetEl){ placeCycleTip(step, targetEl); return; }
+      targetEl.scrollIntoView({ behavior:"smooth", block:"center" });
+      /* Nutzerfund: in einem bereits fortgeschrittenen Spielstand (viele zuvor gefangene, jetzt
+         eingeklappte Standorte oberhalb) liegt die Zielkachel oft mehrere tausend Pixel tiefer im
+         Dokument als in einem frischen Testspielstand - der "smooth" Scroll dorthin dauert dadurch
+         spürbar länger als die zuvor feste 450ms-Wartezeit. placeCycleTip() maß die Position DIREKT
+         nach Ablauf dieser festen Frist, mitten in der noch laufenden Scroll-Animation - Spotlight
+         und Tipp landeten dadurch auf der noch-nicht-fertig-gescrollten (weit außerhalb des
+         sichtbaren Bereichs liegenden) Zwischenposition. Fiel im Artifact-Test mit frischem
+         Spielstand (kurze Scrollstrecke, 450ms reichten) nicht auf, wohl aber in der echten,
+         installierten PWA mit echtem Spielfortschritt. Fix: siehe waitForScrollSettle() oben - statt
+         einer geratenen festen Frist wird abgewartet, bis die Scroll-Bewegung selbst als
+         abgeschlossen gemeldet wird. */
+      waitForScrollSettle(()=>placeCycleTip(step, targetEl));
     }, step.tab ? 150 : 0);
   };
   if(existing){
@@ -10602,7 +10653,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="stats">
     <div class="stat"><div class="n">23</div><div class="l">Editionen</div></div>
     <div class="stat"><div class="n">1075</div><div class="l">Pokémon-Arten</div></div>
-    <div class="stat"><div class="n">94</div><div class="l">Versions&shy;stände</div></div>
+    <div class="stat"><div class="n">95</div><div class="l">Versions&shy;stände</div></div>
     <div class="stat"><div class="n">Gen 1–9</div><div class="l">Abgedeckt</div></div>
   </div>
 
@@ -10612,6 +10663,32 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.92</span><span class="tag tag-fix">Fehlerbehebung</span></div>
+      <h3>"Tour-Idee"-Vorschau: Hinweisfeld landete bei fortgeschrittenem Spielstand außerhalb des Bildschirms</h3>
+      <p>Nutzerfund: die experimentelle "Tour-Idee: Der Weg eines Fangs"-Vorschau (Werkzeuge →
+      Erweitert) funktionierte im frisch getesteten Artifact einwandfrei, aber nicht im echten,
+      installierten PWA-Spielstand mit tatsächlichem Fortschritt. Zwei ineinandergreifende Ursachen:
+      1) die erste Station zielte auf einen starren Selektor ("die erste Standort-Kachel im DOM") -
+      bei einem fortgeschrittenen Spielstand ist das oft eine längst erledigte, in der automatisch
+      eingeklappten "erledigt"-Sammelgruppe liegende Kachel statt einer offenen. Behoben durch
+      Wiederverwendung des bestehenden <code>effectiveCurrentLocId()</code>/
+      <code>expandCollapseGroupsForLocation()</code>-Mechanismus, den Standort-Suche und
+      Karten-Sprung bereits nutzen - liefert zuverlässig eine tatsächlich offene Kachel und klappt
+      deren Sammelgruppe vorher auf. 2) selbst mit dem richtigen Ziel dauert der "smooth"
+      Scroll-zu-Kachel bei einem echten, langen Spielstand (viele zuvor gefangene, eingeklappte
+      Standorte oberhalb) spürbar länger als die zuvor feste 450ms-Wartezeit, nach der die Position
+      für Spotlight/Tipp gemessen wurde - mitten in der noch laufenden Scroll-Animation gemessen,
+      landeten beide auf einer weit außerhalb des sichtbaren Bereichs liegenden Zwischenposition.
+      Behoben durch Abwarten des <code>scrollend</code>-Events des scrollenden Containers statt einer
+      geratenen festen Frist. Beide Ursachen fielen beim ursprünglichen Testen mit frischem
+      Spielstand nicht auf, da dort weder eine eingeklappte Gruppe im Weg stand noch die Scrollstrecke
+      lang genug war, um die feste Frist zu sprengen. Per Playwright mit einem realistischen,
+      simulierten Spielfortschritt (20 bereits gefangene, eingeklappte Standorte plus eine
+      zurückgestellte aktuelle Kachel) wiederholt verifiziert - alle vier Stationen der Vorschau
+      landen jetzt zuverlässig innerhalb des sichtbaren Bereichs.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.91</span><span class="tag tag-fix">Aufgeräumt</span></div>
@@ -12760,7 +12837,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.91.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.92.</footer>
 
 </div>`;
 

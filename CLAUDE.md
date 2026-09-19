@@ -1271,6 +1271,60 @@ explizit wieder darum.
      ordensfrei, was genau umgekehrt zum PokéWiki-Befund wäre. Ursprung: `order-gen1-3.md` Abschnitt
      4.3. Eigener Namens-/Bossaudit nötig, bevor Punkt 2 oben angegangen wird.
 
+## "Tour-Idee"-Vorschau landete bei fortgeschrittenem Spielstand außerhalb des Bildschirms (behoben in v1.9.92)
+
+Nutzerfund: "die tour idee funktioniert im artefakt gut aber in der pwa nicht da ist das feld
+irgendwo ausserhalb des bildschirms vermute ich" - die experimentelle `TOUR_CYCLES.catching`-Vorschau
+(Werkzeuge → Erweitert → "🧪 Tour-Idee: Der Weg eines Fangs") funktionierte in einem frisch
+getesteten Spielstand einwandfrei, aber nicht im Nutzers echtem, weit fortgeschrittenen PWA-
+Spielstand. **Wichtige Klarstellung im Gespräch, nicht vorschnell als Plattformunterschied
+akzeptieren:** auf Nachfrage stellte sich heraus, dass es NICHT wirklich "Artifact vs. PWA" war,
+sondern "frischer Test-Spielstand vs. echter, fortgeschrittener Spielstand" - der Fehler hängt am
+SPIELFORTSCHRITT, nicht an der Auslieferungsform. Zwei ineinandergreifende, unabhängig gefundene
+Ursachen (per Playwright mit einem realistisch simulierten Fortschritt - 20 bereits gefangene,
+eingeklappte Standorte plus eine zurückgestellte aktuelle Kachel - reproduziert):
+1. **Falscher Selektor:** die erste Station zielte auf `'#content .card[data-loc]'` (die
+   erste Standort-Kachel im DOM). Bei einem fortgeschrittenen Spielstand ist das oft eine längst
+   ERLEDIGTE Kachel, die in der automatisch eingeklappten "erledigt"-Sammelgruppe liegt (siehe
+   Einklapp-Mechanik-Eintrag oben) - `getBoundingClientRect()` liefert dafür trotzdem eine Position,
+   nur eben eine, die nichts mit dem sichtbaren Bereich zu tun hat, sobald man versucht, dorthin zu
+   scrollen (der eingeklappte Bereich nimmt ja keinen echten Scroll-Platz ein). Fix: statt eines
+   starren Selektors denselben `effectiveCurrentLocId()` + `expandCollapseGroupsForLocation()`-
+   Mechanismus wiederverwenden, den Standort-Suche/Karten-Sprung (`jump-to-location-result`, siehe
+   Standort-Suche-Eintrag oben) bereits nutzen - liefert immer eine tatsächlich vorhandene, offene
+   Kachel und klappt deren Sammelgruppe (falls zurückgestellt) VOR dem `render()` auf.
+2. **Feste Warte-Frist statt echtem Abwarten, die eigentliche Wurzel des Funds:** selbst mit dem
+   richtigen Ziel maß `placeCycleTip()` die Position IMMER exakt 450ms nach dem Aufruf von
+   `targetEl.scrollIntoView({behavior:"smooth"})` - eine geratene feste Frist, die für die kurze
+   Scrollstrecke eines frischen Testspielstands ausreichte, bei einem echten, langen Spielstand
+   (Zielkachel liegt oft mehrere tausend Pixel tiefer im Dokument, weil viele zuvor gefangene
+   Standorte darüber eingeklappt sind) aber bei Weitem nicht - die Messung erfolgte dadurch MITTEN in
+   der noch laufenden Scroll-Animation, Spotlight und Tipp positionierten sich entsprechend auf einer
+   noch nicht fertig gescrollten Zwischenposition, weit außerhalb des sichtbaren Bereichs. **Erster
+   Lösungsversuch verworfen:** ein rAF-Loop, der auf "Position 3 Frames in Folge unverändert" wartet,
+   erwies sich beim Testen als UNZUVERLÄSSIG (in eigenen Playwright-Wiederholungsläufen ca. 2 von 3
+   Mal falsch-positiv) - in den allerersten Frames nach dem Aufruf von `scrollIntoView()` liest man
+   oft noch dieselbe (alte, noch unbewegte) Position, weil die native Scroll-Animation ihren ersten
+   sichtbaren Schritt noch gar nicht gemacht hat - das sieht "stabil" aus, ist aber der Startzustand,
+   nicht das Ziel. Eine erste Gegenmaßnahme (erst ab beobachteter Bewegung zu zählen anfangen, mit
+   Sonderfall "gar keine Bewegung nach mehreren Frames = kein Scrollen nötig") reduzierte das Problem,
+   löste es aber nicht zuverlässig, da auch "mehrere Frames ohne Bewegung" bei einer langen
+   Scrollstrecke fälschlich als "kein Scrollen nötig" fehlinterpretiert werden kann, wenn der Browser
+   die Animation nur etwas langsamer anlaufen lässt. **Tatsächlicher Fix:** das `scrollend`-Event des
+   scrollenden Containers (`#content`) direkt abwarten, statt die Position selbst zu beobachten -
+   feuert genau einmal, wenn eine Scroll-Bewegung (inkl. "smooth") abgeschlossen ist, unabhängig von
+   Distanz/Timing. Mit `setTimeout`-Notausstieg (700ms) als Fallback für Browser ohne `scrollend`-
+   Unterstützung (ältere Safari-Versionen - derselbe bereits mehrfach dokumentierte Sonderfall dieser
+   Codebase) oder falls gar kein Scrollen nötig war (Ziel bereits sichtbar, dann feuert nie ein
+   Scroll-Event). **Verallgemeinerbare Lehre:** bei einem `scrollIntoView({behavior:"smooth"})` NIE
+   eine geratene feste Wartezeit vor einer nachfolgenden Positionsmessung einbauen, egal wie
+   plausibel sie beim Testen mit kurzen Distanzen wirkt - reale Scrollstrecken in einem fortgeschrittenen
+   Spielstand können um Größenordnungen länger sein als in jedem Test-Spielstand. Ebenso: eine
+   "Position seit N Frames unverändert"-Heuristik allein ist KEIN zuverlässiger Ersatz für ein
+   echtes Abschluss-Event, da sie am Anfang (vor Bewegungsbeginn) genauso "stabil" aussieht wie am
+   Ende (nach Bewegungsende) - wo ein natives `scrollend`/Transitionend-Äquivalent existiert, dieses
+   bevorzugen, mit Timeout nur als Fallback-Netz, nicht als primäre Logik.
+
 ## Bekannter offener UX-/QoL-Backlog (Stand v1.9.90)
 
 Sammlung von Ideen zur Verbesserung des Nutzererlebnisses, auf Nutzerwunsch ("nimm die Themen mal
