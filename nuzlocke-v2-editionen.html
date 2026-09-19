@@ -4031,7 +4031,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.81";
+const APP_VERSION = "1.9.82";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -8637,6 +8637,20 @@ function renderGrave(){
   if(deadLocs.length){
     html += `<div class="region-header">Verstorben</div>`;
     deadLocs.forEach(loc=>{
+      /* Boss-Verknüpfung (seit v1.9.82): deathBossId wird NUR gesetzt, wenn der Tod über die
+         Gegner-Team-Chip-Auswahl in openBossResultSheet() erfasst wurde (siehe confirm-boss-result) -
+         bei Freitext-Todesursachen (openDeathCauseSheet, außerhalb von Bosskämpfen) bleibt es ungesetzt.
+         Zeigt zusätzlich zur Gegner-Spezies, in welchem konkreten Bosskampf das passiert ist, statt nur
+         "gegen wen" ohne Kontext, welcher Kampf das war. */
+      let deathVsBoss = "";
+      if(loc.mon.deathBossId){
+        const dBoss = bossById(loc.mon.deathBossId);
+        if(dBoss){
+          const dIsRival = dBoss.group === "Rivale";
+          const dRivalNick = dIsRival ? (state.rivalNickname||"").trim() : "";
+          deathVsBoss = ` (Team von ${escapeHtml(dRivalNick || dBoss.name)})`;
+        }
+      }
       html += `<div class="card st-dead" data-loc="${loc.id}">
         <div class="card-top">
           ${monLinkHtml("mon-line", loc.mon.species, `
@@ -8648,7 +8662,7 @@ function renderGrave(){
           `)}
           <span class="chip red">R.I.P.</span>
         </div>
-        ${loc.mon.deathCause ? `<div class="loc-note">Gestorben gegen: ${escapeHtml(loc.mon.deathCause)}</div>` : ""}
+        ${loc.mon.deathCause ? `<div class="loc-note">Gestorben gegen: ${escapeHtml(loc.mon.deathCause)}${deathVsBoss}</div>` : ""}
         ${monActionsHtml(loc, false, false)}
       </div>`;
     });
@@ -9206,6 +9220,7 @@ function performMarkDead(locId, cause){
   const wasInTeam = m.inTeam;
   m.dead=true; m.inTeam=false;
   if(cause) m.deathCause = cause; else delete m.deathCause;
+  delete m.deathBossId;
   logEvent("dead", cause ? `${m.nickname || m.species} ist gestorben (${loc.name}, gegen ${cause})` : `${m.nickname || m.species} ist gestorben (${loc.name})`);
   if(wasInTeam) logEvent("team", `${m.nickname || m.species} verließ das Team (gestorben)`);
   vibrateFeedback([25,40,25]);
@@ -10414,7 +10429,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="stats">
     <div class="stat"><div class="n">23</div><div class="l">Editionen</div></div>
     <div class="stat"><div class="n">1075</div><div class="l">Pokémon-Arten</div></div>
-    <div class="stat"><div class="n">84</div><div class="l">Versions&shy;stände</div></div>
+    <div class="stat"><div class="n">85</div><div class="l">Versions&shy;stände</div></div>
     <div class="stat"><div class="n">Gen 1–9</div><div class="l">Abgedeckt</div></div>
   </div>
 
@@ -10424,6 +10439,28 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.82</span><span class="tag tag-feat">Neu</span></div>
+      <h3>Bosskampf-Tode jetzt mit dem konkreten Bosskampf verknüpft, nicht nur mit der Gegner-Spezies</h3>
+      <p>Rückfrage zur v1.9.80-Erweiterung: wählt man beim Eintragen einer Niederlage aus dem
+      getrackten Gegner-Team aus, gegen welches Pokémon man verloren hat - lässt sich daraus auch
+      rekonstruieren, welches TEAM (also welcher Bosskampf) einen besiegt hat, nicht nur die einzelne
+      Spezies? Bisher nein: <code>loc.mon.deathCause</code> speicherte nur den Gegner-Namen als reinen
+      Text, ohne Bezug zum jeweiligen Bosskampf. Jetzt zusätzlich <code>loc.mon.deathBossId</code>,
+      gesetzt in genau dem Moment, in dem ein Tod über die Chip-Auswahl aus einem getrackten
+      Gegner-Team einem Bosskampf zugeordnet wird (<code>confirm-boss-result</code>) - bei der
+      separaten Freitext-Todesursache außerhalb von Bosskämpfen (<code>openDeathCauseSheet</code>)
+      bleibt es bewusst ungesetzt, da dort kein konkreter Bosskampf existiert. Der Friedhof-Eintrag
+      zeigt jetzt zusätzlich zur Gegner-Spezies den Namen des Bosses in Klammern: "Gestorben gegen:
+      Habitak (Team von Blau)". Bewusst rückwärtskompatibel als reines Zusatzfeld gebaut, nicht als
+      Umbau von <code>deathCause</code> selbst - bereits bestehende Spielstände (egal ob Freitext oder
+      der alte, noch nicht boss-verknüpfte Stand) funktionieren unverändert weiter, <code>revive</code>
+      löscht beide Felder wieder symmetrisch. Diese Verknüpfung ist die Grundlage für mehrere
+      besprochene, aber bewusst zurückgestellte Auswertungs-Ideen (Nemesis-Pokémon-Statistik,
+      Erfolg für besonders viele Verluste gegen dieselbe Spezies, ausführlichere Recap-Erzählung) -
+      folgen in einer künftigen Version.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.81</span><span class="tag tag-fix">Korrektur</span></div>
@@ -12326,7 +12363,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.81.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.82.</footer>
 
 </div>`;
 
@@ -13593,7 +13630,7 @@ document.addEventListener("click", e=>{
   }
   else if(act==="revive"){
     const m = findLoc(id).mon;
-    m.dead=false; delete m.deathCause;
+    m.dead=false; delete m.deathCause; delete m.deathBossId;
     saveState(); closeSheet(); render();
   }
   else if(act==="pvp-win") openPvpWinSheet(id);
@@ -13671,7 +13708,7 @@ document.addEventListener("click", e=>{
       if(!loc || !loc.mon || loc.mon.dead) return;
       loc.mon.dead = true; loc.mon.inTeam = false;
       const vs = bossLossDeathVs[loc.id];
-      if(vs) loc.mon.deathCause = vs;
+      if(vs){ loc.mon.deathCause = vs; loc.mon.deathBossId = id; }
       deadNames.push(loc.mon.nickname || loc.mon.species);
       deadLocIds.push(loc.id);
     });

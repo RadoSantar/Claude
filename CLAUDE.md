@@ -756,6 +756,47 @@ jederzeit hier in `CLAUDE.md` + Git-Historie rekonstruierbar, siehe Rest dieser 
   strukturell korrekt als Button existierte, nur optisch nicht als solcher erkennbar war. Betrifft
   automatisch auch den strukturgleichen Spielstände-Archiv-Toggle (`archiveToggle` in
   `renderSettings()`, nutzt dieselben zwei Klassen) - keine gesonderte Anpassung dort nötig.
+- **Bosskampf-Tode jetzt mit dem konkreten Bosskampf verknüpft, nicht nur mit der Gegner-Spezies
+  (seit v1.9.82):** Direkte Rückfrage zur v1.9.80-Chip-Auswahl: lässt sich daraus auch
+  rekonstruieren, welches TEAM (welcher Bosskampf) einen besiegt hat, nicht nur die einzelne Spezies?
+  Antwort zum Zeitpunkt der Frage: nein - `loc.mon.deathCause` speicherte nur den gewählten
+  Gegner-Namen als reinen Text (identisch zum Freitext-Weg, siehe Todesursache-Tracking-Eintrag oben),
+  ohne Bezug zum jeweiligen Bosskampf. Fix: neues, rein additives Zusatzfeld
+  `loc.mon.deathBossId`, gesetzt in `confirm-boss-result` GENAU dann, wenn ein Tod über die
+  Chip-Auswahl aus einem getrackten Gegner-Team einem Bosskampf zugeordnet wird
+  (`if(vs){ loc.mon.deathCause = vs; loc.mon.deathBossId = id; }`) - bei der separaten
+  Freitext-Todesursache außerhalb von Bosskämpfen (`openDeathCauseSheet`/`performMarkDead`) bleibt es
+  bewusst ungesetzt (dort `delete m.deathBossId` zur Sicherheit, falls ein zuvor boss-verknüpft
+  gestorbenes und wiederbelebtes Pokémon später außerhalb eines Bosskampfs erneut stirbt). `revive`
+  löscht symmetrisch beide Felder (`delete m.deathCause; delete m.deathBossId;`). `renderGrave()`
+  löst `deathBossId` bei Vorhandensein gegen `bossById()` auf (inkl. Rivalen-Spitzname-Logik wie in
+  `openBossResultSheet()`) und hängt den Bossnamen in Klammern an: "Gestorben gegen: Habitak (Team
+  von Blau)" statt nur "Gestorben gegen: Habitak". Bewusst KEIN Umbau von `deathCause` selbst (z. B.
+  zu einem Objekt `{species, bossId}`) - das hätte alte Spielstände (Freitext-Strings von vor
+  v1.9.80, oder schon boss-verlinkte Strings aus v1.9.80/81 ohne `deathBossId`) migrieren müssen;
+  ein separates optionales Feld daneben ist rückwärtskompatibel ohne jede Migration. Per Playwright
+  verifiziert: Boss-Verlust mit Chip-Auswahl setzt beide Felder korrekt und zeigt den Bossnamen im
+  Friedhof; der Freitext-Weg setzt nachweislich `deathBossId` nicht; `revive` entfernt beide Felder
+  wieder vollständig (`'deathBossId' in mon` danach `false`).
+  **Backlog, bewusst zurückgestellt** (Nutzerwunsch: "der rest der ideen kommt mal ins backlog"),
+  jetzt technisch möglich dank `deathBossId`:
+  - **Nemesis-Pokémon-Statistik**: welche Gegner-Spezies hat insgesamt die meisten eigenen Team-
+    Mitglieder getötet - reine Auszählung von `deathCause` über alle toten Team-Pokémon, technisch
+    schon OHNE `deathBossId` möglich (nur `deathCause`-Text zählen), aber mit `deathBossId` zusätzlich
+    nach Bosskampf aufschlüsselbar ("gegen X Bosse eingesetzt, hat trotzdem Y Team-Mitglieder
+    gekostet").
+  - **"Gefährlichster Trainer"** ist in `runRecapInsights()` (Run-Rückblick) über `state.bossLossIds`
+    (Anzahl Niederlagen pro Boss, unabhängig von `deathCause`/`deathBossId`) bereits als "Härtester
+    Gegner: {Boss} ({N}× verloren)" vorhanden - NICHT neu zu bauen, nur ggf. um eine
+    Detailaufschlüsselung ("hat X mit {Spezies A}, Y mit {Spezies B} besiegt") zu erweitern, jetzt
+    dank `deathBossId` möglich (vorher nicht, da kein Tod einem Bosskampf zuordenbar war).
+  - **Achievement** für besonders viele Team-Verluste gegen dieselbe Gegner-Spezies oder denselben
+    Bosskampf (z. B. "Erzfeind" - X eigene Pokémon gegen dieselbe Spezies verloren) - neuer Eintrag im
+    `ACHIEVEMENTS`-Array, Check-Funktion analog zu bestehenden `bossLossIds`-basierten Erfolgen (siehe
+    `checkAchievements()`).
+  - **Ausführlichere Recap-Erzählung** (`runRecapNarrative()`/`runRecapInsights()`): einen Insight wie
+    "Dein größter Feind war {Species}, hat {N} deiner Pokémon besiegt" ergänzen, analog zum
+    bestehenden "Härtester Gegner"-Insight, aber pokémon- statt bosszentriert.
 
 ## Deutsche Namen — bekannte Stolperfallen
 
