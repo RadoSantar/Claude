@@ -4149,7 +4149,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.90";
+const APP_VERSION = "1.9.91";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -8314,6 +8314,13 @@ function renderRoutes(){
   updateJumpButton();
 }
 
+/* Seit v1.9.91 bewusst NICHT mehr gerendert: loc.note (Fangmöglichkeiten-/Story-Beschreibungstext
+   pro Standort, z.B. bei Alabastia/Rundfunkturm) blähte Kacheln mit viel Fließtext auf und erzeugte
+   Unübersichtlichkeit (Nutzerfeedback). Die Daten selbst bleiben unangetastet in den LOCATIONS-
+   Arrays - nur die zwei Render-Stellen unten wurden entfernt, falls das Feld später in anderer Form
+   (z.B. Suchindex, Tooltip) wiederverwendet werden soll. loc.customNote (die eigene, manuell
+   eintragbare Notiz über das Notiz-Icon) ist ein komplett separates Feld und bleibt unverändert
+   sichtbar. */
 function routeCard(loc, isCurrent){
   const currentAttr = isCurrent ? ` data-current="true"` : "";
   const flagBtn = iconBtn(isCurrent?"tone-good":"tone-neutral","toggle-current-loc",loc.id,isCurrent?ICON_FLAG_FILLED:ICON_FLAG,isCurrent?"Nicht mehr aktueller Standort":"Als aktuellen Standort markieren",false,true);
@@ -8336,7 +8343,6 @@ function routeCard(loc, isCurrent){
           ${collapseBtn}
         </div>
       </div>
-      <div class="loc-sub">${escapeHtml(loc.note || "Keine wilden Pokémon hier.")}</div>
       ${noteHtml}
       <div class="card-actions" style="margin-top:10px;">
         <button class="btn ${visited?"btn-secondary":"btn-primary"} btn-block" data-act="toggle-loc-visited" data-id="${loc.id}">${visited?"Erledigt zurücknehmen":"Als erledigt markieren"}</button>
@@ -8372,7 +8378,6 @@ function routeCard(loc, isCurrent){
     <div class="card-top">
       <div>
         <div class="loc-name">${escapeHtml(loc.name)}</div>
-        ${loc.note ? `<div class="loc-sub">${escapeHtml(loc.note)}</div>` : ""}
       </div>
       <div style="display:flex; align-items:center; gap:6px; flex:none;">
         ${chipFor(loc)}
@@ -10597,7 +10602,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="stats">
     <div class="stat"><div class="n">23</div><div class="l">Editionen</div></div>
     <div class="stat"><div class="n">1075</div><div class="l">Pokémon-Arten</div></div>
-    <div class="stat"><div class="n">93</div><div class="l">Versions&shy;stände</div></div>
+    <div class="stat"><div class="n">94</div><div class="l">Versions&shy;stände</div></div>
     <div class="stat"><div class="n">Gen 1–9</div><div class="l">Abgedeckt</div></div>
   </div>
 
@@ -10607,6 +10612,22 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.91</span><span class="tag tag-fix">Aufgeräumt</span></div>
+      <h3>Standort-Beschreibungstexte von den Routen-Kacheln entfernt</h3>
+      <p>Nutzerfeedback: Standorte wie Alabastia oder der Rundfunkturm hatten teils recht lange
+      Beschreibungstexte (Fangmöglichkeiten, Story-Ereignisse usw.) direkt unter dem Namen stehen -
+      das blähte die Kacheln auf und erzeugte Unübersichtlichkeit. Auf ausdrücklichen Wunsch komplett
+      unsichtbar gemacht, bewusst ohne jede Ersatzanzeige (kein Info-Icon, keine Kurzfassung) - "es
+      soll clean werden". Wichtig: nur die Anzeige wurde entfernt, die Texte selbst stehen weiterhin
+      unverändert als <code>note</code>-Feld an jedem Standort in den Editions-Datensätzen, falls sie
+      später in anderer Form wiederverwendet werden sollen (z.B. Tooltip, Suchindex). Die eigene,
+      manuell eintragbare Notiz über das Notiz-Icon (<code>customNote</code>) ist davon unberührt und
+      bleibt wie gewohnt sichtbar. Betrifft nur normale Standort-Kacheln sowie die "Kein
+      Wildfang"-Variante - die dortige generische Notiz war ohnehin redundant zum bereits vorhandenen
+      "Kein Wildfang"-Chip.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.90</span><span class="tag tag-feat">Neu</span></div>
@@ -12739,7 +12760,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.90.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.91.</footer>
 
 </div>`;
 
