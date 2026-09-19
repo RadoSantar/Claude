@@ -867,6 +867,38 @@ jederzeit hier in `CLAUDE.md` + Git-Historie rekonstruierbar, siehe Rest dieser 
   bevorzugte) braucht einen Guard direkt im Klick-Handler statt (nur) einen Text-Hinweis davor - bei
   künftigen ähnlichen Fällen die Nutzerpräferenz erfragen/beachten statt automatisch zur ersten
   Variante zu greifen.
+- **Einstellungs-Kacheln blieben über einen Tab-Wechsel hinweg aufgeklappt (seit v1.9.85):**
+  Nutzerwunsch: "wenn von den Einstellungen wieder auf einen anderen Tab gewechselt wird sollen die
+  offenen Kacheln in den Einstellungen immer eingeklappt werden." `expandedSettingsGroups` (welche
+  Einstellungs-Kapitel gerade aufgeklappt sind, siehe `settingsGroupHtml()`) war zwar schon immer
+  bewusst NICHT persistiert (Kommentar bei der Deklaration: "jeder Reload startet eingeklappt"), blieb
+  aber innerhalb EINER laufenden Sitzung über beliebig viele Tab-Wechsel hinweg unverändert bestehen -
+  wer z. B. "Duell & Bosse" aufgeklappt und dann zu einem anderen Tab gewechselt hatte, fand es beim
+  nächsten Öffnen der Einstellungen weiterhin aufgeklappt vor. Fix: neue Variable `lastRenderedTab`
+  (deklariert direkt neben `expandedSettingsGroups`), die sich merkt, in welchem Tab `render()`
+  zuletzt lief. Am Kopf von `render()`:
+  ```js
+  function render(){
+    if(lastRenderedTab==="settings" && activeTab!=="settings") expandedSettingsGroups.clear();
+    lastRenderedTab = activeTab;
+    ...
+  ```
+  leert das die Menge automatisch genau in dem Moment, in dem `activeTab` von "settings" auf einen
+  anderen Tab wechselt - die Einstellungen starten dadurch beim nächsten Öffnen wieder komplett
+  eingeklappt. **Bewusst zentral in `render()` geprüft statt an jeder einzelnen Stelle, die
+  `activeTab` setzt** (Tab-Klick-Handler, Wisch-Geste zwischen Tabs, die geführte Tour, der
+  `#settings`-Deeplink-Parameter beim Laden - mindestens fünf verschiedene Stellen im Code) - `render()`
+  läuft nach jeder einzelnen dieser Stellen ohnehin garantiert genau einmal, ein einziger
+  Anschlusspunkt genügt dadurch, statt das Leeren an fünf potenziell künftig noch mehr werdenden
+  Stellen einzeln nachzuziehen. **Exakt dasselbe Prinzip wie bei der v1.9.78-Auto-Sync-Debounce-Logik
+  weiter oben** (zentral an `saveState()` gehängt statt an einzelne Änderungsstellen) und bewusst NICHT
+  das Muster aus dem Boss-Kachel-`id`-Feld-Fund von v1.9.69 (dort fehlte ein Feld an einer von
+  mehreren strukturell ähnlichen, aber unabhängig gepflegten Stellen) - hier gibt es dagegen ohnehin
+  schon einen einzigen gemeinsamen Durchlaufpunkt (`render()`), der nur genutzt werden musste, statt
+  ihn künstlich nachzubilden. Verifiziert per Playwright: sowohl über direkte `activeTab`-Zustands-
+  änderung als auch über echte `.tab[data-tab]`-Klicks leert sich `expandedSettingsGroups`
+  zuverlässig beim Verlassen der Einstellungen; ein Wechsel zwischen zwei Nicht-Einstellungen-Tabs
+  bleibt wie erwartet folgenlos (die Menge ist zu diesem Zeitpunkt ohnehin schon leer).
 
 ## Deutsche Namen — bekannte Stolperfallen
 

@@ -3901,6 +3901,14 @@ let lastFightBossId = null;
 let expandedRegions = new Set(); // welche Regionen ihre abgeschlossene Historie ausgeklappt haben - bewusst nicht persistiert, jeder Reload startet eingeklappt
 let expandedStashRegions = new Set(); // dito für die "später fangbar"-Sammelgruppe manuell zurückgestellter Standorte
 let expandedSettingsGroups = new Set(); // welche Einstellungs-Gruppen aufgeklappt sind - ebenfalls nicht persistiert, "Fortschritt" bleibt immer sichtbar
+/* Merkt sich, in welchem Tab render() zuletzt lief - einziger Zweck: erkennen, wann activeTab von
+   "settings" auf einen anderen Tab wechselt, um dann expandedSettingsGroups zu leeren (Nutzerwunsch:
+   beim Verlassen der Einstellungen sollen offene Kacheln beim nächsten Öffnen wieder eingeklappt
+   sein). Bewusst zentral in render() geprüft statt an jeder der mehreren Stellen, die activeTab
+   setzen (Tab-Klick, Wisch-Geste, Tour, #settings-Deeplink, ...) einzeln - genau das Muster, das
+   beim fehlenden id-Feld bei Boss-Kacheln (siehe CLAUDE.md) schon einmal zu einer an einer von
+   mehreren Stellen vergessenen Änderung geführt hat. */
+let lastRenderedTab = null;
 let ordenCaseOpen = false; // ob die Orden-Schatulle im Team-Tab gerade geöffnet ist - nicht persistiert, startet immer zu
 let boxSearchQuery = ""; // Box-Suche - nicht persistiert, jeder Tab-Wechsel startet leer
 let boxSortMode = "default"; // "default" (Routen-Reihenfolge) | "name" | "caught"
@@ -4031,7 +4039,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.84";
+const APP_VERSION = "1.9.85";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -10439,7 +10447,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="stats">
     <div class="stat"><div class="n">23</div><div class="l">Editionen</div></div>
     <div class="stat"><div class="n">1075</div><div class="l">Pokémon-Arten</div></div>
-    <div class="stat"><div class="n">87</div><div class="l">Versions&shy;stände</div></div>
+    <div class="stat"><div class="n">88</div><div class="l">Versions&shy;stände</div></div>
     <div class="stat"><div class="n">Gen 1–9</div><div class="l">Abgedeckt</div></div>
   </div>
 
@@ -10449,6 +10457,25 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.85</span><span class="tag tag-feat">Neu</span></div>
+      <h3>Einstellungs-Kacheln klappen beim Verlassen der Einstellungen wieder zu</h3>
+      <p>Nutzerwunsch: "wenn von den Einstellungen wieder auf einen anderen Tab gewechselt wird
+      sollen die offenen Kacheln in den Einstellungen immer eingeklappt werden." Bisher blieb
+      <code>expandedSettingsGroups</code> (welche Einstellungs-Kapitel gerade aufgeklappt sind)
+      über einen Tab-Wechsel hinweg unverändert bestehen - wer z.&nbsp;B. "Duell &amp; Bosse"
+      aufgeklappt hatte, fand die Einstellungen beim nächsten Öffnen genauso vor. Jetzt merkt sich
+      <code>render()</code> per neuer Variable <code>lastRenderedTab</code>, in welchem Tab zuletzt
+      gerendert wurde, und leert <code>expandedSettingsGroups</code> automatisch, sobald
+      <code>activeTab</code> von "settings" auf einen anderen Tab wechselt - die Einstellungen
+      starten dadurch beim nächsten Öffnen immer wieder vollständig eingeklappt. Bewusst zentral in
+      <code>render()</code> geprüft statt einzeln an jeder der mehreren Stellen, die
+      <code>activeTab</code> setzen (Tab-Klick, Wisch-Geste, Tour, Deeplink, …) - eine der Stellen zu
+      vergessen hätte das Problem nur teilweise behoben. Verifiziert per Playwright: sowohl über
+      direkte Zustandsänderung als auch über echte Tab-Klicks leert sich die Liste zuverlässig beim
+      Verlassen der Einstellungen, ein Wechsel zwischen zwei anderen Tabs bleibt folgenlos.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.84</span><span class="tag tag-fix">Korrektur</span></div>
@@ -12407,7 +12434,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.84.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.85.</footer>
 
 </div>`;
 
@@ -12916,6 +12943,8 @@ function applyEdition(){
 }
 
 function render(){
+  if(lastRenderedTab==="settings" && activeTab!=="settings") expandedSettingsGroups.clear();
+  lastRenderedTab = activeTab;
   applyEdition();
   renderHeaderTeam();
   renderHeaderOrden();
