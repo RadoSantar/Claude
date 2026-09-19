@@ -797,7 +797,8 @@ jederzeit hier in `CLAUDE.md` + Git-Historie rekonstruierbar, siehe Rest dieser 
   - **Ausführlichere Recap-Erzählung** (`runRecapNarrative()`/`runRecapInsights()`): einen Insight wie
     "Dein größter Feind war {Species}, hat {N} deiner Pokémon besiegt" ergänzen, analog zum
     bestehenden "Härtester Gegner"-Insight, aber pokémon- statt bosszentriert.
-- **Soul-Link-Modus war unauffindbar, wenn man ihn nicht schon kannte (behoben in v1.9.83):**
+- **Soul-Link-Modus war unauffindbar, wenn man ihn nicht schon kannte (erster Fix v1.9.83, per
+  Nutzerkorrektur weiterentwickelt in v1.9.84 - siehe dort unten im selben Punkt):**
   Nutzerfrage "hatten wir nicht noch eine Soul-Link-Funktion integriert? oder war das einfach eine
   Idee?" - die Funktion existierte bereits vollständig (`state.soulLinkMode`, `soulLinkMismatches()`,
   `checkSoulLinkAfterDeath()`, `openSoulLinkHintSheet()`, siehe Datenmodell-Abschnitt oben), war aber
@@ -825,6 +826,47 @@ jederzeit hier in `CLAUDE.md` + Git-Historie rekonstruierbar, siehe Rest dieser 
   Auswahl aus v1.9.80, die ihrerseits schon einen sichtbaren Schalter unter „Duell & Bosse" hat und
   dieses Problem deshalb nicht hat), aktiv prüfen, ob der Zustand DAVOR ebenfalls einen Hinweis
   bekommt.
+  **Nutzerkorrektur, weiterentwickelt in v1.9.84 - der obige "bewusst NICHT den Schalter selbst
+  vorzeitig anzeigen"-Ansatz wurde direkt im Anschluss verworfen:** "ich denke besser ist den Button
+  schon zu haben und wenn noch kein Partner-Spielstand eingetragen ist und der Button betätigt wird,
+  genau die Info bitte, zuerst Partnerspielstand einzutragen, um den Soul-Link-Modus zu starten." Der
+  reine Text-Hinweis aus v1.9.83 war zwar eine Verbesserung gegenüber komplettem Schweigen, aber der
+  Nutzer wollte stattdessen den ECHTEN Schalter von Anfang an sichtbar, mit Führung erst beim Klick
+  statt vorab per Fließtext. Umgesetzt: `duoCompareCardHtml()`s noch-nicht-verknüpfter Zweig
+  (`if(!state.duoCode){...}`) rendert jetzt denselben `data-act="toggle-soul-link"`-Button samt
+  Info-Icon wie der bereits-verknüpfte Zweig, optisch identisch (`<div class="card-top">` mit Button +
+  `iconBtn(...,"soullink",...)`), anstelle des v1.9.83-Hinweissatzes im `loc-sub`-Text (der wieder
+  entfernt wurde, da er durch den jetzt sichtbaren Button selbst überflüssig ist). Der
+  `toggle-soul-link`-Klick-Handler bekam davor eine Weiche:
+  ```js
+  else if(act==="toggle-soul-link"){
+    if(!state.duoCode){
+      openSheet(`<h3>Soul-Link-Modus</h3>
+        <div class="loc-sub" style="margin-bottom:14px;">Dafür braucht es zuerst einen verknüpften
+        Partner-Spielstand - trag oben bei „Duo-Vergleich" den Sync-Code deines Partners ein und
+        starte den Vergleich, dann lässt sich der Soul-Link-Modus hier aktivieren.</div>
+        <div class="sheet-footer"><button class="btn btn-primary btn-block" data-act="close-sheet">OK</button></div>`);
+      return;
+    }
+    state.soulLinkMode = !state.soulLinkMode;
+    saveState(); render();
+  }
+  ```
+  - ohne verknüpften Partner bricht der Klick VOR dem eigentlichen Umschalten ab und zeigt stattdessen
+  ein `openSheet(...)`-Infofenster, `state.soulLinkMode` bleibt dabei unverändert; mit verknüpftem
+  Partner läuft der Klick unverändert wie zuvor durch. `SETTINGS_HELP.duocompare` entsprechend ein
+  zweites Mal angepasst - erwähnt jetzt, dass der Schalter direkt auf der Karte sichtbar ist, aber
+  erst nach dem Verknüpfen tatsächlich aktivierbar wird. Verifiziert per Playwright (drei Fälle):
+  Button existiert bereits ohne `state.duoCode`; ein Klick darauf zeigt das Hinweis-Sheet und lässt
+  `state.soulLinkMode` unangetastet; nach Setzen von `state.duoCode` schaltet derselbe Button
+  `state.soulLinkMode` wie gewohnt um. **Lehre, die die obige v1.9.83-Lehre nicht ersetzt, sondern
+  ergänzt:** ein bedingt FUNKTIONSFÄHIGES Element (hier: der Soul-Link-Schalter, der ohne Partner
+  ins Leere liefe) muss nicht zwangsläufig auch bedingt SICHTBAR sein - "erst zeigen, wenn nutzbar"
+  und "immer zeigen, aber bei fehlender Voraussetzung führend abfangen" sind zwei unterschiedliche,
+  beide gültige Lösungen für dasselbe Discoverability-Problem, und die zweite (vom Nutzer hier
+  bevorzugte) braucht einen Guard direkt im Klick-Handler statt (nur) einen Text-Hinweis davor - bei
+  künftigen ähnlichen Fällen die Nutzerpräferenz erfragen/beachten statt automatisch zur ersten
+  Variante zu greifen.
 
 ## Deutsche Namen — bekannte Stolperfallen
 

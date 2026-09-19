@@ -4031,7 +4031,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.83";
+const APP_VERSION = "1.9.84";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -7027,16 +7027,26 @@ let duoCompareLoading = false;
 
 function duoCompareCardHtml(){
   if(!state.duoCode){
+    /* Soul-Link-Button (seit v1.9.84) bewusst schon HIER sichtbar, nicht erst nach dem Verknüpfen -
+       Nutzerfeedback zur vorherigen v1.9.83-Lösung (nur ein Vorab-Hinweistext): "ich denke besser ist
+       den button schon zu haben und wenn noch kein partner spielstand eingetragen ist und der button
+       betätigt wird genau die info bitte zuerst partnerspielstand einzutragen". Der Klick-Handler
+       (toggle-soul-link) prüft selbst, ob state.duoCode gesetzt ist, und zeigt ohne Partner einen
+       Hinweis statt umzuschalten - siehe dort. */
     return `<div class="card">
       <div class="card-top">
         <div class="loc-name">Duo-Vergleich</div>
         ${iconBtn("tone-neutral","open-setting-help","duocompare",ICON_INFO,"Erklärung anzeigen",false,true)}
       </div>
-      <div class="loc-sub" style="margin-bottom:10px;">Vergleiche deinen Fortschritt mit dem einer anderen Person, die ebenfalls Cloud-Sync nutzt - trag dazu deren Sync-Code ein (den bekommt ihr z.&nbsp;B. über den „Teilen"-Button bei Cloud-Sync). Rein lesend, der fremde Spielstand wird dadurch nicht verändert. Danach lässt sich hier zusätzlich der Soul-Link-Modus aktivieren, der eure Encounter 1:1 pro Standort koppelt.</div>
+      <div class="loc-sub" style="margin-bottom:10px;">Vergleiche deinen Fortschritt mit dem einer anderen Person, die ebenfalls Cloud-Sync nutzt - trag dazu deren Sync-Code ein (den bekommt ihr z.&nbsp;B. über den „Teilen"-Button bei Cloud-Sync). Rein lesend, der fremde Spielstand wird dadurch nicht verändert.</div>
       <div class="field">
         <input id="duoCodeInput" value="" placeholder="z. B. AB3D9F7K2M" autocomplete="off" style="text-transform:uppercase; font-family:var(--font-mono); letter-spacing:.05em;" maxlength="10" />
       </div>
-      <button class="btn btn-primary btn-block" data-act="link-duo-code">Vergleich starten</button>
+      <button class="btn btn-primary btn-block" style="margin-bottom:8px;" data-act="link-duo-code">Vergleich starten</button>
+      <div class="card-top" style="margin-bottom:8px;">
+        <button class="btn ${state.soulLinkMode?"btn-primary":"btn-secondary"}" style="flex:1;" data-act="toggle-soul-link">Soul-Link-Modus: ${state.soulLinkMode?"Aktiviert":"Deaktiviert"}</button>
+        ${iconBtn("tone-neutral","open-setting-help","soullink",ICON_INFO,"Erklärung anzeigen",false,true)}
+      </div>
     </div>`;
   }
   return `<div class="card">
@@ -10429,7 +10439,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="stats">
     <div class="stat"><div class="n">23</div><div class="l">Editionen</div></div>
     <div class="stat"><div class="n">1075</div><div class="l">Pokémon-Arten</div></div>
-    <div class="stat"><div class="n">86</div><div class="l">Versions&shy;stände</div></div>
+    <div class="stat"><div class="n">87</div><div class="l">Versions&shy;stände</div></div>
     <div class="stat"><div class="n">Gen 1–9</div><div class="l">Abgedeckt</div></div>
   </div>
 
@@ -10439,6 +10449,23 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.84</span><span class="tag tag-fix">Korrektur</span></div>
+      <h3>Soul-Link-Schalter jetzt schon vor dem Verknüpfen sichtbar, statt nur angekündigt</h3>
+      <p>Direkte Nutzerkorrektur zur v1.9.83-Lösung: "ich denke besser ist den Button schon zu haben
+      und wenn noch kein Partner-Spielstand eingetragen ist und der Button betätigt wird, genau die
+      Info bitte, zuerst Partnerspielstand einzutragen, um den Soul-Link-Modus zu starten." Der reine
+      Vorab-Hinweistext aus v1.9.83 war zwar besser als vorher (gar kein Hinweis), aber immer noch nur
+      Text - der Schalter selbst blieb bis zum Verknüpfen unsichtbar. Jetzt steht der Soul-Link-Schalter
+      auf der "Duo-Vergleich"-Karte von Anfang an da, in genau derselben Optik wie im bereits
+      verknüpften Zustand. Tippt man ihn ohne verknüpften Partner an, öffnet sich statt eines
+      Umschaltens ein Hinweis-Sheet ("Dafür braucht es zuerst einen verknüpften Partner-Spielstand -
+      trag oben bei „Duo-Vergleich" den Sync-Code deines Partners ein und starte den Vergleich, dann
+      lässt sich der Soul-Link-Modus hier aktivieren.") - erst nach dem Verknüpfen schaltet derselbe
+      Button den Modus wie gewohnt um. Der Hilfetext hinter dem Info-Symbol wurde entsprechend
+      angepasst.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.83</span><span class="tag tag-fix">Korrektur</span></div>
@@ -12380,7 +12407,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.83.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.84.</footer>
 
 </div>`;
 
@@ -12562,7 +12589,7 @@ const SETTINGS_HELP = {
   nickname: { category:"Regeln", title:"Nickname-Pflicht", text:"Erzwingt beim Fangen einen Spitznamen, bevor sich der Fang speichern lässt - hilfreich, wenn ihr euch als Hausregel vorgenommen habt, jedem Pokémon einen eigenen Namen zu geben." },
   houserules: { category:"Regeln", title:"Regelwerk-Checkliste", text:"Dokumentiert, welche der üblichen Nuzlocke-Hausregeln (Set-Modus, Species-Klausel, kein Item im Kampf, Level-Cap je Bosskampf) für diesen Run gelten - rein zur Erinnerung/Dokumentation, jederzeit an-/abwählbar. Wirkt sich anders als die Dupes-Clause-Warnung und die Level-Cap-Berechnung nicht auf die App-Logik aus, das sind eigene, tatsächlich wirksame Einstellungen." },
   cloudsync: { category:"Spielstände & Mehrspieler", title:"Cloud-Sync", text:"Verknüpft einen Spielstand über einen zufälligen, hochentropischen Code mit einer Cloud-Zeile - ganz ohne Konto oder Login. „Speichern“ lädt den lokalen Stand in die Cloud hoch (beim ersten Mal wird dafür ein neuer Code erzeugt, danach überschreibt jeder weitere Tap einfach die bestehende Cloud-Zeile); „Laden“ ersetzt stattdessen den lokalen Fortschritt durch einen bestehenden Cloud-Stand - per Code-Eingabe, durch Scannen des QR-Codes vom anderen Gerät mit der normalen Kamera-App, oder per „Kurzen PIN anzeigen“: ein 6-stelliger, nur 10 Minuten gültiger und nach einmaliger Nutzung sofort verfallender Einweg-PIN als bequemere Alternative zum langen Code (der eigentliche, dauerhafte Code bleibt davon unberührt). Beide Aktionen überschreiben ohne weiteren Vergleich die jeweils andere Seite - wer auf mehreren Geräten gleichzeitig spielt, sollte deshalb bewusst zwischen „Speichern“ (dieses Gerät gilt) und „Laden“ (das andere Gerät gilt) wählen. Der QR-Code selbst wird nicht dauerhaft angezeigt, sondern erst nach Antippen von „QR-Code anzeigen“ in einem eigenen Fenster. Wer den langen Code kennt, kann den Spielstand abrufen oder überschreiben, deshalb gilt er wie ein Passwort: nicht öffentlich teilen, nur an die eigenen Geräte oder eine vertraute Person für den Duo-Vergleich weitergeben. Der Schalter „Auto-Save“ speichert danach automatisch nach jeder Änderung in die Cloud (kurz gebündelt, kein Tap auf „Speichern“ mehr nötig) - standardmäßig aus, da er bei aktivem Sync auf mehreren gleichzeitig genutzten Geräten den zuletzt schreibenden Stand automatisch gewinnen lässt." },
-  duocompare: { category:"Spielstände & Mehrspieler", title:"Duo-Vergleich", text:"Vergleicht den eigenen Fortschritt rein lesend mit dem einer anderen Person über deren Cloud-Sync-Code: Gesamtabschluss, Überlebensrate und besiegte Bosse nebeneinander. Verändert den fremden Spielstand nie und rührt die eigene Sync-Verknüpfung nicht an - der Partner-Code ist unabhängig vom eigenen Sync-Code. Sobald der Vergleich läuft, erscheint auf derselben Karte zusätzlich der Schalter „Soul-Link-Modus“ (siehe eigener Hilfetext) - der ist erst dann sichtbar, weil er einen bereits verknüpften Partner-Spielstand zum Koppeln braucht." },
+  duocompare: { category:"Spielstände & Mehrspieler", title:"Duo-Vergleich", text:"Vergleicht den eigenen Fortschritt rein lesend mit dem einer anderen Person über deren Cloud-Sync-Code: Gesamtabschluss, Überlebensrate und besiegte Bosse nebeneinander. Verändert den fremden Spielstand nie und rührt die eigene Sync-Verknüpfung nicht an - der Partner-Code ist unabhängig vom eigenen Sync-Code. Auf derselben Karte steht auch schon der Schalter „Soul-Link-Modus“ (siehe eigener Hilfetext) - er lässt sich aber erst nach dem Verknüpfen eines Partner-Spielstands tatsächlich aktivieren, da er dessen Fortschritt zum Koppeln braucht." },
   soullink: { category:"Spielstände & Mehrspieler", title:"Soul-Link-Modus", text:"Koppelt Encounter 1:1 mit dem Duo-Partner über die Standort-ID - funktioniert automatisch überall dort, wo beide Editionen dieselben Standortnamen verwenden (z.&nbsp;B. Partnerversionen wie Schwarz/Weiß oder Rubin/Saphir), nicht nur bei exakt identischer Edition. Stirbt ein Pokémon an einem gekoppelten Standort, gibt es einen Hinweis, falls das Partner-Pokémon dort laut letztem Abgleich noch lebt. Rein informativ: aus denselben Sicherheitsgründen wie beim Duo-Vergleich schreibt die App nie in den Spielstand der Partner-Person, das Aufgeben muss jede Seite selbst vornehmen." },
   keyitems: { category:"Werkzeuge", title:"Schlüsselitems/VMs-Checkliste", text:"Zeigt, welche VMs/Schlüsselitems (Surfer, Zerschneider, Stärke, …) schon eingesammelt wurden - hilfreich, um zu sehen, welche Standorte bereits erreichbar sind. Editionsspezifisch hinterlegt, da sich das VM-Set je nach Spiel-Engine unterscheidet (z.&nbsp;B. Whirlpool/Kaskade nur in manchen Generationen)." }
 };
@@ -14125,6 +14152,14 @@ document.addEventListener("click", e=>{
   }
   else if(act==="open-duo-compare") openDuoCompareSheet();
   else if(act==="toggle-soul-link"){
+    if(!state.duoCode){
+      openSheet(`
+        <h3>Soul-Link-Modus</h3>
+        <div class="loc-sub" style="margin-bottom:14px;">Dafür braucht es zuerst einen verknüpften Partner-Spielstand - trag oben bei „Duo-Vergleich" den Sync-Code deines Partners ein und starte den Vergleich, dann lässt sich der Soul-Link-Modus hier aktivieren.</div>
+        <div class="sheet-footer"><button class="btn btn-primary btn-block" data-act="close-sheet">OK</button></div>
+      `);
+      return;
+    }
     state.soulLinkMode = !state.soulLinkMode;
     saveState(); render();
   }
