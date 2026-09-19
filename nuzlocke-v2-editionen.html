@@ -287,12 +287,23 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
    übereinander und ihr Text überlappt sich unleserlich. Sticky ist hier ohnehin weniger nützlich
    (kurze, einklappbare Abschnitte statt langer Listen) - deshalb explizit deaktiviert. */
 .region-header.no-sticky{ position:static; }
+/* Bis v1.9.80 reine Textzeile ohne Kartenoptik (nur die geerbten .region-header-Eigenschaften:
+   winzige 0.72rem-Versalienschrift, kein Rand/Hintergrund/Radius) - auf Touchscreens optisch nicht
+   von einem einfachen Zwischentitel zu unterscheiden, obwohl die ganze Zeile ein tappbarer Button
+   ist (Nutzerfeedback: "sind die kapitel noch links zum ein/ausklappen und nicht für
+   touchscreenoptimiert bzw. ersichtlich"). Genau dasselbe Problem, das `.collapse-toggle` (Routen-
+   Tab, "X erledigte Standorte") schon einmal hatte und dort bereits mit Kartenoptik gelöst wurde,
+   siehe Kommentar dort - hier dieselbe Lösung übernommen, statt eine neue zu erfinden. */
 .settings-group-header{
   position:static;
   display:flex; align-items:center; justify-content:space-between; width:100%;
-  border:none; background:none; transition:transform .15s ease, opacity .15s ease;
+  border:1px solid var(--line); background:var(--surface-alt); border-radius:var(--radius);
+  box-shadow:var(--shadow); padding:14px 16px; margin-bottom:10px;
+  font-family:var(--font-display); font-size:.86rem; font-weight:700; letter-spacing:.02em;
+  text-transform:none; color:var(--ink); text-align:left;
+  transition:transform .15s ease, opacity .15s ease, background .15s ease;
 }
-.settings-group-header:active{ opacity:.7; transform:scale(.99); }
+.settings-group-header:active{ opacity:.85; transform:scale(.98); background:var(--surface); }
 .settings-group-header .collapse-chevron{ flex:none; stroke:var(--ink-soft); }
 /* Wiederverwendete Auf-/Zuklapp-Animation für alles Einklappbare (Einstellungs-Gruppen, erledigte
    Standort-Blöcke im Routen-Tab, die "später fangbar"-Sammelgruppe, ...): Inhalt bleibt immer im
@@ -4020,7 +4031,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.80";
+const APP_VERSION = "1.9.81";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -10403,7 +10414,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="stats">
     <div class="stat"><div class="n">23</div><div class="l">Editionen</div></div>
     <div class="stat"><div class="n">1075</div><div class="l">Pokémon-Arten</div></div>
-    <div class="stat"><div class="n">83</div><div class="l">Versions&shy;stände</div></div>
+    <div class="stat"><div class="n">84</div><div class="l">Versions&shy;stände</div></div>
     <div class="stat"><div class="n">Gen 1–9</div><div class="l">Abgedeckt</div></div>
   </div>
 
@@ -10413,6 +10424,23 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.81</span><span class="tag tag-fix">Korrektur</span></div>
+      <h3>Einstellungs-Kapitel jetzt mit Kartenoptik statt reinem Text</h3>
+      <p>Nutzerfeedback: "in den einstellungen sind die kapitel noch links zum ein/ausklappen und
+      nicht für touchscreenoptimiert bzw. ersichtlich." Die Gruppenköpfe in den Einstellungen
+      ("Spielstände", "Duell &amp; Bosse", "Regeln" usw.) waren zwar über ihre gesamte Zeile hinweg
+      als Button anklickbar, sahen aber wegen der geerbten winzigen Versalienschrift ohne Rand/
+      Hintergrund/Radius wie ein reiner Abschnittstitel aus statt wie ein antippbares Element - dazu
+      mit nur 38px Zeilenhöhe unter dem gängigen 44px-Mindestwert für Touch-Ziele. Exakt dasselbe
+      Problem, das der Routen-Tab-Toggle "X erledigte Standorte" (<code>.collapse-toggle</code>)
+      früher schon einmal hatte und dort bereits mit Kartenoptik gelöst wurde - hier dieselbe, bereits
+      bewährte Lösung übernommen statt eine neue zu erfinden: Rand, Hintergrund, Eckenradius, Schatten
+      wie jede andere tappbare Fläche der App, größere Schrift ohne Versalien, mehr Innenabstand
+      (Zeilenhöhe jetzt 46px). Der Klapp-Pfeil rotiert weiterhin beim Auf-/Zuklappen, keine Änderung
+      an der eigentlichen Ein-/Ausklapp-Logik nötig - reine CSS-Korrektur.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.80</span><span class="tag tag-feat">Neu</span></div>
@@ -12298,7 +12326,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.80.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.81.</footer>
 
 </div>`;
 

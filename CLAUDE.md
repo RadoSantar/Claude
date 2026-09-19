@@ -737,6 +737,25 @@ jederzeit hier in `CLAUDE.md` + Git-Historie rekonstruierbar, siehe Rest dieser 
   musste angepasst werden. Verifiziert per Playwright: Checkbox-Toggle blendet die richtige
   Chip-Gruppe ein/aus, Chip-Auswahl landet nach Bestätigen korrekt als `deathCause` am richtigen
   Pokémon, Anzeige im Friedhof stimmt.
+- **Einstellungs-Kapitel sahen wie reiner Text aus, nicht wie Buttons (behoben in v1.9.81):**
+  Nutzerfeedback: "in den einstellungen sind die kapitel noch links zum ein/ausklappen und nicht für
+  touchscreenoptimiert bzw. ersichtlich." `settingsGroupHtml()`s Gruppenköpfe
+  (`.settings-group-header`, Klasse `region-header settings-group-header`) waren zwar die gesamte
+  Zeile über als `<button data-act="toggle-settings-group">` anklickbar, erbten aber von
+  `.region-header` eine winzige 0.72rem-Versalienschrift ohne Rand/Hintergrund/Radius - sah wie ein
+  reiner Abschnittstitel aus, nicht wie ein Button, dazu nur 38px Zeilenhöhe (unter dem gängigen
+  44px-Mindestwert für Touch-Ziele). **Exakt dasselbe Problem wie beim Routen-Tab-Toggle
+  `.collapse-toggle`** ("X erledigte Standorte") vor dessen eigener, bereits dokumentierter Korrektur
+  ("Vorher reiner Text+Icon ohne Kontur/Hintergrund - auf Touchscreens nicht als eigenständig
+  tappbares Element erkennbar") - dort bereits gelöst, hier bewusst dieselbe bewährte Lösung
+  übernommen statt eine neue zu erfinden: Rand (`var(--line)`), Hintergrund (`var(--surface-alt)`),
+  `var(--radius)`, `var(--shadow)`, größere Schrift ohne Versalien, mehr Innenabstand (14px 16px) -
+  Zeilenhöhe dadurch auf 46px gewachsen (vorher/nachher per Playwright `getBoundingClientRect()`
+  gemessen: 38px → 46px). Rein additive CSS-Änderung an `.settings-group-header` - Klapp-Logik,
+  Chevron-Rotation und `.collapsible-body`-Animation unverändert, da die Zeile schon vorher
+  strukturell korrekt als Button existierte, nur optisch nicht als solcher erkennbar war. Betrifft
+  automatisch auch den strukturgleichen Spielstände-Archiv-Toggle (`archiveToggle` in
+  `renderSettings()`, nutzt dieselben zwei Klassen) - keine gesonderte Anpassung dort nötig.
 
 ## Deutsche Namen — bekannte Stolperfallen
 
