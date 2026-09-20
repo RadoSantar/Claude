@@ -1331,6 +1331,22 @@ Sammlung von Ideen zur Verbesserung des Nutzererlebnisses, auf Nutzerwunsch ("ni
 ins Backlog auf") gesammelt statt sofort umgesetzt - noch keine davon ist implementiert, keine
 Priorisierung/Reihenfolge impliziert:
 
+- **Onboarding-Tour kuratieren, sobald "das große Ganze" steht (Nutzerwunsch, v1.9.92):**
+  "ich möchte es in diesem stil für weitere inhalte und wenn wir dann das grosse ganze haben möchte
+  ich mit den wichtigsten die welcome tour machen und den rest in die weiterführenden infos packen" -
+  bezieht sich auf zwei bereits bestehende, unterschiedliche Hilfe-Ebenen: die kurze
+  "Erste-Schritte-Tour" (`ONBOARDING_STEPS`, aktive Spotlight-Führung durch die echte Oberfläche,
+  läuft beim ersten Start automatisch) und die "Ausführliche Tour" (`openFeatureIndex()`,
+  durchsuchbare Themen-Übersicht über ALLE `SETTINGS_HELP`-Einträge zum Nachschlagen). Sobald
+  Version 2.0 erreicht ist (alle Editionen vollständig, siehe Meilenstein oben) und damit "das große
+  Ganze" feststeht: die kurze Tour bewusst auf die WICHTIGSTEN Kernfunktionen straffen/kuratieren
+  (nicht jede seither hinzugekommene Funktion dort unterbringen), alles andere bleibt/wandert in die
+  Ausführliche Tour als Nachschlagewerk. Explizit NICHT jetzt schon umsetzen - erst wenn der
+  Funktionsumfang mit v2.0 tatsächlich steht, sonst müsste die Kuration bei jeder weiteren
+  Funktionsergänzung wiederholt werden. Der erste Teil der Nutzeräußerung ("in diesem Stil für
+  weitere Inhalte") bestätigt nur die bereits gelebte Praxis dieser Datei - ausführliche,
+  präzedenzfall-zitierende Einträge pro Fund/Feature - explizit weiter so.
+
 - **Barrierefreiheit:** nur 11 `aria-label`-Attribute im gesamten Code, aber deutlich mehr
   icon-only-Buttons (Mon-Aktionen `.icon-act`, Sheet-Schließen, Bearbeiten-Icons etc.) - für
   Screenreader-Nutzer aktuell lückenhaft beschriftet. Zusätzlich denkbar: eine eigene, von der
