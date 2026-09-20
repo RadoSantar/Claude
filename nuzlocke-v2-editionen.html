@@ -4149,7 +4149,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.93";
+const APP_VERSION = "1.9.94";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -8074,6 +8074,57 @@ const REGION_MAPS = {
       "Route 27":[43.6,82.1], "Tohjo-Fälle":[56.4,82.1], "Route 28":[69.3,82.1],
       "Silberberg":[82.1,82.1], "Silberberghöhle":[95.0,82.1], "Sinjoh-Ruinen":[5.0,95.0]
     }
+  },
+  /* Sinnoh (seit v1.9.94) - Bild: "Sinnoh_BDSP.png" (Bulbagarden Archives, Strahlender Diamant/
+     Leuchtende Perle), 1268×734px, echtes Ingame-Kachelbild ohne Text-Beschriftungen - anders als bei
+     Johto diesmal auf Anhieb ein Kandidat in guter Auflösung, direkt heruntergeladen und visuell
+     geprüft (nicht nur der WebFetch-Beschreibung geglaubt, siehe Johto-Lehre zu Serebiis totem Link).
+     Diamant/Perl, Platin und BDSP nutzen HIER (anders als bei Hoenn/Johto) DREI separate
+     Standort-Datensätze (SINNOH_LOCATIONS/PLATIN_LOCATIONS/BDSP_LOCATIONS) - Platin und BDSP sind
+     zwar beide von SINNOH_LOCATIONS abgeleitet, weichen aber unterschiedlich stark ab (Platin: +2
+     exklusive Standorte Zerrwelt/Eisenruinen; BDSP: +2 andere exklusive Standorte Untergrundhöhlen/
+     Hamanasu-Park - per direktem Array-Abgleich aus der laufenden App verifiziert). Auf Nutzerwunsch
+     ("wir prüfen das dann wenn wir alle Karten haben") bewusst NICHT jetzt schon einzeln geprüft, ob
+     die Abweichungen selbst schon vollständig/korrekt sind - nur ein gemeinsames `points`-Objekt mit
+     der UNION aller 86 Namen aus allen drei Datensätzen angelegt (exakt das ORAS/Johto-Muster:
+     editionsspezifisch ungenutzte Zusatz-Namen bleiben harmlos liegen, da `artworkMapHtml()` ohnehin
+     nur gegen tatsächlich vorhandene `state.locations`-Namen matcht), damit JETZT schon alle drei
+     Editionen vollständige Kartenabdeckung haben (kein fehlender Pin). Koordinaten wieder ein rein
+     algorithmisches 9×10-Platzhalter-Raster (5-95%), noch nicht vom Nutzer kalibriert. */
+  "diamant-perl": {
+    region: "Sinnoh",
+    image: "sprites/maps/sinnoh-bdsp-map.png",
+    points: {
+      "Zweiblattdorf":[5.0,5.0], "Route 201":[16.2,5.0], "See der Wahrheit":[27.5,5.0],
+      "Sandgemme":[38.8,5.0], "Route 202":[50.0,5.0], "Jubelstadt":[61.2,5.0],
+      "Route 203":[72.5,5.0], "Erzelingen-Tor":[83.8,5.0], "Erzelingen":[95.0,5.0],
+      "Erzelingen-Mine":[5.0,15.0], "Route 204":[16.2,15.0], "Verwüsteter Pfad":[27.5,15.0],
+      "Flori":[38.8,15.0], "Auen von Flori":[50.0,15.0], "Windkraftwerk":[61.2,15.0],
+      "Feuriohütte":[72.5,15.0], "Ewigwald":[83.8,15.0], "Alte Villa":[95.0,15.0],
+      "Route 205":[5.0,25.0], "Ewigenau":[16.2,25.0], "Route 206":[27.5,25.0],
+      "Bizarre Höhle":[38.8,25.0], "Route 207":[50.0,25.0], "Route 208":[61.2,25.0],
+      "Herzhofen":[72.5,25.0], "Platz der Treue":[83.8,25.0], "Route 209":[95.0,25.0],
+      "Turm der Ruhenden":[5.0,35.0], "Trostu":[16.2,35.0], "Trostu-Ruinen":[27.5,35.0],
+      "Route 210":[38.8,35.0], "Elyses":[50.0,35.0], "Route 211":[61.2,35.0],
+      "Route 212":[72.5,35.0], "Pokémon-Landgut":[83.8,35.0], "Trophäengarten":[95.0,35.0],
+      "Route 213":[5.0,45.0], "Weideburg":[16.2,45.0], "Großmoor":[27.5,45.0],
+      "Route 214":[38.8,45.0], "Maniac-Tunnel":[50.0,45.0], "Frühlingspfad":[61.2,45.0],
+      "Scheidequelle":[72.5,45.0], "Höhle der Umkehr":[83.8,45.0], "Kühnheitsufer":[95.0,45.0],
+      "See der Kühnheit":[5.0,55.0], "Route 215":[16.2,55.0], "Schleiede":[27.5,55.0],
+      "Route 216":[38.8,55.0], "Route 217":[50.0,55.0], "Stärkeufer":[61.2,55.0],
+      "See der Stärke":[72.5,55.0], "Blizzach":[83.8,55.0], "Blizzach-Tempel":[95.0,55.0],
+      "Route 218":[5.0,65.0], "Fleetburg":[16.2,65.0], "Eiseninsel":[27.5,65.0],
+      "Vollmond-Insel":[38.8,65.0], "Neumond-Insel":[50.0,65.0], "Route 219":[61.2,65.0],
+      "Route 220":[72.5,65.0], "Route 221":[83.8,65.0], "Kraterberg":[95.0,65.0],
+      "Speersäule":[5.0,75.0], "Route 222":[16.2,75.0], "Sonnewik":[27.5,75.0],
+      "Route 223":[38.8,75.0], "Siegesstraße":[50.0,75.0], "Pokémon-Liga":[61.2,75.0],
+      "Route 224":[72.5,75.0], "Buhnenpfad":[83.8,75.0], "Blumenparadies":[95.0,75.0],
+      "Kampfareal":[5.0,85.0], "Route 225":[16.2,85.0], "Überlebensareal":[27.5,85.0],
+      "Route 226":[38.8,85.0], "Route 227":[50.0,85.0], "Kahlberg":[61.2,85.0],
+      "Route 228":[72.5,85.0], "Route 229":[83.8,85.0], "Erholungsareal":[95.0,85.0],
+      "Route 230":[5.0,95.0], "Eisenruinen":[16.2,95.0], "Zerrwelt":[27.5,95.0],
+      "Untergrundhöhlen":[38.8,95.0], "Hamanasu-Park":[50.0,95.0]
+    }
   }
 };
 REGION_MAPS.rubin = REGION_MAPS.smaragd;
@@ -8082,6 +8133,8 @@ REGION_MAPS.omegarubin = REGION_MAPS.smaragd;
 REGION_MAPS.alphasaphir = REGION_MAPS.smaragd;
 REGION_MAPS.kristall = REGION_MAPS["gold-silber"];
 REGION_MAPS.hgss = REGION_MAPS["gold-silber"];
+REGION_MAPS.platin = REGION_MAPS["diamant-perl"];
+REGION_MAPS.bdsp = REGION_MAPS["diamant-perl"];
 let mapViewMode = "artwork";
 
 /* Kalibrierungsmodus (seit v1.9.56): Werkzeug für den Nutzer selbst, um die Klickpunkt-Koordinaten
@@ -10695,7 +10748,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="stats">
     <div class="stat"><div class="n">23</div><div class="l">Editionen</div></div>
     <div class="stat"><div class="n">1075</div><div class="l">Pokémon-Arten</div></div>
-    <div class="stat"><div class="n">96</div><div class="l">Versions&shy;stände</div></div>
+    <div class="stat"><div class="n">97</div><div class="l">Versions&shy;stände</div></div>
     <div class="stat"><div class="n">Gen 1–9</div><div class="l">Abgedeckt</div></div>
   </div>
 
@@ -10705,6 +10758,21 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.94</span><span class="tag tag-feat">Neu</span></div>
+      <h3>Regionskarte: Sinnoh-Kartengrafik für Diamant/Perl, Platin und Strahlender Diamant/Leuchtende Perle</h3>
+      <p>Nach Kanto, Hoenn und Johto jetzt auch eine Kartengrafik für Sinnoh - Bildquelle ist die
+      offizielle Sinnoh-Kartengrafik aus Strahlender Diamant/Leuchtende Perle (1268×734px, sauberes
+      Ingame-Kachelbild ohne Text-Beschriftungen). Diamant/Perl, Platin und Strahlender Diamant/
+      Leuchtende Perle nutzen hier - anders als bei Hoenn/Johto - drei eigenständige Standortlisten;
+      damit von Anfang an alle drei Editionen vollständige Kartenabdeckung haben, enthält die Karte
+      die Vereinigungsmenge aller 86 Standortnamen aus allen drei Listen. Ob die Abweichungen
+      zwischen den drei Listen selbst vollständig/korrekt sind, wird gemeinsam mit den übrigen
+      Kartengrafik-Erweiterungen später noch einmal geprüft. Wie bei Johto sind die Koordinaten
+      vorerst nur ein Platzhalter-Raster - die eigentliche Positionierung folgt über "Punkte selbst
+      kalibrieren".</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.93</span><span class="tag tag-feat">Neu</span></div>
@@ -12894,7 +12962,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.93.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.94.</footer>
 
 </div>`;
 

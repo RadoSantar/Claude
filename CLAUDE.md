@@ -777,6 +777,40 @@ jederzeit hier in `CLAUDE.md` + Git-Historie rekonstruierbar, siehe Rest dieser 
   ursprünglichen Hoenn-Rollout nur eine Übergangslösung, bis der Nutzer selbst über "Punkte selbst
   kalibrieren" die echten Positionen abtippt. Per Playwright verifiziert: alle 55 (Gold/Silber/
   Kristall) bzw. 57 (HGSS) Standorte bekommen einen Pin, keine fehlenden Zuordnungen.
+- **Ausweitung auf Sinnoh (seit v1.9.94) - diesmal auf Anhieb ein guter Treffer, aber DREI statt
+  ZWEI Standort-Datensätze:** Nutzerwunsch "suche schon mal nach einer sinnoh map" direkt im
+  Anschluss an die Johto-Karte. Anders als bei Johto lieferte die Recherche diesmal sofort einen
+  starken Kandidaten: `Sinnoh_BDSP.png` (Bulbagarden Archives, aus Strahlender Diamant/Leuchtende
+  Perle), **1268×734px** - deutlich besser als die zuerst geprüfte klassische Diamant/Perl/Platin-
+  Kartengrafik `Sinnoh.png` (nur 216×168px, sofort verworfen). **Wichtige Methodik-Lehre direkt aus
+  dem Johto-Fund übernommen:** die WebFetch-Beschreibung von `Sinnoh_BDSP.png` wurde NICHT einfach
+  geglaubt, sondern das Bild per `curl` mit der von WebFetch genannten "exakten" Voll-URL
+  heruntergeladen und selbst angesehen - bestätigte in diesem Fall zum Glück die Beschreibung
+  (sauberes Ingame-Kachelbild, keine Text-Beschriftungen), aber der Schritt selbst ist jetzt
+  Standard-Vorgehen, nicht optional, seit sich bei Johto eine "exakt zitierte" URL als echter 404
+  entpuppt hat.
+  **Datenmodell-Komplikation, die es bei Johto/HGSS noch nicht gab:** Diamant/Perl, Platin und
+  Strahlender Diamant/Leuchtende Perle nutzen DREI separate Standort-Datensätze
+  (`SINNOH_LOCATIONS`/`PLATIN_LOCATIONS`/`BDSP_LOCATIONS`) statt nur zwei - Platin UND BDSP sind
+  zwar beide von `SINNOH_LOCATIONS` abgeleitet, weichen aber UNTERSCHIEDLICH voneinander ab (Platin:
+  +2 exklusive Standorte Zerrwelt/Eisenruinen laut Code-Kommentar; BDSP: +2 ANDERE exklusive
+  Standorte Untergrundhöhlen/Hamanasu-Park) - macht in Summe 86 statt nur 82 (Diamant/Perl) eindeutige
+  Namen. Auf ausdrücklichen Nutzerwunsch ("wir prüfen das dann wenn wir alle Karten haben") bewusst
+  NICHT jetzt schon im Detail geprüft, ob diese drei Datensätze selbst schon vollständig/korrekt
+  sind (das wäre ein eigener kleiner Rechercheaudit) - stattdessen rein pragmatisch dieselbe
+  Union-Strategie wie bei ORAS/Johto angewendet: EIN gemeinsames `REGION_MAPS["diamant-perl"]`-
+  Objekt mit der Vereinigungsmenge aller 86 Namen aus allen drei Listen, `platin`/`bdsp` zeigen per
+  Objektreferenz darauf. Editionsspezifisch ungenutzte Namen (z.B. "Zerrwelt" für Diamant/Perl/BDSP)
+  bleiben dabei harmlos ungenutzt liegen, da `artworkMapHtml()` ohnehin nur gegen tatsächlich
+  vorhandene `state.locations`-Namen matcht - dasselbe Prinzip wie schon bei ORAS' 3 und Johtos 2
+  Sonderfällen, nur diesmal mit zwei UNABHÄNGIGEN Abweichungspaaren statt einem gemeinsamen. **Für
+  den späteren Prüf-Durchgang vormerken:** ob "Zerrwelt"/"Eisenruinen" (Platin-exklusiv laut
+  Code-Kommentar bei `PLATIN_LOCATIONS`) und "Untergrundhöhlen"/"Hamanasu-Park" (BDSP-exklusiv) real
+  korrekt sind oder ob z.B. eine der beiden Editionen fälschlich einen Standort vermissen lässt, den
+  sie eigentlich auch haben sollte - noch nicht recherchiert, nur die Namen selbst aus dem
+  bestehenden Code übernommen. Alle 86 Koordinaten sind ein rein algorithmisches 9×10-Platzhalter-
+  Raster (5-95%), noch nicht vom Nutzer kalibriert. Per Playwright verifiziert: alle 82 (Diamant/
+  Perl) bzw. 84 (Platin, BDSP) Standorte bekommen einen Pin, keine fehlenden Zuordnungen.
 - **Rückgängig-Toast — Wegwischen in alle Richtungen (seit v1.9.70):** Nutzerwunsch "der
   Rückgängig-Button soll auf alle Richtungen weg geschoben werden und auch mit einer Animation."
   Bis dahin (seit v1.9.33) ließ sich `.undo-toast` nur seitlich wegwischen -
