@@ -811,6 +811,21 @@ jederzeit hier in `CLAUDE.md` + Git-Historie rekonstruierbar, siehe Rest dieser 
   bestehenden Code übernommen. Alle 86 Koordinaten sind ein rein algorithmisches 9×10-Platzhalter-
   Raster (5-95%), noch nicht vom Nutzer kalibriert. Per Playwright verifiziert: alle 82 (Diamant/
   Perl) bzw. 84 (Platin, BDSP) Standorte bekommen einen Pin, keine fehlenden Zuordnungen.
+- **Ausweitung auf Kalos (seit v1.9.95) - einzige Edition, kein Datensatz-Splitting nötig:**
+  Nutzerwunsch "such nun die kalos karte" im direkten Anschluss an die Sinnoh-Karte. Recherche diesmal
+  wieder unkompliziert (kein zäher Suchprozess wie bei Johto): `Kalos.png` (Bulbagarden Archives,
+  X/Y), **320×210px**, echtes Ingame-Kachelbild ohne Text-Beschriftungen - dieselbe Auflösungsklasse
+  wie das bereits akzeptierte Hoenn-ORAS-Bild. Wie bei Sinnoh etabliert, per direktem `curl` mit der
+  von WebFetch genannten Voll-URL heruntergeladen und visuell geprüft, bevor der Fund dem Nutzer
+  vorgelegt wurde (Standard-Vorgehen seit dem Johto-Serebii-404-Fund) - bestätigte die
+  WebFetch-Beschreibung in diesem Fall korrekt. **Einfachster Rollout bisher:** Kalos (`xy`) ist eine
+  einzelne Edition ohne Versions-Trio und ohne Remake (anders als Kanto/Hoenn/Johto/Sinnoh) - kein
+  Objektreferenz-Sharing zwischen mehreren `REGION_MAPS`-Keys nötig, nur ein einziger `xy`-Eintrag.
+  Alle 55 `KALOS_LOCATIONS`-Namen per direktem `eval()` des Arrays aus der Quelldatei extrahiert
+  (nicht per Regex-Text-Parsing, wegen Sonderzeichen wie "ö"/"é" im selben bewährten Muster wie bei
+  Johto/Sinnoh), Koordinaten ein rein algorithmisches 8×7-Platzhalter-Raster (5-95%), noch nicht vom
+  Nutzer kalibriert. Per Playwright verifiziert: alle 55 Standorte bekommen einen Pin, keine fehlenden
+  Zuordnungen, Kartenbild lädt korrekt im Sheet.
 - **Rückgängig-Toast — Wegwischen in alle Richtungen (seit v1.9.70):** Nutzerwunsch "der
   Rückgängig-Button soll auf alle Richtungen weg geschoben werden und auch mit einer Animation."
   Bis dahin (seit v1.9.33) ließ sich `.undo-toast` nur seitlich wegwischen -

@@ -4149,7 +4149,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.94";
+const APP_VERSION = "1.9.95";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -8125,6 +8125,32 @@ const REGION_MAPS = {
       "Route 230":[5.0,95.0], "Eisenruinen":[16.2,95.0], "Zerrwelt":[27.5,95.0],
       "Untergrundhöhlen":[38.8,95.0], "Hamanasu-Park":[50.0,95.0]
     }
+  },
+  /* Kalos (seit v1.9.95) - einzige Edition (kein Versions-Trio, kein separates Remake), deshalb kein
+     Objektreferenz-Sharing nötig wie bei Johto/Hoenn/Sinnoh. Kartenbild: Kalos.png (Bulbagarden
+     Archives), 320x210px, echtes Ingame-Kachelbild aus X/Y - direkt per curl heruntergeladen und
+     visuell geprüft, bevor der Fund dem Nutzer vorgelegt wurde (seit dem Johto-Serebii-404-Fund
+     Pflicht, s. Johto-Eintrag oben). Koordinaten ein rein algorithmisches 8x7-Platzhalter-Raster
+     (5-95%), noch nicht vom Nutzer kalibriert. */
+  xy: {
+    region: "Kalos",
+    image: "sprites/maps/kalos-map.png",
+    points: {
+      "Escissia":[5.0,5.0], "Route 1":[17.9,5.0], "Aquarellia":[30.7,5.0], "Route 2":[43.6,5.0],
+      "Nouvaria-Wald":[56.4,5.0], "Route 3":[69.3,5.0], "Nouvaria City":[82.1,5.0], "Route 4":[95.0,5.0],
+      "Illumina City":[5.0,20.0], "Route 5":[17.9,20.0], "Vanitéa":[30.7,20.0], "Route 6":[43.6,20.0],
+      "Magnum-Opus-Palast":[56.4,20.0], "Route 7":[69.3,20.0], "Geolinkhöhle":[82.1,20.0], "Route 8":[95.0,20.0],
+      "Petrophia":[5.0,35.0], "Route 9":[17.9,35.0], "Leuchthöhle":[30.7,35.0], "Relievera City":[43.6,35.0],
+      "Route 10":[56.4,35.0], "Cromlexia":[69.3,35.0], "Route 11":[82.1,35.0], "Spiegelhöhle":[95.0,35.0],
+      "Yantara City":[5.0,50.0], "Turm der Erkenntnis":[17.9,50.0], "Route 12":[30.7,50.0], "Azurbucht":[43.6,50.0],
+      "Tempera City":[56.4,50.0], "Route 13":[69.3,50.0], "Kalos-Kraftwerk":[82.1,50.0], "Route 14":[95.0,50.0],
+      "Romantia City":[5.0,65.0], "Pokéball-Fabrik":[17.9,65.0], "Route 15":[30.7,65.0], "Hotelruine":[43.6,65.0],
+      "Route 16":[56.4,65.0], "Frescora":[69.3,65.0], "Frosthöhle":[82.1,65.0], "Route 17":[95.0,65.0],
+      "Fluxia City":[5.0,80.0], "Labor von Flordelis":[17.9,80.0], "Flare-Geheimbasis":[30.7,80.0], "Route 18":[43.6,80.0],
+      "Omega-Höhle":[56.4,80.0], "Mosaia":[69.3,80.0], "Route 19":[82.1,80.0], "Fractalia City":[95.0,80.0],
+      "Route 20":[5.0,95.0], "Pokémon-Dorf":[17.9,95.0], "Route 21":[30.7,95.0], "Route 22":[43.6,95.0],
+      "Siegesstraße":[56.4,95.0], "Pokémon-Liga":[69.3,95.0], "Batika City":[82.1,95.0]
+    }
   }
 };
 REGION_MAPS.rubin = REGION_MAPS.smaragd;
@@ -10748,7 +10774,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="stats">
     <div class="stat"><div class="n">23</div><div class="l">Editionen</div></div>
     <div class="stat"><div class="n">1075</div><div class="l">Pokémon-Arten</div></div>
-    <div class="stat"><div class="n">97</div><div class="l">Versions&shy;stände</div></div>
+    <div class="stat"><div class="n">98</div><div class="l">Versions&shy;stände</div></div>
     <div class="stat"><div class="n">Gen 1–9</div><div class="l">Abgedeckt</div></div>
   </div>
 
@@ -10758,6 +10784,18 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.95</span><span class="tag tag-feat">Neu</span></div>
+      <h3>Regionskarte: Kalos-Kartengrafik für X/Y</h3>
+      <p>Nach Kanto, Hoenn, Johto und Sinnoh jetzt auch eine Kartengrafik für Kalos - Bildquelle ist
+      die offizielle Kalos-Kartengrafik aus X/Y (320×210px, sauberes Ingame-Kachelbild ohne Text-
+      Beschriftungen, dieselbe Auflösungsklasse wie die bereits vorhandene Hoenn-ORAS-Karte). Kalos
+      ist eine einzelne Edition ohne Versions-Trio und ohne Remake, deshalb hier kein Objektreferenz-
+      Sharing zwischen mehreren Editionen nötig. Alle 55 Kalos-Standorte haben bereits einen Kartenpunkt
+      (rein algorithmisches Platzhalter-Raster), noch nicht vom Nutzer über den Kalibrierungsmodus
+      abgetippt.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.94</span><span class="tag tag-feat">Neu</span></div>
@@ -12962,7 +13000,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.94.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.95.</footer>
 
 </div>`;
 
