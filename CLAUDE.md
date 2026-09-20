@@ -1372,10 +1372,14 @@ Priorisierung/Reihenfolge impliziert:
   eine teilbare Bild-Karte des Run-Rückblicks (Editions-Logo, Orden, Team, Todesursachen als
   Screenshot-artige Zusammenfassung) zum Teilen/Sichern - der Recap-Text existiert schon
   (`runRecapNarrative()`/`runRecapInsights()`), nur nicht als teilbares Bild.
-- **Kleinigkeit, kein Feature, eher ein bei dieser Gelegenheit gefundener Fehler:**
-  `pwa/manifest.json`s `description` beschreibt die App noch als "Offline-Tracker für
-  Pokémon-Nuzlocke-Runs über 14 Editionen (Gen 1-5)" - das ist seit Kalos/Hoenn (Gen 6) längst
-  überholt und sollte bei Gelegenheit aktualisiert werden, unabhängig von den Ideen oben.
+- **Erledigt bei einem Cleanup-Durchgang:** `pwa/manifest.json`s `description` beschrieb die App noch
+  als "Offline-Tracker für Pokémon-Nuzlocke-Runs über 14 Editionen (Gen 1-5)" - seit Kalos/Hoenn
+  (Gen 6) längst überholt. Auf "23 Editionen (Gen 1-9)" aktualisiert (Zahlen aus dem
+  `validate-editions.js`-Editionscount bzw. der `CHANGELOG_HTML`-Stat-Kachel übernommen, nicht
+  geschätzt). Rein kosmetisch (wirkt sich nur auf den Installations-/App-Info-Dialog des Betriebssystems
+  aus, nicht auf die App selbst) - kein Versions-Bump/Changelog-Eintrag in der App nötig, da
+  `pwa/manifest.json` ohnehin kein Teil von `nuzlocke-v2-editionen.html` ist. Muss trotzdem in ein
+  neu gebautes Netlify-ZIP einfließen, um beim Nutzer anzukommen (wie jede `pwa/`-Änderung).
 
 ## Workflow-Hinweise für diese Codebase
 

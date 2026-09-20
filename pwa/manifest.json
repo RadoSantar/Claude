@@ -1,7 +1,7 @@
 {
   "name": "Nuzlocke Tracker",
   "short_name": "Nuzlocke",
-  "description": "Offline-Tracker für Pokémon-Nuzlocke-Runs über 14 Editionen (Gen 1-5): Routen, Team, Box, Friedhof und Bosse.",
+  "description": "Offline-Tracker für Pokémon-Nuzlocke-Runs über 23 Editionen (Gen 1-9): Routen, Team, Box, Friedhof und Bosse.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
