@@ -4149,7 +4149,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.92";
+const APP_VERSION = "1.9.93";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -8034,12 +8034,54 @@ const REGION_MAPS = {
       "Seewoge Malvenfroh":[25.3,83.1],
       "Route 103 (Postgame)":[24.2,56.1], "Blütenburg City (Delta-Episode)":[8.8,62.2]
     }
+  },
+  /* Johto (seit v1.9.93) - Bild vom Nutzer selbst beigesteuert (kein brauchbares In-Game-Kachelbild
+     in ausreichender Auflösung über Bulbagarden Archives/Serebii auffindbar, siehe CLAUDE.md: der
+     einzige echte Pokégear-Kartenscreen ist nur 254×190px mit UI-Overlay, die einzigen höher
+     aufgelösten Alternativen waren gemaltes SWF-Werbeseiten-Artwork - bewusste Ausnahme vom sonst
+     harten "Kacheln statt Gemälde"-Kriterium, da der Nutzer explizit trotz der bescheidenen 231×173px
+     Auflösung damit arbeiten wollte, analog zur bewusst niedrig aufgelösten Hoenn-ORAS-Karte).
+     `gold-silber`/`kristall` teilen sich GSC_LOCATIONS' "Johto"-Standortliste (55 Standorte) - HGSS
+     nutzt dagegen LOCATIONS_DEFAULT und hat exakt 2 zusätzliche, HGSS-exklusive Standorte
+     ("Safari-Zone", "Sinjoh-Ruinen", per direktem Datenvergleich verifiziert, nicht geraten) - beide
+     bereits mit im `points`-Objekt unten, exakt dasselbe Muster wie bei ORAS' 3 Zusatzstandorten
+     gegenüber Smaragd. Alle 57 Koordinaten sind ein rein algorithmisch erzeugtes 8×8-Platzhalter-
+     Raster (5-95%, keine zwei Punkte auf derselben Zelle) - wie beim ursprünglichen Hoenn-Rollout nur
+     eine Übergangslösung, damit der Kalibrierungsmodus sofort nutzbar ist. Die eigentliche
+     Positionierung muss der Nutzer selbst über "Punkte selbst kalibrieren" abtippen, siehe
+     Kanto-Kalibrierungsmodus-Kommentar weiter unten, warum das nicht zuverlässig zu erraten ist. */
+  "gold-silber": {
+    region: "Johto",
+    image: "sprites/maps/johto-map.jpg",
+    points: {
+      "Neuborkia":[5.0,5.0], "Route 29":[17.9,5.0], "Rosalia City":[30.7,5.0],
+      "Route 30":[43.6,5.0], "Route 31":[56.4,5.0], "Viola City":[69.3,5.0],
+      "Knofensa-Turm":[82.1,5.0], "Dunkelhöhle (Viola-Seite)":[95.0,5.0], "Route 32":[5.0,17.9],
+      "Einheitstunnel":[17.9,17.9], "Alph-Ruinen":[30.7,17.9], "Route 33":[43.6,17.9],
+      "Azalea City":[56.4,17.9], "Flegmon-Brunnen":[69.3,17.9], "Steineichenwald":[82.1,17.9],
+      "Route 34":[95.0,17.9], "Dukatia City":[5.0,30.7], "Route 35":[17.9,30.7],
+      "Nationalpark":[30.7,30.7], "Route 36":[43.6,30.7], "Route 37":[56.4,30.7],
+      "Teak City":[69.3,30.7], "Turmruine":[82.1,30.7], "Glockenklangpfad":[95.0,30.7],
+      "Glockenturm":[5.0,43.6], "Route 38":[17.9,43.6], "Route 39":[30.7,43.6],
+      "Anemonia City":[43.6,43.6], "Route 40":[56.4,43.6], "Route 41":[69.3,43.6],
+      "Strudelinseln":[82.1,43.6], "Oliviana City":[95.0,43.6], "Route 47":[5.0,56.4],
+      "Route 48":[17.9,56.4], "Safari-Zone":[30.7,56.4], "Route 42":[43.6,56.4],
+      "Kesselberg":[56.4,56.4], "Mahagonia City":[69.3,56.4], "Route 43":[82.1,56.4],
+      "See des Zorns":[95.0,56.4], "Team-Rocket-Versteck":[5.0,69.3], "Rundfunkturm":[17.9,69.3],
+      "Dukatia-Passage":[30.7,69.3], "Route 44":[43.6,69.3], "Eispfad":[56.4,69.3],
+      "Ebenholz City":[69.3,69.3], "Dunkelhöhle (Ebenholz-Seite)":[82.1,69.3], "Drachenhöhle":[95.0,69.3],
+      "Route 45":[5.0,82.1], "Route 46":[17.9,82.1], "Route 26":[30.7,82.1],
+      "Route 27":[43.6,82.1], "Tohjo-Fälle":[56.4,82.1], "Route 28":[69.3,82.1],
+      "Silberberg":[82.1,82.1], "Silberberghöhle":[95.0,82.1], "Sinjoh-Ruinen":[5.0,95.0]
+    }
   }
 };
 REGION_MAPS.rubin = REGION_MAPS.smaragd;
 REGION_MAPS.saphir = REGION_MAPS.smaragd;
 REGION_MAPS.omegarubin = REGION_MAPS.smaragd;
 REGION_MAPS.alphasaphir = REGION_MAPS.smaragd;
+REGION_MAPS.kristall = REGION_MAPS["gold-silber"];
+REGION_MAPS.hgss = REGION_MAPS["gold-silber"];
 let mapViewMode = "artwork";
 
 /* Kalibrierungsmodus (seit v1.9.56): Werkzeug für den Nutzer selbst, um die Klickpunkt-Koordinaten
@@ -10653,7 +10695,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="stats">
     <div class="stat"><div class="n">23</div><div class="l">Editionen</div></div>
     <div class="stat"><div class="n">1075</div><div class="l">Pokémon-Arten</div></div>
-    <div class="stat"><div class="n">95</div><div class="l">Versions&shy;stände</div></div>
+    <div class="stat"><div class="n">96</div><div class="l">Versions&shy;stände</div></div>
     <div class="stat"><div class="n">Gen 1–9</div><div class="l">Abgedeckt</div></div>
   </div>
 
@@ -10663,6 +10705,21 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.93</span><span class="tag tag-feat">Neu</span></div>
+      <h3>Regionskarte: Johto-Kartengrafik für Gold/Silber, Kristall und HeartGold/SoulSilver</h3>
+      <p>Nach Kanto und Hoenn jetzt auch eine Kartengrafik für Johto - alle 55 (Gold/Silber/Kristall)
+      bzw. 57 (HGSS, plus die HGSS-exklusiven Standorte "Safari-Zone" und "Sinjoh-Ruinen") Standorte
+      haben einen eigenen Punkt. Anders als bei Kanto (Let's-Go-Bild) und Hoenn (ORAS-Bild) gab es
+      diesmal keinen brauchbaren Kandidaten aus dem üblichen Rechercheweg: der einzige echte
+      In-Game-Kartenscreen (Pokégear-Karte) ist nur 254×190px mit Spiel-UI drumherum, die einzigen
+      höher aufgelösten Alternativen erwiesen sich als gemaltes Werbeseiten-Artwork statt eines
+      Ingame-Kachelbilds. Der Nutzer hat stattdessen ein eigenes Bild beigesteuert und die geringere
+      Auflösung (231×173px) bewusst in Kauf genommen. Die Koordinaten sind vorerst ein reines
+      Platzhalter-Raster (wie beim ursprünglichen Hoenn-Rollout) - die eigentliche Positionierung
+      erfolgt wie gewohnt über "Punkte selbst kalibrieren".</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.92</span><span class="tag tag-fix">Fehlerbehebung</span></div>
@@ -12837,7 +12894,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.92.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.93.</footer>
 
 </div>`;
 

@@ -726,6 +726,57 @@ jederzeit hier in `CLAUDE.md` + Git-Historie rekonstruierbar, siehe Rest dieser 
   gedachtes Feature — nach erfolgreicher Kalibrierung nicht zwingend entfernen (schadet nicht, könnte
   bei künftiger Ausweitung auf weitere Editionen/Kartenbilder wiederverwendet werden), aber auch nicht
   aktiv bewerben.
+- **Ausweitung auf Johto (seit v1.9.93) — erste Karte ohne brauchbaren Bulbagarden-/Serebii-Fund:**
+  Nutzerwunsch "wir könnten mal eine Karte für Johto einfügen" im Anschluss an eine reine GUI-Polish-
+  Sitzung. Anders als bei Kanto (Let's-Go-Bild) und Hoenn (ORAS-Bild) lieferte die übliche
+  Recherchemethode diesmal **keinen** brauchbaren Kandidaten:
+  1. Der einzige echte In-Game-Kartenscreen (`Pokégear_Map_HGSS.png`, Bulbagarden Archives) ist nur
+     **254×190px** und ein reiner Screenshot mit Spiel-UI drumherum - kleiner als selbst die schon bei
+     Kanto verworfenen `Kanto Town Map RBY/RGBY/GSC.png`-Dateien (≤160×144, aber wenigstens ohne
+     UI-Rand).
+  2. Die höher aufgelösten Alternativen (`JohtoMap.png`, 1961×1316; `HGSS_JohtoKanto.jpg`, 3000×1316)
+     sind laut Bulbagarden-Archiv-Beschreibung offizielle, aber **aus der HGSS-Werbeseite als
+     Flash/SWF-Grafik extrahierte gemalte Illustrationen** - genau der Stil, der seit dem
+     Kanto-RBY_Kanto.png-Vorfall als hartes "Kacheln statt Gemälde"-Kriterium gilt.
+  3. Bulbagarden Archives' eigene "Johto maps"-Kategorie (671 Dateien durchsucht) enthält zwar viele
+     saubere Ingame-Kachelbilder im HGSS-Stil, aber **nur für Einzelstandorte** (z.B.
+     `Cherrygrove_City_HGSS.png`) - keine fertige Gesamt-Johto-Übersichtskarte in diesem Stil, exakt
+     dasselbe Muster wie die bei Hoenn verworfenen `Hoenn <Ort> Town Map.png`-Einzeldateien.
+  4. Eine vielversprechende Serebii-Pokéarth-Spur (`/pokearth/maps/johto-hgss/45.png`, laut
+     WebFetch-Extraktion ein "tile-based, in-game-style rendering") erwies sich als **echter 404** -
+     mehrfach mit verschiedenen User-Agents/Referern/Domain-Varianten (`www.` mit/ohne, `.png`/`.gif`)
+     direkt per `curl` gegengeprüft, nicht nur ein Sandbox-Netzwerkproblem (echte nginx-404-Antwort
+     vom Server). **Lehre:** WebFetch komprimiert/paraphrasiert Seiteninhalt über ein kleines Modell,
+     bevor es antwortet - eine als "exakt" zitierte URL daraus ist trotzdem nicht automatisch real
+     erreichbar; bei kritischen Asset-URLs (hier: eine Bild-URL, die tatsächlich heruntergeladen
+     werden soll) den Treffer immer per direktem `curl`/Download-Versuch gegenprüfen, nicht auf die
+     Zusammenfassung allein verlassen, selbst wenn sie die URL wörtlich in Anführungszeichen nennt.
+  Ergebnis der Nutzerrückfrage (drei Optionen vorgelegt: gemaltes Artwork als Ausnahme verwenden /
+  aus den sauberen Einzelkacheln selbst eine Karte zusammensetzen / vorerst nur Schema-Ansicht):
+  Nutzer entschied sich für eine **vierte, zunächst nicht vorgeschlagene Option** - ein selbst
+  beigesteuertes Bild (231×173px, JPEG, Ingame-Tile-Stil, thematisch dieselbe Bildsprache wie die
+  bereits verwendeten Kanto/Hoenn-Karten) trotz bewusst niedriger Auflösung, direkt als
+  `sprites/maps/johto-map.jpg` übernommen. **Lehre, die schon bei Hoenns 320×210px-Entscheidung
+  galt, hier nochmal bestätigt:** wenn die eigene Recherche an Auflösung/Stil-Kriterium scheitert,
+  ist "der Nutzer bringt selbst ein Bild mit" eine vollwertige vierte Option neben den üblichen drei
+  (Fund verwenden / weitersuchen / nur Schema) - nicht von sich aus vorschlagen, aber sofort
+  akzeptieren, wenn der Nutzer sie von sich aus wählt.
+  **Datenmodell:** `gold-silber`/`kristall` teilen sich `GSC_LOCATIONS`' "Johto"-Standortliste (55
+  Standorte); HGSS nutzt `LOCATIONS_DEFAULT` und hat exakt 2 zusätzliche, HGSS-exklusive Standorte
+  ("Safari-Zone", "Sinjoh-Ruinen") - per direktem Array-Abgleich verifiziert (`gscNames`/`hgssNames`
+  aus der laufenden App heraus verglichen, nicht per Text-Parsing des Quellcodes geraten, um das
+  Risiko von Regex-Fehlern bei einer 55-Namen-Liste mit Sonderzeichen wie "ö"/Klammern zu vermeiden).
+  Exakt dasselbe Muster wie ORAS' 3 Zusatzstandorte gegenüber Smaragd: EIN gemeinsames
+  `REGION_MAPS["gold-silber"]`-Objekt mit allen 57 Namen (inkl. der 2 HGSS-exklusiven), `kristall`
+  und `hgss` zeigen per Objektreferenz darauf - für `gold-silber`/`kristall` bleiben die 2
+  HGSS-exklusiven Punkte im Objekt schlicht ungenutzt (`artworkMapHtml()` rendert ohnehin nur Punkte
+  für tatsächlich in `state.locations` vorhandene Namen), keine Sonderbehandlung nötig. Alle 57
+  Koordinaten sind ein rein algorithmisch erzeugtes 8×8-Platzhalter-Raster (5-95%, jeder Name eine
+  eigene Zelle, keine zwei Namen auf identischen Koordinaten - direkt aus der Route-22-Lehre
+  abgeleitet, obwohl hier noch gar keine echte Kalibrierung stattgefunden hat) - wie beim
+  ursprünglichen Hoenn-Rollout nur eine Übergangslösung, bis der Nutzer selbst über "Punkte selbst
+  kalibrieren" die echten Positionen abtippt. Per Playwright verifiziert: alle 55 (Gold/Silber/
+  Kristall) bzw. 57 (HGSS) Standorte bekommen einen Pin, keine fehlenden Zuordnungen.
 - **Rückgängig-Toast — Wegwischen in alle Richtungen (seit v1.9.70):** Nutzerwunsch "der
   Rückgängig-Button soll auf alle Richtungen weg geschoben werden und auch mit einer Animation."
   Bis dahin (seit v1.9.33) ließ sich `.undo-toast` nur seitlich wegwischen -
