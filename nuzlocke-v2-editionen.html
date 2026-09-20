@@ -1182,6 +1182,16 @@ h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
   background:var(--accent); color:#fff; font-size:.5rem; font-weight:800;
   display:flex; align-items:center; justify-content:center; box-shadow:0 1px 2px rgba(0,0,0,.4);
 }
+/* Ziehbare Punkt-Marker im Kalibrierungsmodus (seit v1.9.96, s. Kommentar bei calibrationDragState)
+   - etwas größer als die normale .map-pin-Größe (20px statt 15px) für zuverlässigeres Greifen auf
+   Touchscreens, touch-action:none überlässt das Ziehen komplett der eigenen Pointer-Events-Logik
+   statt der nativen Seiten-Scroll-Geste (gleiches Prinzip wie beim Rückgängig-Toast-Wischen). */
+.artwork-map[data-act="calibration-tap"] .map-pin.done{
+  width:20px; height:20px; margin:-10px 0 0 -10px; cursor:grab; touch-action:none;
+}
+.artwork-map[data-act="calibration-tap"] .map-pin.done.dragging{
+  cursor:grabbing; filter:brightness(1.15); box-shadow:0 2px 8px rgba(0,0,0,.5); z-index:2;
+}
 .map-zoom-hint{
   position:absolute; right:8px; bottom:8px; width:26px; height:26px; border-radius:8px;
   background:rgba(20,16,10,.55); display:flex; align-items:center; justify-content:center;
@@ -4149,7 +4159,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.95";
+const APP_VERSION = "1.9.96";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -6952,10 +6962,10 @@ function cloudSyncCardHtml(){
     </div>
     <div class="loc-sub" style="margin-bottom:10px;">Sync aktiv · Zuletzt synchronisiert: ${formatRelativeTime(state.lastSyncedAt)}</div>
     ${nameField}
-    <label class="check-row${autoSyncChecked?" done":""}" style="margin-bottom:12px;">
-      <input type="checkbox" data-auto-sync-toggle ${autoSyncChecked?"checked":""} />
-      <span>Auto-Save (nach jeder Änderung automatisch in die Cloud speichern)</span>
-    </label>
+    <div class="switch-row" style="margin-bottom:4px;">
+      <div class="switch-row-label"><span>Auto-Save (nach jeder Änderung automatisch in die Cloud speichern)</span></div>
+      <label class="switch"><input type="checkbox" data-auto-sync-toggle ${autoSyncChecked?"checked":""} /><span class="switch-track"><span class="switch-thumb"></span></span></label>
+    </div>
     <div style="display:flex; gap:8px; margin-bottom:8px;">
       <button class="btn btn-primary" style="flex:1;" data-act="save-to-cloud" ${syncInProgress?"disabled":""}>${syncInProgress?"Speichert …":"Speichern"}</button>
       <button class="btn btn-secondary" style="flex:1;" data-act="open-link-sync-code" data-id="${escapeHtml(state.syncCode)}">Laden</button>
@@ -8210,7 +8220,11 @@ function refreshMapSheet(){
 }
 function calibrationDoneMarkerHtml(name, p){
   if(!p) return "";
-  if(Array.isArray(p)) return `<span class="map-pin done" style="left:${p[0]}%; top:${p[1]}%;" title="${escapeHtml(name)}"></span>`;
+  /* data-cal-drag (seit v1.9.96): macht bereits gesetzte Punkt-Marker per Drag&Drop verschiebbar,
+     siehe die zugehörigen pointerdown/-move/-up-Handler weiter unten. Nur für Punkte (Array-Form),
+     nicht für Flächen/Routen - ein Vieleck per Drag zu verschieben bräuchte eigene Ziehpunkte pro
+     Ecke, bewusst zurückgestellt. */
+  if(Array.isArray(p)) return `<span class="map-pin done" style="left:${p[0]}%; top:${p[1]}%;" title="${escapeHtml(name)}" data-cal-drag="${escapeHtml(name)}"></span>`;
   const poly = p.quad.map(([x,y])=>`${x}% ${y}%`).join(", ");
   return `<span class="map-quad done" style="clip-path:polygon(${poly});" title="${escapeHtml(name)}"></span>`;
 }
@@ -8242,8 +8256,12 @@ function mapCalibrationHtml(gameId){
     ? `Ecke ${calibrationQuadBuffer.length+1} für <strong>${escapeHtml(name)}</strong> antippen - beliebig viele Eckpunkte in beliebiger Reihenfolge, auch für winklige/wacklige Routen. Mit „Fertig" abschließen, sobald alle Ecken gesetzt sind (mindestens 3).`
     : `Punkt ${calibrationIndex+1} von ${total} - auf der Karte antippen, wo <strong>${escapeHtml(name)}</strong> liegt.`;
   const backDisabled = calibrationIndex===0 && calibrationQuadBuffer.length===0;
+  const dragHint = calibrationIndex>0
+    ? `<p class="loc-sub" style="margin-bottom:10px;">Bereits gesetzte Punkte (grau) lassen sich direkt auf der Karte antippen und per Ziehen verschieben, falls einer nicht passt.</p>`
+    : "";
   return `
     <p class="loc-sub" style="margin-bottom:10px;">${prompt}</p>
+    ${dragHint}
     <div class="artwork-map" data-act="calibration-tap">
       <img src="${map.image}" alt="Kalibrierung" />
       ${doneMarkers}
@@ -10774,7 +10792,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="stats">
     <div class="stat"><div class="n">23</div><div class="l">Editionen</div></div>
     <div class="stat"><div class="n">1075</div><div class="l">Pokémon-Arten</div></div>
-    <div class="stat"><div class="n">98</div><div class="l">Versions&shy;stände</div></div>
+    <div class="stat"><div class="n">99</div><div class="l">Versions&shy;stände</div></div>
     <div class="stat"><div class="n">Gen 1–9</div><div class="l">Abgedeckt</div></div>
   </div>
 
@@ -10784,6 +10802,17 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.96</span><span class="tag tag-feat">Neu</span></div>
+      <h3>Kalibrierungsmodus: Punkte per Drag&amp;Drop verschiebbar, Auto-Save als Schalter</h3>
+      <p>Bereits gesetzte Punkte im Kartenkalibrierungsmodus (die grauen "erledigt"-Marker) lassen
+      sich jetzt direkt auf der Karte greifen und per Ziehen verschieben, statt über "Zurück" erst
+      zur jeweiligen Station zurückzuspringen und neu antippen zu müssen - erleichtert das
+      Nachjustieren einzelner Punkte deutlich. Gilt vorerst nur für Punkt-Stationen, nicht für
+      Flächen/Routen. Außerdem: der Auto-Save-Schalter in der Cloud-Sync-Karte ist jetzt ein
+      Toggle-Schalter statt einer Checkbox-Zeile, passend zum übrigen Einstellungen-Design.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.95</span><span class="tag tag-feat">Neu</span></div>
@@ -13000,7 +13029,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.95.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.96.</footer>
 
 </div>`;
 
@@ -14253,6 +14282,56 @@ document.addEventListener("pointercancel", e=>{
   endTeamDrag(false);
 });
 
+/* Kalibrierungspunkte per Drag&Drop nachjustieren (seit v1.9.96) - Nutzerwunsch "es wäre noch gut
+   wenn sich die pins per drag and drop verschieben lassen das erleichtert die positionierungen
+   weder klicken und wenns nicht passt erneut klicken und wieder prüfen": bis dahin ließ sich ein
+   bereits gesetzter Punkt nur über "Zurück" (eine Station pro Klick) erreichen und musste dann neu
+   angetippt werden. Jetzt lässt sich jeder bereits gesetzte Punkt-Marker (`[data-cal-drag]`, siehe
+   calibrationDoneMarkerHtml()) direkt greifen und verschieben, unabhängig davon, wie viele Stationen
+   seither schon weitergelaufen sind. Gleiches Pointer-Events-Muster wie beim Team-Reorder oben -
+   Live-Update per direkter Style-Mutation (kein Re-Render während des Ziehens), Commit erst bei
+   pointerup in calibrationPoints + localStorage. Bewusst nur für Punkte (s. Kommentar dort), nicht
+   für Flächen/Routen. */
+let calibrationDragState = null;
+document.addEventListener("pointerdown", e=>{
+  const pin = e.target.closest("[data-cal-drag]");
+  if(!pin || !calibrationActive) return;
+  const container = pin.closest(".artwork-map");
+  if(!container) return;
+  e.preventDefault();
+  e.stopPropagation();
+  pin.classList.add("dragging");
+  calibrationDragState = { name: pin.dataset.calDrag, container, pin, pointerId: e.pointerId, x:null, y:null };
+  try{ pin.setPointerCapture(e.pointerId); }catch(err){}
+});
+document.addEventListener("pointermove", e=>{
+  if(!calibrationDragState || e.pointerId !== calibrationDragState.pointerId) return;
+  const { container, pin } = calibrationDragState;
+  const rect = container.getBoundingClientRect();
+  const x = Math.round(Math.max(0, Math.min(100, (e.clientX-rect.left)/rect.width*100))*10)/10;
+  const y = Math.round(Math.max(0, Math.min(100, (e.clientY-rect.top)/rect.height*100))*10)/10;
+  pin.style.left = x+"%"; pin.style.top = y+"%";
+  calibrationDragState.x = x; calibrationDragState.y = y;
+});
+function endCalibrationDrag(commit){
+  if(!calibrationDragState) return;
+  const { name, pin, x, y } = calibrationDragState;
+  pin.classList.remove("dragging");
+  if(commit && typeof x === "number"){
+    calibrationPoints[name] = [x,y];
+    try{ localStorage.setItem("nuzlocke-map-calibration-"+currentGame().id, JSON.stringify(calibrationPoints)); }catch(err){}
+  }
+  calibrationDragState = null;
+}
+document.addEventListener("pointerup", e=>{
+  if(!calibrationDragState || e.pointerId !== calibrationDragState.pointerId) return;
+  endCalibrationDrag(true);
+});
+document.addEventListener("pointercancel", e=>{
+  if(!calibrationDragState || e.pointerId !== calibrationDragState.pointerId) return;
+  endCalibrationDrag(false);
+});
+
 /* Spitzname inline auf der Team-Kachel (siehe renderTeam/editingTeamNickId): "focusout" statt
    "blur" für die Delegation, da blur nicht bubbelt - Enter schließt per .blur() den Kreis zum
    selben Speicherpfad, Escape bricht ohne zu speichern ab. */
@@ -14270,6 +14349,11 @@ document.addEventListener("keydown", e=>{
 });
 
 document.addEventListener("click", e=>{
+  /* Ein Klick/Tap auf einen per Drag&Drop verschiebbaren Kalibrierungspunkt (s.o.) darf NICHT bis
+     zum umschließenden .artwork-map[data-act="calibration-tap"] durchbubbeln - sonst würde ein
+     bloßes Antippen (ohne Ziehen) fälschlich einen neuen Punkt für die aktuell laufende Station an
+     dieser Stelle setzen. */
+  if(e.target.closest("[data-cal-drag]")) return;
   const t = e.target.closest("[data-act]");
   if(!t) return;
   const act = t.dataset.act, id = t.dataset.id;
@@ -15075,8 +15159,6 @@ document.addEventListener("input", e=>{
     state.autoSyncEnabled = e.target.checked;
     if(!e.target.checked) clearTimeout(autoSyncTimer);
     saveState();
-    const row = e.target.closest(".check-row");
-    if(row) row.classList.toggle("done", e.target.checked);
   }
   if(e.target && e.target.dataset && e.target.dataset.toggleSetting){
     /* Generischer Schalter-Handler (seit v1.9.87) für alle echten Ein/Aus-Einstellungen, die bis

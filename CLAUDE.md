@@ -1252,6 +1252,56 @@ jederzeit hier in `CLAUDE.md` + Git-Historie rekonstruierbar, siehe Rest dieser 
   `SETTINGS_HELP` abrufbar; keine toten `data-act="toggle-X"`-Referenzen der sieben ersetzten
   Buttons bleiben im Code zurück.
 
+## Kalibrierungspunkte per Drag&Drop verschiebbar + Auto-Save als Toggle-Schalter (seit v1.9.96)
+
+Zwei unabhängige Nutzerwünsche in derselben Runde direkt im Anschluss an die Kalos-Karte:
+
+- **Drag&Drop im Kalibrierungsmodus:** "es wäre noch gut wenn sich die pins per drag and drop
+  verschieben lassen das erleichtert die positionierungen weder klicken und wenns nicht passt
+  erneut klicken und wieder prüfen." Bis dahin ließ sich ein bereits gesetzter Kalibrierungspunkt
+  nur über den "Zurück"-Button erreichen (eine Station pro Klick zurück, dann neu antippen) - bei
+  einem Fehler mehrere Stationen später bedeutete das mehrfaches Zurückklicken. Jetzt bekommen die
+  bereits gesetzten "erledigt"-Punkt-Marker (`<span class="map-pin done" data-cal-drag="Name">`,
+  siehe `calibrationDoneMarkerHtml()`) echte Pointer-Events-Handler (`calibrationDragState`,
+  dieselbe pointerdown/-move/-up-Technik wie beim bereits bestehenden Team-Reihenfolge-Drag&Drop
+  weiter oben in der Datei) - Greifen, Ziehen zur richtigen Stelle, Loslassen committet die neue
+  Position direkt in `calibrationPoints[name]` + `localStorage`, ohne dass man erst zur jeweiligen
+  Station zurückspringen muss. **Bewusst nur für Punkt-Stationen**, nicht für Flächen/Routen
+  (`.map-quad`) - ein Vieleck per Drag zu verschieben bräuchte eigene Ziehpunkte pro Ecke, das wäre
+  eine eigene, größere Erweiterung; für Routen bleibt "Zurück"/Neukalibrieren vorerst der einzige
+  Weg. **Wichtige Falle, direkt vermieden:** die Punkt-Marker liegen INNERHALB des
+  `.artwork-map[data-act="calibration-tap"]`-Containers - ein bloßer Klick (ohne Ziehen) auf einen
+  Marker hätte sonst zum umschließenden `data-act`-Handler durchgebubbelt und fälschlich einen NEUEN
+  Punkt für die gerade laufende Station an dieser Stelle gesetzt. Behoben durch einen frühen
+  Guard ganz am Anfang des globalen `click`-Delegierers (`if(e.target.closest("[data-cal-drag]"))
+  return;`) - ein Klick auf einen ziehbaren Punkt tut jetzt nichts, nur ein tatsächlicher Zieh-
+  vorgang (pointerdown→move→up) verändert etwas. Marker im Kalibrierungsmodus zusätzlich von 15px
+  auf 20px vergrößert (`touch-action:none`, damit Ziehen auf Touchscreens nicht mit der nativen
+  Seiten-Scroll-Geste kollidiert - gleiches Prinzip wie beim Rückgängig-Toast-Wischen) für
+  zuverlässigeres Greifen. Neuer Hinweistext unter dem Stations-Prompt ("Bereits gesetzte Punkte
+  (grau) lassen sich direkt auf der Karte antippen und per Ziehen verschieben..."), erscheint erst
+  ab dem zweiten Punkt (sobald es überhaupt einen ziehbaren Marker zum Entdecken gibt). Verifiziert
+  per Playwright: zwei Punkte gesetzt, Drag des ersten Punkts verschiebt ihn sichtbar + landet
+  korrekt in `calibrationPoints` und `localStorage`; ein anschließender reiner Klick (ohne
+  Bewegung) auf denselben Marker verändert weder `calibrationIndex` noch die Punktkoordinaten.
+- **Auto-Save als Toggle-Schalter statt Checkbox:** "und auto save soll auch einen an/aus toggle
+  bekommen" - der Auto-Sync-Schalter in der Cloud-Sync-Karte (`state.autoSyncEnabled`, seit v1.9.78,
+  siehe Cloud-Sync-Eintrag oben) war die einzige der acht binären Ein/Aus-Einstellungen, die beim
+  v1.9.87-Umbau auf `.switch`-Toggles bewusst NICHT mitgezogen wurde (siehe dortiger Kommentar:
+  "kosmetische Vereinheitlichung dort war den zusätzlichen Berührungsaufwand nicht wert") - blieb
+  seitdem eine `.check-row`-Checkbox. Jetzt nachgezogen: `cloudSyncCardHtml()` rendert dieselbe
+  `.switch`/`.switch-track`/`.switch-thumb`-Markup wie `switchHtml()`, aber weiterhin mit dem
+  EIGENEN `data-auto-sync-toggle`-Attribut statt `data-toggle-setting` - bewusst NICHT auf den
+  generischen `data-toggle-setting`-Handler umgestellt, da dieser nur `state[key]` setzt und den
+  Einstellungen-Container neu zeichnet, aber NICHT den beim Ausschalten nötigen
+  `clearTimeout(autoSyncTimer)`-Aufruf kennt (sonst könnte ein bereits laufender 4-Sekunden-
+  Debounce-Timer nach dem Ausschalten noch verspätet einen Push auslösen, exakt die schon beim
+  "Sync trennen"-Fall dokumentierte Falle). Der bestehende dedizierte `autoSyncToggle`-Handler blieb
+  deshalb erhalten, nur um die jetzt überflüssige `.check-row`-`classList.toggle("done",...)`-Zeile
+  gekürzt (Switches brauchen keine JS-getriebene "done"-Klasse, das übernimmt CSS rein über
+  `:checked`). Verifiziert per Playwright: Schalter rendert als `<input>` innerhalb `.switch-row`
+  (keine `.check-row` mehr vorhanden), Umschalten setzt `state.autoSyncEnabled` weiterhin korrekt.
+
 ## Deutsche Namen — bekannte Stolperfallen
 
 Bei der Recherche-Arbeit mehrfach mit falschen Annahmen hereingefallen — beim nächsten Audit nicht
