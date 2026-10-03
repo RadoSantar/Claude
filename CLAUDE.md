@@ -1347,6 +1347,13 @@ Zwei unabhängige kleine Fixes in einer Runde:
   gebraucht wird). Verifiziert per Playwright: `EINALL_BW_LOCATIONS` enthält "Moor von Nevaio" nicht
   mehr (57 statt 58 Standorte), "Nevaio City" hat `noCatch:false` mit dem neuen Hinweistext, sowohl
   in einem frischen Schwarz- als auch Weiß-Spielstand.
+- **Direkte Anschlussfrage, KEIN Bug (reine Gegenprüfung, keine Code-Änderung):** "ebenfalls sind
+  weder in gavina noch avenitia pokemon fangbar" - per PokéWiki bestätigt, beide bestehenden
+  `noCatch:true`-Markierungen sind korrekt. Avenitias einzige "Pokémon"-Tabelle listet nur die drei
+  Starter (Serpifeu/Floink/Ottaro) als Geschenkbox-Wahl, keine Wildfänge; Gavinas einzige
+  "Pokémon"-Tabelle listet nur zwei tauschexklusive Pokémon (Ambidiffel/Simsala), die es zudem nur in
+  Schwarz2/Weiß2 gibt, nicht im hier betroffenen Schwarz/Weiß. Bewusst notiert, damit diese zwei
+  Standorte nicht versehentlich ein zweites Mal denselben Rechercheaufwand wie Nevaio City auslösen.
 
 ## Deutsche Namen — bekannte Stolperfallen
 
