@@ -1302,6 +1302,52 @@ Zwei unabhängige Nutzerwünsche in derselben Runde direkt im Anschluss an die K
   `:checked`). Verifiziert per Playwright: Schalter rendert als `<input>` innerhalb `.switch-row`
   (keine `.check-row` mehr vorhanden), Umschalten setzt `state.autoSyncEnabled` weiterhin korrekt.
 
+## Duo-Vergleich-Kachel gekürzt + Nevaio-City-Fangkorrektur (Schwarz/Weiß) (seit v1.9.97)
+
+Zwei unabhängige kleine Fixes in einer Runde:
+
+- **Duo-Vergleich-Kachel gekürzt:** Nutzerfeedback - der Kachel-Text in den Einstellungen überschnitt
+  sich stark mit dem Text hinter dem Info-Button derselben Kachel ("Vergleiche deinen Fortschritt mit
+  dem einer anderen Person, die ebenfalls Cloud-Sync nutzt..." vs. Info-Text "Vergleicht den eigenen
+  Fortschritt rein lesend mit dem einer anderen Person über deren Cloud-Sync-Code..." - dieselbe
+  Kernaussage doppelt). Gekürzt auf die reine Handlungsanweisung: "Sync-Code der anderen Person
+  eintragen - sie findet ihn über „Teilen" bei ihrer Cloud-Sync-Karte." (`duoCompareCardHtml()`,
+  noch-nicht-verknüpfter Zweig). Das dadurch im Info-Text fehlende Detail (WIE die andere Person an
+  ihren Code kommt) wurde dort ergänzt: `SETTINGS_HELP.duocompare`s erster Satz bekam den
+  Klammerzusatz "(die andere Person findet ihren Code über „Teilen" bei ihrer eigenen
+  Cloud-Sync-Karte)". Exakt dasselbe Muster wie beim v1.9.87-Umbau ("Kachel kurz und
+  handlungsorientiert, ausführliche Erklärung hinter dem Info-Button") - hier nur nachträglich
+  konsequent zu Ende angewendet, da diese eine Kachel damals noch einen alten, langen Vorspann
+  behalten hatte.
+- **Nevaio City (Schwarz/Weiß) fälschlich als fangfrei markiert:** Nutzerfund - die Kachel zeigte
+  "Keine wilden Pokémon", das stimmt aber nicht. Gegengeprüft über zwei unabhängige Quellen (PokéWiki
+  + Serebii Pokéarth, da Bulbapedia in dieser Sandbox mit 403 blockiert war): Nevaio City (Icirrus
+  City) ist - anders als jede andere Arena-Stadt dieser Edition (Orion/Septerna/Stratos/Rayono/Marea/
+  Panaero/Twindrake City, alle korrekt `noCatch:true`) - vom namensgebenden Nevaio-Moor durchzogen,
+  mit eigener Wildpokémon-Tabelle (Mebrana/Schnuthelm/Flunschlik per Gras, Flunschlik/Branawarz/Welsar
+  per Surfer, Schmerbe/Flunschlik per Angel). Wichtig: beide Quellen führen dafür **keine eigene,
+  getrennte Standort-Seite** ("Nevaio-Moor" existiert auf PokéWiki nicht einmal als Artikel, Serebiis
+  Pokéarth-Eintrag "Icirrus City" trägt die komplette Encounter-Tabelle direkt selbst) - die Stadt UND
+  ihr Moor sind dieselbe reale Fläche, keine zwei verschiedenen Orte. Die App hatte das bisher
+  fälschlich als zwei getrennte Kacheln modelliert (`EINALL_BW_LOCATIONS`: "Nevaio City" mit
+  `noCatch:true` direkt gefolgt von einer eigenen "Moor von Nevaio"-Kachel) - genau die schon
+  mehrfach dokumentierte Route-22-Fangfalle (zwei Kacheln für denselben realen Ort, siehe
+  Datenmodell-Abschnitt oben), nur hier nicht durch zweimaliges Betreten im Spielverlauf verursacht,
+  sondern durch eine falsche Aufteilung EINES einzigen Standorts in zwei Kacheln von Anfang an. Fix:
+  "Moor von Nevaio" komplett entfernt (hatte keine `bossAfter`-Bindung, unbedenklich zu löschen),
+  "Nevaio City" verliert `noCatch:true` und bekommt einen erklärenden Hinweis statt der bisherigen
+  "Keine wilden Pokémon."-Notiz: "Anders als sonst in Arena-Städten üblich: die Stadt ist vom
+  Nevaio-Moor durchzogen, wilde Pokémon per Gras/Surfer/Angel fangbar." Brycens/Sandros
+  `bossAfter`-Bindung an "Einall|Nevaio City" blieb unverändert gültig, da der Standortname selbst
+  nicht geändert wurde. **Bewusst nur `EINALL_BW_LOCATIONS` (Schwarz/Weiß) angefasst** -
+  `EINALL_B2W2_LOCATIONS` enthält Nevaio City gar nicht als eigene Kachel (die Stadt ist in
+  Schwarz2/Weiß2 laut Quelle nur im noch nicht implementierten Postgame nach Sieg über die Top Vier
+  betretbar, siehe den bereits bestehenden Backlog-Punkt "Einall (Schwarz2/Weiß2) - komplettes
+  Postgame" weiter unten - keine neue Lücke, nur bestätigt, dass dieser Fix dort nicht zusätzlich
+  gebraucht wird). Verifiziert per Playwright: `EINALL_BW_LOCATIONS` enthält "Moor von Nevaio" nicht
+  mehr (57 statt 58 Standorte), "Nevaio City" hat `noCatch:false` mit dem neuen Hinweistext, sowohl
+  in einem frischen Schwarz- als auch Weiß-Spielstand.
+
 ## Deutsche Namen — bekannte Stolperfallen
 
 Bei der Recherche-Arbeit mehrfach mit falschen Annahmen hereingefallen — beim nächsten Audit nicht
