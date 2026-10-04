@@ -1355,6 +1355,35 @@ Zwei unabhängige kleine Fixes in einer Runde:
   Schwarz2/Weiß2 gibt, nicht im hier betroffenen Schwarz/Weiß. Bewusst notiert, damit diese zwei
   Standorte nicht versehentlich ein zweites Mal denselben Rechercheaufwand wie Nevaio City auslösen.
 
+## Nutzerkorrektur: v1.9.97-Nevaio-Zusammenführung rückgängig gemacht (v1.9.98)
+
+Direkt im Anschluss an den obigen v1.9.97-Fix kam die Korrektur: "achtung nevaio moor ist auch ein
+eigenes gebiet also braucht es die kachel doch." Die v1.9.97-Schlussfolgerung ("Stadt UND Moor sind
+dieselbe reale Fläche") war **falsch** - laut Nutzer (direkte Spielkenntnis) sind Nevaio City und
+Moor von Nevaio tatsächlich zwei getrennte Gebiete im Spiel. Zurückgesetzt: `EINALL_BW_LOCATIONS`
+hat "Nevaio City" wieder als `{name:"Nevaio City", note:"Keine wilden Pokémon.", noCatch:true}`,
+direkt gefolgt von der wiederhergestellten eigenen Kachel `"Moor von Nevaio"` - exakt der Stand vor
+v1.9.97. Brycens/Sandros `bossAfter`-Bindung an "Einall|Nevaio City" war nie betroffen (der
+Standortname selbst hat sich nie geändert).
+
+**Lehre, zentral - die Fehlerursache war eine Beweisführungslücke, kein Recherche-Fehler im
+engeren Sinn:** die v1.9.97-Argumentation stützte sich darauf, dass weder PokéWiki noch Serebiis
+Pokéarth eine eigene, getrennte Artikel-/Seiten-Existenz für "Nevaio-Moor" führen (beide
+Wildpokémon-Tabellen standen direkt unter dem Stadt-Artikel/der Stadt-Seite selbst). Das wurde als
+Beleg dafür gewertet, dass es sich um denselben realen Ort handelt - **das ist ein Fehlschluss**:
+das Fehlen eines eigenen Wiki-Artikels für ein benanntes Teilgebiet ist KEIN Beleg dafür, dass dieses
+Teilgebiet mit der übergeordneten Stadt identisch ist. Wikis bündeln kleine, angrenzende Nebengebiete
+häufig in den Artikel der Hauptstadt statt ihnen eine eigene Seite zu geben - das ist eine
+redaktionelle/organisatorische Entscheidung des jeweiligen Wikis, kein Hinweis auf reale
+geografische Identität. **Für künftige ähnliche Fälle (Verdacht auf "zwei Kacheln für denselben
+realen Ort", Route-22-Fangfalle-Muster):** eine fehlende eigene Wiki-Seite für ein Teilgebiet ist
+höchstens ein schwaches Indiz, niemals ein Beleg - die direkte Spielkenntnis des Nutzers wiegt hier
+mehr als eine solche indirekte Schlussfolgerung aus bloßer Artikelstruktur. Im Zweifel vor einer
+Zusammenführung zweier Kacheln beim Nutzer nachfragen, statt aus Artikelstruktur allein zu schließen.
+Verifiziert per Playwright nach dem Rückbau: `EINALL_BW_LOCATIONS` wieder 58 Standorte (14 ohne
+Wildfang), "Nevaio City" mit `noCatch:true`, "Moor von Nevaio" als eigene Kachel direkt danach
+vorhanden.
+
 ## Deutsche Namen — bekannte Stolperfallen
 
 Bei der Recherche-Arbeit mehrfach mit falschen Annahmen hereingefallen — beim nächsten Audit nicht

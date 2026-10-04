@@ -2535,7 +2535,8 @@ const EINALL_BW_LOCATIONS = [
     "Turm des Himmels",
     "Route 7",
     {name:"Wendelberg", note:"Erst mit dem Jet-Orden zugänglich; Layout ändert sich saisonal."},
-    {name:"Nevaio City", note:"Anders als sonst in Arena-Städten üblich: die Stadt ist vom Nevaio-Moor durchzogen, wilde Pokémon per Gras/Surfer/Angel fangbar."},
+    {name:"Nevaio City", note:"Keine wilden Pokémon.", noCatch:true},
+    "Moor von Nevaio",
     {name:"Drachenstiege", note:"N erweckt hier das Version-Legendäre (Story-Ereignis, kein Kampf)."},
     "Route 8",
     {name:"Zylinderbrücke", note:"Keine wilden Pokémon.", noCatch:true},
@@ -4158,7 +4159,7 @@ function monActionsHtml(loc, small, showDelete){
   return html;
 }
 
-const APP_VERSION = "1.9.97";
+const APP_VERSION = "1.9.98";
 const SAVES_INDEX_KEY = "nuzlocke-saves-index";
 const ACTIVE_SAVE_KEY = "nuzlocke-active-save-id";
 const LEGACY_STORAGE_KEY = "hgss-nuzlocke-tracker-v1";
@@ -10791,7 +10792,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   <div class="stats">
     <div class="stat"><div class="n">23</div><div class="l">Editionen</div></div>
     <div class="stat"><div class="n">1075</div><div class="l">Pokémon-Arten</div></div>
-    <div class="stat"><div class="n">100</div><div class="l">Versions&shy;stände</div></div>
+    <div class="stat"><div class="n">101</div><div class="l">Versions&shy;stände</div></div>
     <div class="stat"><div class="n">Gen 1–9</div><div class="l">Abgedeckt</div></div>
   </div>
 
@@ -10801,6 +10802,24 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
   </a>
 
   <div class="log">
+
+    <div class="entry">
+      <div class="entry-head"><span class="ver">v1.9.98</span><span class="tag tag-fix">Fix</span></div>
+      <h3>Korrektur: "Moor von Nevaio" ist doch ein eigener Standort - v1.9.97-Zusammenführung rückgängig gemacht</h3>
+      <p>Nutzerkorrektur direkt im Anschluss an v1.9.97: "achtung nevaio moor ist auch ein eigenes
+      gebiet also braucht es die kachel doch." Die in v1.9.97 vorgenommene Zusammenführung von
+      "Nevaio City" und "Moor von Nevaio" zu einer einzigen fangbaren Kachel war ein Fehler - beide
+      sind im Spiel tatsächlich getrennte Gebiete. Zurückgesetzt: "Nevaio City" ist wieder
+      <code>noCatch:true</code> ("Keine wilden Pokémon."), "Moor von Nevaio" existiert wieder als
+      eigene, fangbare Kachel direkt danach, exakt wie vor v1.9.97. Brycens/Sandros Arenakampf bleibt
+      unverändert an "Nevaio City" gebunden. <strong>Lehre:</strong> die v1.9.97-Schlussfolgerung
+      stützte sich darauf, dass weder PokéWiki noch Serebiis Pokéarth einen eigenen Artikel/eine
+      eigene Seite für das Moor führen (beide Wildpokémon-Tabellen standen direkt unter dem
+      Stadt-Artikel) - das war aber kein Beleg für denselben realen Ort, nur eine redaktionelle
+      Entscheidung der jeweiligen Wiki-Seite, kleine Nebengebiete nicht separat zu bebildern. Bei
+      künftigen Fällen dieser Art zählt die direkte Spielkenntnis des Nutzers mehr als eine solche
+      indirekte Fehlschluss-Kette aus bloßer Artikelstruktur.</p>
+    </div>
 
     <div class="entry">
       <div class="entry-head"><span class="ver">v1.9.97</span><span class="tag tag-fix">Fix</span></div>
@@ -13043,7 +13062,7 @@ const CHANGELOG_HTML = `<p class="lede">Von der allerersten Bauetappe eines einf
     <div class="followup-item"><strong>Verlauf/Zeitleiste</strong> — <em>→ umgesetzt in v1.8.1.</em></div>
   </div>
 
-  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.97.</footer>
+  <footer>Erstellt aus dem Commit-Verlauf von <code>nuzlocke-v2-editionen.html</code> sowie den Änderungsprotokollen des Vorgängerprojekts und des allerersten Prototyps, Stand v1.9.98.</footer>
 
 </div>`;
 
